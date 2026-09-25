@@ -1,0 +1,24 @@
+LANHOUSEMANAGER - PENDRIVE DE INSTALACAO
+
+ANTES: no painel, encerre a sessao da maquina (se houver).
+
+1. Entre no perfil do cliente ("Usuário") e deixe Desktop e Downloads como devem ficar.
+   Se a tela de bloqueio aparecer: Ctrl+Alt+Del > Trocar usuario > conta administradora,
+   ou libere a maquina pelo painel durante a instalacao.
+2. Execute "1 - INSTALAR.bat" e informe o numero da maquina (ex.: 12).
+   Confirme o aviso do Windows (Sim). Se falhar, o motivo aparece na janela
+   e fica salvo em LanHouseManager-Estacoes\erro-instalacao.txt.
+3. Execute "2 - CAPTURAR PADRAO.bat".
+4. Reinicie e entre no perfil do cliente.
+5. Execute "3 - VERIFICAR APOS REINICIAR.bat".
+6. No painel: libere, imprima 1 pagina P&B e 1 colorida, encerre e confira a restauracao.
+
+Impressao: o cliente so ve a "Impressão Nexcafé". Ele escolhe preto e branco ou
+colorido na previa, e o computador do caixa imprime. As impressoras e os precos
+sao escolhidos no painel: Atendimento > Impressões.
+
+A instalacao remove as outras impressoras da estacao e libera a pasta do agente
+no Windows Defender.
+
+O servidor deve estar ligado em 192.168.1.14:4780.
+Use somente os arquivos deste pendrive.

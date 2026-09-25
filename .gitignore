@@ -1,0 +1,10 @@
+# Dados da loja (banco, backups, fila de impressao): nunca versionar
+server/data/
+# Contem a chave de instalacao
+**/install-config.json
+# Copia gerada do agente para o pendrive
+Pendrive-Preparado/LanHouseManager-Estacoes/
+*.zip
+*.log
+*.tmp
+.impeccable/

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LanHouseManager</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="authScreen" class="authScreen">
+    <form id="authForm" class="authForm">
+      <div class="brandMark">LH</div>
+      <h1>LanHouseManager</h1>
+      <p id="authSubtitle">Acesso do atendente</p>
+      <label>Usuário<input name="name" autocomplete="username" required></label>
+      <label>Senha<input name="password" type="password" autocomplete="current-password" minlength="10" required></label>
+      <button type="submit" id="authSubmit">Entrar</button>
+      <p id="authError" class="formError" hidden></p>
+    </form>
+  </div>
+
+  <div id="workspace" class="workspace" hidden>
+    <aside class="sidebar">
+      <div class="sideBrand"><span class="brandMark">LH</span><span>LanHouseManager</span></div>
+      <nav aria-label="Navegação principal">
+        <button data-view="machines" class="active">Atendimento</button>
+        <button data-view="cash">Caixa</button>
+        <button data-view="clients">Clientes</button>
+        <button data-view="products">Produtos</button>
+        <button data-view="settings">Tarifas</button>
+        <button data-view="reports">Relatórios</button>
+        <button data-view="users">Usuários</button>
+      </nav>
+      <div class="sideFooter"><span id="operatorName"></span><button id="logoutButton" class="textButton">Sair</button></div>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <div><h1 id="pageTitle">Atendimento</h1><p id="serverStatus">Conectando...</p></div>
+        <div class="topbarRight"><button id="shiftBadge" class="shiftBadge" title="Abrir o caixa">Caixa fechado</button><button id="quickSaleButton" class="primary">Nova venda</button><button id="refreshButton" class="iconButton" title="Atualizar" aria-label="Atualizar">&#8635;</button></div>
+      </header>
+
+      <main>
+        <section id="view-machines" class="view">
+          <div class="overviewLabel">Visão da operação</div>
+          <div class="metrics" id="machineMetrics"></div>
+          <div id="fleetNotice" class="fleetNotice" hidden></div>
+          <div class="sectionHead"><div><h2>Estações</h2><p>Libere, acompanhe e encerre atendimentos.</p></div><div class="headActions"><button id="powerAllButton">Ligar todas</button><details class="actionMenu"><summary>Mais opções</summary><div class="actionMenuPanel"><button id="shutdownAllButton">Desligar todas</button><button id="downloadInstallerButton" hidden>Baixar pacote das estações</button><button id="addMachineButton" hidden>Adicionar manualmente</button></div></details></div></div>
+          <div id="machines" class="machineGrid"></div>
+          <section id="etaSection" hidden><div class="sectionHead spaced"><div><h2>Previsão de término</h2><p>Estações em uso, da que termina antes para a que termina depois</p></div></div><div id="etaList" class="tableWrap"></div></section>
+          <div class="sectionHead spaced"><div><h2>Lista de espera</h2><p>Clientes aguardando uma estação</p></div><div class="headActions"><input id="waitName" placeholder="Nome do cliente"><button id="waitAddButton" class="primary">Adicionar</button></div></div>
+          <div id="waitList" class="tableWrap"></div>
+          <div class="sectionHead spaced"><div><h2>Impressões</h2><p>O cliente imprime na "Impressão Nexcafé" e escolhe preto e branco ou colorido; o caixa imprime na impressora abaixo</p></div></div>
+          <form id="printRoute" class="printRoute">
+            <label>Preto e branco<select id="printBlack"><option value="">Carregando...</option></select></label>
+            <label class="printPrice">Preço P&amp;B (R$/pág)<input id="printBlackPrice" type="number" min="0.01" step="0.01" inputmode="decimal"></label>
+            <label>Colorido<select id="printColor"><option value="">Carregando...</option></select></label>
+            <label class="printPrice">Preço colorido (R$/pág)<input id="printColorPrice" type="number" min="0.01" step="0.01" inputmode="decimal"></label>
+            <div class="printRouteActions"><button type="button" id="printRouteRefresh" title="Atualizar lista de impressoras">Atualizar lista</button><button type="submit" class="primary">Salvar impressoras</button></div>
+          </form>
+          <div id="printQueue" class="tableWrap"></div>
+          <div class="sectionHead spaced"><div><h2>Atividade recente</h2></div></div>
+          <div id="events" class="activityList"></div>
+        </section>
+
+        <section id="view-cash" class="view" hidden>
+          <div class="metrics" id="cashMetrics"></div>
+          <div class="sectionHead"><div><h2>Caixa atual</h2><p id="shiftDetail"></p></div><div class="headActions"><button id="printSaleButton">Registrar impressão</button><button id="cashAdjustButton">Entrada / retirada</button><button id="cashToggleButton" class="primary">Abrir caixa</button></div></div>
+          <div class="sectionHead spaced"><h2>Pendências</h2></div><div id="dueList" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Recebimentos recentes</h2></div><div id="paymentList" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Caixas anteriores</h2></div><div id="shiftList" class="tableWrap"></div>
+        </section>
+
+        <section id="view-clients" class="view" hidden>
+          <div class="sectionHead"><div><h2>Clientes</h2><p>Cadastros para vincular às sessões</p></div><button id="addClientButton" class="primary">Novo cliente</button></div>
+          <div class="filterRow"><input id="clientSearch" type="search" placeholder="Buscar cliente"></div>
+          <div id="clientList" class="tableWrap"></div>
+        </section>
+
+        <section id="view-products" class="view" hidden>
+          <div class="sectionHead"><div><h2>Produtos e serviços</h2><p>Preços, vendas e estoque</p></div><button id="addProductButton" class="primary">Novo item</button></div>
+          <div id="stockAlerts" class="stockAlerts" hidden></div>
+          <div class="filterRow"><input id="productSearch" type="search" placeholder="Buscar por nome ou código"></div>
+          <div id="productList" class="tableWrap"></div>
+        </section>
+
+        <section id="view-settings" class="view" hidden>
+          <div class="sectionHead"><div><h2>Tarifas e operação</h2><p>Valores usados nas próximas vendas</p></div></div>
+          <form id="settingsForm" class="settingsForm">
+            <label>Valor por hora (R$)<input name="hourPrice" type="number" min="0.01" step="0.01" required></label>
+            <label>Tempo padrão (min)<input name="defaultMinutes" type="number" min="1" max="1440" required></label>
+            <label>Faixas de tempo (min=R$):<input name="timeTable" type="text" placeholder="15=3.00; 30=3.70; 60=5.00" required></label>
+            <label>Impressão P&B / página (R$)<input name="printBW" type="number" min="0.01" step="0.01" required></label>
+            <label>Impressão colorida / página (R$)<input name="printColor" type="number" min="0.01" step="0.01" required></label>
+            <label class="checkboxLabel"><input name="autoRestoreOnTimeEnd" type="checkbox">Restaurar pastas ao expirar o tempo</label>
+            <div><button type="submit" class="primary">Salvar tarifas</button></div>
+          </form>
+          <div class="sectionHead spaced"><h2>Instalação das estações</h2></div>
+          <form id="printersForm" class="settingsForm">
+            <label>Impressora compartilhada (caminho UNC)<input name="printerShare" type="text" placeholder="\\BALCAO\Impressora"></label>
+            <div class="headActions"><button type="submit" class="primary">Salvar impressora</button><button type="button" id="regenerateKeyButton">Regenerar chave de instalação</button></div>
+            <p class="muted">A impressora e a chave vão dentro do install-config.json baixado em Atendimento.</p>
+          </form>
+        </section>
+
+        <section id="view-reports" class="view" hidden>
+          <div class="sectionHead"><div><h2>Relatório diário</h2><p>Uso das estações e vendas</p></div><input id="reportDate" type="date"></div>
+          <div id="reportMetrics" class="metrics"></div>
+          <div class="sectionHead spaced"><h2>Uso por estação</h2></div><div id="reportMachines" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Produtos mais vendidos</h2></div><div id="reportProducts" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Recebimentos por atendente</h2></div><div id="reportOperators" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Vendas do dia</h2></div><div id="reportCharges" class="tableWrap"></div>
+        </section>
+
+        <section id="view-users" class="view" hidden>
+          <div class="sectionHead"><div><h2>Usuários</h2><p>Equipe com acesso ao painel</p></div><button id="addUserButton" class="primary">Novo usuário</button></div>
+          <div id="userList" class="tableWrap"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="formDialog"><form id="modalForm"><div class="modalHead"><h2 id="modalTitle"></h2><button type="button" id="modalClose" class="iconButton" title="Fechar" aria-label="Fechar">&#215;</button></div><div id="modalFields" class="modalFields"></div><p id="modalError" class="formError" hidden></p><div class="modalActions"><button type="button" id="modalCancel">Cancelar</button><button id="modalSubmit" type="submit" class="primary">Salvar</button></div></form></dialog>
+  <dialog id="saleDialog" class="saleDialog"><form id="saleForm"><div class="modalHead"><div><h2 id="saleTitle">Nova venda</h2><p id="saleSubtitle">Adicione produtos e receba em uma operação.</p></div><button type="button" id="saleClose" class="iconButton" title="Fechar" aria-label="Fechar">&#215;</button></div><label>Buscar produto ou código de barras<input id="saleSearch" type="search" autocomplete="off" placeholder="Digite ou leia o código"></label><div id="saleMatches" class="saleMatches"></div><div id="saleCart" class="saleCart"></div><div id="salePrintRow" class="salePrintRow" hidden><label>Impressão P&amp;B (páginas)<input id="salePrintBW" type="number" min="0" max="10000" step="1" value="0"></label><label>Impressão colorida (páginas)<input id="salePrintColor" type="number" min="0" max="10000" step="1" value="0"></label></div><div class="saleFooter"><strong id="saleTotal">R$ 0,00</strong><label id="salePaymentLabel">Pagamento<select id="salePayment"><option value="cash">Dinheiro</option><option value="pix">Pix</option><option value="card">Cartão</option></select></label></div><p id="saleError" class="formError" hidden></p><div class="modalActions"><button type="button" id="saleCancel">Cancelar</button><button id="saleSubmit" type="submit" class="primary">Concluir venda</button></div></form></dialog>
+  <dialog id="pairDialog"><div class="pairContent"><h2>Código da estação</h2><p>Informe este código ao instalar o agente no computador cliente. Ele expira em uma hora e aparece apenas agora.</p><code id="pairCode"></code><div class="modalActions"><button id="pairClose" class="primary">Concluir</button></div></div></dialog>
+  <dialog id="monitorDialog" class="monitorDialog"><div class="monitorHead"><h2 id="monitorTitle">Monitoramento</h2><span id="monitorStatus" class="muted"></span><button type="button" id="monitorClose" class="iconButton" title="Fechar" aria-label="Fechar">&#215;</button></div><img id="monitorImage" alt="Tela da estação"><div id="monitorBar" class="monitorBar"><button data-mctrl="text">Digitar</button><button data-mctrl="enter">Enter</button><button data-mctrl="esc">Esc</button><button data-mctrl="tab">Tab</button><button data-mctrl="restart">Reiniciar</button><button data-mctrl="shutdown">Desligar</button><button data-mctrl="unlock">Desbloquear</button></div></dialog>
+  <div id="toast" role="status" class="toast" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>

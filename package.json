@@ -1,0 +1,16 @@
+{
+  "name": "lan-house-manager",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Sistema local para lan house: servidor, painel do atendente e agente cliente Windows.",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "check": "node --check server/server.js && node --check server/app.js && node --check server/installer-package.js && node --check server/public/app.js && node --check tests/integration.test.js",
+    "test": "node --test tests/integration.test.js",
+    "verify": "npm run check && npm test"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
