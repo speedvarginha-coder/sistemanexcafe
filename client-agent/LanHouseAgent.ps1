@@ -626,6 +626,9 @@ function Install-VirtualPrintQueue {
 
 function Invoke-InstallAgent {
     Require-Admin
+    # Para o agente em execucao: senao ele reinicia no meio da instalacao (token novo) e a tela de
+    # bloqueio cobre a janela do instalador. Ele volta no proximo login/reinicio.
+    Stop-AgentUiProcesses -Actions @("Run", "LockScreen", "Overlay", "Monitor", "PrintReview")
     Repair-AgentFolderAccess
     Ensure-AgentRoot
 
@@ -781,8 +784,8 @@ powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$instal
     Write-Host "Inicializacao criada em $StartupBat"
     Write-Host "Impressora do cliente: $VirtualPrinterName (impressao feita pelo caixa)"
     Write-Host ""
-    Write-Host "Prepare o perfil cliente e rode como Administrador:"
-    Write-Host "powershell -ExecutionPolicy Bypass -File `"$installedScript`" -Action Capture"
+    Write-Host "PROXIMO PASSO: rode '2 - CAPTURAR PADRAO.bat' e depois reinicie a estacao pelo menu Iniciar." -ForegroundColor Green
+    Write-Host "(O agente e a tela de bloqueio voltam depois do reinicio.)"
 }
 
 # Abre outra acao do agente (bloqueio, contador, monitor, revisao de impressao) sem janela de console.
@@ -1184,7 +1187,7 @@ function Stop-AgentUiProcesses {
     param([string[]]$Actions = @("LockScreen", "Overlay", "Monitor", "PrintReview"))
     $session = (Get-Process -Id $PID).SessionId
     $pattern = '(?i)-Action\s+"?(' + ($Actions -join '|') + ')"?'
-    foreach ($process in @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
+    foreach ($process in @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='cmd.exe'" -ErrorAction SilentlyContinue)) {
         if ($process.ProcessId -eq $PID -or $process.SessionId -ne $session) { continue }
         if ($process.CommandLine -match $pattern -and $process.CommandLine -match 'LanHouseAgent\.ps1') {
             Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
