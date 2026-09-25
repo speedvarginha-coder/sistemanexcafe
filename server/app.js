@@ -381,7 +381,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   function admin(user) { if (user.role !== "admin") throw err(403, "Acesso exclusivo do administrador"); }
   function agent(req, item) {
     const token = req.headers.authorization?.match(/^Bearer (.+)$/)?.[1];
-    if (!token || !item.agentHash || hash(token) !== item.agentHash) throw err(401, "Agente nao autorizado");
+    if (!token || !item.agentHash || hash(token) !== item.agentHash) {
+      // Diferencia no painel "PC desligado" de "PC ligado com vinculo antigo" (so em memoria).
+      if (token) item.rejectedAt = now();
+      throw err(401, "Agente nao autorizado");
+    }
   }
   function origin(req) {
     if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return;
