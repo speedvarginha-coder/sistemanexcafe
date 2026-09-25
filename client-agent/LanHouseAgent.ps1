@@ -1904,11 +1904,18 @@ public class LanHouseOverlayForm : Form {
     $tick = {
         if (-not $script:OverlaySession) { return }
         $now = (Get-Date).ToUniversalTime().AddMilliseconds($script:OverlayOffset)
-        $end = [datetime]::Parse($script:OverlaySession.endsAt).ToUniversalTime()
-        $total = [int][math]::Floor([math]::Max(0, ($end - $now).TotalSeconds))
+        # Tempo livre: mostra o tempo usado (conta do zero), sem avisos de fim.
+        $openSession = [bool]$script:OverlaySession.open
+        if ($openSession) {
+            $total = [int][math]::Floor([math]::Max(0, ($now - [datetime]::Parse($script:OverlaySession.startedAt).ToUniversalTime()).TotalSeconds))
+        } else {
+            $end = [datetime]::Parse($script:OverlaySession.endsAt).ToUniversalTime()
+            $total = [int][math]::Floor([math]::Max(0, ($end - $now).TotalSeconds))
+        }
         $h = [int][math]::Floor($total / 3600); $m = [int][math]::Floor(($total % 3600) / 60); $sec = $total % 60
         $timeLabel.Text = if ($h -gt 0) { "{0:00}:{1:00}:{2:00}" -f $h, $m, $sec } else { "{0:00}:{1:00}" -f $m, $sec }
-        $timeLabel.ForeColor = if ($total -le 300) { $danger } else { $white }
+        $timeLabel.ForeColor = if (-not $openSession -and $total -le 300) { $danger } else { $white }
+        if ($openSession) { $script:OverlayWarn5 = $true; $script:OverlayWarn1 = $true }
         if (-not $script:OverlayWarn5 -and $total -le 300 -and $total -gt 60) { $script:OverlayWarn5 = $true; try { [System.Media.SystemSounds]::Exclamation.Play() } catch { } }
         if (-not $script:OverlayWarn1 -and $total -le 60) { $script:OverlayWarn1 = $true; try { [System.Media.SystemSounds]::Hand.Play() } catch { } }
         $totalLabel.Text = "Total " + ("R$ {0:N2}" -f ($script:OverlayValueCents / 100))

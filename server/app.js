@@ -8,6 +8,8 @@ const { execFile } = require("node:child_process");
 const { buildZip } = require("./installer-package");
 
 const OFFLINE_MS = 20_000;
+// Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
+const OPEN_SESSION_MAX_MINUTES = 12 * 60;
 const SESSION_MS = 12 * 60 * 60 * 1000;
 const METHODS = ["cash", "pix", "card"];
 const ARCHIVE_AFTER_DAYS = 45;
@@ -289,7 +291,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const client = db.clients.find(row => row.id === session.clientId);
     const prints = db.charges.filter(row => row.sessionId === session.id && row.kind === "print").map(row => ({ color: row.color === true, pages: row.quantity || 0, amountCents: row.amountCents }));
     const extras = db.charges.filter(row => row.sessionId === session.id && row.kind === "sale").flatMap(row => row.items || []).map(row => ({ name: row.name, quantity: row.quantity, amountCents: row.totalCents }));
-    return { customer: session.customer || (client ? client.name : "Avulso"), billingMode: session.billingMode, plannedMinutes: session.plannedMinutes, usedMinutes, startedAt: session.startedAt, timeCents: cost.timeCents, prints, printCents: cost.printCents, extras, extrasCents: cost.extrasCents, totalCents: cost.totalCents };
+    return { customer: session.customer || (client ? client.name : "Avulso"), billingMode: session.billingMode, open: session.open === true, plannedMinutes: session.plannedMinutes, usedMinutes, startedAt: session.startedAt, timeCents: cost.timeCents, prints, printCents: cost.printCents, extras, extrasCents: cost.extrasCents, totalCents: cost.totalCents };
   }
   function publicMachine(item) {
     const { agentHash, pairingHash, pairingExpiresAt, ...safe } = item;
@@ -768,8 +770,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if ((item.restoreSeq || 0) > (item.appliedRestoreSeq || 0)) throw err(409, "Restauracao pendente. Aguarde a limpeza da estacao terminar");
         if (status(item) === "offline") throw err(409, "Agente offline. Verifique a estacao antes de liberar");
         if (item.maintenance) throw err(409, "Estacao em manutencao");
-        const minutes = number(input.minutes, 1, 1440, "Minutos");
-        const billingMode = ["prepaid", "postpaid", "credit"].includes(input.billingMode) ? input.billingMode : "postpaid";
+        // Tempo livre: sem duracao combinada; o relogio conta do zero e cobra pela tabela ao encerrar.
+        const open = input.billingMode === "open";
+        const minutes = open ? OPEN_SESSION_MAX_MINUTES : number(input.minutes, 1, 1440, "Minutos");
+        const billingMode = open ? "postpaid" : ["prepaid", "postpaid", "credit"].includes(input.billingMode) ? input.billingMode : "postpaid";
         const clientId = input.clientId ? label(input.clientId, 50) : null;
         const client = clientId && db.clients.find(row => row.id === clientId && row.active);
         if (clientId && !client) throw err(400, "Cliente nao encontrado");
@@ -778,7 +782,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
           if ((client.creditSeconds || 0) < minutes * 60) throw err(409, "Saldo de tempo insuficiente");
           if (Object.values(db.machines).some(row => row.session?.clientId === client.id)) throw err(409, "Cliente ja usa outra estacao");
         }
-        const session = { id: uuid(), clientId, customer: billingMode === "credit" ? client.name : label(input.customer, 80), startedAt: now(), endsAt: new Date(Date.now() + minutes * 60000).toISOString(), plannedMinutes: minutes, billingMode, rateCentsHour: db.settings.rateCentsHour };
+        const session = { id: uuid(), clientId, customer: billingMode === "credit" ? client.name : label(input.customer, 80), startedAt: now(), endsAt: new Date(Date.now() + minutes * 60000).toISOString(), plannedMinutes: minutes, billingMode, open, rateCentsHour: db.settings.rateCentsHour };
         if (billingMode === "credit") session.creditSeconds = minutes * 60;
         if (billingMode === "prepaid") {
           if (!currentShift()) throw err(409, "Abra o caixa para venda antecipada");
@@ -789,9 +793,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         }
         item.session = session; item.locked = false; item.openedSessionId = null; item.openedAt = null; item.lockMessage = ""; touch(item);
         if (input.waitId) db.waitList = db.waitList.filter(row => row.id !== input.waitId);
-        event(item.id, "Maquina liberada", `${minutes} min; ${billingMode}`, user.name);
+        event(item.id, "Maquina liberada", open ? "tempo livre" : `${minutes} min; ${billingMode}`, user.name);
       } else if (action === "add-time") {
         if (!item.session) throw err(409, "Maquina sem sessao ativa");
+        if (item.session.open) throw err(409, "Tempo livre nao precisa de tempo extra");
         const minutes = number(input.minutes, 1, 1440, "Minutos");
         if (item.session.billingMode === "credit") {
           // Tempo extra com saldo tambem e descontado do cliente no encerramento.

@@ -98,13 +98,19 @@ function clock(ms) {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
   return h ? `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}` : `${String(m).padStart(2,"0")}:${String(sec).padStart(2,"0")}`;
 }
+// Tempo livre: mostra o tempo usado (conta do zero); tempo fixo: o que falta.
+function sessionClock(machine, now = Date.now() + serverOffset) {
+  const session = machine.session;
+  if (!session) return clock(0);
+  return session.open ? clock(Math.max(0, now - Date.parse(session.startedAt))) : clock(Math.max(0, Date.parse(session.endsAt) - now));
+}
 function tickClocks() {
   if (!state || !state.machines) return;
   const now = Date.now() + serverOffset;
   for (const machine of state.machines) {
     const el = document.querySelector(`.machineClock[data-id="${machine.id}"]`);
     if (!el || !machine.session) continue;
-    el.textContent = clock(Math.max(0, Date.parse(machine.session.endsAt) - now));
+    el.textContent = sessionClock(machine, now);
   }
 }
 function formatCredit(seconds) {
@@ -117,7 +123,7 @@ function machineCard(machine, compact = false) {
   const restoring = machine.restoreSeq > (machine.appliedRestoreSeq || 0);
   const active = !!session;
   const available = !active && !restoring && machine.status !== "offline" && machine.status !== "maintenance";
-  const mode = { prepaid: "Pago antes", postpaid: "Pagar ao sair", credit: "Saldo do cliente" }[session?.billingMode] || "";
+  const mode = session?.open ? "Tempo livre" : { prepaid: "Pago antes", postpaid: "Pagar ao sair", credit: "Saldo do cliente" }[session?.billingMode] || "";
   const phase = machine.status === "offline" ? active ? "Uso sem conexão" : machine.rejectedAt && Date.now() - Date.parse(machine.rejectedAt) < 60000 ? "Vínculo antigo" : "Offline" : machine.maintenance ? "Manutenção" : restoring ? "Preparando" : active && machine.locked ? "Pausada" : active && machine.openedSessionId !== session.id ? "Liberando" : active ? "Em uso" : "Disponível";
   const tone = machine.status === "offline" ? "offline" : machine.maintenance || restoring ? "maintenance" : active ? "in_use" : "free";
   const info = active ? `${html(session.customer || state.clients.find(c => c.id === session.clientId)?.name || "Avulso")} · ${mode}` : "";
@@ -128,8 +134,8 @@ function machineCard(machine, compact = false) {
   const action = active ? `<button class="primary" data-action="end" data-id="${html(machine.id)}">Encerrar e receber</button>` : machine.status === "offline" ? machine.mac ? `<button data-action="power" data-id="${html(machine.id)}">Ligar estação</button>` : `<span class="machineSetupNote">Aguardando instalação</span>` : `<button class="primary" data-action="start" data-id="${html(machine.id)}" ${available ? "" : "disabled"}>Liberar estação</button>`;
   return `<article class="machine ${tone}${compact ? " compact" : ""}" data-machine="${html(machine.id)}">
     <div class="machineTop"><div><h3>${html(machine.name)}</h3><small>${html(machine.id)}</small></div><span class="status ${tone}">${phase}</span></div>
-    ${compact ? "" : active ? `<div class="machineMiddle"><div class="machineClock" data-id="${html(machine.id)}">${clock(machine.remainingMs)}</div><div class="machineValue">${currency(machine.valueCents || 0)}</div></div><div class="machineInfo">${info}</div>` : `<div class="machineIdle"><span class="machineIdleIcon">${monitorIcon}</span><div><strong>${idleTitle}</strong><span>${idleDetail}</span></div></div>`}
-    <div class="machineActions">${action}${active ? `<button data-action="addTime" data-id="${html(machine.id)}">+ Tempo</button><button data-action="consume" data-id="${html(machine.id)}">+ Consumo</button>` : ""}</div>
+    ${compact ? "" : active ? `<div class="machineMiddle"><div class="machineClock" data-id="${html(machine.id)}">${sessionClock(machine)}</div><div class="machineValue">${currency(machine.valueCents || 0)}</div></div><div class="machineInfo">${info}</div>` : `<div class="machineIdle"><span class="machineIdleIcon">${monitorIcon}</span><div><strong>${idleTitle}</strong><span>${idleDetail}</span></div></div>`}
+    <div class="machineActions">${action}${active ? `${session.open ? "" : `<button data-action="addTime" data-id="${html(machine.id)}">+ Tempo</button>`}<button data-action="consume" data-id="${html(machine.id)}">+ Consumo</button>` : ""}</div>
     <details class="machineMore"><summary>Mais ações</summary><div class="machineMoreActions">
       ${active ? `<button data-action="${machine.locked ? "unlock" : "lock"}" data-id="${html(machine.id)}">${machine.locked ? "Retomar" : "Pausar"}</button><button data-action="summary" data-id="${html(machine.id)}">Resumo</button><button data-action="move" data-id="${html(machine.id)}">Mover</button><button data-action="restart" data-id="${html(machine.id)}">Encerrar e reiniciar</button>` : ""}
       <button data-action="monitor" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>Monitorar</button>
@@ -144,7 +150,7 @@ function summaryHtml(machine) {
   if (!s) return '<p class="muted">Sem sessão ativa nesta estação.</p>';
   const rows = [];
   rows.push(`<div class="summaryRow"><span>Cliente</span><strong>${html(s.customer)}</strong></div>`);
-  rows.push(`<div class="summaryRow"><span>Contratado</span><strong>${s.plannedMinutes} min</strong></div>`);
+  rows.push(s.open ? `<div class="summaryRow"><span>Modalidade</span><strong>Tempo livre</strong></div>` : `<div class="summaryRow"><span>Contratado</span><strong>${s.plannedMinutes} min</strong></div>`);
   rows.push(`<div class="summaryRow"><span>Tempo usado</span><strong>${s.usedMinutes} min</strong></div>`);
   rows.push(`<div class="summaryRow"><span>${s.billingMode === "credit" ? "Consumido do saldo" : "Valor do tempo"}</span><strong>${currency(s.timeCents)}</strong></div>`);
   const bw = (s.prints || []).filter(p => !p.color);
@@ -248,7 +254,7 @@ function renderMachines() {
   }
   const inUse = state.machines.filter(item => item.session).slice().sort((a, b) => a.remainingMs - b.remainingMs);
   $("#etaSection").hidden = inUse.length === 0;
-  $("#etaList").innerHTML = table(["Estação", "Cliente", "Termina em", "Total"], inUse.map(m => `<tr><td>${html(m.name)}</td><td>${html(m.summary ? m.summary.customer : "-")}</td><td>${clock(m.remainingMs)}</td><td class="money">${currency(m.valueCents || 0)}</td></tr>`), "Nenhuma estação em uso.");
+  $("#etaList").innerHTML = table(["Estação", "Cliente", "Termina em", "Total"], inUse.map(m => `<tr><td>${html(m.name)}</td><td>${html(m.summary ? m.summary.customer : "-")}</td><td>${m.session.open ? `livre · ${sessionClock(m)} usado` : clock(m.remainingMs)}</td><td class="money">${currency(m.valueCents || 0)}</td></tr>`), "Nenhuma estação em uso.");
   const wait = state.waitList || [];
   $("#waitList").innerHTML = table(["Cliente", "Aguardando desde", "Ação"], wait.map(w => `<tr><td>${html(w.name)}</td><td>${dateTime(w.at)}</td><td class="actionsCell"><button data-action="waitServe" data-id="${html(w.id)}" ${counts.free ? "" : "disabled"}>Atender</button><button data-action="waitRemove" data-id="${html(w.id)}">Remover</button></td></tr>`), "Ninguém na lista de espera.");
   $("#printQueue").innerHTML = table(["Estação", "Impressão", "Estado", "Valor", "Ação"], (state.printJobs || []).slice(0, 12).map(job => {
@@ -353,7 +359,7 @@ function openStartModal(machine, wait = null) {
   const clients = state.clients.filter(item => item.active).slice().sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
   const free = state.machines.filter(item => !item.session && item.status !== "offline" && !item.maintenance && item.restoreSeq <= (item.appliedRestoreSeq || 0));
   const target = wait ? select("targetMachineId", "Estação", free.map(item => [item.id, item.name]), machine.id) : "";
-  const fields = target + field("clientSearch", "Buscar cliente", "search", "", 'placeholder="Nome ou login" autocomplete="off"') + select("clientId", "Cliente", [["", "Avulso"], ...clients.map(item => [item.id, `${item.name}${item.creditSeconds ? ` · saldo ${formatCredit(item.creditSeconds)}` : ""}`])], "") + field("customer", "Nome avulso (opcional)", "text", wait?.name || "") + '<div class="presetRow" aria-label="Durações rápidas"><button type="button" data-preset="15">15 min</button><button type="button" data-preset="30">30 min</button><button type="button" data-preset="60">1 hora</button></div>' + field("minutes", "Minutos", "number", state.settings.defaultMinutes, 'min="1" max="1440" required') + select("billingMode", "Cobrança", [["postpaid", "Pagar ao sair"], ["prepaid", "Pagar agora"], ["credit", "Usar saldo do cliente"]], "postpaid") + paymentField() + '<p id="startQuote" class="quoteBox" role="status">Calculando valor...</p>';
+  const fields = target + field("clientSearch", "Buscar cliente", "search", "", 'placeholder="Nome ou login" autocomplete="off"') + select("clientId", "Cliente", [["", "Avulso"], ...clients.map(item => [item.id, `${item.name}${item.creditSeconds ? ` · saldo ${formatCredit(item.creditSeconds)}` : ""}`])], "") + field("customer", "Nome avulso (opcional)", "text", wait?.name || "") + '<div class="presetRow" aria-label="Durações rápidas"><button type="button" data-preset="15">15 min</button><button type="button" data-preset="30">30 min</button><button type="button" data-preset="60">1 hora</button></div>' + field("minutes", "Minutos", "number", state.settings.defaultMinutes, 'min="1" max="1440" required') + select("billingMode", "Cobrança", [["open", "Tempo livre (paga ao sair)"], ["postpaid", "Tempo fixo (paga ao sair)"], ["prepaid", "Tempo fixo (paga agora)"], ["credit", "Usar saldo do cliente"]], "open") + paymentField() + '<p id="startQuote" class="quoteBox" role="status">Calculando valor...</p>';
   openModal(`Liberar ${machine.name}`, fields, values => api(`/api/machines/${encodeURIComponent(values.targetMachineId || machine.id)}/start`, { ...values, minutes: Number(values.minutes), waitId: wait?.id || null }), "Liberar estação");
   const form = $("#modalForm"), clientSelect = form.elements.clientId, search = form.elements.clientSearch, mode = form.elements.billingMode, minutes = form.elements.minutes;
   let quoteRun = 0;
@@ -369,6 +375,10 @@ function openStartModal(machine, wait = null) {
   async function update() {
     const credit = mode.value === "credit";
     const prepaid = mode.value === "prepaid";
+    const open = mode.value === "open";
+    minutes.closest("label").hidden = open;
+    minutes.disabled = open;
+    form.querySelector(".presetRow").hidden = open;
     form.elements.paymentMethod.closest("label").hidden = !prepaid;
     form.elements.paymentMethod.disabled = !prepaid;
     form.elements.customer.closest("label").hidden = credit || !!clientSelect.value;
@@ -377,6 +387,11 @@ function openStartModal(machine, wait = null) {
     const run = ++quoteRun;
     const count = Number(minutes.value);
     $("#modalSubmit").disabled = (credit && (!client || client.creditSeconds < count * 60)) || (prepaid && !state.cashShift);
+    if (open) {
+      const first = (state.settings.timeTable || []).slice().sort((a, b) => a.minutes - b.minutes)[0];
+      $("#startQuote").textContent = `Tempo livre: o relógio começa do zero e o cliente paga o que usar ao sair${first ? ` (mínimo ${currency(first.cents)} até ${first.minutes} min)` : ""}.`;
+      return;
+    }
     if (!Number.isInteger(count) || count < 1 || count > 1440) { $("#startQuote").textContent = "Informe de 1 a 1440 minutos."; return; }
     if (credit) { $("#startQuote").textContent = client ? `Saldo disponível: ${formatCredit(client.creditSeconds)}. Serão reservados ${count} min.` : "Selecione um cliente com saldo."; return; }
     if (prepaid && !state.cashShift) { $("#startQuote").textContent = "Abra o caixa antes de receber e liberar."; return; }
