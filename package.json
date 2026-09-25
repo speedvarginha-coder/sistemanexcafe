@@ -6,8 +6,8 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "check": "node --check server/server.js && node --check server/app.js && node --check server/installer-package.js && node --check server/public/app.js && node --check tests/integration.test.js",
-    "test": "node --test tests/integration.test.js",
+    "check": "node --check server/server.js && node --check server/app.js && node --check server/installer-package.js && node --check server/public/app.js && node --check tests/integration.test.js && node --check tests/estacao-simulada.test.js",
+    "test": "node --test tests/integration.test.js tests/estacao-simulada.test.js",
     "verify": "npm run check && npm test"
   },
   "engines": {

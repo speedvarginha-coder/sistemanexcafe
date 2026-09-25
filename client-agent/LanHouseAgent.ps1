@@ -1284,12 +1284,23 @@ function Remove-ClientRestrictions {
     param([string]$User)
     Invoke-WithUserHive -User $User -Action {
         param($root)
-        foreach ($name in @("DisableTaskMgr", "DisableRegistryTools", "DisableChangePassword")) { & reg.exe delete "$root\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v $name /f 2>$null | Out-Null }
-        & reg.exe delete "$root\Software\Policies\Microsoft\Windows\System" /v DisableCMD /f 2>$null | Out-Null
-        foreach ($name in @("NoRun", "DisallowRun")) { & reg.exe delete "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v $name /f 2>$null | Out-Null }
-        & reg.exe delete "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun" /f 2>$null | Out-Null
+        foreach ($name in @("DisableTaskMgr", "DisableRegistryTools", "DisableChangePassword")) { [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Microsoft\Windows\CurrentVersion\Policies\System", "/v", $name, "/f")) }
+        [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Policies\Microsoft\Windows\System", "/v", "DisableCMD", "/f"))
+        foreach ($name in @("NoRun", "DisallowRun")) { [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "/v", $name, "/f")) }
+        [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun", "/f"))
     }
     Write-AgentLog "Restricoes removidas do perfil $User."
+}
+
+# Executa um programa do Windows (reg, icacls, cmdkey) sem que as mensagens de erro dele virem erro
+# fatal: no Windows PowerShell 5.1, redirecionar o stderr de um programa com
+# $ErrorActionPreference = "Stop" interrompe o script. Devolve a saida; o codigo fica em $LASTEXITCODE.
+function Invoke-NativeQuiet {
+    param([string]$File, [string[]]$Arguments)
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try { return @(& $File @Arguments 2>&1 | ForEach-Object { [string]$_ }) }
+    finally { $ErrorActionPreference = $previous }
 }
 
 function Get-LocalGroupMemberNames {
@@ -1370,8 +1381,8 @@ function Protect-AgentFolder {
 # Conserta permissoes deixadas por uma instalacao anterior (inclusive arquivos sem nenhuma permissao).
 function Repair-AgentFolderAccess {
     if (-not (Test-Path -LiteralPath $InstallRoot)) { return }
-    & icacls.exe $InstallRoot /setowner "*S-1-5-32-544" /T /C /Q 2>&1 | Out-Null
-    & icacls.exe $InstallRoot /reset /T /C /Q 2>&1 | Out-Null
+    [void](Invoke-NativeQuiet icacls.exe @($InstallRoot, "/setowner", "*S-1-5-32-544", "/T", "/C", "/Q"))
+    [void](Invoke-NativeQuiet icacls.exe @($InstallRoot, "/reset", "/T", "/C", "/Q"))
     Write-AgentLog "Permissoes da pasta do agente restauradas para a instalacao."
 }
 
@@ -1483,10 +1494,10 @@ function Clear-ClientTraces {
     }
 
     # Senhas salvas no Windows (Gerenciador de Credenciais) do usuario cliente.
-    foreach ($line in @(& cmdkey.exe /list 2>$null)) {
+    foreach ($line in @(Invoke-NativeQuiet cmdkey.exe @("/list"))) {
         if ($line -match '^\s*(Destino|Target):\s*(.+)$') {
             $target = $Matches[2].Trim() -replace '^(LegacyGeneric|Domain|Generic|WindowsLive):target=', ''
-            if ($target -and $target -notmatch 'virtualapp/didlogical|WindowsLive:') { & cmdkey.exe /delete:$target 2>$null | Out-Null }
+            if ($target -and $target -notmatch 'virtualapp/didlogical|WindowsLive:') { [void](Invoke-NativeQuiet cmdkey.exe @("/delete:$target")) }
         }
     }
 
