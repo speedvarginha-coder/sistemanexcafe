@@ -69,7 +69,7 @@ async function loadState() {
     if (latestPrint && latestPrint.id !== lastPrintJobId) {
       lastPrintJobId = latestPrint.id;
       if (latestPrint.state === "pending") toast(`Nova impressão: ${latestPrint.pages} pág ${latestPrint.color ? "colorida" : "P&B"} — aguardando cliente`);
-      else if (latestPrint.state === "confirmed") toast(`Impressão confirmada: ${latestPrint.pages} pág ${latestPrint.color ? "colorida" : "P&B"}`);
+      else if (latestPrint.state === "confirmed") toast(`Enviada à impressora: ${latestPrint.pages} pág ${latestPrint.color ? "colorida" : "P&B"}`);
     }
     $("#serverStatus").textContent = `Servidor online · ${dateTime(state.serverTime)}`;
     $("#shiftBadge").textContent = state.cashShift ? "Caixa aberto" : "Caixa fechado";
@@ -259,7 +259,7 @@ function renderMachines() {
   $("#waitList").innerHTML = table(["Cliente", "Aguardando desde", "Ação"], wait.map(w => `<tr><td>${html(w.name)}</td><td>${dateTime(w.at)}</td><td class="actionsCell"><button data-action="waitServe" data-id="${html(w.id)}" ${counts.free ? "" : "disabled"}>Atender</button><button data-action="waitRemove" data-id="${html(w.id)}">Remover</button></td></tr>`), "Ninguém na lista de espera.");
   $("#printQueue").innerHTML = table(["Estação", "Impressão", "Estado", "Valor", "Ação"], (state.printJobs || []).slice(0, 12).map(job => {
     const charge = (state.openCharges || []).find(row => row.printJobId === job.id);
-    const label = { pending: "Aguardando cliente", printing: "Imprimindo no caixa", failed: "Falhou", confirmed: job.printedAt ? "Impressa" : "Confirmada", cancelled: "Cancelada" }[job.state] || job.state;
+    const label = { pending: "Aguardando cliente", printing: "Imprimindo no caixa", failed: "Falhou", confirmed: "Enviada à impressora", cancelled: "Cancelada" }[job.state] || job.state;
     return `<tr><td>${html(job.machineId)}</td><td>${job.pages} pág · ${job.color ? "Colorida" : "P&B"}</td><td>${label}</td><td class="money">${currency(job.amountCents)}</td><td>${charge ? `<button data-action="pay" data-id="${html(charge.id)}" ${state.cashShift ? "" : "disabled"}>Receber</button>` : "-"}</td></tr>`;
   }), "Nenhuma impressão recente.");
   $("#events").innerHTML = state.events.length ? state.events.slice(0, 20).map(item => `<div class="activity"><time>${dateTime(item.at)}</time><span class="source">${html(item.machineId)}</span><span><strong>${html(item.title)}</strong>${item.detail ? ` · ${html(item.detail)}` : ""}</span></div>`).join("") : empty("Nenhuma atividade ainda.");

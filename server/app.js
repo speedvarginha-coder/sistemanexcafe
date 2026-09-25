@@ -620,7 +620,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     }
     const printUpload = p.match(/^\/api\/client\/([^/]+)\/print-upload$/);
     if (printUpload && req.method === "POST") {
-      // A estacao envia o PDF; o caixa imprime na impressora do Atendimento e so cobra se a impressao sair.
+      // A estacao envia o PDF; a cobranca ocorre quando a fila do Windows aceita o trabalho.
       const item = getMachine(decodeURIComponent(printUpload[1])); agent(req, item);
       const color = url.searchParams.get("color") === "1";
       const pages = number(url.searchParams.get("pages"), 1, 200, "Paginas");
@@ -650,7 +650,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       printJob.pages = printed; printJob.amountCents = printed * rate;
       printJob.state = "confirmed"; printJob.printedAt = now();
       charge("print", `Impressao ${color ? "colorida" : "P&B"}: ${printed} pag`, printJob.amountCents, { machineId: item.id, quantity: printed, color, printPrinter: printer, printJobId: printJob.id, sessionId: printJob.sessionId });
-      event(item.id, "Impressao concluida", `${printed} pag ${color ? "colorida" : "P&B"}`, "servidor"); save();
+      event(item.id, "Impressao enviada a impressora", `${printed} pag ${color ? "colorida" : "P&B"}`, "servidor"); save();
       return send(res, 200, { ok: true, printId: printJob.id, pages: printed, color, amountCents: printJob.amountCents, printer });
     }
     const clientScreen = p.match(/^\/api\/client\/([^/]+)\/screen$/);
@@ -1114,10 +1114,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     }
     if (p === "/api/installer-config" && req.method === "GET") {
       admin(user);
-      const shares = db.printerShares && db.printerShares.length ? db.printerShares : ["\\\\DESKTOP-HAA6JTV\\HP432", "\\\\DESKTOP-HAA6JTV\\EPSON4260"];
-      const blackPrinter = shares.find(s => /hp|laser|432/i.test(s)) || shares[0];
-      const colorPrinter = shares.find(s => /4260|epson|color/i.test(s)) || shares[1] || shares[0];
-      return send(res, 200, { ok: true, serverUrl: `http://${lanAddress()}:${port}`, installKey: db.installKey, colorPrinters: ["4260"], printers: shares, printBlackPrinter: blackPrinter, printColorPrinter: colorPrinter });
+      const shares = db.printerShares || [];
+      const blackPrinter = db.settings.printBlackPrinter || shares.find(s => /hp|laser|432/i.test(s)) || "";
+      const colorPrinter = db.settings.printColorPrinter || shares.find(s => /l375|epson|color/i.test(s)) || "";
+      return send(res, 200, { ok: true, serverUrl: `http://${lanAddress()}:${port}`, installKey: db.installKey, colorPrinters: colorPrinter ? [colorPrinter] : [], printers: shares, printBlackPrinter: blackPrinter, printColorPrinter: colorPrinter });
     }
     if (p === "/api/installer-package" && req.method === "GET") {
       admin(user);
@@ -1134,16 +1134,16 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         else stationIds[number] = machine.id;
       }
       for (const number of ambiguousStations) delete stationIds[number];
-      const shares = db.printerShares && db.printerShares.length ? db.printerShares : ["\\\\DESKTOP-HAA6JTV\\HP432", "\\\\DESKTOP-HAA6JTV\\EPSON4260"];
-      const blackPrinter = shares.find(s => /hp|laser|432/i.test(s)) || shares[0];
-      const colorPrinter = shares.find(s => /4260|epson|color/i.test(s)) || shares[1] || shares[0];
-      const config = { serverUrl: `http://${lanAddress()}:${port}`, installKey: db.installKey, colorPrinters: ["4260"], printers: shares, printBlackPrinter: blackPrinter, printColorPrinter: colorPrinter, stationIds };
+      const shares = db.printerShares || [];
+      const blackPrinter = db.settings.printBlackPrinter || shares.find(s => /hp|laser|432/i.test(s)) || "";
+      const colorPrinter = db.settings.printColorPrinter || shares.find(s => /l375|epson|color/i.test(s)) || "";
+      const config = { serverUrl: `http://${lanAddress()}:${port}`, installKey: db.installKey, colorPrinters: colorPrinter ? [colorPrinter] : [], printers: shares, printBlackPrinter: blackPrinter, printColorPrinter: colorPrinter, stationIds };
       const instructions = [
         "INSTALACAO DA ESTACAO - LanHouseManager", "",
         "1. Extraia todos os arquivos deste ZIP em uma pasta local da estacao.",
         "2. Entre uma vez no usuario Windows do cliente e prepare Desktop e Downloads.",
         "3. Execute Instalar-Agente.bat, informe o numero da estacao e confirme o administrador. Escolha o usuario cliente se solicitado.",
-        "4. Como administrador, execute Capturar-Padrao.bat para salvar o estado padrao.",
+        "4. Execute Capturar-Padrao.bat para conferir a captura feita na instalacao.",
         "5. Reinicie e entre no usuario cliente. O agente inicia automaticamente.",
         "6. Execute Verificar-Agente.bat e confirme no painel que a estacao esta online e bloqueada.",
         "7. Teste liberar, encerrar e restaurar antes de instalar nas outras estacoes.", "",

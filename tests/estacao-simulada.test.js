@@ -70,7 +70,10 @@ test("estacao simulada: reinstalar, proteger conta e capturar sem erros", { skip
     assert.ok(state.events.some(row => row.title === "Agente iniciado" && row.machineId === "tempname"), "agente conversou com o servidor");
   } finally {
     await new Promise(resolve => server.close(resolve));
-    if (!process.env.LHM_KEEP) fs.rmSync(work, { recursive: true, force: true }); else console.log("pasta:", work);
+    const resolved = path.resolve(work);
+    assert.equal(path.dirname(resolved), path.resolve(os.tmpdir()), "limpeza limitada ao diretorio temporario");
+    assert.ok(path.basename(resolved).startsWith("lhm-estacao-"), "limpeza limitada ao teste");
+    if (!process.env.LHM_KEEP) fs.rmSync(resolved, { recursive: true, force: true }); else console.log("pasta:", resolved);
   }
 });
 

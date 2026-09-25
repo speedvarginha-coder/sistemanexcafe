@@ -43,19 +43,31 @@ function Register-AgentUpdater { Log-Call "Tarefa atualizador" }
 function Get-ExistingLocalUsers { return @($clientName) }
 # Como na estacao depois da 1a tentativa: o cliente ja tem DisableRegistryTools e reg.exe recusa gravar.
 function reg.exe { Log-Call ("reg.exe BLOQUEADO: " + ($args -join " ")); Write-Output "ERRO: a edicao do Registro foi desabilitada pelo administrador."; $global:LASTEXITCODE = 1 }
-# Gravacoes reais pela API do .NET, redirecionadas de HKU\<sid> para uma chave de teste do usuario atual.
-$testRoot = "Software\LHMSimulado"
-function Open-UserRegistryKey {
-    param([string]$Key)
-    if ($Key -notmatch '^HKU\\[^\\]+\\(.+)$') { throw "Chave fora de HKU: $Key" }
+# O sandbox nao permite gravar HKCU. Registra os valores pedidos sem tocar o registro real.
+$script:registryValues = @{}
+function Set-RegistryDword {
+    param([string]$Key, [string]$Name, [int]$Value)
+    if ($Key -notmatch '^HKU\\') { throw "Chave fora de HKU: $Key" }
     Log-Call "registro: $Key"
-    return [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("$testRoot\$($Matches[1])")
+    $script:registryValues["$Key\$Name"] = $Value
+}
+function Set-RegistryString {
+    param([string]$Key, [string]$Name, [string]$Value)
+    if ($Key -notmatch '^HKU\\') { throw "Chave fora de HKU: $Key" }
+    Log-Call "registro: $Key"
+    $script:registryValues["$Key\$Name"] = $Value
 }
 function net.exe { Log-Call ("net " + ($args -join " ")); $global:LASTEXITCODE = 0 }
 function Get-CimInstance {
     param([string]$ClassName, [string]$Filter, $ErrorAction)
     if ($ClassName -eq "Win32_UserProfile") { return [pscustomobject]@{ LocalPath = (Join-Path "C:\Users" $clientName); SID = $clientSid } }
-    CimCmdlets\Get-CimInstance -ClassName $ClassName -Filter $Filter
+    if ($ClassName -in @("Win32_Process", "Win32_Printer", "Win32_NetworkAdapterConfiguration")) { return @() }
+    throw "Classe CIM nao simulada: $ClassName"
+}
+function Test-Path {
+    param([string]$Path, [string]$LiteralPath, [string]$PathType, $ErrorAction)
+    if ($Path -eq "Registry::HKEY_USERS\$clientSid") { return $true }
+    Microsoft.PowerShell.Management\Test-Path @PSBoundParameters
 }
 $script:groups = @{ "S-1-5-32-544" = @("Administrador", $clientName); "S-1-5-32-545" = @($clientName) }
 $script:groupNames = @{ "S-1-5-32-544" = "Administradores"; "S-1-5-32-545" = "Usuários" }
@@ -71,7 +83,7 @@ function Get-LocalUser {
 function New-LocalUser { param($Name, $Password, $FullName, $Description, [switch]$PasswordNeverExpires, [switch]$AccountNeverExpires) $script:localUsers["S-1-5-21-TEC"] = $Name; Log-Call "Conta criada: $Name"; [pscustomobject]@{ Name = $Name } }
 function Add-LocalGroupMember { param($Group, $Member, $ErrorAction) $sid = $Group.SID; if ($script:groups[$sid] -notcontains $Member) { $script:groups[$sid] += $Member }; Log-Call "Grupo $($Group.Name) + $Member" }
 function Remove-LocalGroupMember { param($Group, $Member, $ErrorAction) $sid = $Group.SID; $script:groups[$sid] = @($script:groups[$sid] | Where-Object { $_ -ne $Member }); Log-Call "Grupo $($Group.Name) - $Member" }
-function Read-Host { param($Prompt, [switch]$AsSecureString) if ($AsSecureString) { return (ConvertTo-SecureString "senha-tecnico" -AsPlainText -Force) }; if ("$Prompt" -match "Aplicar") { return "S" }; return "" }
+function Read-Host { param($Prompt, [switch]$AsSecureString) if ($AsSecureString) { $secure = New-Object Security.SecureString; foreach ($letter in "senha-tecnico".ToCharArray()) { $secure.AppendChar($letter) }; return $secure }; if ("$Prompt" -match "Aplicar") { return "S" }; return "" }
 
 # --- Estado da estacao antes da reinstalacao: vinculada e com as permissoes quebradas ---
 New-Item -ItemType Directory -Path $InstallRoot, (Join-Path $BaselineRoot "$clientName\Desktop") -Force | Out-Null
@@ -85,8 +97,8 @@ try {
     $result.install = "ok"
 } catch { $result.install = "ERRO: $($_.Exception.Message) @ $($_.InvocationInfo.PositionMessage)" }
 try {
-    Invoke-CaptureBaseline *>&1 | Out-Null
-    $result.capture = "ok"
+    $captured = Get-Content -Raw $ConfigPath | ConvertFrom-Json
+    $result.capture = if ($captured.LastCapture) { "ok" } else { "ERRO: instalacao nao registrou a captura" }
 } catch { $result.capture = "ERRO: $($_.Exception.Message)" }
 # Agente iniciando depois da instalacao, como no login do cliente (3 voltas do loop).
 function Remove-ClientPrinterConnections { Log-Call "Remove conexoes de impressora" }
@@ -104,7 +116,7 @@ try { Invoke-AgentRun *>&1 | Out-Null } catch { $result.run = if ($_.Exception.M
 
 try { $config = Get-Content -Raw $ConfigPath | ConvertFrom-Json } catch {
     $result.config = "ERRO ao ler configuracao: $($_.Exception.Message)"; $result.calls = @($calls); $result.fileAcl = ((& icacls.exe $ConfigPath) -join " ")
-    & icacls.exe $InstallRoot /reset /T /C /Q 2>&1 | Out-Null
+    & icacls.exe $InstallRoot /grant "*$($clientSid):(OI)(CI)F" /T /C /Q 2>&1 | Out-Null
     $result | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 (Join-Path $Work "resultado.json"); exit 0
 }
 $result.protectedUsers = @($config.ProtectedUsers)
@@ -112,18 +124,22 @@ $result.protectedFolders = @($config.ProtectedFolders)
 $result.token = [string]$config.AgentToken
 $result.lastCapture = [string]$config.LastCapture
 $result.startupBat = Test-Path $StartupBat
-$result.installedScriptMatches = (Get-FileHash (Join-Path $InstallRoot "LanHouseAgent.ps1")).Hash -eq (Get-FileHash $agentCopy).Hash
+$sha = [Security.Cryptography.SHA256]::Create()
+try {
+    $installedHash = [Convert]::ToBase64String($sha.ComputeHash([IO.File]::ReadAllBytes((Join-Path $InstallRoot "LanHouseAgent.ps1"))))
+    $sourceHash = [Convert]::ToBase64String($sha.ComputeHash([IO.File]::ReadAllBytes($agentCopy)))
+    $result.installedScriptMatches = ($installedHash -eq $sourceHash)
+} finally { $sha.Dispose() }
 $result.fileAcl = ((& icacls.exe $ConfigPath) -join " ")
 $result.adminsAfter = @($script:groups["S-1-5-32-544"])
-$policy = "HKCU:\$testRoot\Software\Microsoft\Windows\CurrentVersion\Policies"
+$policy = "HKU\$clientSid\Software\Microsoft\Windows\CurrentVersion\Policies"
 $result.policies = [ordered]@{
-    DisableTaskMgr = (Get-ItemProperty "$policy\System" -ErrorAction SilentlyContinue).DisableTaskMgr
-    DisableRegistryTools = (Get-ItemProperty "$policy\System" -ErrorAction SilentlyContinue).DisableRegistryTools
-    DisableCMD = (Get-ItemProperty "HKCU:\$testRoot\Software\Policies\Microsoft\Windows\System" -ErrorAction SilentlyContinue).DisableCMD
-    NoRun = (Get-ItemProperty "$policy\Explorer" -ErrorAction SilentlyContinue).NoRun
-    DisallowRun1 = (Get-ItemProperty "$policy\Explorer\DisallowRun" -ErrorAction SilentlyContinue).'1'
+    DisableTaskMgr = $script:registryValues["$policy\System\DisableTaskMgr"]
+    DisableRegistryTools = $script:registryValues["$policy\System\DisableRegistryTools"]
+    DisableCMD = $script:registryValues["HKU\$clientSid\Software\Policies\Microsoft\Windows\System\DisableCMD"]
+    NoRun = $script:registryValues["$policy\Explorer\NoRun"]
+    DisallowRun1 = $script:registryValues["$policy\Explorer\DisallowRun\1"]
 }
-Remove-Item "HKCU:\$testRoot" -Recurse -Force -ErrorAction SilentlyContinue
 $result.calls = @($calls)
-& icacls.exe $InstallRoot /reset /T /C /Q 2>&1 | Out-Null
+& icacls.exe $InstallRoot /grant "*$($clientSid):(OI)(CI)F" /T /C /Q 2>&1 | Out-Null
 $result | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 (Join-Path $Work "resultado.json")

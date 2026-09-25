@@ -11,7 +11,7 @@ Sistema local para administrar uma lan house com oito estações Windows 10. Inc
 - Ligar e desligar estações pelo painel: desligar o Windows de uma máquina ou de todas, e ligar via Wake-on-LAN (envia o pacote mágico pelo MAC que o agente informa).
 - Caixa com abertura, recebimentos em dinheiro/Pix/cartão, entradas, retiradas e fechamento.
 - Tarifas por faixas de tempo (ex.: 15 min = R$ 3,00, 30 min = R$ 3,70, 60 min = R$ 5,00) e por hora acima da última faixa, mais valor por página; cobrança pelo tempo efetivamente usado, arredondado para cima ao minuto e limitado ao tempo contratado.
-- Painel flutuante na tela do cliente, no canto inferior direito, com o tempo restante e o valor que está correndo (tempo + impressões + consumo).
+- Contador no canto superior direito da tela do cliente, em uma faixa reservada para não cobrir programas, com o tempo e o valor da sessão (tempo + impressões + consumo).
 - Consumo na estação (**+ Consumo** no cartão): produtos, serviços e impressões feitas no balcão entram na conta da sessão e são recebidos no encerramento.
 - Monitoramento remoto da tela com controle de mouse e teclado (cerca de 3 quadros por segundo).
 - Atualização automática do agente: as estações comparam a versão com o servidor e se atualizam e reiniciam sozinhas (depois da primeira instalação por pen drive).
@@ -20,7 +20,7 @@ Sistema local para administrar uma lan house com oito estações Windows 10. Inc
 - Venda rápida com vários produtos, leitura de código de barras, um pagamento e alerta de estoque mínimo.
 - Pacote ZIP de instalação gerado pelo painel, com configuração atual do servidor.
 - Saldo pré-pago por cliente: o atendente recarrega em reais e o próprio cliente entra na estação com login e senha; o tempo usado é descontado do saldo e o que sobrar volta ao cadastro.
-- Impressão pelo caixa: a estação só enxerga a **Impressão Nexcafé**. O cliente vê a prévia, escolhe preto e branco ou colorido, e o computador do caixa imprime na impressora escolhida em **Atendimento > Impressões** (onde também ficam os preços). Só cobra se a impressão sair.
+- Impressão pelo caixa: a estação só enxerga a **Impressão Nexcafé**. O cliente vê a prévia, escolhe preto e branco ou colorido, e o computador do caixa envia o trabalho à impressora escolhida em **Atendimento > Impressões** (onde também ficam os preços). A cobrança é registrada após a fila do Windows aceitar o trabalho; confira a saída física antes de receber.
 
 O bloqueio é uma janela do Windows, não um congelamento de disco como Deep Freeze. Não substitui políticas de segurança do Windows. Teste uma estação antes de migrar as oito.
 
@@ -46,8 +46,8 @@ O servidor guarda dados em `server\data\db.json`. Na migração da versão anter
 
 1. Em **Atendimento > Impressões**, escolha as impressoras do caixa (preto e branco e colorida) e os preços por página.
 2. Use o pendrive preparado (`Pendrive-Preparado`, com a pasta `LanHouseManager-Estacoes`) ou baixe o ZIP em **Atendimento > Baixar pacote das estações**.
-3. Na estação, deixe o perfil do cliente como deve ficar e execute `1 - INSTALAR.bat` com o número da estação. No fim, responda **S** para proteger a conta: o instalador cria a conta administradora **Tecnico** (pede a senha na primeira vez), tira o administrador do usuário do cliente, bloqueia Gerenciador de Tarefas, CMD, Executar e PowerShell no perfil do cliente, protege a pasta do agente, remove as impressoras diretas e libera a pasta do agente no Windows Defender.
-4. Execute `2 - CAPTURAR PADRAO.bat`. Reinicie e entre no usuário cliente.
+3. Na estação, deixe o perfil do cliente como deve ficar e execute `1 - INSTALAR.bat` com o número da estação. Em uma reinstalação, entre na conta **Tecnico** antes de executar o passo 1, pois o PowerShell do cliente já pode estar bloqueado. No fim, responda **S** para proteger a conta: o instalador cria a conta administradora **Tecnico** (pede a senha na primeira vez), tira o administrador do usuário do cliente, bloqueia Gerenciador de Tarefas, CMD, Executar e PowerShell no perfil do cliente, protege a pasta do agente, remove as impressoras diretas e libera a pasta do agente no Windows Defender.
+4. Execute `2 - CONFERIR PADRAO.bat` para conferir a captura feita pelo instalador. Reinicie e entre no usuário cliente.
 5. Execute `3 - VERIFICAR APOS REINICIAR.bat` e confirme no painel que a estação ficou online e bloqueada.
 
 Reinstalar na mesma máquina funciona direto. Para instalar uma estação já cadastrada em **outro** computador, clique antes em **Mais ações > Vincular agente** no cartão dela (vale por 1 hora); sem isso a chave de instalação não substitui o vínculo existente.
@@ -63,7 +63,7 @@ A chave de instalação autentica as estações. Para invalidar configurações 
 3. Entre como administrador e execute `Instalar-Agente.bat`.
 4. Informe a URL do servidor, o ID, o nome e o código de vinculação.
 5. Escolha o perfil Windows do cliente. Esta versão aceita **um perfil cliente por estação**.
-6. Prepare Desktop e Downloads do perfil `Cliente`. Execute `Capturar-Padrao.bat` como administrador para salvar o padrão.
+6. Prepare Desktop e Downloads do perfil `Cliente` antes da instalação. O instalador salva o padrão; execute `Capturar-Padrao.bat` para conferir.
 7. Entre no perfil `Cliente` e reinicie a estação. O agente inicia automaticamente e deve aparecer online no painel.
 
 Se já havia um agente da versão 0.1, reinstale com o novo instalador.

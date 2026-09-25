@@ -1,12 +1,19 @@
 @echo off
 setlocal
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Capturar-Padrao.ps1"
-if errorlevel 1 (
-  echo.
-  echo Falha ao capturar o padrao. Confira a mensagem acima ou na janela do agente.
-  pause
-  exit /b 1
-)
+set "config=C:\LanHouseManagerAgent\agent-config.json"
+if not exist "%config%" goto missing
+if not exist "C:\LanHouseManagerAgent\Baseline\" goto missing
+set "capture="
+for /f "tokens=2 delims=, " %%A in ('findstr /C:"LastCapture" "%config%"') do set "capture=%%~A"
+if not defined capture goto missing
+if /I "%capture%"=="null" goto missing
 echo.
-echo Padrao salvo. Reinicie e entre no perfil do cliente.
+echo Padrao capturado em %capture%.
+echo Reinicie e entre no perfil do cliente.
 pause
+exit /b 0
+:missing
+echo ERRO: padrao ausente ou incompleto.
+echo Entre na conta Tecnico e execute 1 - INSTALAR.bat novamente.
+pause
+exit /b 1

@@ -651,7 +651,7 @@ function Invoke-InstallAgent {
     }
 
     $sharedPrinters = @()
-    $colorPrinters = @("4260")
+    $colorPrinters = @("L375")
     $blackPrinter = ""
     $colorPrinter = ""
     if ($installConfig) {
@@ -668,7 +668,7 @@ function Invoke-InstallAgent {
         if (-not $blackPrinter) { $blackPrinter = $sharedPrinters[0] }
     }
     if (-not $colorPrinter -and $sharedPrinters.Count -gt 0) {
-        $colorPrinter = ($sharedPrinters | Where-Object { $_ -match "4260|Epson|Color" } | Select-Object -First 1)
+        $colorPrinter = ($sharedPrinters | Where-Object { $_ -match "L375|Epson|Color" } | Select-Object -First 1)
         if (-not $colorPrinter -and $sharedPrinters.Count -gt 1) { $colorPrinter = $sharedPrinters[1] }
     }
 
@@ -771,6 +771,10 @@ powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$instal
     Install-VirtualPrintQueue
     Remove-DirectPrinters
 
+    # Captura enquanto o instalador ainda esta elevado; depois a conta do cliente
+    # perde permissao para iniciar outro PowerShell como administrador.
+    Invoke-CaptureBaseline
+
     # Protecao: pasta somente leitura, atualizacao pelo sistema, perfil restrito e cliente sem administrador.
     Protect-AgentFolder
     Register-AgentUpdater
@@ -784,7 +788,7 @@ powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$instal
     Write-Host "Inicializacao criada em $StartupBat"
     Write-Host "Impressora do cliente: $VirtualPrinterName (impressao feita pelo caixa)"
     Write-Host ""
-    Write-Host "PROXIMO PASSO: rode '2 - CAPTURAR PADRAO.bat' e depois reinicie a estacao pelo menu Iniciar." -ForegroundColor Green
+    Write-Host "Padrao salvo. PROXIMO PASSO: reinicie a estacao pelo menu Iniciar." -ForegroundColor Green
     Write-Host "(O agente e a tela de bloqueio voltam depois do reinicio.)"
 }
 
@@ -1785,6 +1789,9 @@ function Invoke-Overlay {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
     Add-Type -ReferencedAssemblies @("System.Windows.Forms", "System.Drawing", "System") -TypeDefinition @'
+using System;
+using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 public class LanHouseOverlayForm : Form {
     protected override bool ShowWithoutActivation { get { return true; } }
@@ -1794,6 +1801,35 @@ public class LanHouseOverlayForm : Form {
             parameters.ExStyle |= 0x08000000 | 0x00000080;
             return parameters;
         }
+    }
+}
+public static class LanHouseOverlayAppBar {
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect { public int Left, Top, Right, Bottom; }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Data {
+        public uint Size;
+        public IntPtr Window;
+        public uint Callback;
+        public uint Edge;
+        public Rect Area;
+        public IntPtr Parameter;
+    }
+    [DllImport("shell32.dll")]
+    private static extern IntPtr SHAppBarMessage(uint message, ref Data data);
+    public static bool Register(IntPtr window, Rectangle screen, int height) {
+        var data = new Data { Size = (uint)Marshal.SizeOf(typeof(Data)), Window = window, Edge = 1 };
+        if (SHAppBarMessage(0, ref data) == IntPtr.Zero) return false;
+        data.Area = new Rect { Left = screen.Left, Top = screen.Top,
+            Right = screen.Right, Bottom = screen.Top + height };
+        SHAppBarMessage(2, ref data);
+        data.Area.Bottom = data.Area.Top + height;
+        SHAppBarMessage(3, ref data);
+        return true;
+    }
+    public static void Unregister(IntPtr window) {
+        var data = new Data { Size = (uint)Marshal.SizeOf(typeof(Data)), Window = window };
+        SHAppBarMessage(1, ref data);
     }
 }
 '@
@@ -1813,10 +1849,10 @@ public class LanHouseOverlayForm : Form {
     $form.BackColor = $dark
     $panelWidth = 300
     $panelHeight = 76
-    $area = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
+    $screenBounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
     $form.ClientSize = New-Object Drawing.Size($panelWidth, $panelHeight)
     $form.Opacity = 0.94
-    $form.Location = New-Object Drawing.Point(($area.Right - $panelWidth - 12), ($area.Bottom - $panelHeight - 12))
+    $form.Location = New-Object Drawing.Point(($screenBounds.Right - $panelWidth - 12), $screenBounds.Top)
 
     $script:OverlaySession = $null
     $script:OverlayValueCents = 0
@@ -1857,7 +1893,7 @@ public class LanHouseOverlayForm : Form {
     $breakLabel.Size = New-Object Drawing.Size(($panelWidth - 24), 22)
     $form.Controls.Add($breakLabel)
 
-    # Cantos arredondados e arrastar para outra posicao, sem roubar o foco.
+    # Cantos arredondados. A faixa superior reservada evita cobrir outras janelas.
     $radius = 14
     $shape = New-Object System.Drawing.Drawing2D.GraphicsPath
     $shape.AddArc(0, 0, $radius, $radius, 180, 90)
@@ -1866,20 +1902,6 @@ public class LanHouseOverlayForm : Form {
     $shape.AddArc(0, ($panelHeight - $radius), $radius, $radius, 90, 90)
     $shape.CloseAllFigures()
     $form.Region = New-Object System.Drawing.Region($shape)
-    $script:OverlayDrag = $null
-    $dragDown = { $script:OverlayDrag = [System.Windows.Forms.Cursor]::Position; $script:OverlayDragOrigin = $form.Location }
-    $dragMove = {
-        if ($script:OverlayDrag) {
-            $p = [System.Windows.Forms.Cursor]::Position
-            $form.Location = New-Object Drawing.Point(($script:OverlayDragOrigin.X + $p.X - $script:OverlayDrag.X), ($script:OverlayDragOrigin.Y + $p.Y - $script:OverlayDrag.Y))
-        }
-    }
-    $dragUp = { $script:OverlayDrag = $null }
-    foreach ($control in @($form, $timeLabel, $totalLabel, $breakLabel)) {
-        $control.Cursor = [System.Windows.Forms.Cursors]::SizeAll
-        $control.Add_MouseDown($dragDown); $control.Add_MouseMove($dragMove); $control.Add_MouseUp($dragUp)
-    }
-
     $load = {
         try {
             $command = Get-AgentCommand -Config $config
@@ -1932,8 +1954,18 @@ public class LanHouseOverlayForm : Form {
     $script:OverlayTimer = $timer
     $timer.Add_Tick($tick)
     $timer.Start()
-    $form.Show()
-    [System.Windows.Forms.Application]::Run($form)
+    $appBarRegistered = $false
+    $appBarHandle = [IntPtr]::Zero
+    try {
+        $form.Show()
+        $appBarHandle = $form.Handle
+        $appBarRegistered = [LanHouseOverlayAppBar]::Register($appBarHandle, $screenBounds, $panelHeight)
+        if (-not $appBarRegistered) { Write-AgentLog "Nao foi possivel reservar o espaco do contador no topo." }
+        [System.Windows.Forms.Application]::Run($form)
+    } finally {
+        if ($appBarRegistered) { [LanHouseOverlayAppBar]::Unregister($appBarHandle) }
+        $timer.Stop(); $timer.Dispose(); $form.Dispose()
+    }
 }
 
 function New-RoundedRegion {

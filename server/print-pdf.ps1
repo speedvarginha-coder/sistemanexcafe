@@ -66,6 +66,11 @@ function Get-PdfPageImage {
 
 function Send-PdfToPrinter {
     param([string]$Path, [string]$Printer, [bool]$Color)
+    $queue = Get-Printer -Name $Printer -ErrorAction Stop
+    $queueStatus = [string]$queue.PrinterStatus
+    if ($queueStatus -match 'Offline|Error|PaperOut|NotAvailable|UserIntervention|DoorOpen|NoToner') {
+        throw "Impressora $Printer indisponivel: $queueStatus"
+    }
     $document = Open-PdfDocument -Path $Path
     $pages = [int]$document.PageCount
     if ($pages -lt 1) { throw "O documento nao contem paginas." }

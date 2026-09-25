@@ -610,7 +610,7 @@ test("venda em carrinho e pendencias antigas permanecem operaveis", async () => 
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
-test("impressao pelo caixa: estacao envia PDF, caixa imprime na impressora do atendimento e cobra so se sair", async () => {
+test("impressao pelo caixa: estacao envia PDF e cobra quando a fila do Windows aceita", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
   const printed = [];
   let failNext = false;
