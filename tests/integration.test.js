@@ -736,3 +736,64 @@ test("consumo na estacao: itens entram na conta da sessao, somam ao valor e sao 
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("protecoes: reinstalacao so na mesma maquina, ID fixo com agente, saldo no tempo extra, hash leve e backup externo", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-backup-"));
+  const server = createApp({ dataDir, backupDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data, token = null) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (token) headers.authorization = `Bearer ${token}`;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    const key = (await request("/api/installer-config")).payload.installKey;
+
+    const first = await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Máquina 12" });
+    assert.equal(first.status, 200);
+    const hijack = await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Intruso" });
+    assert.equal(hijack.status, 409, "chave sozinha nao toma o lugar de uma estacao vinculada");
+    assert.match(hijack.payload.error, /Vincular agente/);
+    assert.equal((await request("/api/client/maquina-12/command", undefined, first.payload.token)).status, 200, "agente legitimo continua funcionando");
+    const reinstall = await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Máquina 12", previousToken: first.payload.token });
+    assert.equal(reinstall.status, 200, "reinstalar na mesma maquina usa o token anterior");
+    assert.equal((await request("/api/machines/maquina-12/pair", {})).status, 200);
+    const replaced = await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Máquina 12" });
+    assert.equal(replaced.status, 200, "com Vincular agente no painel, outro computador pode assumir");
+    assert.equal((await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Máquina 12" })).status, 409, "a liberacao vale uma vez");
+
+    const hashInfo = await request("/api/client/maquina-12/script-hash", undefined, replaced.payload.token);
+    assert.equal(hashInfo.status, 200);
+    assert.match(hashInfo.payload.hash, /^[0-9a-f]{64}$/);
+    assert.equal((await request("/api/client/maquina-12/script-hash")).status, 401);
+
+    assert.equal((await request("/api/machines/maquina-12/rename", { name: "Máquina 12 B", id: "maquina-99" })).status, 409, "ID nao muda com agente instalado");
+    assert.equal((await request("/api/machines/maquina-12/rename", { name: "Máquina 12 B" })).status, 200, "nome continua editavel");
+
+    await request("/api/cash/open", { opening: 0 });
+    const client = (await request("/api/clients", { name: "Ana", login: "ana", password: "1234" })).payload.client;
+    await request(`/api/clients/${client.id}/recharge`, { amount: 5, paymentMethod: "cash" });
+    await request("/api/client/maquina-12/command", undefined, replaced.payload.token);
+    assert.equal((await request("/api/machines/maquina-12/start", { minutes: 30, billingMode: "credit", clientId: client.id })).status, 200);
+    assert.equal((await request("/api/machines/maquina-12/add-time", { minutes: 60 })).status, 409, "sem saldo para o tempo extra");
+    assert.equal((await request("/api/machines/maquina-12/add-time", { minutes: 20 })).status, 200);
+    const session = (await request("/api/state")).payload.machines[0].session;
+    assert.equal(session.creditSeconds, 50 * 60, "tempo extra entra no saldo a descontar");
+
+    assert.ok(fs.readdirSync(backupDir).some(name => /^db-\d{4}-\d{2}-\d{2}\.json$/.test(name)), "copia diaria no disco de backup");
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+    fs.rmSync(backupDir, { recursive: true, force: true });
+  }
+});

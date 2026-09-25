@@ -1,5 +1,5 @@
 ﻿param(
-    [ValidateSet("Install", "Run", "LockScreen", "Overlay", "Monitor", "Capture", "Restore", "Status", "Uninstall")]
+    [ValidateSet("Install", "Run", "LockScreen", "Overlay", "Monitor", "PrintReview", "Update", "Capture", "Restore", "Status", "Uninstall")]
     [string]$Action = "Status",
 
     [string]$ServerUrl,
@@ -7,7 +7,8 @@
     [string]$MachineName,
     [string]$PairingCode,
     [string[]]$Users,
-    [switch]$IncludeDocuments
+    [switch]$IncludeDocuments,
+    [string]$JobPath
 )
 
 $ErrorActionPreference = "Stop"
@@ -20,6 +21,7 @@ $BaselineRoot = Join-Path $InstallRoot "Baseline"
 $LogRoot = Join-Path $UserDataRoot "Logs"
 $StartupFolder = "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
 $StartupBat = Join-Path $StartupFolder "LanHouseManager-Agent.bat"
+$TechnicianUser = "Tecnico"
 
 function Write-AgentLog {
     param([string]$Message)
@@ -114,7 +116,7 @@ function Assert-PathUnderRoot {
 function Get-ExistingLocalUsers {
     return @(Get-ChildItem "C:\Users" -Directory -ErrorAction SilentlyContinue |
         Where-Object {
-            $_.Name -notin @("Public", "Default", "Default User", "All Users", "Administrador", "Administrator") -and
+            $_.Name -notin @("Public", "Default", "Default User", "All Users", "Administrador", "Administrator", $TechnicianUser) -and
             -not $_.Name.StartsWith("TEMP", [StringComparison]::OrdinalIgnoreCase)
         } |
         Select-Object -ExpandProperty Name)
@@ -509,6 +511,7 @@ function Invoke-AgentRestore {
         }
 
         Clear-UserCaches -User $user -Config $config
+        if ($user -eq $env:USERNAME) { Clear-ClientTraces -User $user }
     }
 
     Write-AgentLog "Restauracao concluida."
@@ -710,22 +713,17 @@ function Invoke-InstallAgent {
         $resolvedUsers = Resolve-UserList
     }
 
-    $folders = @("Desktop", "Downloads")
-    $wantDocs = [bool]$IncludeDocuments
-    if ($installConfig -and $installConfig.includeDocuments -eq $true) { $wantDocs = $true }
-    if ($wantDocs) {
-        $folders += "Documents"
-    } elseif (-not $installConfig) {
-        $includeDocsAnswer = Read-Host "Tambem proteger Documents? Digite S para sim"
-        if ($includeDocsAnswer -match "^[sS]") {
-            $folders += "Documents"
-        }
-    }
+    # Tudo o que o cliente costuma salvar volta ao padrao a cada atendimento.
+    $folders = @("Desktop", "Downloads", "Documents", "Pictures", "Videos", "Music")
+    $previousToken = ""
+    if (Test-Path $ConfigPath) { try { $previousToken = [string](Get-Content -Raw -Path $ConfigPath | ConvertFrom-Json).AgentToken } catch { } }
 
     if ($installConfig -and $InstallKey) {
-        $enrollBody = @{ key = $InstallKey.Trim(); id = $MachineId.Trim(); name = $MachineName.Trim() } | ConvertTo-Json -Depth 4
+        $enrollBody = @{ key = $InstallKey.Trim(); id = $MachineId.Trim(); name = $MachineName.Trim(); previousToken = $previousToken } | ConvertTo-Json -Depth 4
         $enrollBytes = [System.Text.Encoding]::UTF8.GetBytes($enrollBody)
-        $enrollment = Invoke-RestMethod -Method Post -Uri "$ServerUrl/api/agent/enroll-by-key" -ContentType "application/json; charset=utf-8" -Body $enrollBytes -TimeoutSec 10
+        try {
+            $enrollment = Invoke-RestMethod -Method Post -Uri "$ServerUrl/api/agent/enroll-by-key" -ContentType "application/json; charset=utf-8" -Body $enrollBytes -TimeoutSec 10
+        } catch { throw (Get-ApiMessage -ErrorRecord $_) }
     } else {
         $enrollBody = @{ id = $MachineId.Trim(); name = $MachineName.Trim(); code = $PairingCode.Trim() } | ConvertTo-Json -Depth 4
         $enrollBytes = [System.Text.Encoding]::UTF8.GetBytes($enrollBody)
@@ -769,6 +767,12 @@ powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$instal
     Install-VirtualPrintQueue
     Remove-DirectPrinters
 
+    # Protecao: pasta somente leitura, atualizacao pelo sistema, perfil restrito e cliente sem administrador.
+    Protect-AgentFolder
+    Register-AgentUpdater
+    Set-ClientRestrictions -User $resolvedUsers[0]
+    Set-StationAccounts -ClientUser $resolvedUsers[0]
+
     Write-Host ""
     Write-Host "Agente instalado em $InstallRoot"
     Write-Host "Inicializacao criada em $StartupBat"
@@ -778,55 +782,23 @@ powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$instal
     Write-Host "powershell -ExecutionPolicy Bypass -File `"$installedScript`" -Action Capture"
 }
 
-function Start-LockScreenProcess {
+# Abre outra acao do agente (bloqueio, contador, monitor, revisao de impressao) sem janela de console.
+# Usa CreateProcess direto: a politica DisallowRun do cliente (que bloqueia powershell.exe) vale para
+# programas abertos pelo Explorer/ShellExecute, e Start-Process passaria por esse caminho.
+function Start-AgentChild {
+    param([string]$ChildAction, [string[]]$Extra = @())
     $scriptPath = Join-Path $InstallRoot "LanHouseAgent.ps1"
-    if (-not (Test-Path $scriptPath)) {
-        $scriptPath = $PSCommandPath
-    }
-    return Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -PassThru -ArgumentList @(
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        $scriptPath,
-        "-Action",
-        "LockScreen"
-    )
+    if (-not (Test-Path $scriptPath)) { $scriptPath = $PSCommandPath }
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
+    $info.Arguments = (@("-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$scriptPath`"", "-Action", $ChildAction) + $Extra) -join " "
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    return [System.Diagnostics.Process]::Start($info)
 }
 
-function Start-OverlayProcess {
-    $scriptPath = Join-Path $InstallRoot "LanHouseAgent.ps1"
-    if (-not (Test-Path $scriptPath)) {
-        $scriptPath = $PSCommandPath
-    }
-    return Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -PassThru -ArgumentList @(
-        "-NoProfile",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-File",
-        $scriptPath,
-        "-Action",
-        "Overlay"
-    )
-}
-
-function Get-PrintColorNames {
-    param([object]$Config)
-    if ($Config.ColorPrinters -and $Config.ColorPrinters.Count -gt 0) { return @($Config.ColorPrinters) }
-    return @("4260")
-}
-
-function Get-NewPrintEvents {
-    param([int]$LastRecordId)
-    try {
-        $events = Get-WinEvent -LogName "Microsoft-Windows-PrintService/Operational" -FilterXPath "*[System[EventID=307]]" -ErrorAction Stop |
-            Where-Object { $_.RecordId -gt $LastRecordId } |
-            Sort-Object RecordId
-        return @($events)
-    } catch {
-        return @()
-    }
-}
+function Start-LockScreenProcess { return Start-AgentChild -ChildAction "LockScreen" }
+function Start-OverlayProcess { return Start-AgentChild -ChildAction "Overlay" }
 
 function Wait-WinRtOperation {
     param([object]$Operation, [type]$ResultType)
@@ -1048,200 +1020,8 @@ function Receive-VirtualPrintJob {
     try { if ($file.Read($header, 0, 4) -ne 4) { throw "Documento vazio." } }
     finally { $file.Dispose() }
     if ([Text.Encoding]::ASCII.GetString($header) -ne "%PDF") { throw "A impressora virtual nao gerou PDF valido." }
-    $pages = Get-PdfPageCount -Path $path
-    if ($pages -lt 1 -or $pages -gt 200) { throw "Numero de paginas fora do limite (1 a 200)." }
-    $choice = Show-PdfPrintReview -Path $path -Pages $pages -BwCents ($pages * $PrintBW) -ColorCents ($pages * $PrintColor)
-    if (-not $choice) {
-        Remove-Item -LiteralPath $path -Force
-        Write-AgentLog "Impressao cancelada antes do envio: $pages pagina(s)."
-        return
-    }
-    $current = Get-AgentCommand -Config $Config
-    if ($current.locked -or -not $current.session -or $current.session.id -ne $SessionId) {
-        Remove-Item -LiteralPath $path -Force
-        throw "A sessao terminou antes da confirmacao. Imprima novamente em uma sessao ativa."
-    }
-    # O caixa imprime na impressora escolhida no Atendimento e so cobra se a impressao sair.
-    $color = ($choice -eq "color")
-    $base = "$($Config.ServerUrl)".TrimEnd("/")
-    $id = [Uri]::EscapeDataString($Config.MachineId)
-    $uri = "$base/api/client/$id/print-upload?pages=$pages&color=$(if ($color) { '1' } else { '0' })"
-    try {
-        $result = Invoke-RestMethod -Method Post -Uri $uri -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -ContentType "application/pdf" -InFile $path -TimeoutSec 240
-    } catch {
-        $message = Get-ApiMessage -ErrorRecord $_
-        Write-AgentLog "Falha ao imprimir pelo caixa. Documento preservado em $path. Detalhe: $message"
-        throw $message
-    }
-    Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue
-    Write-AgentLog "Impresso pelo caixa em $($result.printer): $($result.pages) pagina(s), $(if ($color) { 'colorido' } else { 'preto e branco' })."
-}
-
-function Show-PrintConfirm {
-    param([int]$Pages, [int]$BwCents, [int]$ColorCents, [bool]$SuggestedColor)
-
-    $bwText = "Preto e branco      R$ {0:N2}" -f ($BwCents / 100)
-    $colorText = "Colorido      R$ {0:N2}" -f ($ColorCents / 100)
-
-    Add-Type -AssemblyName System.Windows.Forms
-    Add-Type -AssemblyName System.Drawing
-    [System.Windows.Forms.Application]::EnableVisualStyles()
-
-    $card = [Drawing.Color]::FromArgb(24, 33, 45)
-    $accent = [Drawing.Color]::FromArgb(8, 126, 114)
-    $accentHover = [Drawing.Color]::FromArgb(10, 150, 135)
-    $muted = [Drawing.Color]::FromArgb(164, 176, 192)
-    $white = [Drawing.Color]::White
-    $line = [Drawing.Color]::FromArgb(40, 52, 68)
-    $ghost = [Drawing.Color]::FromArgb(34, 45, 60)
-    $ghostHover = [Drawing.Color]::FromArgb(46, 60, 78)
-
-    $form = New-Object System.Windows.Forms.Form
-    $form.Text = "Impressao"
-    $form.FormBorderStyle = "None"
-    $form.StartPosition = "CenterScreen"
-    $form.TopMost = $true
-    $form.ShowInTaskbar = $false
-    $form.KeyPreview = $true
-    $form.ClientSize = New-Object Drawing.Size(460, 340)
-    $form.BackColor = $card
-
-    $script:PrintDrag = $null
-    $form.Add_MouseDown({ $script:PrintDrag = $_.Location })
-    $form.Add_MouseMove({
-        if ($script:PrintDrag) {
-            $form.Location = New-Object Drawing.Point(($form.Left + $_.X - $script:PrintDrag.X), ($form.Top + $_.Y - $script:PrintDrag.Y))
-            $script:PrintDrag = $_.Location
-        }
-    })
-    $form.Add_MouseUp({ $script:PrintDrag = $null })
-
-    $title = New-Object System.Windows.Forms.Label
-    $title.Text = "Confirmar impressao"
-    $title.Font = New-Object Drawing.Font("Segoe UI", 15, [Drawing.FontStyle]::Bold)
-    $title.ForeColor = $white
-    $title.BackColor = [Drawing.Color]::Transparent
-    $title.Location = New-Object Drawing.Point(26, 20)
-    $title.Size = New-Object Drawing.Size(408, 28)
-    $form.Controls.Add($title)
-
-    $subtitle = New-Object System.Windows.Forms.Label
-    $subtitle.Text = "$Pages pagina(s) detectada(s). Escolha como imprimir:"
-    $subtitle.Font = New-Object Drawing.Font("Segoe UI", 10)
-    $subtitle.ForeColor = $muted
-    $subtitle.BackColor = [Drawing.Color]::Transparent
-    $subtitle.Location = New-Object Drawing.Point(26, 50)
-    $subtitle.Size = New-Object Drawing.Size(408, 20)
-    $form.Controls.Add($subtitle)
-
-    $sep1 = New-Object System.Windows.Forms.Panel
-    $sep1.BackColor = $line
-    $sep1.Location = New-Object Drawing.Point(26, 80)
-    $sep1.Size = New-Object Drawing.Size(408, 1)
-    $form.Controls.Add($sep1)
-
-    $bw = New-Object System.Windows.Forms.Button
-    $bw.Text = $bwText
-    $bw.Font = New-Object Drawing.Font("Segoe UI", 14, [Drawing.FontStyle]::Bold)
-    $bw.ForeColor = $white
-    $bw.FlatStyle = "Flat"
-    $bw.FlatAppearance.BorderSize = 0
-    $bw.FlatAppearance.MouseOverBackColor = $ghostHover
-    $bw.BackColor = $ghost
-    $bw.Location = New-Object Drawing.Point(26, 96)
-    $bw.Size = New-Object Drawing.Size(408, 72)
-    $bw.Cursor = [System.Windows.Forms.Cursors]::Hand
-    $form.Controls.Add($bw)
-
-    $color = New-Object System.Windows.Forms.Button
-    $color.Text = $colorText
-    $color.Font = New-Object Drawing.Font("Segoe UI", 14, [Drawing.FontStyle]::Bold)
-    $color.ForeColor = $white
-    $color.FlatStyle = "Flat"
-    $color.FlatAppearance.BorderSize = 0
-    $color.FlatAppearance.MouseOverBackColor = $accentHover
-    $color.BackColor = $ghost
-    $color.Location = New-Object Drawing.Point(26, 180)
-    $color.Size = New-Object Drawing.Size(408, 72)
-    $color.Cursor = [System.Windows.Forms.Cursors]::Hand
-    $form.Controls.Add($color)
-
-    if ($SuggestedColor) {
-        $color.BackColor = $accent
-    } else {
-        $bw.BackColor = $accent
-        $bw.FlatAppearance.MouseOverBackColor = $accentHover
-    }
-
-    $cancel = New-Object System.Windows.Forms.Button
-    $cancel.Text = "Cancelar essa impressao"
-    $cancel.Font = New-Object Drawing.Font("Segoe UI", 11, [Drawing.FontStyle]::Bold)
-    $cancel.ForeColor = $muted
-    $cancel.BackColor = [Drawing.Color]::FromArgb(20, 28, 38)
-    $cancel.FlatStyle = "Flat"
-    $cancel.FlatAppearance.BorderSize = 0
-    $cancel.FlatAppearance.MouseOverBackColor = $ghostHover
-    $cancel.Location = New-Object Drawing.Point(26, 268)
-    $cancel.Size = New-Object Drawing.Size(408, 44)
-    $cancel.Cursor = [System.Windows.Forms.Cursors]::Hand
-    $cancel.DialogResult = [System.Windows.Forms.DialogResult]::Cancel
-    $form.Controls.Add($cancel)
-
-    $script:PrintChoice = $null
-    $bw.Add_Click({ $script:PrintChoice = "bw"; $form.DialogResult = [System.Windows.Forms.DialogResult]::OK; $form.Close() })
-    $color.Add_Click({ $script:PrintChoice = "color"; $form.DialogResult = [System.Windows.Forms.DialogResult]::OK; $form.Close() })
-
-    $form.AcceptButton = $color
-    $form.CancelButton = $cancel
-
-    $radius = 16
-    $region = New-Object System.Drawing.Drawing2D.GraphicsPath
-    $region.AddArc(0, 0, $radius, $radius, 180, 90)
-    $region.AddArc(($form.ClientSize.Width - $radius), 0, $radius, $radius, 270, 90)
-    $region.AddArc(($form.ClientSize.Width - $radius), ($form.ClientSize.Height - $radius), $radius, $radius, 0, 90)
-    $region.AddArc(0, ($form.ClientSize.Height - $radius), $radius, $radius, 90, 90)
-    $region.CloseAllFigures()
-    $form.Region = New-Object System.Drawing.Region($region)
-
-    $form.ShowDialog() | Out-Null
-    $form.Dispose()
-    return $script:PrintChoice
-}
-
-function Invoke-PrintCapture {
-    param([object]$Config, [object]$Event, [string[]]$ColorNames, [int]$PrintBW = 100, [int]$PrintColor = 200)
-
-    $msg = $Event.Message
-    $pages = 1
-    if ($msg -match '[Pp]áginas?\s+impressas?:\s*(\d+)') { $pages = [int]$Matches[1] }
-    elseif ($msg -match 'Pages\s+printed:\s*(\d+)') { $pages = [int]$Matches[1] }
-    if ($pages -lt 1) { $pages = 1 }
-
-    $printer = "Desconhecida"
-    if ($msg -match 'impresso em (.+?) pela porta') { $printer = $Matches[1].Trim() }
-    elseif ($msg -match 'printed on (.+?) through') { $printer = $Matches[1].Trim() }
-
-    $suggestedColor = $false
-    foreach ($name in $ColorNames) {
-        if ($printer -like "*$name*") { $suggestedColor = $true; break }
-    }
-
-    try {
-        $choice = Show-PrintConfirm -Pages $pages -BwCents ($pages * $PrintBW) -ColorCents ($pages * $PrintColor) -SuggestedColor $suggestedColor
-        $color = ($choice -eq "color")
-
-        $base = "$($Config.ServerUrl)".TrimEnd("/")
-        $id = [Uri]::EscapeDataString($Config.MachineId)
-        $headers = @{ Authorization = "Bearer $($Config.AgentToken)" }
-        $body = @{ pages = $pages; color = $color; printer = $printer } | ConvertTo-Json -Depth 3
-        $req = Invoke-RestMethod -Method Post -Uri "$base/api/client/$id/print-request" -Headers $headers -ContentType "application/json" -Body $body -TimeoutSec 8
-
-        $confirmBody = @{ printId = $req.printId; cancel = ($null -eq $choice) } | ConvertTo-Json -Depth 3
-        Invoke-RestMethod -Method Post -Uri "$base/api/client/$id/print-confirm" -Headers $headers -ContentType "application/json" -Body $confirmBody -TimeoutSec 8 | Out-Null
-        Write-AgentLog "Impressao $(if ($choice) { "confirmada ($choice)" } else { 'cancelada' }): $pages pag"
-    } catch {
-        Write-AgentLog "Falha ao capturar impressao: $($_.Exception.Message)"
-    }
+    [void](Start-PrintReviewProcess -Path $path)
+    Write-AgentLog "Documento recebido da Impressao Nexcafe; revisao aberta para o cliente."
 }
 
 $script:LhmInputReady = $false
@@ -1310,34 +1090,26 @@ function Get-ScriptHash {
 }
 
 function Update-AgentScriptIfNeeded {
-    param([object]$Config, [string]$ServerHash)
-    if (-not $ServerHash) { return $false }
+    param([object]$Config, [string]$ServerHash, [string]$RunningHash)
     $installed = Join-Path $InstallRoot "LanHouseAgent.ps1"
-    if ((Get-ScriptHash -Path $installed) -eq $ServerHash) { return $false }
-    try {
-        $base = "$($Config.ServerUrl)".TrimEnd("/")
-        $id = [Uri]::EscapeDataString($Config.MachineId)
-        $resp = Invoke-RestMethod -Method Get -Uri "$base/api/client/$id/script" -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -TimeoutSec 20
-        $text = [string]$resp.script
-        if ($text.Length -lt 15000 -or $text -notmatch "param\(" -or $text -notmatch "function Invoke-AgentRun") {
-            Write-AgentLog "Atualizacao ignorada: script recebido invalido."
-            return $false
+    if (-not $script:UpdateDenied) {
+        try { [void](Save-AgentScriptFromServer -Config $Config -ServerHash $ServerHash) }
+        catch {
+            $denied = $_.Exception -is [System.UnauthorizedAccessException] -or $_.Exception.InnerException -is [System.UnauthorizedAccessException]
+            if ($denied) { $script:UpdateDenied = $true; Write-AgentLog "Pasta protegida: a atualizacao fica com a tarefa do sistema." }
+            else { Write-AgentLog "Falha ao atualizar agente: $($_.Exception.Message)" }
         }
-        $tmp = "$installed.new"
-        [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
-        if ((Get-ScriptHash -Path $tmp) -ne $ServerHash) {
-            Write-AgentLog "Atualizacao ignorada: hash nao confere."
-            Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-            return $false
-        }
-        Move-Item -LiteralPath $tmp -Destination $installed -Force
-        Write-AgentLog "Agente atualizado para o hash $ServerHash. Reiniciando em 3s."
-        Start-Process -FilePath "cmd.exe" -WindowStyle Hidden -ArgumentList @("/c", "timeout /t 3 /nobreak >nul & powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$installed`" -Action Run")
-        return $true
-    } catch {
-        Write-AgentLog "Falha ao atualizar agente: $($_.Exception.Message)"
-        return $false
     }
+    $current = Get-ScriptHash -Path $installed
+    if (-not $current -or $current -eq $RunningHash) { return $false }
+    Write-AgentLog "Nova versao do agente instalada. Reiniciando em 3s."
+    $info = New-Object System.Diagnostics.ProcessStartInfo
+    $info.FileName = Join-Path $env:WINDIR "System32\cmd.exe"
+    $info.Arguments = "/c timeout /t 3 /nobreak >nul & powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$installed`" -Action Run"
+    $info.UseShellExecute = $false
+    $info.CreateNoWindow = $true
+    [void][System.Diagnostics.Process]::Start($info)
+    return $true
 }
 
 function Get-ScreenJpeg {
@@ -1395,15 +1167,14 @@ function Invoke-Monitor {
 }
 
 function Start-MonitorProcess {
-    $scriptPath = Join-Path $InstallRoot "LanHouseAgent.ps1"
-    if (-not (Test-Path $scriptPath)) { $scriptPath = $PSCommandPath }
-    return Start-Process -FilePath "powershell.exe" -WindowStyle Hidden -PassThru -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$scriptPath`"", "-Action", "Monitor")
+    return Start-AgentChild -ChildAction "Monitor"
 }
 
 # Encerra telas (bloqueio, contador, monitor) de uma versao anterior para que a nova assuma.
 function Stop-AgentUiProcesses {
+    param([string[]]$Actions = @("LockScreen", "Overlay", "Monitor", "PrintReview"))
     $session = (Get-Process -Id $PID).SessionId
-    $pattern = '(?i)-Action\s+"?(LockScreen|Overlay|Monitor)"?'
+    $pattern = '(?i)-Action\s+"?(' + ($Actions -join '|') + ')"?'
     foreach ($process in @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue)) {
         if ($process.ProcessId -eq $PID -or $process.SessionId -ne $session) { continue }
         if ($process.CommandLine -match $pattern -and $process.CommandLine -match 'LanHouseAgent\.ps1') {
@@ -1427,6 +1198,314 @@ function Close-ClientApps {
     if ($targets.Count -gt 0) { Write-AgentLog "Programas fechados antes da restauracao: $(($targets | ForEach-Object { $_.ProcessName } | Select-Object -Unique) -join ', ')" }
 }
 
+#region Protecao da estacao (instalacao como administrador)
+
+$TechnicianUser = "Tecnico"
+$UpdaterTaskName = "LanHouseManager-Atualizador"
+
+function Get-LocalUserSid {
+    param([string]$User)
+    return (New-Object System.Security.Principal.NTAccount($User)).Translate([System.Security.Principal.SecurityIdentifier]).Value
+}
+
+# Executa $Action com o registro (HKU) do usuario carregado, mesmo que ele nao esteja logado.
+function Invoke-WithUserHive {
+    param([string]$User, [scriptblock]$Action)
+    $sid = Get-LocalUserSid -User $User
+    if (Test-Path "Registry::HKEY_USERS\$sid") { & $Action "HKU\$sid"; return }
+    $hive = Join-Path (Join-Path "C:\Users" $User) "NTUSER.DAT"
+    if (-not (Test-Path -LiteralPath $hive)) { throw "Perfil do usuario $User ainda nao foi criado (entre uma vez nele)." }
+    $mount = "LHM_$($User -replace '[^A-Za-z0-9]', '')"
+    & reg.exe load "HKU\$mount" "$hive" | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Nao foi possivel carregar o registro do usuario $User." }
+    try { & $Action "HKU\$mount" }
+    finally {
+        [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+        & reg.exe unload "HKU\$mount" | Out-Null
+    }
+}
+
+function Set-RegistryDword {
+    param([string]$Key, [string]$Name, [int]$Value)
+    & reg.exe add $Key /v $Name /t REG_DWORD /d $Value /f | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao gravar $Key\$Name" }
+}
+
+# Bloqueia no perfil do cliente as ferramentas usadas para fechar o agente.
+# DisableCMD=2 impede o prompt mas mantem o .bat de inicializacao do agente funcionando.
+function Set-ClientRestrictions {
+    param([string]$User)
+    Invoke-WithUserHive -User $User -Action {
+        param($root)
+        $system = "$root\Software\Microsoft\Windows\CurrentVersion\Policies\System"
+        Set-RegistryDword -Key $system -Name "DisableTaskMgr" -Value 1
+        Set-RegistryDword -Key $system -Name "DisableRegistryTools" -Value 1
+        Set-RegistryDword -Key $system -Name "DisableChangePassword" -Value 1
+        Set-RegistryDword -Key "$root\Software\Policies\Microsoft\Windows\System" -Name "DisableCMD" -Value 2
+        $explorer = "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer"
+        Set-RegistryDword -Key $explorer -Name "NoRun" -Value 1
+        Set-RegistryDword -Key $explorer -Name "DisallowRun" -Value 1
+        $index = 1
+        foreach ($exe in @("powershell.exe", "powershell_ise.exe", "pwsh.exe", "regedit.exe", "taskmgr.exe", "mmc.exe", "Autoruns.exe", "procexp.exe", "procexp64.exe", "ProcessHacker.exe")) {
+            & reg.exe add "$explorer\DisallowRun" /v "$index" /t REG_SZ /d $exe /f | Out-Null
+            $index++
+        }
+    }
+    Write-AgentLog "Restricoes aplicadas ao perfil $User (Gerenciador de Tarefas, CMD, Executar, PowerShell)."
+}
+
+function Remove-ClientRestrictions {
+    param([string]$User)
+    Invoke-WithUserHive -User $User -Action {
+        param($root)
+        foreach ($name in @("DisableTaskMgr", "DisableRegistryTools", "DisableChangePassword")) { & reg.exe delete "$root\Software\Microsoft\Windows\CurrentVersion\Policies\System" /v $name /f 2>$null | Out-Null }
+        & reg.exe delete "$root\Software\Policies\Microsoft\Windows\System" /v DisableCMD /f 2>$null | Out-Null
+        foreach ($name in @("NoRun", "DisallowRun")) { & reg.exe delete "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v $name /f 2>$null | Out-Null }
+        & reg.exe delete "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun" /f 2>$null | Out-Null
+    }
+    Write-AgentLog "Restricoes removidas do perfil $User."
+}
+
+function Get-LocalGroupMemberNames {
+    param([string]$Sid)
+    # ADSI em vez de Get-LocalGroupMember, que falha quando o grupo tem contas antigas removidas.
+    $groupName = (Get-LocalGroup -SID $Sid).Name
+    $group = [ADSI]"WinNT://$env:COMPUTERNAME/$groupName,group"
+    return @($group.psbase.Invoke("Members") | ForEach-Object { $_.GetType().InvokeMember("Name", "GetProperty", $null, $_, $null) })
+}
+
+function Test-LocalAdmin {
+    param([string]$User)
+    return [bool](Get-LocalGroupMemberNames -Sid "S-1-5-32-544" | Where-Object { $_ -ieq $User })
+}
+
+# Cria a conta administradora "Tecnico" e tira o administrador do usuario dos clientes.
+function Set-StationAccounts {
+    param([string]$ClientUser)
+    $admins = Get-LocalGroup -SID "S-1-5-32-544"
+    $users = Get-LocalGroup -SID "S-1-5-32-545"
+    $technician = Get-LocalUser -Name $TechnicianUser -ErrorAction SilentlyContinue
+    $clientIsAdmin = Test-LocalAdmin -User $ClientUser
+    if ($technician -and (Test-LocalAdmin -User $TechnicianUser) -and -not $clientIsAdmin) {
+        Write-AgentLog "Contas ja protegidas: $TechnicianUser administrador, $ClientUser padrao."
+        return
+    }
+    Write-Host ""
+    Write-Host "PROTECAO DA CONTA DO CLIENTE" -ForegroundColor Cyan
+    Write-Host "O usuario '$ClientUser' deixa de ser administrador. A manutencao passa a usar a conta '$TechnicianUser'."
+    if (-not $technician) { Write-Host "Sera criada a conta '$TechnicianUser' com a senha que voce digitar. GUARDE ESSA SENHA." -ForegroundColor Yellow }
+    $answer = Read-Host "Aplicar agora? Digite S para sim (recomendado) ou N para pular"
+    if ($answer -notmatch '^[sS]') {
+        Write-Host "Protecao da conta pulada. O cliente continua administrador e pode desativar o agente." -ForegroundColor Yellow
+        Write-AgentLog "Protecao da conta pulada pelo instalador."
+        return
+    }
+    if (-not $technician) {
+        while ($true) {
+            $first = Read-Host "Senha da conta $TechnicianUser (minimo 6 caracteres)" -AsSecureString
+            $second = Read-Host "Repita a senha" -AsSecureString
+            $plainA = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($first))
+            $plainB = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($second))
+            if ($plainA.Length -lt 6) { Write-Host "Senha muito curta." -ForegroundColor Red; continue }
+            if ($plainA -cne $plainB) { Write-Host "As senhas nao conferem." -ForegroundColor Red; continue }
+            break
+        }
+        $technician = New-LocalUser -Name $TechnicianUser -Password $first -FullName "Tecnico da lan house" -Description "Manutencao do LanHouseManager" -PasswordNeverExpires -AccountNeverExpires
+        Write-AgentLog "Conta $TechnicianUser criada."
+    }
+    if (-not (Test-LocalAdmin -User $TechnicianUser)) { Add-LocalGroupMember -Group $admins -Member $TechnicianUser -ErrorAction SilentlyContinue }
+    # So rebaixa o cliente depois de garantir um administrador com senha.
+    if (-not (Test-LocalAdmin -User $TechnicianUser)) { throw "A conta $TechnicianUser nao ficou administradora; o cliente nao foi alterado." }
+    if (-not (Get-LocalGroupMemberNames -Sid "S-1-5-32-545" | Where-Object { $_ -ieq $ClientUser })) { Add-LocalGroupMember -Group $users -Member $ClientUser -ErrorAction SilentlyContinue }
+    if ($clientIsAdmin) {
+        try { Remove-LocalGroupMember -Group $admins -Member $ClientUser -ErrorAction Stop }
+        catch { & net.exe localgroup "$($admins.Name)" "$ClientUser" /delete | Out-Null }
+        if (Test-LocalAdmin -User $ClientUser) { throw "Nao foi possivel tirar o administrador do usuario $ClientUser." }
+        Write-AgentLog "Usuario $ClientUser deixou de ser administrador (vale no proximo login)."
+    }
+    Write-Host "Pronto: '$TechnicianUser' administrador, '$ClientUser' conta padrao." -ForegroundColor Green
+}
+
+# Pasta do agente: cliente so le. Sem isso ele poderia editar o script e remover o bloqueio.
+function Protect-AgentFolder {
+    & icacls.exe $InstallRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" "*S-1-5-32-545:(OI)(CI)RX" /T /C /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao proteger a pasta $InstallRoot (icacls $LASTEXITCODE)." }
+    Write-AgentLog "Pasta do agente protegida: clientes somente leitura."
+}
+
+# Com a pasta protegida o agente do cliente nao grava a atualizacao; uma tarefa do sistema faz isso.
+function Register-AgentUpdater {
+    $script = Join-Path $InstallRoot "LanHouseAgent.ps1"
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`" -Action Update"
+    $triggers = @(
+        (New-ScheduledTaskTrigger -AtStartup),
+        (New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 2) -RepetitionDuration (New-TimeSpan -Days 3650))
+    )
+    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 5) -MultipleInstances IgnoreNew -StartWhenAvailable
+    Register-ScheduledTask -TaskName $UpdaterTaskName -Action $action -Trigger $triggers -Principal $principal -Settings $settings -Force | Out-Null
+    Write-AgentLog "Tarefa de atualizacao automatica registrada ($UpdaterTaskName)."
+}
+
+#endregion
+
+#region Atualizacao do script
+
+# Baixa o script do servidor quando o hash muda. Retorna $true se o arquivo instalado foi trocado.
+function Save-AgentScriptFromServer {
+    param([object]$Config, [string]$ServerHash)
+    $installed = Join-Path $InstallRoot "LanHouseAgent.ps1"
+    if (-not $ServerHash -or (Get-ScriptHash -Path $installed) -eq $ServerHash) { return $false }
+    $base = "$($Config.ServerUrl)".TrimEnd("/")
+    $id = [Uri]::EscapeDataString($Config.MachineId)
+    $resp = Invoke-RestMethod -Method Get -Uri "$base/api/client/$id/script" -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -TimeoutSec 20
+    $text = [string]$resp.script
+    if ($text.Length -lt 15000 -or $text -notmatch "param\(" -or $text -notmatch "function Invoke-AgentRun") { throw "script recebido invalido" }
+    $tmp = "$installed.new"
+    [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
+    if ((Get-ScriptHash -Path $tmp) -ne $ServerHash) {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        throw "hash do script nao confere"
+    }
+    Move-Item -LiteralPath $tmp -Destination $installed -Force
+    Write-AgentLog "Agente atualizado para o hash $ServerHash."
+    return $true
+}
+
+# Executado pela tarefa do sistema a cada 2 minutos.
+function Invoke-AgentUpdate {
+    $config = Load-Config
+    $base = "$($config.ServerUrl)".TrimEnd("/")
+    $id = [Uri]::EscapeDataString($config.MachineId)
+    try {
+        $info = Invoke-RestMethod -Method Get -Uri "$base/api/client/$id/script-hash" -Headers @{ Authorization = "Bearer $($config.AgentToken)" } -TimeoutSec 10
+        [void](Save-AgentScriptFromServer -Config $config -ServerHash ([string]$info.hash))
+    } catch { Write-AgentLog "Atualizador: $($_.Exception.Message)" }
+}
+
+#endregion
+
+#region Limpeza reforcada entre clientes (roda no usuario cliente)
+
+function Clear-ClientTraces {
+    param([string]$User)
+    $profile = Join-Path "C:\Users" $User
+    $local = Join-Path $profile "AppData\Local"
+    $roaming = Join-Path $profile "AppData\Roaming"
+
+    # Aplicativos que guardam login: fechados e com os dados de sessao apagados.
+    foreach ($name in @("WhatsApp", "Telegram", "Discord", "Spotify", "Teams", "ms-teams", "Zoom", "Skype")) {
+        Get-Process -Name $name -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Milliseconds 500
+    $appData = @(
+        (Join-Path $local "WhatsApp"), (Join-Path $roaming "WhatsApp"),
+        (Join-Path $roaming "Telegram Desktop\tdata"),
+        (Join-Path $roaming "discord\Local Storage"), (Join-Path $roaming "discord\Session Storage"), (Join-Path $roaming "discord\Cookies"),
+        (Join-Path $roaming "Spotify\Users"), (Join-Path $roaming "Zoom\data")
+    )
+    foreach ($package in @(Get-ChildItem -LiteralPath (Join-Path $local "Packages") -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match '^(5319275A\.WhatsAppDesktop|4DF9E0F8\.Netflix|SpotifyAB\.SpotifyMusic|TelegramMessengerLLP\.TelegramDesktop|Facebook\.|Instagram\.|MicrosoftTeams|MSTeams)' })) {
+        $appData += Join-Path $package.FullName "LocalState"
+        $appData += Join-Path $package.FullName "LocalCache"
+        $appData += Join-Path $package.FullName "AC\INetCookies"
+    }
+    foreach ($path in $appData) { Remove-PathSafe -Path $path -AllowedRoot $profile }
+
+    # Conta conectada nos navegadores Chromium (sincronizacao), alem do que Clear-UserCaches ja remove.
+    foreach ($root in @("Google\Chrome\User Data", "Microsoft\Edge\User Data", "BraveSoftware\Brave-Browser\User Data")) {
+        $userData = Join-Path $local $root
+        if (-not (Test-Path $userData)) { continue }
+        foreach ($prof in @(Get-ChildItem -LiteralPath $userData -Directory -ErrorAction SilentlyContinue)) {
+            foreach ($item in @("Account Web Data", "Account Web Data-journal", "Login Data For Account", "Login Data For Account-journal", "Sync Data", "Top Sites", "Shortcuts", "Favicons")) {
+                Remove-PathSafe -Path (Join-Path $prof.FullName $item) -AllowedRoot $profile
+            }
+        }
+    }
+
+    # Arquivos recentes do Windows e do Office.
+    foreach ($path in @((Join-Path $roaming "Microsoft\Windows\Recent"), (Join-Path $roaming "Microsoft\Office\Recent"))) {
+        foreach ($item in @(Get-ChildItem -LiteralPath $path -Force -ErrorAction SilentlyContinue)) { Remove-PathSafe -Path $item.FullName -AllowedRoot $profile }
+    }
+    foreach ($key in @(
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\TypedPaths",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\WordWheelQuery",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\OpenSavePidlMRU",
+        "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\ComDlg32\LastVisitedPidlMRU"
+    )) { Remove-Item -Path $key -Recurse -Force -ErrorAction SilentlyContinue }
+    foreach ($office in @(Get-ChildItem "HKCU:\Software\Microsoft\Office" -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -match '^\d+\.\d+$' })) {
+        foreach ($mru in @(Get-ChildItem $office.PSPath -Recurse -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -in @("File MRU", "Place MRU", "User MRU") })) {
+            Remove-Item -Path $mru.PSPath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    # Senhas salvas no Windows (Gerenciador de Credenciais) do usuario cliente.
+    foreach ($line in @(& cmdkey.exe /list 2>$null)) {
+        if ($line -match '^\s*(Destino|Target):\s*(.+)$') {
+            $target = $Matches[2].Trim() -replace '^(LegacyGeneric|Domain|Generic|WindowsLive):target=', ''
+            if ($target -and $target -notmatch 'virtualapp/didlogical|WindowsLive:') { & cmdkey.exe /delete:$target 2>$null | Out-Null }
+        }
+    }
+
+    try { Clear-RecycleBin -Force -ErrorAction Stop } catch { }
+    try { Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.Clipboard]::Clear() } catch { }
+    Remove-PathSafe -Path (Join-Path $UserDataRoot "PrintJobs") -AllowedRoot $profile
+    Write-AgentLog "Rastros do cliente removidos (apps, conta do navegador, recentes, credenciais, lixeira)."
+}
+
+#endregion
+
+#region Impressao: revisao em processo proprio (o loop do agente nao para)
+
+function Start-PrintReviewProcess {
+    param([string]$Path)
+    return Start-AgentChild -ChildAction "PrintReview" -Extra @("-JobPath", "`"$Path`"")
+}
+
+function Show-PrintError {
+    param([string]$Message)
+    Add-Type -AssemblyName System.Windows.Forms
+    [System.Windows.Forms.MessageBox]::Show("Não foi possível concluir a impressão. Nada foi cobrado. Avise o atendente se precisar.`n`n$Message", "Impressão Nexcafé", "OK", "Error") | Out-Null
+}
+
+function Invoke-PrintReview {
+    param([string]$Path)
+    $config = Load-Config
+    try {
+        if (-not (Test-Path -LiteralPath $Path)) { throw "Documento nao encontrado." }
+        $pages = Get-PdfPageCount -Path $Path
+        if ($pages -lt 1 -or $pages -gt 200) { throw "Numero de paginas fora do limite (1 a 200)." }
+        $command = Get-AgentCommand -Config $config
+        if ($command.locked -or -not $command.session) { throw "A estação não está liberada. Imprima durante o seu tempo de uso." }
+        $sessionId = [string]$command.session.id
+        $choice = Show-PdfPrintReview -Path $Path -Pages $pages -BwCents ($pages * [int]$command.printBWCents) -ColorCents ($pages * [int]$command.printColorCents)
+        if (-not $choice) {
+            Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+            Write-AgentLog "Impressao cancelada pelo cliente: $pages pagina(s)."
+            return
+        }
+        $current = Get-AgentCommand -Config $config
+        if ($current.locked -or -not $current.session -or [string]$current.session.id -ne $sessionId) { throw "O tempo terminou antes da confirmação. Imprima novamente em uma sessão ativa." }
+        # O caixa imprime na impressora escolhida no Atendimento e so cobra se a impressao sair.
+        $color = ($choice -eq "color")
+        $base = "$($config.ServerUrl)".TrimEnd("/")
+        $id = [Uri]::EscapeDataString($config.MachineId)
+        $uri = "$base/api/client/$id/print-upload?pages=$pages&color=$(if ($color) { '1' } else { '0' })"
+        try {
+            $result = Invoke-RestMethod -Method Post -Uri $uri -Headers @{ Authorization = "Bearer $($config.AgentToken)" } -ContentType "application/pdf" -InFile $Path -TimeoutSec 240
+        } catch { throw (Get-ApiMessage -ErrorRecord $_) }
+        Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+        Write-AgentLog "Impresso pelo caixa em $($result.printer): $($result.pages) pagina(s), $(if ($color) { 'colorido' } else { 'preto e branco' })."
+    } catch {
+        Remove-Item -LiteralPath $Path -Force -ErrorAction SilentlyContinue
+        Write-AgentLog "Falha na impressao: $($_.Exception.Message)"
+        Show-PrintError -Message $_.Exception.Message
+    }
+}
+
+#endregion
+
 function Invoke-AgentRun {
     $runMutex = New-Object System.Threading.Mutex($false, "Local\LanHouseManagerAgentRun")
     if (-not $runMutex.WaitOne(0)) {
@@ -1440,7 +1519,6 @@ function Invoke-AgentRun {
     }
     if (-not $config.AgentToken) { throw "Agente antigo sem vinculacao. Reinstale pelo painel." }
     $state = Load-State
-    $colorNames = Get-PrintColorNames -Config $config
     $printListener = $null
     # Toda impressao passa pela "Impressao Nexcafe" e e impressa pelo caixa.
     Add-OrUpdateProperty -Object $config -Name "VirtualPrinting" -Value $true
@@ -1463,12 +1541,6 @@ function Invoke-AgentRun {
             Send-AgentEvent -Config $config -Title "Impressão indisponível" -Detail $_.Exception.Message
         }
     }
-    if ([int]$state.LastPrintRecordId -eq 0) {
-        try {
-            $latest = @(Get-WinEvent -LogName "Microsoft-Windows-PrintService/Operational" -MaxEvents 1 -ErrorAction Stop)
-            if ($latest.Count -gt 0) { $state.LastPrintRecordId = [int]$latest[0].RecordId; Save-State -State $state }
-        } catch { }
-    }
     $lockProcess = $null
     $overlayProcess = $null
     $lastScreenAt = [datetime]::MinValue
@@ -1476,12 +1548,17 @@ function Invoke-AgentRun {
     $lastFailureEvent = [datetime]::MinValue
     $nextRestoreAt = [datetime]::MinValue
     $monitorProcess = $null
+    $lastCommand = $null
+    $serverOffsetMs = 0
+    $runningHash = Get-ScriptHash -Path $PSCommandPath
     Stop-AgentUiProcesses
     Send-AgentEvent -Config $config -Title "Agente iniciado" -Detail $env:USERNAME
 
     while ($true) {
         try {
             $command = Get-AgentCommand -Config $config
+            $lastCommand = $command
+            try { $serverOffsetMs = ([datetime]::Parse($command.serverTime).ToUniversalTime() - (Get-Date).ToUniversalTime()).TotalMilliseconds } catch { }
 
             if ([int]$state.LastRestoreSeq -gt [int]$command.appliedRestoreSeq) {
                 Send-AgentEvent -Config $config -Title "Restauracao confirmada" -Detail "Sequencia $($state.LastRestoreSeq)" -RestoreSeq ([int]$state.LastRestoreSeq)
@@ -1491,6 +1568,7 @@ function Invoke-AgentRun {
             }
 
             if ($command.locked) {
+                Stop-AgentUiProcesses -Actions @("PrintReview")
                 if (-not $lockProcess -or $lockProcess.HasExited) {
                     $lockProcess = Start-LockScreenProcess
                     Start-Sleep -Milliseconds 500
@@ -1523,7 +1601,7 @@ function Invoke-AgentRun {
                 $lastScriptCheck = Get-Date
                 Remove-ClientPrinterConnections
                 if ($printListener) { try { [void](Set-VirtualPrinterDefault) } catch { Write-AgentLog "Falha ao manter impressora padrao: $($_.Exception.Message)" } }
-                if (Update-AgentScriptIfNeeded -Config $config -ServerHash ([string]$command.scriptHash)) { break }
+                if (Update-AgentScriptIfNeeded -Config $config -ServerHash ([string]$command.scriptHash) -RunningHash $runningHash) { break }
             }
 
             if (-not $command.locked) {
@@ -1533,19 +1611,9 @@ function Invoke-AgentRun {
                             Receive-VirtualPrintJob -Listener $printListener -Config $config -SessionId ([string]$command.session.id) -PrintBW ([int]$command.printBWCents) -PrintColor ([int]$command.printColorCents)
                         } catch {
                             Write-AgentLog "Falha na impressão virtual: $($_.Exception.Message)"
-                            Add-Type -AssemblyName System.Windows.Forms
-                            [System.Windows.Forms.MessageBox]::Show(
-                                "Não foi possível concluir a impressão. Avise o atendente e confira a cobrança antes de tentar novamente.`n`n$($_.Exception.Message)",
-                                "Impressão Nexcafé", "OK", "Error") | Out-Null
+                            Show-PrintError -Message $_.Exception.Message
                         }
                     }
-                }
-                $printEvents = Get-NewPrintEvents -LastRecordId ([int]$state.LastPrintRecordId)
-                foreach ($evt in $printEvents) {
-                    $state.LastPrintRecordId = $evt.RecordId
-                    Save-State -State $state
-                    if ($evt.Message -match 'Impressão Nexcafé|Nexcafe:') { continue }
-                    Invoke-PrintCapture -Config $config -Event $evt -ColorNames $colorNames -PrintBW ([int]$command.printBWCents) -PrintColor ([int]$command.printColorCents)
                 }
             }
 
@@ -1584,6 +1652,16 @@ function Invoke-AgentRun {
 
         } catch {
             Write-AgentLog "Falha no loop do agente: $($_.Exception.Message)"
+            # Sem servidor: bloqueia sozinho quando o tempo contratado acaba.
+            if ($lastCommand -and -not $lastCommand.locked -and $lastCommand.session) {
+                try {
+                    $endsAt = [datetime]::Parse($lastCommand.session.endsAt).ToUniversalTime()
+                    if ((Get-Date).ToUniversalTime().AddMilliseconds($serverOffsetMs) -ge $endsAt -and (-not $lockProcess -or $lockProcess.HasExited)) {
+                        Write-AgentLog "Tempo encerrado sem contato com o servidor; bloqueando a estacao."
+                        $lockProcess = Start-LockScreenProcess
+                    }
+                } catch { }
+            }
             if (((Get-Date) - $lastFailureEvent).TotalSeconds -ge 30) {
                 Send-AgentEvent -Config $config -Title "Falha no agente" -Detail $_.Exception.Message
                 $lastFailureEvent = Get-Date
@@ -2137,6 +2215,8 @@ function Invoke-UninstallAgent {
     if (Test-Path $StartupBat) {
         Remove-Item -LiteralPath $StartupBat -Force
     }
+    Unregister-ScheduledTask -TaskName $UpdaterTaskName -Confirm:$false -ErrorAction SilentlyContinue
+    try { foreach ($user in @((Load-Config).ProtectedUsers)) { Remove-ClientRestrictions -User $user } } catch { Write-Host "Restricoes nao removidas: $($_.Exception.Message)" }
     Write-Host "Inicializacao removida. Arquivos mantidos em $InstallRoot por seguranca."
 }
 
@@ -2175,6 +2255,8 @@ switch ($Action) {
     "LockScreen" { Invoke-LockScreen }
     "Overlay" { Invoke-Overlay }
     "Monitor" { Invoke-Monitor }
+    "PrintReview" { Invoke-PrintReview -Path $JobPath }
+    "Update" { Invoke-AgentUpdate }
     "Capture" { Invoke-CaptureBaseline }
     "Restore" { Invoke-AgentRestore }
     "Status" { Show-AgentStatus }

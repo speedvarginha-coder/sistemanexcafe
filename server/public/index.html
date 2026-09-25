@@ -47,6 +47,7 @@
           <div id="fleetNotice" class="fleetNotice" hidden></div>
           <div class="sectionHead"><div><h2>Estações</h2><p>Libere, acompanhe e encerre atendimentos.</p></div><div class="headActions"><button id="powerAllButton">Ligar todas</button><details class="actionMenu"><summary>Mais opções</summary><div class="actionMenuPanel"><button id="shutdownAllButton">Desligar todas</button><button id="downloadInstallerButton" hidden>Baixar pacote das estações</button><button id="addMachineButton" hidden>Adicionar manualmente</button></div></details></div></div>
           <div id="machines" class="machineGrid"></div>
+          <section id="offlineSection" class="offlineSection" hidden><div class="sectionHead spaced"><div><h2>Sem conexão <span id="offlineCount" class="countBadge"></span></h2><p>Estações cadastradas aguardando o agente ou desligadas</p></div></div><div id="offlineMachines" class="machineGrid compactGrid"></div></section>
           <section id="etaSection" hidden><div class="sectionHead spaced"><div><h2>Previsão de término</h2><p>Estações em uso, da que termina antes para a que termina depois</p></div></div><div id="etaList" class="tableWrap"></div></section>
           <div class="sectionHead spaced"><div><h2>Lista de espera</h2><p>Clientes aguardando uma estação</p></div><div class="headActions"><input id="waitName" placeholder="Nome do cliente"><button id="waitAddButton" class="primary">Adicionar</button></div></div>
           <div id="waitList" class="tableWrap"></div>

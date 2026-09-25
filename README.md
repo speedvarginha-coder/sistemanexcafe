@@ -7,18 +7,20 @@ Sistema local para administrar uma lan house com oito estações Windows 10. Inc
 - Login de administrador e atendentes, com senhas protegidas por `scrypt`.
 - Cadastro e vinculação das estações por código temporário.
 - Liberação de tempo pré-pago ou pós-pago, adição de minutos, bloqueio, encerramento e reinício remoto.
-- Tela cheia de bloqueio no cliente; restauração das pastas Desktop e Downloads a um padrão salvo e limpeza de caches.
+- Tela cheia de bloqueio (fundo azul) no cliente. Ao encerrar, volta Área de trabalho, Downloads, Documentos, Imagens, Vídeos e Músicas ao padrão salvo e limpa navegadores (histórico, cookies, senhas, conta conectada), WhatsApp/Telegram/Discord, arquivos recentes, senhas salvas no Windows e a lixeira. Programas abertos pelo cliente são fechados antes.
 - Ligar e desligar estações pelo painel: desligar o Windows de uma máquina ou de todas, e ligar via Wake-on-LAN (envia o pacote mágico pelo MAC que o agente informa).
 - Caixa com abertura, recebimentos em dinheiro/Pix/cartão, entradas, retiradas e fechamento.
 - Tarifas por faixas de tempo (ex.: 15 min = R$ 3,00, 30 min = R$ 3,70, 60 min = R$ 5,00) e por hora acima da última faixa, mais valor por página; cobrança pelo tempo efetivamente usado, arredondado para cima ao minuto e limitado ao tempo contratado.
-- Painel flutuante na tela do cliente, no canto, com o tempo restante e o valor que está correndo, para ele acompanhar.
+- Painel flutuante na tela do cliente, no canto inferior direito, com o tempo restante e o valor que está correndo (tempo + impressões + consumo).
+- Consumo na estação (**+ Consumo** no cartão): produtos, serviços e impressões feitas no balcão entram na conta da sessão e são recebidos no encerramento.
+- Monitoramento remoto da tela com controle de mouse e teclado (cerca de 3 quadros por segundo).
 - Atualização automática do agente: as estações comparam a versão com o servidor e se atualizam e reiniciam sozinhas (depois da primeira instalação por pen drive).
 - Clientes, produtos/serviços, estoque, venda e histórico diário.
 - Atendimento com duração rápida, busca de cliente, prévia de tarifa, confirmação de abertura pelo agente e recebimento no encerramento.
 - Venda rápida com vários produtos, leitura de código de barras, um pagamento e alerta de estoque mínimo.
 - Pacote ZIP de instalação gerado pelo painel, com configuração atual do servidor.
 - Saldo pré-pago por cliente: o atendente recarrega em reais e o próprio cliente entra na estação com login e senha; o tempo usado é descontado do saldo e o que sobrar volta ao cadastro.
-- Registro manual e captura de impressões pelo evento do Windows, com confirmação de cobrança pelo cliente e fila visível no painel. A impressão física não espera essa confirmação.
+- Impressão pelo caixa: a estação só enxerga a **Impressão Nexcafé**. O cliente vê a prévia, escolhe preto e branco ou colorido, e o computador do caixa imprime na impressora escolhida em **Atendimento > Impressões** (onde também ficam os preços). Só cobra se a impressão sair.
 
 O bloqueio é uma janela do Windows, não um congelamento de disco como Deep Freeze. Não substitui políticas de segurança do Windows. Teste uma estação antes de migrar as oito.
 
@@ -42,11 +44,13 @@ O servidor guarda dados em `server\data\db.json`. Na migração da versão anter
 
 ## Instalar cada estação (modo rápido)
 
-1. Em **Tarifas**, informe a impressora compartilhada do balcão no formato `\\COMPUTADOR\Impressora` e salve.
-2. Em **Atendimento**, clique **Baixar pacote das estações**. O ZIP contém o agente e uma configuração atualizada.
-3. Em cada estação, prepare o perfil Windows do cliente, extraia o ZIP em uma pasta limpa e execute `Instalar-Agente.bat`. Informe o número da estação ou deixe em branco para usar o nome do computador. Escolha o usuário protegido se solicitado.
-4. Execute `Capturar-Padrao.bat` como administrador. Reinicie e entre no usuário cliente.
-5. Execute `Verificar-Agente.bat` e confirme no painel que a estação ficou online e bloqueada.
+1. Em **Atendimento > Impressões**, escolha as impressoras do caixa (preto e branco e colorida) e os preços por página.
+2. Use o pendrive preparado (`Pendrive-Preparado`, com a pasta `LanHouseManager-Estacoes`) ou baixe o ZIP em **Atendimento > Baixar pacote das estações**.
+3. Na estação, deixe o perfil do cliente como deve ficar e execute `1 - INSTALAR.bat` com o número da estação. No fim, responda **S** para proteger a conta: o instalador cria a conta administradora **Tecnico** (pede a senha na primeira vez), tira o administrador do usuário do cliente, bloqueia Gerenciador de Tarefas, CMD, Executar e PowerShell no perfil do cliente, protege a pasta do agente, remove as impressoras diretas e libera a pasta do agente no Windows Defender.
+4. Execute `2 - CAPTURAR PADRAO.bat`. Reinicie e entre no usuário cliente.
+5. Execute `3 - VERIFICAR APOS REINICIAR.bat` e confirme no painel que a estação ficou online e bloqueada.
+
+Reinstalar na mesma máquina funciona direto. Para instalar uma estação já cadastrada em **outro** computador, clique antes em **Mais ações > Vincular agente** no cartão dela (vale por 1 hora); sem isso a chave de instalação não substitui o vínculo existente.
 
 Siga o roteiro completo em `docs\INSTALACAO-ESTACOES.md` antes de instalar nas oito máquinas.
 
@@ -87,12 +91,13 @@ O login do cliente é opcional: o atendente continua podendo liberar tempo pelo 
 
 ## Segurança e limites conhecidos
 
-- O código de vinculação autentica o agente, mas um usuário local que possa controlar o próprio processo ainda pode interromper a janela de bloqueio. Use conta padrão sem privilégios, políticas Windows e supervisão física.
-- A restauração cobre as pastas configuradas e caches conhecidos. Outros arquivos, programas instalados, histórico de navegador e mudanças de sistema não são revertidos integralmente.
-- A restauração pode falhar se houver arquivos abertos ou bloqueados. O agente registra a falha e o painel só mostra confirmação quando termina; teste com navegadores e programas usados na loja.
-- A captura automática depende do log operacional de impressão do Windows, da configuração da impressora compartilhada e da confirmação do cliente. O registro manual continua disponível para trabalhos fora desse fluxo; valide com as impressoras reais da loja.
+- A proteção depende de o cliente usar conta **sem administrador** (o instalador faz isso). Com a conta Tecnico a estação fica em manutenção normal: o agente não roda nela. Desinstalar (`LanHouseAgent.ps1 -Action Uninstall`, como Tecnico) remove as restrições.
+- O agente do cliente não consegue gravar a própria pasta; a atualização automática é feita pela tarefa **LanHouseManager-Atualizador** (conta do sistema, a cada 2 minutos) e o agente reinicia sozinho com a versão nova.
+- Sem contato com o servidor, a estação liberada bloqueia sozinha quando o tempo contratado acaba.
+- A restauração cobre as pastas e dados listados acima. Programas instalados e arquivos salvos fora do perfil (por exemplo em outro disco) não são revertidos. Arquivos que continuarem em uso são mantidos e registrados no log.
+- A impressão pelo caixa roda no serviço do servidor (conta do sistema): as impressoras precisam estar instaladas no computador do caixa de forma visível para essa conta (impressoras locais ou de rede). Conexões `\\PC\Impressora` feitas só no usuário do Windows não aparecem na lista.
 - Desligar funciona por comando ao agente. Ligar usa Wake-on-LAN: exige que a placa de rede do PC suporte WOL, que esteja habilitado no BIOS e no driver do Windows, e que o "Início Rápido" do Windows esteja desligado. O servidor precisa ter aprendido o MAC da estação (basta ela ter ficado online uma vez com o agente atualizado).
-- O banco local JSON atende a uma instalação pequena. Faça backup e mantenha o servidor em um computador estável, com energia protegida.
+- O banco local JSON atende a uma instalação pequena. Além da cópia diária em `server\data`, o servidor grava `C:\LanHouseManager-Backup\db-AAAA-MM-DD.json` (30 dias, em outro disco). Copie essa pasta de vez em quando para fora do computador do caixa (pendrive ou nuvem).
 
 ## Documentação
 

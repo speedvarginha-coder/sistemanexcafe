@@ -145,7 +145,13 @@ const defaultPrintRunner = {
   print: ({ file, printer, color }) => runPrintScript(["-Action", "Print", "-Path", file, "-Printer", printer, ...(color ? ["-Color"] : [])]),
 };
 
-function createApp({ dataDir = path.join(__dirname, "data"), port = 4780, printRunner = defaultPrintRunner } = {}) {
+const DEFAULT_DATA_DIR = path.join(__dirname, "data");
+// Copia diaria em outro disco: se o disco do sistema falhar, caixa, clientes e saldos nao se perdem.
+const DEFAULT_OFFSITE_DIR = process.env.LHM_BACKUP_DIR || (process.platform === "win32" ? "C:\\LanHouseManager-Backup" : "");
+const OFFSITE_KEEP_DAYS = 30;
+
+function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir } = {}) {
+  const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
   const dbPath = path.join(dataDir, "db.json");
   fs.mkdirSync(dataDir, { recursive: true });
   const screens = new Map();
@@ -226,6 +232,17 @@ function createApp({ dataDir = path.join(__dirname, "data"), port = 4780, printR
       const backup = `${dbPath}.${day}.bak`;
       if (!fs.existsSync(backup)) fs.copyFileSync(dbPath, backup);
       backupDay = day;
+      if (offsiteDir) {
+        try {
+          fs.mkdirSync(offsiteDir, { recursive: true });
+          fs.copyFileSync(dbPath, path.join(offsiteDir, `db-${day}.json`));
+          const cutoff = Date.now() - OFFSITE_KEEP_DAYS * DAY_MS;
+          for (const name of fs.readdirSync(offsiteDir)) {
+            const match = name.match(/^db-(\d{4}-\d{2}-\d{2})\.json$/);
+            if (match && Date.parse(match[1]) < cutoff) fs.rmSync(path.join(offsiteDir, name), { force: true });
+          }
+        } catch (cause) { console.error(`Backup em ${offsiteDir} falhou: ${cause.message}`); }
+      }
     }
     if (Date.now() - lastMaintenance > 3600000) {
       lastMaintenance = Date.now();
@@ -297,7 +314,8 @@ function createApp({ dataDir = path.join(__dirname, "data"), port = 4780, printR
   }
   function pair(item) {
     const code = crypto.randomBytes(9).toString("base64url");
-    item.pairingHash = hash(code); item.pairingExpiresAt = new Date(Date.now() + 3600000).toISOString(); touch(item);
+    item.pairingHash = hash(code); item.pairingExpiresAt = new Date(Date.now() + 3600000).toISOString();
+    item.reenrollUntil = item.pairingExpiresAt; touch(item);
     return code;
   }
   function currentShift() { return db.cashShifts.find(item => !item.closedAt) || null; }
@@ -489,13 +507,19 @@ function createApp({ dataDir = path.join(__dirname, "data"), port = 4780, printR
       enrollAttempts.delete(ip);
       const name = label(input.name || id, 60);
       let item = db.machines[id];
+      // Estacao ja vinculada: so reinstala na mesma maquina (token anterior) ou com "Vincular agente" no painel.
+      if (item && item.agentHash) {
+        const sameMachine = input.previousToken && hash(String(input.previousToken)) === item.agentHash;
+        const allowed = item.reenrollUntil && Date.parse(item.reenrollUntil) > Date.now();
+        if (!sameMachine && !allowed) throw err(409, `A estacao ${item.name} ja esta vinculada a outro computador. No painel, abra Mais acoes > Vincular agente nessa estacao e rode o instalador de novo em ate 1 hora.`);
+      }
       if (!item) {
         item = { id, name, locked: true, lockMessage: "Aguardando liberacao", session: null, lastSeen: null, createdAt: now(), updatedAt: now(), commandSeq: 1, restoreSeq: 0, restartSeq: 0, appliedRestoreSeq: 0, appliedRestartSeq: 0 };
         db.machines[id] = item;
         event(id, "Maquina vinculada por chave", name, "instalador");
       }
       const token = crypto.randomBytes(32).toString("base64url");
-      item.agentHash = hash(token); item.name = name; touch(item); event(id, "Agente vinculado", name, "instalador"); save();
+      item.agentHash = hash(token); item.reenrollUntil = null; item.name = name; touch(item); event(id, "Agente vinculado", name, "instalador"); save();
       return send(res, 200, { ok: true, token, machineId: id });
     }
     const command = p.match(/^\/api\/client\/([^/]+)\/command$/);
@@ -650,6 +674,12 @@ function createApp({ dataDir = path.join(__dirname, "data"), port = 4780, printR
       inputs.set(item.id, []);
       return send(res, 200, { ok: true, events: queue.slice(0, 50), monitorUntil: item.monitorUntil || 0 });
     }
+    const clientScriptHash = p.match(/^\/api\/client\/([^/]+)\/script-hash$/);
+    if (clientScriptHash && req.method === "GET") {
+      // Consulta leve da tarefa de atualizacao (SYSTEM) da estacao; nao altera o estado da maquina.
+      const item = getMachine(decodeURIComponent(clientScriptHash[1])); agent(req, item);
+      return send(res, 200, { ok: true, hash: agentScript().hash });
+    }
     const clientScript = p.match(/^\/api\/client\/([^/]+)\/script$/);
     if (clientScript && req.method === "GET") {
       const item = getMachine(decodeURIComponent(clientScript[1])); agent(req, item);
@@ -719,6 +749,7 @@ function createApp({ dataDir = path.join(__dirname, "data"), port = 4780, printR
         const newId = input.id !== undefined && String(input.id).trim() !== "" ? machineId(input.id) : item.id;
         if (newId !== item.id) {
           if (item.session) throw err(409, "Encerre a sessao antes de mudar o ID");
+          if (item.agentHash) throw err(409, "Estacao com agente instalado: altere so o nome. Para mudar o ID, remova a estacao e reinstale o agente.");
           if (db.machines[newId]) throw err(409, "ID ja cadastrado");
           delete db.machines[item.id];
           item.id = newId;
@@ -758,6 +789,12 @@ function createApp({ dataDir = path.join(__dirname, "data"), port = 4780, printR
       } else if (action === "add-time") {
         if (!item.session) throw err(409, "Maquina sem sessao ativa");
         const minutes = number(input.minutes, 1, 1440, "Minutos");
+        if (item.session.billingMode === "credit") {
+          // Tempo extra com saldo tambem e descontado do cliente no encerramento.
+          const client = db.clients.find(row => row.id === item.session.clientId);
+          if (!client || (client.creditSeconds || 0) < (item.session.creditSeconds || 0) + minutes * 60) throw err(409, "Saldo do cliente insuficiente para esse tempo extra. Faca uma recarga antes.");
+          item.session.creditSeconds = (item.session.creditSeconds || 0) + minutes * 60;
+        }
         if (item.session.billingMode === "prepaid") {
           if (!currentShift()) throw err(409, "Abra o caixa para vender tempo");
           if (!METHODS.includes(input.paymentMethod)) throw err(400, "Escolha a forma de pagamento");

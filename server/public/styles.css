@@ -221,3 +221,10 @@ main{max-width:1550px;padding:24px 32px 62px}
 @media(max-width:760px){.printRoute{grid-template-columns:1fr}.printRouteActions button{flex:1}}
 .salePrintRow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
 .salePrintRow input{width:100%}
+/* Menu "Mais acoes" abre dentro do cartao (nao cobre as estacoes vizinhas). */
+.machineMoreActions{position:static;left:auto;right:auto;top:auto;margin-top:8px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+/* Estacoes sem conexao: cartoes compactos em grupo proprio. */
+.compactGrid{grid-template-columns:repeat(auto-fill,minmax(min(100%,190px),1fr));gap:8px}
+.machine.compact{min-height:0;padding:9px 11px 7px;gap:5px;border-top-width:3px;box-shadow:none}
+.machine.compact .machineActions button,.machine.compact .machineSetupNote{min-height:28px;font-size:10px}
+.countBadge{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 7px;margin-left:6px;border-radius:11px;background:#edf2f2;color:#56707a;font-size:12px;font-weight:700;vertical-align:middle}

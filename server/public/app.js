@@ -112,7 +112,7 @@ function formatCredit(seconds) {
   const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60);
   return h ? `${h}h ${String(m).padStart(2,"0")}min` : `${m}min`;
 }
-function machineCard(machine) {
+function machineCard(machine, compact = false) {
   const session = machine.session;
   const restoring = machine.restoreSeq > (machine.appliedRestoreSeq || 0);
   const active = !!session;
@@ -125,9 +125,9 @@ function machineCard(machine) {
   const idleDetail = machine.status === "offline" ? machine.mac ? "É possível tentar ligar pelo painel." : "Instale o agente no PC para liberar." : machine.maintenance ? "A liberação está suspensa." : restoring ? "Aguarde a restauração terminar." : "Disponível para o próximo cliente.";
   const monitorIcon = `<svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="5" y="7" width="30" height="21" rx="3" stroke="currentColor" stroke-width="2"/><path d="M15 33h10M20 28v5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
   const action = active ? `<button class="primary" data-action="end" data-id="${html(machine.id)}">Encerrar e receber</button>` : machine.status === "offline" ? machine.mac ? `<button data-action="power" data-id="${html(machine.id)}">Ligar estação</button>` : `<span class="machineSetupNote">Aguardando instalação</span>` : `<button class="primary" data-action="start" data-id="${html(machine.id)}" ${available ? "" : "disabled"}>Liberar estação</button>`;
-  return `<article class="machine ${tone}" data-machine="${html(machine.id)}">
+  return `<article class="machine ${tone}${compact ? " compact" : ""}" data-machine="${html(machine.id)}">
     <div class="machineTop"><div><h3>${html(machine.name)}</h3><small>${html(machine.id)}</small></div><span class="status ${tone}">${phase}</span></div>
-    ${active ? `<div class="machineMiddle"><div class="machineClock" data-id="${html(machine.id)}">${clock(machine.remainingMs)}</div><div class="machineValue">${currency(machine.valueCents || 0)}</div></div><div class="machineInfo">${info}</div>` : `<div class="machineIdle"><span class="machineIdleIcon">${monitorIcon}</span><div><strong>${idleTitle}</strong><span>${idleDetail}</span></div></div>`}
+    ${compact ? "" : active ? `<div class="machineMiddle"><div class="machineClock" data-id="${html(machine.id)}">${clock(machine.remainingMs)}</div><div class="machineValue">${currency(machine.valueCents || 0)}</div></div><div class="machineInfo">${info}</div>` : `<div class="machineIdle"><span class="machineIdleIcon">${monitorIcon}</span><div><strong>${idleTitle}</strong><span>${idleDetail}</span></div></div>`}
     <div class="machineActions">${action}${active ? `<button data-action="addTime" data-id="${html(machine.id)}">+ Tempo</button><button data-action="consume" data-id="${html(machine.id)}">+ Consumo</button>` : ""}</div>
     <details class="machineMore"><summary>Mais ações</summary><div class="machineMoreActions">
       ${active ? `<button data-action="${machine.locked ? "unlock" : "lock"}" data-id="${html(machine.id)}">${machine.locked ? "Retomar" : "Pausar"}</button><button data-action="summary" data-id="${html(machine.id)}">Resumo</button><button data-action="move" data-id="${html(machine.id)}">Mover</button><button data-action="restart" data-id="${html(machine.id)}">Encerrar e reiniciar</button>` : ""}
@@ -232,7 +232,14 @@ function renderMachines() {
   $("#powerAllButton").disabled = !state.machines.some(machine => machine.status === "offline" && machine.mac);
   $("#shutdownAllButton").disabled = !state.machines.some(machine => machine.status !== "offline");
   const expanded = [...document.querySelectorAll(".machineMore[open]")].map(item => item.closest("[data-machine]")?.dataset.machine);
-  $("#machines").innerHTML = state.machines.length ? state.machines.slice().sort((a,b) => a.name.localeCompare(b.name, "pt-BR", { numeric: true })).map(machineCard).join("") : empty("Nenhuma estação. Baixe o instalador e rode nas estações: elas se cadastram sozinhas.");
+  // Conectadas em cima; sem conexao em cartoes compactos abaixo, para nao ocupar a tela de atendimento.
+  const sortedMachines = state.machines.slice().sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { numeric: true }));
+  const onlineMachines = sortedMachines.filter(machine => machine.status !== "offline" || machine.session);
+  const offlineMachines = sortedMachines.filter(machine => machine.status === "offline" && !machine.session);
+  $("#machines").innerHTML = !state.machines.length ? empty("Nenhuma estação. Baixe o instalador e rode nas estações: elas se cadastram sozinhas.") : onlineMachines.length ? onlineMachines.map(machine => machineCard(machine)).join("") : empty("Nenhuma estação conectada no momento.");
+  $("#offlineSection").hidden = !offlineMachines.length;
+  $("#offlineCount").textContent = offlineMachines.length;
+  $("#offlineMachines").innerHTML = offlineMachines.map(machine => machineCard(machine, true)).join("");
   for (const id of expanded) {
     const card = [...document.querySelectorAll("#machines [data-machine]")].find(item => item.dataset.machine === id);
     if (card) card.querySelector(".machineMore").open = true;

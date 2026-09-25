@@ -2,23 +2,32 @@ LANHOUSEMANAGER - PENDRIVE DE INSTALACAO
 
 ANTES: no painel, encerre a sessao da maquina (se houver).
 
-1. Entre no perfil do cliente ("Usuário") e deixe Desktop e Downloads como devem ficar.
-   Se a tela de bloqueio aparecer: Ctrl+Alt+Del > Trocar usuario > conta administradora,
-   ou libere a maquina pelo painel durante a instalacao.
+1. Entre no perfil do cliente ("Usuário") e deixe Area de trabalho, Downloads,
+   Documentos, Imagens, Videos e Musicas como devem ficar para todo cliente.
+   Se a tela de bloqueio aparecer: libere a maquina pelo painel durante a instalacao
+   (ou Ctrl+Alt+Del > Trocar usuario > conta Tecnico, se ela ja existir).
 2. Execute "1 - INSTALAR.bat" e informe o numero da maquina (ex.: 12).
-   Confirme o aviso do Windows (Sim). Se falhar, o motivo aparece na janela
-   e fica salvo em LanHouseManager-Estacoes\erro-instalacao.txt.
-3. Execute "2 - CAPTURAR PADRAO.bat".
+   Confirme o aviso do Windows (Sim).
+   No fim ele pergunta se deve proteger a conta do cliente: digite S.
+   Na primeira vez ele cria a conta "Tecnico" (administradora) e pede uma senha.
+   ANOTE ESSA SENHA: ela passa a ser a unica conta de administrador da estacao.
+   Se falhar, o motivo aparece na janela e fica salvo em
+   LanHouseManager-Estacoes\erro-instalacao.txt.
+3. Execute "2 - CAPTURAR PADRAO.bat" (se pedir, use a conta Tecnico e a senha).
 4. Reinicie e entre no perfil do cliente.
 5. Execute "3 - VERIFICAR APOS REINICIAR.bat".
-6. No painel: libere, imprima 1 pagina P&B e 1 colorida, encerre e confira a restauracao.
+6. No painel: libere, imprima 1 pagina P&B e 1 colorida, lance um consumo,
+   encerre e confira a restauracao.
 
-Impressao: o cliente so ve a "Impressão Nexcafé". Ele escolhe preto e branco ou
-colorido na previa, e o computador do caixa imprime. As impressoras e os precos
-sao escolhidos no painel: Atendimento > Impressões.
+O que a instalacao faz:
+- Tela de bloqueio, contador e monitoramento; atualizacao automatica pelo sistema.
+- Cliente sem administrador; Gerenciador de Tarefas, CMD, Executar e PowerShell bloqueados.
+- Ao encerrar: volta as pastas ao padrao e limpa navegadores, WhatsApp/Telegram/Discord,
+  arquivos recentes, senhas salvas no Windows e a lixeira.
+- Impressao: o cliente so ve a "Impressão Nexcafé"; o caixa imprime. Impressoras e precos
+  ficam no painel: Atendimento > Impressões.
 
-A instalacao remove as outras impressoras da estacao e libera a pasta do agente
-no Windows Defender.
+Manutencao na estacao: entre com a conta Tecnico (o agente nao roda nela).
 
 O servidor deve estar ligado em 192.168.1.14:4780.
 Use somente os arquivos deste pendrive.

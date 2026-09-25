@@ -1,5 +1,30 @@
 # Auditoria LanHouseManager (25/09/2026)
 
+## Situação após as correções (25/09/2026, fim do dia)
+
+| Item | Situação |
+|---|---|
+| 1. Cliente edita o agente | Corrigido: pasta somente leitura para clientes; atualização pela tarefa `LanHouseManager-Atualizador` (SYSTEM). |
+| 2. Bloqueio fechado pelo Gerenciador | Corrigido: cliente sem administrador; Gerenciador, CMD, Executar e PowerShell bloqueados; conta Tecnico para manutenção. |
+| 3. Janela de impressão trava o agente | Corrigido: revisão abre em processo próprio (`-Action PrintReview`). |
+| 4. Sem servidor não bloqueia | Corrigido: agente bloqueia sozinho no fim do tempo. |
+| 5. PrintNightmare | Corrigido na reinstalação (valores seguros restaurados). |
+| 6. Impressão sem cobrança | Corrigido: impressoras diretas removidas; impressão pelo caixa, cobrada só se sair. |
+| 7. Tempo extra grátis no saldo | Corrigido. |
+| 8. Acentos | Corrigido (script com BOM, corpo JSON em UTF-8). |
+| 9. Instalador | Corrigido (aspas nos argumentos). |
+| 10. Monitoramento enchendo o histórico | Corrigido; monitoramento reescrito (JPEG binário, ~3 quadros/s). |
+| 11. Sequestro por chave | Corrigido: reinstalação só com token anterior ou "Vincular agente". Regenerar a chave após instalar as estações. |
+| 11b. "Liberando" eterno | Corrigido. |
+| 12. Troca de ID quebra o agente | Corrigido: ID fixo em estação com agente. |
+| 13. Consultas pesadas | Corrigido (MAC em cache, monitor separado). |
+| 14. Pausa de 15 s na restauração | Corrigido; programas do cliente fechados antes da limpeza. |
+| Organização | Git criado; cópias duplicadas em `..\_Arquivo-antigo-2026-09-25`; backup diário em `C:\LanHouseManager-Backup`. |
+
+Pendente de validação na estação: impressão real pelo serviço do caixa, monitoramento, proteção de conta e limpeza reforçada (roteiro no `LEIA-ME-ANTES.txt` do pendrive).
+
+---
+
 Escopo: `server/` (Node), `server/public/` (painel), `client-agent/` (agente PowerShell), scripts `.bat`, dados reais em `server/data/db.json` e pastas auxiliares.
 
 Estado atual verificado:
