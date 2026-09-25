@@ -1103,13 +1103,19 @@ function Update-AgentScriptIfNeeded {
     $current = Get-ScriptHash -Path $installed
     if (-not $current -or $current -eq $RunningHash) { return $false }
     Write-AgentLog "Nova versao do agente instalada. Reiniciando em 3s."
+    Restart-AgentRun
+    return $true
+}
+
+# Inicia um novo agente em 3 s (depois que este sair) e fecha as telas antigas para reabrirem com ele.
+function Restart-AgentRun {
+    $installed = Join-Path $InstallRoot "LanHouseAgent.ps1"
     $info = New-Object System.Diagnostics.ProcessStartInfo
     $info.FileName = Join-Path $env:WINDIR "System32\cmd.exe"
     $info.Arguments = "/c timeout /t 3 /nobreak >nul & powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$installed`" -Action Run"
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
     [void][System.Diagnostics.Process]::Start($info)
-    return $true
 }
 
 function Get-ScreenJpeg {
@@ -1203,17 +1209,34 @@ function Close-ClientApps {
 $TechnicianUser = "Tecnico"
 $UpdaterTaskName = "LanHouseManager-Atualizador"
 
-function Get-LocalUserSid {
+# Resolve a conta pelo caminho da pasta do perfil (C:\Users\<pasta>). O nome da pasta pode diferir
+# do nome interno da conta (acento gravado de outra forma, conta renomeada), entao nao da para
+# procurar so pelo nome.
+function Resolve-LocalAccount {
     param([string]$User)
-    return (New-Object System.Security.Principal.NTAccount($User)).Translate([System.Security.Principal.SecurityIdentifier]).Value
+    $profilePath = (Join-Path "C:\Users" $User).Normalize([Text.NormalizationForm]::FormC)
+    $profile = Get-CimInstance -ClassName Win32_UserProfile -ErrorAction SilentlyContinue |
+        Where-Object { $_.LocalPath -and $_.LocalPath.Normalize([Text.NormalizationForm]::FormC) -ieq $profilePath } | Select-Object -First 1
+    $sid = $null
+    if ($profile) { $sid = [string]$profile.SID }
+    else {
+        foreach ($candidate in @($User, $User.Normalize([Text.NormalizationForm]::FormC), $User.Normalize([Text.NormalizationForm]::FormD), (Remove-Diacritics $User))) {
+            try { $sid = (New-Object System.Security.Principal.NTAccount($candidate)).Translate([System.Security.Principal.SecurityIdentifier]).Value; break } catch { }
+        }
+    }
+    if (-not $sid) { throw "Conta do Windows do perfil '$User' nao encontrada." }
+    $account = Get-LocalUser -SID $sid -ErrorAction SilentlyContinue
+    $name = if ($account) { [string]$account.Name } else { ((New-Object System.Security.Principal.SecurityIdentifier($sid)).Translate([System.Security.Principal.NTAccount]).Value -split '\\')[-1] }
+    return [pscustomobject]@{ Sid = $sid; Name = $name; ProfilePath = if ($profile) { [string]$profile.LocalPath } else { Join-Path "C:\Users" $User } }
 }
 
 # Executa $Action com o registro (HKU) do usuario carregado, mesmo que ele nao esteja logado.
 function Invoke-WithUserHive {
     param([string]$User, [scriptblock]$Action)
-    $sid = Get-LocalUserSid -User $User
+    $account = Resolve-LocalAccount -User $User
+    $sid = $account.Sid
     if (Test-Path "Registry::HKEY_USERS\$sid") { & $Action "HKU\$sid"; return }
-    $hive = Join-Path (Join-Path "C:\Users" $User) "NTUSER.DAT"
+    $hive = Join-Path $account.ProfilePath "NTUSER.DAT"
     if (-not (Test-Path -LiteralPath $hive)) { throw "Perfil do usuario $User ainda nao foi criado (entre uma vez nele)." }
     $mount = "LHM_$($User -replace '[^A-Za-z0-9]', '')"
     & reg.exe load "HKU\$mount" "$hive" | Out-Null
@@ -1282,6 +1305,8 @@ function Test-LocalAdmin {
 # Cria a conta administradora "Tecnico" e tira o administrador do usuario dos clientes.
 function Set-StationAccounts {
     param([string]$ClientUser)
+    # Nome interno da conta (pode diferir do nome da pasta do perfil).
+    $ClientUser = (Resolve-LocalAccount -User $ClientUser).Name
     $admins = Get-LocalGroup -SID "S-1-5-32-544"
     $users = Get-LocalGroup -SID "S-1-5-32-545"
     $technician = Get-LocalUser -Name $TechnicianUser -ErrorAction SilentlyContinue
@@ -1529,7 +1554,11 @@ function Invoke-AgentRun {
                 try { Install-VirtualPrintQueue } catch { }
             }
             $printListener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, 18955)
-            $printListener.Start()
+            # Ao reiniciar, o agente anterior pode levar alguns segundos para liberar a porta.
+            for ($attempt = 1; ; $attempt++) {
+                try { $printListener.Start(); break }
+                catch { if ($attempt -ge 10) { throw }; Start-Sleep -Seconds 1 }
+            }
             try {
                 if (-not (Set-VirtualPrinterDefault)) { throw "Impressora virtual nao encontrada." }
             } catch {
@@ -1652,6 +1681,15 @@ function Invoke-AgentRun {
 
         } catch {
             Write-AgentLog "Falha no loop do agente: $($_.Exception.Message)"
+            # Reinstalacao gera um token novo: recarrega a configuracao e reinicia o agente com ele.
+            try {
+                $fresh = Load-Config
+                if ($fresh.AgentToken -and $fresh.AgentToken -ne $config.AgentToken) {
+                    Write-AgentLog "Nova vinculacao detectada; reiniciando o agente."
+                    Restart-AgentRun
+                    break
+                }
+            } catch { }
             # Sem servidor: bloqueia sozinho quando o tempo contratado acaba.
             if ($lastCommand -and -not $lastCommand.locked -and $lastCommand.session) {
                 try {
