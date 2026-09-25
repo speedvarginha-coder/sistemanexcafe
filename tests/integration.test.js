@@ -797,3 +797,36 @@ test("protecoes: reinstalacao so na mesma maquina, ID fixo com agente, saldo no 
     fs.rmSync(backupDir, { recursive: true, force: true });
   }
 });
+
+test("reiniciar estacao sem cliente pelo painel", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data, token = null) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (token) headers.authorization = `Bearer ${token}`;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    const created = await request("/api/machines/register", { id: "pc-01", name: "PC 01" });
+    const token = (await request("/api/agent/enroll", { id: "pc-01", name: "PC 01", code: created.payload.pairingCode })).payload.token;
+    assert.equal((await request("/api/machines/pc-01/reboot", {})).status, 409, "offline: comando nao chega");
+    await request("/api/client/pc-01/command", undefined, token);
+    assert.equal((await request("/api/machines/pc-01/reboot", {})).status, 200);
+    assert.equal((await request("/api/client/pc-01/command", undefined, token)).payload.restartSeq, 1, "agente recebe o pedido de reinicio");
+    await request("/api/machines/pc-01/start", { minutes: 30, billingMode: "postpaid" });
+    assert.equal((await request("/api/machines/pc-01/reboot", {})).status, 409, "com cliente usa Encerrar e reiniciar");
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});

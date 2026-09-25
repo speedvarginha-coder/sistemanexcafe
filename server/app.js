@@ -809,6 +809,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       } else if (action === "unlock") {
         if (!item.session) throw err(409, "Abra uma sessao antes de desbloquear a estacao");
         item.locked = false; item.lockMessage = ""; touch(item); event(item.id, "Maquina desbloqueada", "", user.name);
+      } else if (action === "reboot") {
+        // Reinicio sem sessao (com cliente, use "Encerrar e reiniciar" para cobrar e restaurar).
+        if (item.session) throw err(409, "Estacao com cliente: use Encerrar e reiniciar");
+        if (status(item) === "offline") throw err(409, "Estacao sem conexao: o comando nao chega ate ela. Reinicie no proprio computador.");
+        item.restartSeq = (item.restartSeq || 0) + 1; touch(item); event(item.id, "Reinicio solicitado", "", user.name);
       } else if (action === "shutdown") {
         item.shutdownSeq = (item.shutdownSeq || 0) + 1; touch(item); event(item.id, "Desligamento solicitado", "", user.name);
       } else if (action === "power") {

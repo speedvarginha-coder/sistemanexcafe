@@ -132,6 +132,7 @@ function machineCard(machine, compact = false) {
     <details class="machineMore"><summary>Mais ações</summary><div class="machineMoreActions">
       ${active ? `<button data-action="${machine.locked ? "unlock" : "lock"}" data-id="${html(machine.id)}">${machine.locked ? "Retomar" : "Pausar"}</button><button data-action="summary" data-id="${html(machine.id)}">Resumo</button><button data-action="move" data-id="${html(machine.id)}">Mover</button><button data-action="restart" data-id="${html(machine.id)}">Encerrar e reiniciar</button>` : ""}
       <button data-action="monitor" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>Monitorar</button>
+      ${active ? "" : `<button data-action="reboot" data-id="${html(machine.id)}" ${machine.status === "offline" ? 'disabled title="Sem conexão: reinicie no próprio computador"' : ""}>Reiniciar</button>`}
       <button data-action="shutdown" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>Desligar</button>
       <button data-action="maintenance" data-id="${html(machine.id)}" ${active ? "disabled" : ""}>${machine.maintenance ? "Encerrar manutenção" : "Manutenção"}</button>
       ${state.user.role === "admin" ? `<button data-action="rename" data-id="${html(machine.id)}">Renomear</button><button data-action="pair" data-id="${html(machine.id)}">Vincular agente</button><button data-action="remove" data-id="${html(machine.id)}">Remover</button>` : ""}
@@ -549,6 +550,10 @@ document.addEventListener("click", async event => {
       openSale(null, machine);
     } else if (action === "addTime" && machine) {
       openModal(`Adicionar tempo · ${machine.name}`, field("minutes", "Minutos", "number", "10", 'min="1" max="1440" required') + (machine.session?.billingMode === "prepaid" ? paymentField() : ""), values => api(`/api/machines/${encodeURIComponent(id)}/add-time`, { ...values, minutes: Number(values.minutes) }), "Adicionar");
+    } else if (action === "reboot" && machine) {
+      if (!confirm(`Reiniciar ${machine.name}?`)) return;
+      await api(`/api/machines/${encodeURIComponent(id)}/reboot`, {});
+      await loadState(); toast("Reiniciando a estação...");
     } else if (action === "shutdown" && machine) {
       if (!confirm(`Desligar ${machine.name}?`)) return;
       await api(`/api/machines/${encodeURIComponent(id)}/shutdown`, {});
