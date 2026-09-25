@@ -742,7 +742,7 @@ function Invoke-InstallAgent {
         MachineId = $MachineId.Trim()
         MachineName = $MachineName.Trim()
         AgentToken = $enrollment.token
-        ProtectedUsers = $resolvedUsers
+        ProtectedUsers = @($resolvedUsers)
         ProtectedFolders = @($folders | Select-Object -Unique)
         CleanTemp = $true
         CleanBrowserCache = $true
@@ -771,8 +771,10 @@ powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$instal
     # Protecao: pasta somente leitura, atualizacao pelo sistema, perfil restrito e cliente sem administrador.
     Protect-AgentFolder
     Register-AgentUpdater
-    Set-ClientRestrictions -User $resolvedUsers[0]
-    Set-StationAccounts -ClientUser $resolvedUsers[0]
+    # Com um so usuario o PowerShell devolve texto, e [0] pegaria a primeira letra.
+    $clientUser = [string](@($resolvedUsers)[0])
+    Set-ClientRestrictions -User $clientUser
+    Set-StationAccounts -ClientUser $clientUser
 
     Write-Host ""
     Write-Host "Agente instalado em $InstallRoot"
@@ -1368,8 +1370,8 @@ function Protect-AgentFolder {
 # Conserta permissoes deixadas por uma instalacao anterior (inclusive arquivos sem nenhuma permissao).
 function Repair-AgentFolderAccess {
     if (-not (Test-Path -LiteralPath $InstallRoot)) { return }
-    & icacls.exe $InstallRoot /setowner "*S-1-5-32-544" /T /C /Q | Out-Null
-    & icacls.exe $InstallRoot /reset /T /C /Q | Out-Null
+    & icacls.exe $InstallRoot /setowner "*S-1-5-32-544" /T /C /Q 2>&1 | Out-Null
+    & icacls.exe $InstallRoot /reset /T /C /Q 2>&1 | Out-Null
     Write-AgentLog "Permissoes da pasta do agente restauradas para a instalacao."
 }
 
