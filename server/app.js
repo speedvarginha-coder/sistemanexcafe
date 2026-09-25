@@ -1108,7 +1108,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (p === "/api/installer-package" && req.method === "GET") {
       admin(user);
       const folder = path.join(__dirname, "..", "client-agent");
-      const files = ["LanHouseAgent.ps1", "Instalar-Agente.bat", "Instalar-Agente.ps1", "Capturar-Padrao.bat", "Capturar-Padrao.ps1", "Verificar-Agente.bat"];
+      const files = ["LanHouseAgent.ps1", "Instalar-Agente.bat", "Instalar-Agente.ps1", "Capturar-Padrao.bat", "Capturar-Padrao.ps1", "Executar-Elevado.ps1", "Verificar-Agente.bat"];
       const stationIds = {};
       const ambiguousStations = new Set();
       for (const machine of Object.values(db.machines)) {

@@ -14,7 +14,7 @@ try {
 }
 Write-Host "Servidor conectado: $serverUrl"
 $number = (Read-Host "Numero da estacao (1 a 999; Enter usa o nome do computador)").Trim()
-$machineArguments = @()
+$machineArguments = ""
 if ($number) {
     if ($number -notmatch '^[1-9][0-9]{0,2}$') { throw "Numero da estacao invalido. Use apenas digitos de 1 a 999, sem zero inicial." }
     $machineName = "M$([char]0x00E1)quina $number"
@@ -25,9 +25,7 @@ if ($number) {
     }
     if ($machineId -notmatch '^[a-z0-9][a-z0-9_-]{1,31}$') { throw "ID da estacao invalido na configuracao do pendrive." }
     Write-Host "Estacao $number vinculada ao cadastro $machineId"
-    $machineArguments = @("-MachineId", $machineId, "-MachineName", "`"$machineName`"")
+    $machineArguments = "-MachineId '$machineId' -MachineName '$machineName'"
 }
-$arguments = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$agentScript`"", "-Action", "Install")
-$arguments += $machineArguments
-$process = Start-Process -FilePath "powershell.exe" -Verb RunAs -ArgumentList $arguments -Wait -PassThru
-exit $process.ExitCode
+. (Join-Path $PSScriptRoot "Executar-Elevado.ps1")
+exit (Invoke-AgentElevated -AgentScript $agentScript -AgentArguments "-Action Install $machineArguments" -ErrorFile (Join-Path $PSScriptRoot "erro-instalacao.txt"))

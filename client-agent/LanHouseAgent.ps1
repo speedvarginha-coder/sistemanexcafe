@@ -272,7 +272,7 @@ function Clear-FolderContent {
     }
 
     Assert-PathUnderRoot -Path $Path -Root $AllowedRoot -Purpose "limpeza"
-    Get-ChildItem -LiteralPath $Path -Force -ErrorAction Stop | ForEach-Object {
+    Get-ChildItem -LiteralPath $Path -Force -ErrorAction Stop | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) } | ForEach-Object {
         Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction Stop
     }
 }
@@ -285,7 +285,7 @@ function Copy-FolderContent {
     }
 
     New-Item -ItemType Directory -Path $Destination -Force | Out-Null
-    Get-ChildItem -LiteralPath $Source -Force -ErrorAction Stop | ForEach-Object {
+    Get-ChildItem -LiteralPath $Source -Force -ErrorAction Stop | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) } | ForEach-Object {
         Copy-Item -LiteralPath $_.FullName -Destination $Destination -Recurse -Force -ErrorAction Stop
     }
 }
@@ -332,10 +332,10 @@ function Replace-FolderContent {
 function Sync-FolderContent {
     param([string]$Source, [string]$Destination)
     $locked = @()
-    foreach ($item in @(Get-ChildItem -LiteralPath $Destination -Force -ErrorAction SilentlyContinue)) {
+    foreach ($item in @(Get-ChildItem -LiteralPath $Destination -Force -ErrorAction SilentlyContinue | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) })) {
         try { Remove-Item -LiteralPath $item.FullName -Recurse -Force -ErrorAction Stop } catch { $locked += $item.Name }
     }
-    foreach ($item in @(Get-ChildItem -LiteralPath $Source -Force -ErrorAction SilentlyContinue)) {
+    foreach ($item in @(Get-ChildItem -LiteralPath $Source -Force -ErrorAction SilentlyContinue | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) })) {
         try { Copy-Item -LiteralPath $item.FullName -Destination $Destination -Recurse -Force -ErrorAction Stop } catch { $locked += $item.Name }
     }
     if ($locked.Count -gt 0) { Write-AgentLog "Restaurado com itens em uso mantidos em $($Destination):$($locked -join ', ')" }
