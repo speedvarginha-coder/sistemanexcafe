@@ -626,6 +626,7 @@ function Install-VirtualPrintQueue {
 
 function Invoke-InstallAgent {
     Require-Admin
+    Repair-AgentFolderAccess
     Ensure-AgentRoot
 
     # O agente captura a tela para o monitoramento remoto e o Defender pode bloquear o script;
@@ -1353,9 +1354,23 @@ function Set-StationAccounts {
 
 # Pasta do agente: cliente so le. Sem isso ele poderia editar o script e remover o bloqueio.
 function Protect-AgentFolder {
-    & icacls.exe $InstallRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" "*S-1-5-32-545:(OI)(CI)RX" /T /C /Q | Out-Null
+    # Permissoes explicitas so na pasta; arquivos e subpastas herdam dela. (Aplicar com /T deixava os
+    # arquivos sem nenhuma permissao, e nem o agente do cliente nem o administrador conseguiam le-los.)
+    & icacls.exe $InstallRoot /inheritance:r /grant:r "*S-1-5-18:(OI)(CI)F" "*S-1-5-32-544:(OI)(CI)F" "*S-1-5-32-545:(OI)(CI)RX" /C /Q | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Falha ao proteger a pasta $InstallRoot (icacls $LASTEXITCODE)." }
+    & icacls.exe (Join-Path $InstallRoot "*") /reset /T /C /Q | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao aplicar permissoes nos arquivos de $InstallRoot (icacls $LASTEXITCODE)." }
+    $probe = Get-ChildItem -LiteralPath $InstallRoot -File -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($probe -and -not ((& icacls.exe $probe.FullName) -match 'S-1-5-32-545|\\Usu|\\Users')) { throw "Arquivos do agente ficaram sem permissao de leitura para os clientes." }
     Write-AgentLog "Pasta do agente protegida: clientes somente leitura."
+}
+
+# Conserta permissoes deixadas por uma instalacao anterior (inclusive arquivos sem nenhuma permissao).
+function Repair-AgentFolderAccess {
+    if (-not (Test-Path -LiteralPath $InstallRoot)) { return }
+    & icacls.exe $InstallRoot /setowner "*S-1-5-32-544" /T /C /Q | Out-Null
+    & icacls.exe $InstallRoot /reset /T /C /Q | Out-Null
+    Write-AgentLog "Permissoes da pasta do agente restauradas para a instalacao."
 }
 
 # Com a pasta protegida o agente do cliente nao grava a atualizacao; uma tarefa do sistema faz isso.
