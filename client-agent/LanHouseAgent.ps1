@@ -800,6 +800,8 @@ function Start-AgentChild {
     $info.Arguments = (@("-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden", "-File", "`"$scriptPath`"", "-Action", $ChildAction) + $Extra) -join " "
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
+    # Pasta fixa: herdar a pasta atual falha se ela deixou de existir (ex.: pendrive removido).
+    $info.WorkingDirectory = if (Test-Path -LiteralPath $InstallRoot) { $InstallRoot } else { $env:SystemRoot }
     return [System.Diagnostics.Process]::Start($info)
 }
 
@@ -1121,6 +1123,8 @@ function Restart-AgentRun {
     $info.Arguments = "/c timeout /t 3 /nobreak >nul & powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$installed`" -Action Run"
     $info.UseShellExecute = $false
     $info.CreateNoWindow = $true
+    # Pasta fixa: herdar a pasta atual falha se ela deixou de existir (ex.: pendrive removido).
+    $info.WorkingDirectory = if (Test-Path -LiteralPath $InstallRoot) { $InstallRoot } else { $env:SystemRoot }
     [void][System.Diagnostics.Process]::Start($info)
 }
 
@@ -1618,7 +1622,7 @@ function Invoke-AgentRun {
             # Ao reiniciar, o agente anterior pode levar alguns segundos para liberar a porta.
             for ($attempt = 1; ; $attempt++) {
                 try { $printListener.Start(); break }
-                catch { if ($attempt -ge 10) { throw }; Start-Sleep -Seconds 1 }
+                catch { if ($attempt -ge 30) { throw }; Start-Sleep -Seconds 1 }
             }
             try {
                 if (-not (Set-VirtualPrinterDefault)) { throw "Impressora virtual nao encontrada." }
@@ -1660,8 +1664,9 @@ function Invoke-AgentRun {
             if ($command.locked) {
                 Stop-AgentUiProcesses -Actions @("PrintReview")
                 if (-not $lockProcess -or $lockProcess.HasExited) {
-                    $lockProcess = Start-LockScreenProcess
-                    Start-Sleep -Milliseconds 500
+                    # Falha ao abrir a tela nao pode impedir o resto do ciclo (restauracao, reinicio).
+                    try { $lockProcess = Start-LockScreenProcess; Start-Sleep -Milliseconds 500 }
+                    catch { Write-AgentLog "Falha ao abrir a tela de bloqueio: $($_.Exception.Message)"; Send-AgentEvent -Config $config -Title "Falha ao abrir bloqueio" -Detail $_.Exception.Message }
                 }
             }
 
@@ -2317,6 +2322,11 @@ function Invoke-UninstallAgent {
     Unregister-ScheduledTask -TaskName $UpdaterTaskName -Confirm:$false -ErrorAction SilentlyContinue
     try { foreach ($user in @((Load-Config).ProtectedUsers)) { Remove-ClientRestrictions -User $user } } catch { Write-Host "Restricoes nao removidas: $($_.Exception.Message)" }
     Write-Host "Inicializacao removida. Arquivos mantidos em $InstallRoot por seguranca."
+}
+
+# Acoes que rodam na estacao trabalham a partir da pasta do agente (nunca do pendrive).
+if ($Action -in @("Run", "LockScreen", "Overlay", "Monitor", "PrintReview", "Update") -and (Test-Path -LiteralPath $InstallRoot)) {
+    Set-Location -LiteralPath $InstallRoot
 }
 
 switch ($Action) {

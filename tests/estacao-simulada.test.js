@@ -73,3 +73,10 @@ test("estacao simulada: reinstalar, proteger conta e capturar sem erros", { skip
     if (!process.env.LHM_KEEP) fs.rmSync(work, { recursive: true, force: true }); else console.log("pasta:", work);
   }
 });
+
+test("telas do agente abrem mesmo com a pasta atual removida (pendrive retirado)", { skip: process.platform !== "win32" }, async () => {
+  const script = path.join(__dirname, "pasta-removida.ps1");
+  const agent = path.join(__dirname, "..", "client-agent", "LanHouseAgent.ps1");
+  const output = await new Promise((resolve, reject) => execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, "-AgentFile", agent, "-Label", "agente"], { timeout: 60000 }, (error, stdout) => error ? reject(error) : resolve(stdout)));
+  assert.match(output, /agente -> abriu: ok LockScreen/, output);
+});
