@@ -83,3 +83,11 @@ test("telas do agente abrem mesmo com a pasta atual removida (pendrive retirado)
   const output = await new Promise((resolve, reject) => execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, "-AgentFile", agent, "-Label", "agente"], { timeout: 60000 }, (error, stdout) => error ? reject(error) : resolve(stdout)));
   assert.match(output, /agente -> abriu: ok LockScreen/, output);
 });
+
+test("lancador do pendrive: eleva pelo cmd.exe, repassa argumentos com acento e grava o erro", { skip: process.platform !== "win32" }, async () => {
+  const script = path.join(__dirname, "lancador-elevado.ps1");
+  const output = await new Promise((resolve, reject) => execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script], { timeout: 90000 }, (error, stdout) => error ? reject(error) : resolve(stdout)));
+  assert.match(output, /instalar: retorno=0/, output);
+  assert.match(output, /acento correto: True/, output);
+  assert.match(output, /capturar: retorno=1 \| arquivo de erro: ERRO: falha simulada na captura/, output);
+});

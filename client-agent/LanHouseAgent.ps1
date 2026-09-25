@@ -1789,9 +1789,6 @@ function Invoke-Overlay {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
     Add-Type -ReferencedAssemblies @("System.Windows.Forms", "System.Drawing", "System") -TypeDefinition @'
-using System;
-using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 public class LanHouseOverlayForm : Form {
     protected override bool ShowWithoutActivation { get { return true; } }
@@ -1801,35 +1798,6 @@ public class LanHouseOverlayForm : Form {
             parameters.ExStyle |= 0x08000000 | 0x00000080;
             return parameters;
         }
-    }
-}
-public static class LanHouseOverlayAppBar {
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Rect { public int Left, Top, Right, Bottom; }
-    [StructLayout(LayoutKind.Sequential)]
-    private struct Data {
-        public uint Size;
-        public IntPtr Window;
-        public uint Callback;
-        public uint Edge;
-        public Rect Area;
-        public IntPtr Parameter;
-    }
-    [DllImport("shell32.dll")]
-    private static extern IntPtr SHAppBarMessage(uint message, ref Data data);
-    public static bool Register(IntPtr window, Rectangle screen, int height) {
-        var data = new Data { Size = (uint)Marshal.SizeOf(typeof(Data)), Window = window, Edge = 1 };
-        if (SHAppBarMessage(0, ref data) == IntPtr.Zero) return false;
-        data.Area = new Rect { Left = screen.Left, Top = screen.Top,
-            Right = screen.Right, Bottom = screen.Top + height };
-        SHAppBarMessage(2, ref data);
-        data.Area.Bottom = data.Area.Top + height;
-        SHAppBarMessage(3, ref data);
-        return true;
-    }
-    public static void Unregister(IntPtr window) {
-        var data = new Data { Size = (uint)Marshal.SizeOf(typeof(Data)), Window = window };
-        SHAppBarMessage(1, ref data);
     }
 }
 '@
@@ -1849,10 +1817,10 @@ public static class LanHouseOverlayAppBar {
     $form.BackColor = $dark
     $panelWidth = 300
     $panelHeight = 76
-    $screenBounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+    $area = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $form.ClientSize = New-Object Drawing.Size($panelWidth, $panelHeight)
     $form.Opacity = 0.94
-    $form.Location = New-Object Drawing.Point(($screenBounds.Right - $panelWidth - 12), $screenBounds.Top)
+    $form.Location = New-Object Drawing.Point(($area.Right - $panelWidth - 12), ($area.Bottom - $panelHeight - 12))
 
     $script:OverlaySession = $null
     $script:OverlayValueCents = 0
@@ -1893,7 +1861,7 @@ public static class LanHouseOverlayAppBar {
     $breakLabel.Size = New-Object Drawing.Size(($panelWidth - 24), 22)
     $form.Controls.Add($breakLabel)
 
-    # Cantos arredondados. A faixa superior reservada evita cobrir outras janelas.
+    # Cantos arredondados e arrastar para outra posicao, sem roubar o foco.
     $radius = 14
     $shape = New-Object System.Drawing.Drawing2D.GraphicsPath
     $shape.AddArc(0, 0, $radius, $radius, 180, 90)
@@ -1902,6 +1870,20 @@ public static class LanHouseOverlayAppBar {
     $shape.AddArc(0, ($panelHeight - $radius), $radius, $radius, 90, 90)
     $shape.CloseAllFigures()
     $form.Region = New-Object System.Drawing.Region($shape)
+    $script:OverlayDrag = $null
+    $dragDown = { $script:OverlayDrag = [System.Windows.Forms.Cursor]::Position; $script:OverlayDragOrigin = $form.Location }
+    $dragMove = {
+        if ($script:OverlayDrag) {
+            $p = [System.Windows.Forms.Cursor]::Position
+            $form.Location = New-Object Drawing.Point(($script:OverlayDragOrigin.X + $p.X - $script:OverlayDrag.X), ($script:OverlayDragOrigin.Y + $p.Y - $script:OverlayDrag.Y))
+        }
+    }
+    $dragUp = { $script:OverlayDrag = $null }
+    foreach ($control in @($form, $timeLabel, $totalLabel, $breakLabel)) {
+        $control.Cursor = [System.Windows.Forms.Cursors]::SizeAll
+        $control.Add_MouseDown($dragDown); $control.Add_MouseMove($dragMove); $control.Add_MouseUp($dragUp)
+    }
+
     $load = {
         try {
             $command = Get-AgentCommand -Config $config
@@ -1954,18 +1936,8 @@ public static class LanHouseOverlayAppBar {
     $script:OverlayTimer = $timer
     $timer.Add_Tick($tick)
     $timer.Start()
-    $appBarRegistered = $false
-    $appBarHandle = [IntPtr]::Zero
-    try {
-        $form.Show()
-        $appBarHandle = $form.Handle
-        $appBarRegistered = [LanHouseOverlayAppBar]::Register($appBarHandle, $screenBounds, $panelHeight)
-        if (-not $appBarRegistered) { Write-AgentLog "Nao foi possivel reservar o espaco do contador no topo." }
-        [System.Windows.Forms.Application]::Run($form)
-    } finally {
-        if ($appBarRegistered) { [LanHouseOverlayAppBar]::Unregister($appBarHandle) }
-        $timer.Stop(); $timer.Dispose(); $form.Dispose()
-    }
+    $form.Show()
+    [System.Windows.Forms.Application]::Run($form)
 }
 
 function New-RoundedRegion {

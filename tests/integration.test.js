@@ -759,8 +759,11 @@ test("protecoes: reinstalacao so na mesma maquina, ID fixo com agente, saldo no 
     await request("/api/login", { name: "admin", password: "senha-teste-123" });
     const key = (await request("/api/installer-config")).payload.installKey;
 
+    const neverSeen = await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Máquina 12" });
+    assert.equal(neverSeen.status, 200);
     const first = await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Máquina 12" });
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 200, "estacao que nunca se conectou pode ser vinculada de novo");
+    assert.equal((await request("/api/client/maquina-12/command", undefined, first.payload.token)).status, 200);
     const hijack = await request("/api/agent/enroll-by-key", { key, id: "maquina-12", name: "Intruso" });
     assert.equal(hijack.status, 409, "chave sozinha nao toma o lugar de uma estacao vinculada");
     assert.match(hijack.payload.error, /Vincular agente/);

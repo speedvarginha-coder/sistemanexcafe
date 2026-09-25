@@ -4,22 +4,21 @@ ANTES: no painel, encerre a sessao da maquina (se houver).
 
 1. Entre no perfil do cliente ("Usuário") e deixe Area de trabalho, Downloads,
    Documentos, Imagens, Videos e Musicas como devem ficar para todo cliente.
-   Se a tela de bloqueio aparecer: libere a maquina pelo painel durante a instalacao
-   (ou Ctrl+Alt+Del > Trocar usuario > conta Tecnico, se ela ja existir).
-   NA MAQUINA 11, que ja teve o agente instalado: depois de preparar o perfil,
-   troque para a conta Tecnico antes de executar o passo 1. O perfil do cliente
-   ja pode estar proibido de abrir o PowerShell do instalador.
+   Deixe a maquina LIBERADA no painel durante toda a instalacao (sem tela de bloqueio).
 2. Execute "1 - INSTALAR.bat" e informe o numero da maquina (ex.: 12).
-   Confirme o aviso do Windows (Sim).
+   Confirme o aviso do Windows (Sim). Se o Windows pedir usuario e senha,
+   use a conta Tecnico e a senha dela.
+   A instalacao ja salva o padrao do perfil (nao existe mais captura separada).
    No fim ele pergunta se deve proteger a conta do cliente: digite S.
    Na primeira vez ele cria a conta "Tecnico" (administradora) e pede uma senha.
    ANOTE ESSA SENHA: ela passa a ser a unica conta de administrador da estacao.
    Se falhar, o motivo aparece na janela e fica salvo em
    LanHouseManager-Estacoes\erro-instalacao.txt.
-3. Execute "2 - CONFERIR PADRAO.bat" para conferir a captura feita na instalacao.
-   Se avisar que falta o padrao, entre na conta Tecnico e execute o passo 1 de novo.
+3. Execute "2 - CONFERIR PADRAO.bat" para conferir o padrao salvo na instalacao.
+   Se avisar que falta o padrao, execute o passo 1 de novo.
 4. Reinicie e entre no perfil do cliente.
 5. Execute "3 - VERIFICAR APOS REINICIAR.bat".
+   Se algo der errado, execute "4 - DIAGNOSTICO.bat" e traga o pendrive ao caixa.
 6. No painel: libere, imprima 1 pagina P&B e 1 colorida, lance um consumo,
    encerre e confira a restauracao.
 

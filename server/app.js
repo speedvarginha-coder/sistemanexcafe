@@ -516,7 +516,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       // Estacao ja vinculada: so reinstala na mesma maquina (token anterior) ou com "Vincular agente" no painel.
       if (item && item.agentHash) {
         const sameMachine = input.previousToken && hash(String(input.previousToken)) === item.agentHash;
-        const allowed = item.reenrollUntil && Date.parse(item.reenrollUntil) > Date.now();
+        // Estacao que nunca se conectou (cadastro de testes/instalacao interrompida) pode ser vinculada.
+        const allowed = !item.lastSeen || (item.reenrollUntil && Date.parse(item.reenrollUntil) > Date.now());
         if (!sameMachine && !allowed) throw err(409, `A estacao ${item.name} ja esta vinculada a outro computador. No painel, abra Mais acoes > Vincular agente nessa estacao e rode o instalador de novo em ate 1 hora.`);
       }
       if (!item) {

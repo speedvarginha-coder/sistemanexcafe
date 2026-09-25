@@ -25,6 +25,11 @@ try {
 }
 "@
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($command))
-    $process = Start-Process -FilePath "powershell.exe" -Verb RunAs -Wait -PassThru -ArgumentList @("-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encoded)
+    # Eleva o cmd.exe e ele abre o PowerShell: o perfil protegido do cliente proibe abrir powershell.exe
+    # pelo Windows (DisallowRun), e o pedido de administrador passava justamente por esse caminho.
+    # Na conta do cliente o Windows pede a senha da conta Tecnico.
+    $cmd = Join-Path $env:WINDIR "System32\cmd.exe"
+    $powershell = Join-Path $env:WINDIR "System32\WindowsPowerShell\v1.0\powershell.exe"
+    $process = Start-Process -FilePath $cmd -Verb RunAs -Wait -PassThru -ArgumentList "/c `"`"$powershell`" -NoProfile -ExecutionPolicy Bypass -EncodedCommand $encoded`""
     return $process.ExitCode
 }
