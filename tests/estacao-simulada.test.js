@@ -54,8 +54,9 @@ test("estacao simulada: reinstalar, proteger conta e capturar sem erros", { skip
     assert.deepEqual(result.adminsAfter, ["Administrador", "Tecnico"], "Tecnico administrador; Usuario deixou de ser");
     const calls = result.calls.join("\n");
     assert.match(calls, /Conta criada: Tecnico/);
-    assert.match(calls, /reg add HKU\\S-1-5-21-[\d-]+\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System \/v DisableTaskMgr/);
-    assert.match(calls, /DisableCMD \/t REG_DWORD \/d 2/);
+    assert.match(calls, /registro: HKU\\S-1-5-21-[\d-]+\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System/);
+    assert.doesNotMatch(calls, /reg\.exe BLOQUEADO/, "instalador nao depende do reg.exe (bloqueado pela propria politica)");
+    assert.deepEqual(result.policies, { DisableTaskMgr: 1, DisableRegistryTools: 1, DisableCMD: 2, NoRun: 1, DisallowRun1: "powershell.exe" }, "politicas gravadas de verdade");
     assert.match(calls, /Grupo Administradores - Usuário/);
     assert.match(calls, /Defender exclusao/);
 

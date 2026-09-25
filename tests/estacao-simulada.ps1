@@ -41,7 +41,16 @@ function Install-VirtualPrintQueue { Log-Call "Impressora virtual" }
 function Remove-DirectPrinters { Log-Call "Remove impressoras diretas" }
 function Register-AgentUpdater { Log-Call "Tarefa atualizador" }
 function Get-ExistingLocalUsers { return @($clientName) }
-function reg.exe { Log-Call ("reg " + ($args -join " ")); $global:LASTEXITCODE = 0 }
+# Como na estacao depois da 1a tentativa: o cliente ja tem DisableRegistryTools e reg.exe recusa gravar.
+function reg.exe { Log-Call ("reg.exe BLOQUEADO: " + ($args -join " ")); Write-Output "ERRO: a edicao do Registro foi desabilitada pelo administrador."; $global:LASTEXITCODE = 1 }
+# Gravacoes reais pela API do .NET, redirecionadas de HKU\<sid> para uma chave de teste do usuario atual.
+$testRoot = "Software\LHMSimulado"
+function Open-UserRegistryKey {
+    param([string]$Key)
+    if ($Key -notmatch '^HKU\\[^\\]+\\(.+)$') { throw "Chave fora de HKU: $Key" }
+    Log-Call "registro: $Key"
+    return [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("$testRoot\$($Matches[1])")
+}
 function net.exe { Log-Call ("net " + ($args -join " ")); $global:LASTEXITCODE = 0 }
 function Get-CimInstance {
     param([string]$ClassName, [string]$Filter, $ErrorAction)
@@ -106,6 +115,15 @@ $result.startupBat = Test-Path $StartupBat
 $result.installedScriptMatches = (Get-FileHash (Join-Path $InstallRoot "LanHouseAgent.ps1")).Hash -eq (Get-FileHash $agentCopy).Hash
 $result.fileAcl = ((& icacls.exe $ConfigPath) -join " ")
 $result.adminsAfter = @($script:groups["S-1-5-32-544"])
+$policy = "HKCU:\$testRoot\Software\Microsoft\Windows\CurrentVersion\Policies"
+$result.policies = [ordered]@{
+    DisableTaskMgr = (Get-ItemProperty "$policy\System" -ErrorAction SilentlyContinue).DisableTaskMgr
+    DisableRegistryTools = (Get-ItemProperty "$policy\System" -ErrorAction SilentlyContinue).DisableRegistryTools
+    DisableCMD = (Get-ItemProperty "HKCU:\$testRoot\Software\Policies\Microsoft\Windows\System" -ErrorAction SilentlyContinue).DisableCMD
+    NoRun = (Get-ItemProperty "$policy\Explorer" -ErrorAction SilentlyContinue).NoRun
+    DisallowRun1 = (Get-ItemProperty "$policy\Explorer\DisallowRun" -ErrorAction SilentlyContinue).'1'
+}
+Remove-Item "HKCU:\$testRoot" -Recurse -Force -ErrorAction SilentlyContinue
 $result.calls = @($calls)
 & icacls.exe $InstallRoot /reset /T /C /Q 2>&1 | Out-Null
 $result | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 (Join-Path $Work "resultado.json")

@@ -1254,10 +1254,40 @@ function Invoke-WithUserHive {
     }
 }
 
+# Grava no registro pela API do .NET. A politica DisableRegistryTools (aplicada ao cliente) bloqueia
+# regedit.exe e reg.exe para o proprio usuario; numa reinstalacao feita logado como cliente o
+# instalador nao conseguiria mais gravar com reg.exe.
+function Open-UserRegistryKey {
+    param([string]$Key)
+    if ($Key -notmatch '^HKU\\(.+)$') { throw "Chave fora de HKU: $Key" }
+    $opened = [Microsoft.Win32.Registry]::Users.CreateSubKey($Matches[1])
+    if (-not $opened) { throw "Nao foi possivel abrir $Key" }
+    return $opened
+}
+
 function Set-RegistryDword {
     param([string]$Key, [string]$Name, [int]$Value)
-    & reg.exe add $Key /v $Name /t REG_DWORD /d $Value /f | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "Falha ao gravar $Key\$Name" }
+    $opened = Open-UserRegistryKey -Key $Key
+    try { $opened.SetValue($Name, $Value, [Microsoft.Win32.RegistryValueKind]::DWord) } finally { $opened.Close() }
+}
+
+function Set-RegistryString {
+    param([string]$Key, [string]$Name, [string]$Value)
+    $opened = Open-UserRegistryKey -Key $Key
+    try { $opened.SetValue($Name, $Value, [Microsoft.Win32.RegistryValueKind]::String) } finally { $opened.Close() }
+}
+
+function Remove-RegistryValue {
+    param([string]$Key, [string]$Name)
+    if ($Key -notmatch '^HKU\\(.+)$') { return }
+    $opened = [Microsoft.Win32.Registry]::Users.OpenSubKey($Matches[1], $true)
+    if ($opened) { try { $opened.DeleteValue($Name, $false) } finally { $opened.Close() } }
+}
+
+function Remove-RegistryKey {
+    param([string]$Key)
+    if ($Key -notmatch '^HKU\\(.+)$') { return }
+    [Microsoft.Win32.Registry]::Users.DeleteSubKeyTree($Matches[1], $false)
 }
 
 # Bloqueia no perfil do cliente as ferramentas usadas para fechar o agente.
@@ -1276,7 +1306,7 @@ function Set-ClientRestrictions {
         Set-RegistryDword -Key $explorer -Name "DisallowRun" -Value 1
         $index = 1
         foreach ($exe in @("powershell.exe", "powershell_ise.exe", "pwsh.exe", "regedit.exe", "taskmgr.exe", "mmc.exe", "Autoruns.exe", "procexp.exe", "procexp64.exe", "ProcessHacker.exe")) {
-            & reg.exe add "$explorer\DisallowRun" /v "$index" /t REG_SZ /d $exe /f | Out-Null
+            Set-RegistryString -Key "$explorer\DisallowRun" -Name "$index" -Value $exe
             $index++
         }
     }
@@ -1287,10 +1317,10 @@ function Remove-ClientRestrictions {
     param([string]$User)
     Invoke-WithUserHive -User $User -Action {
         param($root)
-        foreach ($name in @("DisableTaskMgr", "DisableRegistryTools", "DisableChangePassword")) { [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Microsoft\Windows\CurrentVersion\Policies\System", "/v", $name, "/f")) }
-        [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Policies\Microsoft\Windows\System", "/v", "DisableCMD", "/f"))
-        foreach ($name in @("NoRun", "DisallowRun")) { [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer", "/v", $name, "/f")) }
-        [void](Invoke-NativeQuiet reg.exe @("delete", "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun", "/f"))
+        foreach ($name in @("DisableTaskMgr", "DisableRegistryTools", "DisableChangePassword")) { Remove-RegistryValue -Key "$root\Software\Microsoft\Windows\CurrentVersion\Policies\System" -Name $name }
+        Remove-RegistryValue -Key "$root\Software\Policies\Microsoft\Windows\System" -Name "DisableCMD"
+        foreach ($name in @("NoRun", "DisallowRun")) { Remove-RegistryValue -Key "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" -Name $name }
+        Remove-RegistryKey -Key "$root\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\DisallowRun"
     }
     Write-AgentLog "Restricoes removidas do perfil $User."
 }
