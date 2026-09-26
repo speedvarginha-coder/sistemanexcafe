@@ -479,10 +479,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       "Eletrônicos & Acessórios": { count: 0, revenueCents: 0, color: "#ea580c" }
     };
     for (const sale of charges) {
-      const rows = sale.kind === "sale" ? sale.items || [] : sale.kind === "product" ? [{ productId: sale.productId, name: sale.description, quantity: sale.quantity || 1, totalCents: sale.amountCents }] : [{ name: sale.description, quantity: 1, totalCents: sale.amountCents, category: "Gráfica Rápida" }];
+      const fallbackCategory = sale.kind === "print" ? "Gráfica Rápida" : "Lan House & Serviços Digitais";
+      const rows = sale.kind === "sale" ? sale.items || [] : sale.kind === "product" ? [{ productId: sale.productId, name: sale.description, quantity: sale.quantity || 1, totalCents: sale.amountCents }] : [{ name: sale.description, quantity: 1, totalCents: sale.amountCents, category: fallbackCategory }];
       for (const r of rows) {
-        const cat = r.category || (r.productId && db.products.find(p => p.id === r.productId)?.category) || "Gráfica Rápida";
-        const target = byCategory[cat] || byCategory["Gráfica Rápida"];
+        const cat = r.category || (r.productId && db.products.find(p => p.id === r.productId)?.category) || fallbackCategory;
+        const target = byCategory[cat] || (byCategory[cat] = { count: 0, revenueCents: 0, color: "#64748b" });
         target.count += (r.quantity || 1);
         target.revenueCents += (r.totalCents || 0);
       }
@@ -1034,13 +1035,15 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       const items = [];
       let amountCents = 0;
+      const stockNeeded = new Map();
       for (const row of input.items) {
         const qty = number(row.quantity, 1, 1000, "Quantidade");
         if (row.productId) {
           const id = label(row.productId, 80);
           const product = db.products.find(item => item.id === id);
           if (!product || !product.active) throw err(409, "Produto indisponivel");
-          if (product.type === "stock" && product.stock < qty) throw err(409, `Estoque insuficiente: ${product.name}`);
+          stockNeeded.set(id, (stockNeeded.get(id) || 0) + qty);
+          if (product.type === "stock" && product.stock < stockNeeded.get(id)) throw err(409, `Estoque insuficiente: ${product.name}`);
           if (product.priceCents < 1) throw err(409, `Configure o preco: ${product.name}`);
           const totalCents = qty * product.priceCents;
           amountCents += totalCents;
@@ -1060,21 +1063,27 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const finalTotalCents = amountCents - discountCents;
       if (!Number.isSafeInteger(finalTotalCents) || finalTotalCents > 10000000) throw err(400, "Total da venda acima do limite");
 
-      const sale = charge("sale", `Venda balcao: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId: input.clientId || null });
-
-      const payments = Array.isArray(input.payments) && input.payments.length ? input.payments : (input.paymentMethod ? [{ method: input.paymentMethod, amountCents: finalTotalCents }] : []);
-      if (!payments.length) throw err(400, "Informe ao menos uma forma de pagamento");
-
-      for (const payEntry of payments) {
+      const requested = Array.isArray(input.payments) && input.payments.length ? input.payments : (input.paymentMethod ? [{ method: input.paymentMethod, amountCents: finalTotalCents }] : []);
+      if (!requested.length) throw err(400, "Informe ao menos uma forma de pagamento");
+      const clientId = input.clientId ? label(input.clientId, 50) : null;
+      const planned = [];
+      let fiado = false;
+      for (const payEntry of requested) {
         const m = payEntry.method;
-        if (m === "fiado" || m === "due") {
-          if (!input.clientId) throw err(400, "Selecione um cliente cadastrado para vender fiado / a prazo");
-          continue;
-        }
+        if (m === "fiado" || m === "due") { fiado = true; continue; }
         if (!METHODS.includes(m)) throw err(400, `Forma de pagamento invalida: ${m}`);
         const payAmount = Number.isInteger(payEntry.amountCents) ? payEntry.amountCents : money(payEntry.amount, "Valor do pagamento");
-        if (payAmount > 0) pay(sale, Math.min(payAmount, sale.amountCents - sale.paidCents), m, user.name);
+        if (payAmount > 0) planned.push({ method: m, amountCents: payAmount });
       }
+      const plannedCents = planned.reduce((sum, row) => sum + row.amountCents, 0);
+      if (plannedCents > finalTotalCents) throw err(400, "Pagamentos somam mais que o total da venda");
+      if (plannedCents < finalTotalCents) {
+        if (!fiado) throw err(400, `Pagamentos somam ${(plannedCents / 100).toFixed(2)}; faltam R$ ${((finalTotalCents - plannedCents) / 100).toFixed(2)}`);
+        if (!clientId || !db.clients.some(row => row.id === clientId && row.active)) throw err(400, "Selecione um cliente cadastrado para vender fiado / a prazo");
+      }
+
+      const sale = charge("sale", `Venda balcao: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId });
+      for (const row of planned) pay(sale, row.amountCents, row.method, user.name);
 
       for (const row of items) {
         if (row.productId) {

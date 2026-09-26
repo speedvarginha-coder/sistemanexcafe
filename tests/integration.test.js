@@ -919,3 +919,54 @@ test("cancelar pendencia: so administrador, com motivo, preserva o que ja foi pa
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto e estoque", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    await request("/api/cash/open", { opening: 0 });
+    const water = (await request("/api/products", { name: "Agua", type: "stock", price: 2.5, stock: 3 })).payload.product;
+    const client = (await request("/api/clients", { name: "Ana" })).payload.client;
+    const sale = (items, extra, ref) => request("/api/sales", { items, ref, ...extra });
+
+    assert.equal((await sale([{ productId: water.id, quantity: 1 }], { paymentMethod: "debit" }, "a")).status, 201, "debito aceito");
+    assert.equal((await sale([{ name: "Acesso internet", unitPriceCents: 530, quantity: 1 }], { paymentMethod: "credit" }, "b")).status, 201, "credito e item avulso aceitos");
+    const short = await sale([{ productId: water.id, quantity: 1 }], { payments: [{ method: "cash", amountCents: 100 }] }, "c");
+    assert.equal(short.status, 400, "misto que nao fecha o total e recusado");
+    assert.match(short.payload.error, /faltam R\$ 1\.50/);
+    assert.equal((await sale([{ productId: water.id, quantity: 1 }], { paymentMethod: "fiado" }, "d")).status, 400, "fiado sem cliente recusado");
+    let state = (await request("/api/state")).payload;
+    assert.equal(state.charges.length, 2, "vendas recusadas nao deixam cobranca pela metade");
+    assert.equal(state.products[0].stock, 2);
+
+    assert.equal((await sale([{ productId: water.id, quantity: 1 }], { payments: [{ method: "cash", amountCents: 100 }, { method: "pix", amountCents: 150 }] }, "e")).status, 201, "misto que fecha o total");
+    assert.equal((await sale([{ productId: water.id, quantity: 1 }, { productId: water.id, quantity: 1 }], { paymentMethod: "cash" }, "f")).status, 409, "estoque somado entre linhas do mesmo produto");
+    const fiado = await sale([{ productId: water.id, quantity: 1 }], { payments: [{ method: "cash", amountCents: 50 }, { method: "fiado" }], clientId: client.id, discountCents: 50 }, "g");
+    assert.equal(fiado.status, 201);
+    assert.equal(fiado.payload.charge.amountCents, 200, "desconto registrado de verdade");
+    assert.equal(fiado.payload.charge.paidCents, 50, "restante fica pendente no nome do cliente");
+    state = (await request("/api/state")).payload;
+    assert.equal(state.openCharges.length, 1);
+    assert.equal(state.openCharges[0].clientId, client.id);
+    assert.equal(state.products[0].stock, 0);
+    const report = (await request("/api/reports")).payload;
+    assert.equal(report.byMethod.debit + report.byMethod.credit, 250 + 530);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
