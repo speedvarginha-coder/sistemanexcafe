@@ -3,130 +3,587 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LanHouseManager</title>
+  <title>LanHouseManager Enterprise · Central de Operações</title>
   <script>if (location.protocol === "file:") location.replace("http://localhost:4780/");</script>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Tela de Autenticação Enterprise -->
   <div id="authScreen" class="authScreen">
-    <form id="authForm" class="authForm">
-      <div class="brandMark">LH</div>
-      <h1>LanHouseManager</h1>
-      <p id="authSubtitle">Acesso do atendente</p>
-      <label>Usuário<input name="name" autocomplete="username" required></label>
-      <label>Senha<input name="password" type="password" autocomplete="current-password" minlength="10" required></label>
-      <button type="submit" id="authSubmit">Entrar</button>
-      <p id="authError" class="formError" hidden></p>
-    </form>
+    <div class="authCard">
+      <div class="authBrandHeader">
+        <div class="brandMark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="brandIcon"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="authTitleGroup">
+          <h1>LanHouseManager</h1>
+          <span class="enterpriseBadge">Enterprise POS</span>
+        </div>
+        <p id="authSubtitle">Acesso Seguro à Central Operacional</p>
+      </div>
+      <form id="authForm" class="authForm">
+        <label>
+          <span>Identificação do Operador</span>
+          <div class="inputWrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inputIcon"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <input name="name" autocomplete="username" placeholder="Digite seu usuário ou operador" required>
+          </div>
+        </label>
+        <label>
+          <span>Chave de Acesso / Senha</span>
+          <div class="inputWrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inputIcon"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input name="password" type="password" autocomplete="current-password" minlength="10" placeholder="••••••••••" required>
+          </div>
+        </label>
+        <button type="submit" id="authSubmit" class="primary authButton">
+          <span>Entrar no Sistema</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="btnIconRight"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </button>
+        <p id="authError" class="formError" hidden></p>
+      </form>
+    </div>
   </div>
 
+  <!-- Workspace Principal Enterprise -->
   <div id="workspace" class="workspace" hidden>
     <aside class="sidebar">
-      <div class="sideBrand"><span class="brandMark">LH</span><span>LanHouseManager</span></div>
+      <div class="sideBrand">
+        <div class="brandMark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <div class="brandMeta">
+          <span class="brandTitle">LanHouse</span>
+          <div class="brandBadgeRow">
+            <span class="brandSubtitle">Enterprise</span>
+            <span class="versionPill">v2.5</span>
+          </div>
+        </div>
+      </div>
+
       <nav aria-label="Navegação principal">
-        <button data-view="machines" class="active">Atendimento</button>
-        <button data-view="cash">Caixa</button>
-        <button data-view="clients">Clientes</button>
-        <button data-view="products">Produtos</button>
-        <button data-view="settings">Tarifas</button>
-        <button data-view="reports">Relatórios</button>
-        <button data-view="users">Usuários</button>
+        <button data-view="machines" class="active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span>Atendimento</span>
+        </button>
+        <button data-view="cash">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>Caixa &amp; PDV</span>
+        </button>
+        <button data-view="clients">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Clientes &amp; Saldo</span>
+        </button>
+        <button data-view="products">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span>Catálogo &amp; Estoque</span>
+        </button>
+        <button data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Tarifas &amp; Rede</span>
+        </button>
+        <button data-view="reports">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Auditoria &amp; Relatórios</span>
+        </button>
+        <button data-view="users">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Operadores</span>
+        </button>
       </nav>
-      <div class="sideFooter"><span id="operatorName"></span><button id="logoutButton" class="textButton">Sair</button></div>
+
+      <div class="sideFooter">
+        <div class="operatorCard">
+          <div class="operatorAvatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="operatorDetails">
+            <span id="operatorName" class="operatorName">Operador</span>
+            <span class="operatorRole">Terminal Balcão 01</span>
+          </div>
+        </div>
+        <button id="logoutButton" class="logoutBtn" title="Encerrar sessão de trabalho" aria-label="Sair do sistema">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
     </aside>
 
     <div class="content">
+      <!-- Barra Superior de Controle Corporativo -->
       <header class="topbar">
-        <div><h1 id="pageTitle">Atendimento</h1><p id="serverStatus">Conectando...</p></div>
-        <div class="topbarRight"><button id="shiftBadge" class="shiftBadge" title="Abrir o caixa">Caixa fechado</button><button id="quickSaleButton" class="primary">Nova venda</button><button id="refreshButton" class="iconButton" title="Atualizar" aria-label="Atualizar">&#8635;</button></div>
+        <div class="topbarLeft">
+          <div class="titleWithTelemetry">
+            <h1 id="pageTitle">Atendimento</h1>
+            <span class="unitTag">Unidade Matriz</span>
+          </div>
+          <div class="serverIndicator">
+            <span class="statusDot"></span>
+            <p id="serverStatus">Servidor online · Latência &lt;1ms</p>
+          </div>
+        </div>
+
+        <div class="topbarRight">
+          <div id="printAlertPill" class="printAlertPill" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            <span id="printAlertText">1 impressão aguardando</span>
+          </div>
+
+          <button id="soundToggleBtn" class="iconButton soundBtn" title="Alertas Sonoros: Ativados" aria-label="Alternar alertas sonoros">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="soundIcon"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+          </button>
+
+          <button id="shiftBadge" class="shiftBadge" title="Status do Caixa do Turno">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="badgeIcon"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span>Caixa fechado</span>
+          </button>
+
+          <button id="quickSaleButton" class="primary quickSaleBtn" title="Atalho: F2">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Nova Venda</span>
+            <kbd class="shortcutKey">F2</kbd>
+          </button>
+
+          <button id="refreshButton" class="iconButton" title="Sincronizar telemetria" aria-label="Atualizar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          </button>
+        </div>
       </header>
 
       <main>
+        <!-- Visão: Atendimento (Estações) -->
         <section id="view-machines" class="view">
-          <div class="overviewLabel">Visão da operação</div>
+          <div class="metricsHeader">
+            <div class="overviewLabel">Indicadores de Desempenho Operacional (KPIs)</div>
+            <div class="overviewHint">Atualização contínua a cada 3s · Gestão sem fricção</div>
+          </div>
+          
           <div class="metrics" id="machineMetrics"></div>
+
           <div id="fleetNotice" class="fleetNotice" hidden></div>
-          <div class="sectionHead"><div><h2>Estações</h2><p>Libere, acompanhe e encerre atendimentos.</p></div><div class="headActions"><button id="powerAllButton">Ligar todas</button><details class="actionMenu"><summary>Mais opções</summary><div class="actionMenuPanel"><button id="shutdownAllButton">Desligar todas</button><button id="downloadInstallerButton" hidden>Baixar pacote das estações</button><button id="addMachineButton" hidden>Adicionar manualmente</button></div></details></div></div>
+
+          <!-- Barra de Filtros de Frota & Alternância de Visualização -->
+          <div class="fleetControlBar">
+            <div class="fleetFilters" role="tablist">
+              <button class="fleetFilterBtn active" data-filter="all">Todas as Estações <span class="badgeNum" id="fCountAll">0</span></button>
+              <button class="fleetFilterBtn" data-filter="active">Em Atendimento <span class="badgeNum" id="fCountActive">0</span></button>
+              <button class="fleetFilterBtn" data-filter="free">Disponíveis <span class="badgeNum" id="fCountFree">0</span></button>
+              <button class="fleetFilterBtn" data-filter="offline">Desligadas <span class="badgeNum" id="fCountOffline">0</span></button>
+            </div>
+
+            <div class="fleetControlRight">
+              <div class="fleetSearchWrapper">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="searchIcon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="stationSearch" placeholder="Filtrar estação ou cliente..." autocomplete="off">
+              </div>
+
+              <div class="viewModeSwitch" role="group" aria-label="Modo de visualização">
+                <button type="button" id="viewModeGrid" class="active" title="Visão em Cartões de Atendimento">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                </button>
+                <button type="button" id="viewModeTable" title="Visão em Matriz / Tabela Executiva">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                </button>
+              </div>
+
+              <div class="headActions">
+                <button id="powerAllButton" class="secondaryBtn" title="Ligar terminais conhecidos via rede">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                  <span>Ligar todas</span>
+                </button>
+                <details class="actionMenu">
+                  <summary>
+                    <span>Comandos globais</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevronIcon"><polyline points="6 9 12 15 18 9"/></svg>
+                  </summary>
+                  <div class="actionMenuPanel">
+                    <button id="shutdownAllButton">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>
+                      <span>Desligar todas as estações</span>
+                    </button>
+                    <button id="downloadInstallerButton">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      <span>Baixar pacote das estações (.zip)</span>
+                    </button>
+                    <button id="addMachineButton" hidden>Adicionar manualmente</button>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grade Principal de Cartões das Estações -->
           <div id="machines" class="machineGrid"></div>
-          <section id="offlineSection" class="offlineSection" hidden><div class="sectionHead spaced"><div><h2>Sem conexão <span id="offlineCount" class="countBadge"></span></h2><p>Estações cadastradas aguardando o agente ou desligadas</p></div></div><div id="offlineMachines" class="machineGrid compactGrid"></div></section>
-          <section id="etaSection" hidden><div class="sectionHead spaced"><div><h2>Previsão de término</h2><p>Estações em uso, da que termina antes para a que termina depois</p></div></div><div id="etaList" class="tableWrap"></div></section>
-          <div class="sectionHead spaced"><div><h2>Lista de espera</h2><p>Clientes aguardando uma estação</p></div><div class="headActions"><input id="waitName" placeholder="Nome do cliente"><button id="waitAddButton" class="primary">Adicionar</button></div></div>
-          <div id="waitList" class="tableWrap"></div>
-          <div class="sectionHead spaced"><div><h2>Impressões</h2><p>O cliente imprime na "Impressão Nexcafé" e escolhe preto e branco ou colorido; o caixa imprime na impressora abaixo</p></div></div>
-          <form id="printRoute" class="printRoute">
-            <label>Preto e branco<select id="printBlack"><option value="">Carregando...</option></select></label>
-            <label class="printPrice">Preço P&amp;B (R$/pág)<input id="printBlackPrice" type="number" min="0.01" step="0.01" inputmode="decimal"></label>
-            <label>Colorido<select id="printColor"><option value="">Carregando...</option></select></label>
-            <label class="printPrice">Preço colorido (R$/pág)<input id="printColorPrice" type="number" min="0.01" step="0.01" inputmode="decimal"></label>
-            <div class="printRouteActions"><button type="button" id="printRouteRefresh" title="Atualizar lista de impressoras">Atualizar lista</button><button type="submit" class="primary">Salvar impressoras</button></div>
-          </form>
-          <div id="printQueue" class="tableWrap"></div>
-          <div class="sectionHead spaced"><div><h2>Atividade recente</h2></div></div>
-          <div id="events" class="activityList"></div>
+
+          <!-- Visualização Alternativa em Matriz / Tabela de Frota -->
+          <div id="machinesTableWrap" class="tableWrap" hidden></div>
+
+          <!-- Seção de Estações Desligadas / Standby -->
+          <section id="offlineSection" class="offlineSection" hidden>
+            <div class="sectionHead spaced">
+              <div>
+                <h2>Terminais em Standby / Desligados <span id="offlineCount" class="countBadge">0</span></h2>
+                <p>Estações prontas para acionamento remoto por Wake-on-LAN ou inicialização do agente.</p>
+              </div>
+            </div>
+            <div id="offlineMachines" class="machineGrid compactGrid"></div>
+          </section>
+
+          <!-- Previsão de Término da Fila -->
+          <section id="etaSection" class="auxiliaryCard" hidden>
+            <div class="sectionHead">
+              <div>
+                <h2>Cronograma de Liberação Iminente</h2>
+                <p>Estações em atendimento organizadas por ordem de término cronológico.</p>
+              </div>
+            </div>
+            <div id="etaList" class="tableWrap"></div>
+          </section>
+
+          <!-- Painel Duplo: Lista de Espera & Fila de Impressões -->
+          <div class="secondaryPanelsGrid">
+            <!-- Fila de Espera -->
+            <div class="auxiliaryCard">
+              <div class="sectionHead">
+                <div>
+                  <h2>Lista de Espera</h2>
+                  <p>Clientes aguardando liberação de terminal</p>
+                </div>
+              </div>
+              <div class="waitAddRow">
+                <input id="waitName" placeholder="Nome do cliente na espera..." autocomplete="off">
+                <button id="waitAddButton" class="primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>Registrar</span>
+                </button>
+              </div>
+              <div id="waitList" class="tableWrap"></div>
+            </div>
+
+            <!-- Fila de Impressões do Caixa -->
+            <div class="auxiliaryCard" id="printSectionCard">
+              <div class="sectionHead">
+                <div>
+                  <h2>Central de Impressão</h2>
+                  <p>Gerenciamento de filas de documentos <strong>Impressão Nexcafé</strong></p>
+                </div>
+              </div>
+              <form id="printRoute" class="printRoute">
+                <div class="printRouteFields">
+                  <label>
+                    <span>Fila Preto &amp; Branco</span>
+                    <select id="printBlack"><option value="">Carregando filas...</option></select>
+                  </label>
+                  <label class="printPrice">
+                    <span>Tarifa P&amp;B (R$/pág)</span>
+                    <input id="printBlackPrice" type="number" min="0.01" step="0.01" inputmode="decimal">
+                  </label>
+                  <label>
+                    <span>Fila Colorida</span>
+                    <select id="printColor"><option value="">Carregando filas...</option></select>
+                  </label>
+                  <label class="printPrice">
+                    <span>Tarifa Colorida (R$/pág)</span>
+                    <input id="printColorPrice" type="number" min="0.01" step="0.01" inputmode="decimal">
+                  </label>
+                </div>
+                <div class="printRouteActions">
+                  <button type="button" id="printRouteRefresh" title="Sincronizar filas locais do Windows">Atualizar spool</button>
+                  <button type="submit" class="primary">Salvar roteamento</button>
+                </div>
+              </form>
+              <div id="printQueue" class="tableWrap"></div>
+            </div>
+          </div>
+
+          <!-- Histórico / Auditoria Recente -->
+          <div class="auxiliaryCard spacedTop">
+            <div class="sectionHead">
+              <div>
+                <h2>Log de Eventos &amp; Auditoria Operacional</h2>
+                <p>Trilha de auditoria das ações realizadas pelos operadores e terminais</p>
+              </div>
+            </div>
+            <div id="events" class="activityList"></div>
+          </div>
         </section>
 
+        <!-- Visão: Caixa -->
         <section id="view-cash" class="view" hidden>
           <div class="metrics" id="cashMetrics"></div>
-          <div class="sectionHead"><div><h2>Caixa atual</h2><p id="shiftDetail"></p></div><div class="headActions"><button id="printSaleButton">Registrar impressão</button><button id="cashAdjustButton">Entrada / retirada</button><button id="cashToggleButton" class="primary">Abrir caixa</button></div></div>
-          <div class="sectionHead spaced"><h2>Pendências</h2></div><div id="dueList" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Recebimentos recentes</h2></div><div id="paymentList" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Caixas anteriores</h2></div><div id="shiftList" class="tableWrap"></div>
+          <div class="sectionHead">
+            <div>
+              <h2>Fechamento &amp; Conciliação de Caixa</h2>
+              <p id="shiftDetail">Abra o caixa para iniciar o turno de atendimento</p>
+            </div>
+            <div class="headActions">
+              <button id="printSaleButton">Registrar impressão avulsa</button>
+              <button id="cashAdjustButton">Sangria / Suprimento</button>
+              <button id="cashToggleButton" class="primary">Abrir caixa</button>
+            </div>
+          </div>
+          <div class="sectionHead spaced"><h2>Pendências Financeiras</h2></div>
+          <div id="dueList" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Recebimentos Conciliados do Turno</h2></div>
+          <div id="paymentList" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Histórico de Turnos Fechados</h2></div>
+          <div id="shiftList" class="tableWrap"></div>
         </section>
 
+        <!-- Visão: Clientes -->
         <section id="view-clients" class="view" hidden>
-          <div class="sectionHead"><div><h2>Clientes</h2><p>Cadastros para vincular às sessões</p></div><button id="addClientButton" class="primary">Novo cliente</button></div>
-          <div class="filterRow"><input id="clientSearch" type="search" placeholder="Buscar cliente"></div>
+          <div class="sectionHead">
+            <div>
+              <h2>Carteira de Clientes &amp; Saldo</h2>
+              <p>Contas de autoatendimento, controle de créditos e histórico de recargas</p>
+            </div>
+            <button id="addClientButton" class="primary">Cadastrar cliente</button>
+          </div>
+          <div class="filterRow">
+            <input id="clientSearch" type="search" placeholder="Localizar por nome, telefone ou login de acesso...">
+          </div>
           <div id="clientList" class="tableWrap"></div>
         </section>
 
+        <!-- Visão: Produtos -->
         <section id="view-products" class="view" hidden>
-          <div class="sectionHead"><div><h2>Produtos e serviços</h2><p>Preços, vendas e estoque</p></div><button id="addProductButton" class="primary">Novo item</button></div>
+          <div class="sectionHead">
+            <div>
+              <h2>Catálogo de Itens &amp; Gestão de Estoque</h2>
+              <p>Preços, códigos de barras, saldo de mercadorias e alerta de reposição</p>
+            </div>
+            <button id="addProductButton" class="primary">Cadastrar produto</button>
+          </div>
           <div id="stockAlerts" class="stockAlerts" hidden></div>
-          <div class="filterRow"><input id="productSearch" type="search" placeholder="Buscar por nome ou código"></div>
+          <div class="filterRow">
+            <input id="productSearch" type="search" placeholder="Localizar item por código de barras ou descrição...">
+          </div>
           <div id="productList" class="tableWrap"></div>
         </section>
 
+        <!-- Visão: Tarifas -->
         <section id="view-settings" class="view" hidden>
-          <div class="sectionHead"><div><h2>Tarifas e operação</h2><p>Valores usados nas próximas vendas</p></div></div>
-          <form id="settingsForm" class="settingsForm">
-            <label>Valor por hora (R$)<input name="hourPrice" type="number" min="0.01" step="0.01" required></label>
-            <label>Tempo padrão (min)<input name="defaultMinutes" type="number" min="1" max="1440" required></label>
-            <label>Faixas de tempo (min=R$):<input name="timeTable" type="text" placeholder="15=3.00; 30=3.70; 60=5.00" required></label>
-            <label>Impressão P&B / página (R$)<input name="printBW" type="number" min="0.01" step="0.01" required></label>
-            <label>Impressão colorida / página (R$)<input name="printColor" type="number" min="0.01" step="0.01" required></label>
-            <label class="checkboxLabel"><input name="autoRestoreOnTimeEnd" type="checkbox">Restaurar pastas ao expirar o tempo</label>
-            <div><button type="submit" class="primary">Salvar tarifas</button></div>
+          <div class="sectionHead">
+            <div>
+              <h2>Configurações de Tarifação &amp; Parâmetros</h2>
+              <p>Definição de regras de cobrança por fração de tempo e políticas de ambiente</p>
+            </div>
+          </div>
+          <form id="settingsForm" class="settingsForm modernFormCard">
+            <label><span>Tarifa por hora avulsa (R$)</span><input name="hourPrice" type="number" min="0.01" step="0.01" required></label>
+            <label><span>Duração padrão sugerida (minutos)</span><input name="defaultMinutes" type="number" min="1" max="1440" required></label>
+            <label class="fullWidth"><span>Tabela progressiva de tempo (minutos=valor):</span><input name="timeTable" type="text" placeholder="15=3.00; 30=3.70; 60=5.00" required></label>
+            <label><span>Preço Impressão P&amp;B / pág (R$)</span><input name="printBW" type="number" min="0.01" step="0.01" required></label>
+            <label><span>Preço Impressão Colorida / pág (R$)</span><input name="printColor" type="number" min="0.01" step="0.01" required></label>
+            <label class="checkboxLabel fullWidth"><input name="autoRestoreOnTimeEnd" type="checkbox"><span>Limpar diretórios temporários e restaurar ambiente automaticamente no término</span></label>
+            <div class="fullWidth"><button type="submit" class="primary">Salvar parâmetros</button></div>
           </form>
-          <div class="sectionHead spaced"><h2>Instalação das estações</h2></div>
-          <form id="printersForm" class="settingsForm">
-            <label>Impressora compartilhada (caminho UNC)<input name="printerShare" type="text" placeholder="\\BALCAO\Impressora"></label>
-            <div class="headActions"><button type="submit" class="primary">Salvar impressora</button><button type="button" id="regenerateKeyButton">Regenerar chave de instalação</button></div>
-            <p class="muted">A impressora e a chave vão dentro do install-config.json baixado em Atendimento.</p>
+
+          <div class="sectionHead spaced">
+            <div>
+              <h2>Provisionamento de Terminais Cliente</h2>
+              <p>Configuração de compartilhamento de impressora e chave de homologação</p>
+            </div>
+          </div>
+          <form id="printersForm" class="settingsForm modernFormCard">
+            <label class="fullWidth"><span>Caminho UNC da impressora padrão</span><input name="printerShare" type="text" placeholder="\\SERVIDOR\Impressora"></label>
+            <div class="headActions fullWidth">
+              <button type="submit" class="primary">Salvar configuração</button>
+              <button type="button" id="regenerateKeyButton" class="secondaryBtn">Regenerar chave de instalação</button>
+            </div>
+            <p class="muted fullWidth">A chave e o caminho são encapsulados no arquivo de automação install-config.json.</p>
           </form>
         </section>
 
+        <!-- Visão: Relatórios -->
         <section id="view-reports" class="view" hidden>
-          <div class="sectionHead"><div><h2>Relatório diário</h2><p>Uso das estações e vendas</p></div><input id="reportDate" type="date"></div>
+          <div class="sectionHead">
+            <div>
+              <h2>Relatórios Executivos de Performance</h2>
+              <p>Consolidado contábil de faturamento, volume de tempo e performance por atendente</p>
+            </div>
+            <input id="reportDate" type="date">
+          </div>
           <div id="reportMetrics" class="metrics"></div>
-          <div class="sectionHead spaced"><h2>Uso por estação</h2></div><div id="reportMachines" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Produtos mais vendidos</h2></div><div id="reportProducts" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Recebimentos por atendente</h2></div><div id="reportOperators" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Vendas do dia</h2></div><div id="reportCharges" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Produtividade por Terminal</h2></div><div id="reportMachines" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Itens Mais Vendidos</h2></div><div id="reportProducts" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Arrecadação por Operador</h2></div><div id="reportOperators" class="tableWrap"></div>
+          <div class="sectionHead spaced"><h2>Extrato de Lançamentos</h2></div><div id="reportCharges" class="tableWrap"></div>
         </section>
 
+        <!-- Visão: Usuários -->
         <section id="view-users" class="view" hidden>
-          <div class="sectionHead"><div><h2>Usuários</h2><p>Equipe com acesso ao painel</p></div><button id="addUserButton" class="primary">Novo usuário</button></div>
+          <div class="sectionHead">
+            <div>
+              <h2>Controle de Acessos &amp; Perfis</h2>
+              <p>Credenciais de operadores de balcão e administradores de sistema</p>
+            </div>
+            <button id="addUserButton" class="primary">Cadastrar operador</button>
+          </div>
           <div id="userList" class="tableWrap"></div>
         </section>
       </main>
     </div>
   </div>
 
-  <dialog id="formDialog"><form id="modalForm"><div class="modalHead"><h2 id="modalTitle"></h2><button type="button" id="modalClose" class="iconButton" title="Fechar" aria-label="Fechar">&#215;</button></div><div id="modalFields" class="modalFields"></div><p id="modalError" class="formError" hidden></p><div class="modalActions"><button type="button" id="modalCancel">Cancelar</button><button id="modalSubmit" type="submit" class="primary">Salvar</button></div></form></dialog>
-  <dialog id="saleDialog" class="saleDialog"><form id="saleForm"><div class="modalHead"><div><h2 id="saleTitle">Nova venda</h2><p id="saleSubtitle">Adicione produtos e receba em uma operação.</p></div><button type="button" id="saleClose" class="iconButton" title="Fechar" aria-label="Fechar">&#215;</button></div><label>Buscar produto ou código de barras<input id="saleSearch" type="search" autocomplete="off" placeholder="Digite ou leia o código"></label><div id="saleMatches" class="saleMatches"></div><div id="saleCart" class="saleCart"></div><div id="salePrintRow" class="salePrintRow" hidden><label>Impressão P&amp;B (páginas)<input id="salePrintBW" type="number" min="0" max="10000" step="1" value="0"></label><label>Impressão colorida (páginas)<input id="salePrintColor" type="number" min="0" max="10000" step="1" value="0"></label></div><div class="saleFooter"><strong id="saleTotal">R$ 0,00</strong><label id="salePaymentLabel">Pagamento<select id="salePayment"><option value="cash">Dinheiro</option><option value="pix">Pix</option><option value="card">Cartão</option></select></label></div><p id="saleError" class="formError" hidden></p><div class="modalActions"><button type="button" id="saleCancel">Cancelar</button><button id="saleSubmit" type="submit" class="primary">Concluir venda</button></div></form></dialog>
-  <dialog id="pairDialog"><div class="pairContent"><h2>Código da estação</h2><p>Informe este código ao instalar o agente no computador cliente. Ele expira em uma hora e aparece apenas agora.</p><code id="pairCode"></code><div class="modalActions"><button id="pairClose" class="primary">Concluir</button></div></div></dialog>
-  <dialog id="monitorDialog" class="monitorDialog"><div class="monitorHead"><h2 id="monitorTitle">Monitoramento</h2><span id="monitorStatus" class="muted"></span><button type="button" id="monitorClose" class="iconButton" title="Fechar" aria-label="Fechar">&#215;</button></div><img id="monitorImage" alt="Tela da estação"><div id="monitorBar" class="monitorBar"><button data-mctrl="text">Digitar</button><button data-mctrl="enter">Enter</button><button data-mctrl="esc">Esc</button><button data-mctrl="tab">Tab</button><button data-mctrl="restart">Reiniciar</button><button data-mctrl="shutdown">Desligar</button><button data-mctrl="unlock">Desbloquear</button></div></dialog>
+  <!-- Diálogo Genérico de Formulários -->
+  <dialog id="formDialog">
+    <form id="modalForm">
+      <div class="modalHead">
+        <h2 id="modalTitle"></h2>
+        <button type="button" id="modalClose" class="iconButton closeBtn" title="Fechar (Esc)" aria-label="Fechar">&#215;</button>
+      </div>
+      <div id="modalFields" class="modalFields"></div>
+      <p id="modalError" class="formError" hidden></p>
+      <div class="modalActions">
+        <button type="button" id="modalCancel">Cancelar</button>
+        <button id="modalSubmit" type="submit" class="primary">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Diálogo de Venda Rápida / PDV / Consumo na Estação -->
+  <dialog id="saleDialog" class="saleDialog">
+    <form id="saleForm">
+      <div class="modalHead">
+        <div>
+          <h2 id="saleTitle">Terminal PDV · Nova Venda</h2>
+          <p id="saleSubtitle">Registro ágil de mercadorias e emissão de cobrança direta.</p>
+        </div>
+        <button type="button" id="saleClose" class="iconButton closeBtn" title="Fechar (Esc)" aria-label="Fechar">&#215;</button>
+      </div>
+
+      <div class="saleInputWrapper">
+        <label>
+          <span>Leitor de Código de Barras / Busca de Produtos (Enter adiciona)</span>
+          <div class="inputWrapper">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="inputIcon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="saleSearch" type="search" autocomplete="off" placeholder="Leia o código de barras ou digite o nome do produto...">
+          </div>
+        </label>
+      </div>
+
+      <div id="saleQuickChips" class="saleQuickChips"></div>
+      <div id="saleMatches" class="saleMatches"></div>
+
+      <div class="saleCartWrapper">
+        <div class="cartTitle">Itens da Operação</div>
+        <div id="saleCart" class="saleCart"></div>
+      </div>
+
+      <div id="salePrintRow" class="salePrintRow" hidden>
+        <label>
+          <span>Impressão P&amp;B (páginas)</span>
+          <input id="salePrintBW" type="number" min="0" max="10000" step="1" value="0">
+        </label>
+        <label>
+          <span>Impressão Colorida (páginas)</span>
+          <input id="salePrintColor" type="number" min="0" max="10000" step="1" value="0">
+        </label>
+      </div>
+
+      <div class="saleFooter">
+        <div class="saleTotalBlock">
+          <span class="saleTotalLabel">Total da Operação</span>
+          <strong id="saleTotal" class="saleTotalAmount">R$ 0,00</strong>
+        </div>
+
+        <div class="salePaymentBlock">
+          <label id="salePaymentLabel">
+            <span>Meio de Pagamento</span>
+            <select id="salePayment">
+              <option value="cash">Dinheiro em Espécie</option>
+              <option value="pix">Pix Instantâneo</option>
+              <option value="card">Cartão de Débito / Crédito</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div id="saleCashCalculator" class="saleCashCalculator" hidden>
+        <div class="cashCalcRow">
+          <span>Troco:</span>
+          <input type="number" id="saleGivenInput" min="0" step="0.01" placeholder="Valor entregue (R$)" style="width: 140px; padding: 6px 10px; font-size: 13px;">
+          <div class="cashChips">
+            <button type="button" data-cash-val="exact">Exato</button>
+            <button type="button" data-cash-val="10">R$ 10</button>
+            <button type="button" data-cash-val="20">R$ 20</button>
+            <button type="button" data-cash-val="50">R$ 50</button>
+            <button type="button" data-cash-val="100">R$ 100</button>
+          </div>
+        </div>
+        <div id="saleChangeDisplay" class="changeDisplay">Troco: R$ 0,00</div>
+      </div>
+
+      <p id="saleError" class="formError" hidden></p>
+
+      <div class="modalActions">
+        <button type="button" id="saleCancel">Cancelar</button>
+        <button id="saleSubmit" type="submit" class="primary">Concluir Operação</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Diálogo de Comprovante de Transação (Receipt / Cupom Não Fiscal) -->
+  <dialog id="receiptDialog" class="receiptDialog">
+    <div class="receiptContainer">
+      <div class="modalHead">
+        <h2>Comprovante de Atendimento</h2>
+        <button type="button" id="receiptCloseBtn" class="iconButton closeBtn" title="Fechar (Esc)">&#215;</button>
+      </div>
+      <div id="receiptPaper" class="receiptPaper">
+        <!-- Renderizado dinamicamente -->
+      </div>
+      <div class="receiptActions">
+        <button type="button" id="receiptPrintBtn" class="primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 16px; height: 16px;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          <span>Imprimir Comprovante (80mm)</span>
+        </button>
+        <button type="button" id="receiptDoneBtn">Fechar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Diálogo de Pareamento de Estação -->
+  <dialog id="pairDialog">
+    <div class="pairContent">
+      <h2>Homologação de Terminal</h2>
+      <p>Informe esta chave na estação cliente para autenticação mútua. A chave expira em 60 minutos.</p>
+      <code id="pairCode"></code>
+      <div class="modalActions">
+        <button id="pairClose" class="primary">Concluir</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Diálogo de Monitoramento Remoto Enterprise -->
+  <dialog id="monitorDialog" class="monitorDialog">
+    <div class="monitorHead">
+      <div class="monitorTitleWrapper">
+        <h2 id="monitorTitle">Console Remoto</h2>
+        <span id="monitorStatus" class="monitorStatusBadge">Ao vivo</span>
+      </div>
+      <button type="button" id="monitorClose" class="iconButton closeBtn" title="Fechar (Esc)" aria-label="Fechar">&#215;</button>
+    </div>
+    <div class="monitorCanvasWrapper">
+      <img id="monitorImage" alt="Tela em tempo real da estação">
+    </div>
+    <div id="monitorBar" class="monitorBar">
+      <button data-mctrl="text"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btnIcon"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg><span>Digitar texto</span></button>
+      <button data-mctrl="enter">Enter ↵</button>
+      <button data-mctrl="esc">Esc</button>
+      <button data-mctrl="tab">Tab ⇥</button>
+      <button data-mctrl="unlock" class="actionBtn">Desbloquear</button>
+      <button data-mctrl="restart" class="warnBtn">Reiniciar</button>
+      <button data-mctrl="shutdown" class="dangerBtn">Desligar</button>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Flutuante -->
   <div id="toast" role="status" class="toast" hidden></div>
+
   <script src="/app.js"></script>
 </body>
 </html>
