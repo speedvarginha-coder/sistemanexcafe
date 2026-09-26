@@ -11,7 +11,7 @@ const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
 const OPEN_SESSION_MAX_MINUTES = 12 * 60;
 const SESSION_MS = 12 * 60 * 60 * 1000;
-const METHODS = ["cash", "pix", "card"];
+const METHODS = ["cash", "pix", "card", "debit", "credit"];
 const ARCHIVE_AFTER_DAYS = 45;
 const BACKUP_KEEP_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -409,9 +409,32 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const adjustmentCents = shiftAdjustments.reduce((sum, item) => sum + (item.direction === "in" ? item.amountCents : -item.amountCents), 0);
     return { ok: true, user: publicUser(user), settings: db.settings, machines: Object.values(db.machines).map(publicMachine), events: db.events.slice(0, 60), clients: db.clients.map(publicClient), products: db.products, charges: db.charges.slice(0, 200), openCharges, payments: db.payments.slice(0, 150), cashShift: shift, cashSummary: { expectedCashCents: shift ? shift.openingCents + cashReceivedCents + adjustmentCents : 0, receivedCents: shiftPayments.reduce((sum, item) => sum + item.amountCents, 0), pendingCents: openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0) }, cashShifts: db.cashShifts.slice(0, 30), cashAdjustments: db.cashAdjustments.slice(0, 150), users: user.role === "admin" ? db.users.map(publicUser) : [], printers: user.role === "admin" ? db.printerShares : [], printJobs: db.printJobs.slice(0, 20), waitList: db.waitList, serverTime: now() };
   }
-  function report(date) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw err(400, "Data invalida");
-    const onDate = value => new Date(value).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) === date;
+  function report(inputDate) {
+    let date = typeof inputDate === "string" ? inputDate : (inputDate?.date || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
+    const period = (typeof inputDate === "object" && inputDate?.period) ? inputDate.period : "today";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      date = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+    }
+    const onDate = value => {
+      if (!value) return false;
+      const d = new Date(value).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+      if (period === "today") return d === date;
+      if (period === "month") return d.slice(0, 7) === date.slice(0, 7);
+      if (period === "7d") {
+        const diff = (Date.parse(date) - Date.parse(d)) / 86400000;
+        return diff >= 0 && diff < 7;
+      }
+      if (period === "15d") {
+        const diff = (Date.parse(date) - Date.parse(d)) / 86400000;
+        return diff >= 0 && diff < 15;
+      }
+      if (period === "30d") {
+        const diff = (Date.parse(date) - Date.parse(d)) / 86400000;
+        return diff >= 0 && diff < 30;
+      }
+      if (period === "all") return true;
+      return d === date;
+    };
     const archiveFile = path.join(dataDir, `archive-${date.slice(0, 7)}.json`);
     let archived = {};
     if (fs.existsSync(archiveFile)) {
@@ -420,8 +443,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const charges = db.charges.filter(item => onDate(item.at)).concat((archived.charges || []).filter(item => onDate(item.at)));
     const payments = db.payments.filter(item => onDate(item.at)).concat((archived.payments || []).filter(item => onDate(item.at)));
     const sessions = db.sessionHistory.filter(item => onDate(item.endedAt)).concat((archived.sessionHistory || []).filter(item => onDate(item.endedAt)));
-    const byMethod = { cash: 0, pix: 0, card: 0 };
-    for (const item of payments) byMethod[item.method] += item.amountCents;
+    const byMethod = { cash: 0, pix: 0, card: 0, debit: 0, credit: 0 };
+    for (const item of payments) {
+      if (byMethod[item.method] !== undefined) byMethod[item.method] += item.amountCents;
+      else byMethod.card += item.amountCents;
+    }
     const byMachine = {};
     for (const item of sessions) { byMachine[item.machineId] ||= { machineId: item.machineId, count: 0, minutes: 0 }; byMachine[item.machineId].count++; byMachine[item.machineId].minutes += item.usedMinutes; }
     const byProduct = {};
@@ -441,7 +467,47 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       byOperator[name].receivedCents += payment.amountCents;
       byOperator[name].payments++;
     }
-    return { ok: true, date, salesCents: charges.reduce((sum, item) => sum + item.amountCents, 0), receivedCents: payments.reduce((sum, item) => sum + item.amountCents, 0), dueCents: db.charges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0), sessions: sessions.length, minutes: sessions.reduce((sum, item) => sum + item.usedMinutes, 0), byMethod, byMachine: Object.values(byMachine), byProduct: Object.values(byProduct).sort((a, b) => b.amountCents - a.amountCents), byOperator: Object.values(byOperator).sort((a, b) => b.receivedCents - a.receivedCents), charges };
+
+    // Categorias Oficiais
+    const byCategory = {
+      "Gráfica Rápida": { count: 0, revenueCents: 0, color: "#0284c7" },
+      "Lan House & Serviços Digitais": { count: 0, revenueCents: 0, color: "#7c3aed" },
+      "Serviços Públicos": { count: 0, revenueCents: 0, color: "#059669" },
+      "Bomboniere & Bebidas": { count: 0, revenueCents: 0, color: "#e11d48" },
+      "Serviços Financeiros": { count: 0, revenueCents: 0, color: "#0d9488" },
+      "Informática & Celular": { count: 0, revenueCents: 0, color: "#2563eb" },
+      "Eletrônicos & Acessórios": { count: 0, revenueCents: 0, color: "#ea580c" }
+    };
+    for (const sale of charges) {
+      const rows = sale.kind === "sale" ? sale.items || [] : sale.kind === "product" ? [{ productId: sale.productId, name: sale.description, quantity: sale.quantity || 1, totalCents: sale.amountCents }] : [{ name: sale.description, quantity: 1, totalCents: sale.amountCents, category: "Gráfica Rápida" }];
+      for (const r of rows) {
+        const cat = r.category || (r.productId && db.products.find(p => p.id === r.productId)?.category) || "Gráfica Rápida";
+        const target = byCategory[cat] || byCategory["Gráfica Rápida"];
+        target.count += (r.quantity || 1);
+        target.revenueCents += (r.totalCents || 0);
+      }
+    }
+
+    const salesCents = charges.reduce((sum, item) => sum + item.amountCents, 0);
+    const receivedCents = payments.reduce((sum, item) => sum + item.amountCents, 0);
+    const dueCents = db.charges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0);
+
+    return { 
+      ok: true, 
+      date, 
+      period, 
+      salesCents, 
+      receivedCents, 
+      dueCents, 
+      sessions: sessions.length, 
+      minutes: sessions.reduce((sum, item) => sum + item.usedMinutes, 0), 
+      byMethod, 
+      byCategory,
+      byMachine: Object.values(byMachine), 
+      byProduct: Object.values(byProduct).sort((a, b) => b.amountCents - a.amountCents), 
+      byOperator: Object.values(byOperator).sort((a, b) => b.receivedCents - a.receivedCents), 
+      charges 
+    };
   }
 
   const spoolDir = path.join(dataDir, "print-spool");
@@ -709,7 +775,12 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const minutes = number(url.searchParams.get("minutes"), 1, 1440, "Minutos");
       return send(res, 200, { ok: true, minutes, amountCents: timeAmountCents(minutes, db.settings) });
     }
-    if (p === "/api/reports" && req.method === "GET") return send(res, 200, report(url.searchParams.get("date") || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })));
+    if (p === "/api/reports" && req.method === "GET") {
+      return send(res, 200, report({
+        date: url.searchParams.get("date") || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }),
+        period: url.searchParams.get("period") || "today"
+      }));
+    }
     if (p === "/api/machines/register" && req.method === "POST") {
       admin(user); const input = await readBody(req); const id = machineId(input.id);
       if (db.machines[id]) throw err(409, "ID ja cadastrado");
@@ -956,35 +1027,62 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (p === "/api/sales" && req.method === "POST") {
       const input = await readBody(req);
       if (!currentShift()) throw err(409, "Abra o caixa antes de vender");
-      if (!METHODS.includes(input.paymentMethod)) throw err(400, "Escolha a forma de pagamento");
       if (!Array.isArray(input.items) || input.items.length < 1 || input.items.length > 50) throw err(400, "Informe de 1 a 50 itens");
       const ref = label(input.ref, 80);
       const existing = ref && db.charges.find(row => row.kind === "sale" && row.ref === ref);
       if (existing) return send(res, 200, { ok: true, duplicate: true, charge: existing });
-      const quantities = new Map();
-      for (const row of input.items) {
-        const id = label(row.productId, 80);
-        quantities.set(id, (quantities.get(id) || 0) + number(row.quantity, 1, 1000, "Quantidade"));
-      }
+
       const items = [];
       let amountCents = 0;
-      for (const [id, quantity] of quantities) {
-        const product = db.products.find(row => row.id === id);
-        if (!product || !product.active) throw err(409, "Produto indisponivel");
-        if (product.type === "stock" && product.stock < quantity) throw err(409, `Estoque insuficiente: ${product.name}`);
-        if (product.priceCents < 1) throw err(409, `Configure o preco: ${product.name}`);
-        const totalCents = quantity * product.priceCents;
-        amountCents += totalCents;
-        items.push({ productId: id, name: product.name, quantity, unitPriceCents: product.priceCents, totalCents });
+      for (const row of input.items) {
+        const qty = number(row.quantity, 1, 1000, "Quantidade");
+        if (row.productId) {
+          const id = label(row.productId, 80);
+          const product = db.products.find(item => item.id === id);
+          if (!product || !product.active) throw err(409, "Produto indisponivel");
+          if (product.type === "stock" && product.stock < qty) throw err(409, `Estoque insuficiente: ${product.name}`);
+          if (product.priceCents < 1) throw err(409, `Configure o preco: ${product.name}`);
+          const totalCents = qty * product.priceCents;
+          amountCents += totalCents;
+          items.push({ productId: id, name: product.name, category: product.category, quantity: qty, unitPriceCents: product.priceCents, totalCents });
+        } else {
+          const name = label(row.name, 100);
+          if (!name) throw err(400, "Informe a descricao do item");
+          const unitPriceCents = money(row.unitPriceCents !== undefined ? row.unitPriceCents / 100 : row.unitPrice, "Preco unitario");
+          if (unitPriceCents < 1) throw err(400, `Configure o preco do item: ${name}`);
+          const totalCents = qty * unitPriceCents;
+          amountCents += totalCents;
+          items.push({ productId: null, name, category: label(row.category, 50) || "Serviço Avulso", quantity: qty, unitPriceCents, totalCents });
+        }
       }
-      if (!Number.isSafeInteger(amountCents) || amountCents > 10000000) throw err(400, "Total da venda acima do limite");
-      const sale = charge("sale", `Venda balcao: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, amountCents, { items, ref, clientId: input.clientId || null });
-      pay(sale, amountCents, input.paymentMethod, user.name);
+
+      const discountCents = Math.min(amountCents, Math.max(0, Number.isInteger(input.discountCents) ? input.discountCents : 0));
+      const finalTotalCents = amountCents - discountCents;
+      if (!Number.isSafeInteger(finalTotalCents) || finalTotalCents > 10000000) throw err(400, "Total da venda acima do limite");
+
+      const sale = charge("sale", `Venda balcao: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId: input.clientId || null });
+
+      const payments = Array.isArray(input.payments) && input.payments.length ? input.payments : (input.paymentMethod ? [{ method: input.paymentMethod, amountCents: finalTotalCents }] : []);
+      if (!payments.length) throw err(400, "Informe ao menos uma forma de pagamento");
+
+      for (const payEntry of payments) {
+        const m = payEntry.method;
+        if (m === "fiado" || m === "due") {
+          if (!input.clientId) throw err(400, "Selecione um cliente cadastrado para vender fiado / a prazo");
+          continue;
+        }
+        if (!METHODS.includes(m)) throw err(400, `Forma de pagamento invalida: ${m}`);
+        const payAmount = Number.isInteger(payEntry.amountCents) ? payEntry.amountCents : money(payEntry.amount, "Valor do pagamento");
+        if (payAmount > 0) pay(sale, Math.min(payAmount, sale.amountCents - sale.paidCents), m, user.name);
+      }
+
       for (const row of items) {
-        const product = db.products.find(item => item.id === row.productId);
-        if (product.type === "stock") {
-          product.stock -= row.quantity;
-          db.stockMovements.unshift({ id: uuid(), at: now(), productId: product.id, delta: -row.quantity, reason: `Venda ${sale.id}`, operator: user.name });
+        if (row.productId) {
+          const product = db.products.find(item => item.id === row.productId);
+          if (product && product.type === "stock") {
+            product.stock -= row.quantity;
+            db.stockMovements.unshift({ id: uuid(), at: now(), productId: product.id, delta: -row.quantity, reason: `Venda ${sale.id}`, operator: user.name });
+          }
         }
       }
       event("produtos", "Venda registrada", sale.description, user.name); save();

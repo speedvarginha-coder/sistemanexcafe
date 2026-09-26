@@ -70,8 +70,8 @@
           <span>Atendimento</span>
         </button>
         <button data-view="cash">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          <span>Caixa &amp; PDV</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          <span>PDV &amp; Vendas</span>
         </button>
         <button data-view="clients">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -311,25 +311,287 @@
         </section>
 
         <!-- Visão: Caixa -->
+        <!-- Visão: PDV Unificado & Caixa -->
         <section id="view-cash" class="view" hidden>
-          <div class="metrics" id="cashMetrics"></div>
-          <div class="sectionHead">
-            <div>
-              <h2>Fechamento &amp; Conciliação de Caixa</h2>
-              <p id="shiftDetail">Abra o caixa para iniciar o turno de atendimento</p>
+          <!-- Barra Superior de KPIs do PDV (Padrão Speed) -->
+          <div class="posMetricsBar">
+            <!-- Status do Caixa -->
+            <div class="posMetricCard" id="posShiftStatusCard">
+              <span class="posMetricLabel">Status do Caixa</span>
+              <div class="posMetricValueRow">
+                <span id="posShiftBadge" class="posStatusPill open">CAIXA ABERTO</span>
+              </div>
+              <div class="posMetricSub" id="posShiftSubText">Turno ativo · Operador admin</div>
             </div>
-            <div class="headActions">
-              <button id="printSaleButton">Registrar impressão avulsa</button>
-              <button id="cashAdjustButton">Sangria / Suprimento</button>
-              <button id="cashToggleButton" class="primary">Abrir caixa</button>
+
+            <!-- Vendas em Dinheiro -->
+            <div class="posMetricCard">
+              <span class="posMetricLabel">Vendas em Dinheiro (Bruto)</span>
+              <div class="posMetricValue" id="posCashSalesVal">R$ 0,00</div>
+              <div class="posMetricSub" id="posCashFundSub">Total c/ Fundo Fixo: R$ 100,00</div>
+            </div>
+
+            <!-- Faturamento da Sessão -->
+            <div class="posMetricCard">
+              <span class="posMetricLabel">Faturamento da Sessão</span>
+              <div class="posMetricValue" id="posSessionRevenueVal">R$ 0,00</div>
+              <div class="posMetricSub" id="posSessionSalesCount">0 atendimentos concluídos</div>
+            </div>
+
+            <!-- Meta Diária -->
+            <div class="posMetricCard goalCard">
+              <div class="goalHeader">
+                <span class="posMetricLabel">Meta Diária</span>
+                <span id="posGoalPercentBadge" class="goalPercentBadge">0%</span>
+              </div>
+              <div class="posMetricValue" id="posGoalTargetVal">R$ 500,00</div>
+              <div class="goalProgressTrack">
+                <div id="posGoalProgressBar" class="goalProgressBar" style="width: 0%;"></div>
+              </div>
+              <div class="posMetricSub" id="posGoalRemainingText">Faltam R$ 500,00 p/ meta</div>
             </div>
           </div>
-          <div class="sectionHead spaced"><h2>Pendências Financeiras</h2></div>
-          <div id="dueList" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Recebimentos Conciliados do Turno</h2></div>
-          <div id="paymentList" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Histórico de Turnos Fechados</h2></div>
-          <div id="shiftList" class="tableWrap"></div>
+
+          <!-- Área Principal: Catálogo Rápido + Cupom da Venda -->
+          <div class="posWorkspace">
+            <!-- Coluna Esquerda: Catálogo com Busca e Abas -->
+            <div class="posCatalogCol">
+              <div class="posSearchRow">
+                <div class="posSearchWrapper">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="searchIcon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <input id="posSearchInput" placeholder="Código (ex: 101), Nome ou Código de Barras EAN... (F1 ou /)" autocomplete="off">
+                  <div id="posSearchSuggestions" class="posSearchSuggestions" hidden></div>
+                </div>
+                <button type="button" id="posCustomItemBtn" class="posBtnAvulso" title="Atalho: F9">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <span>+ Item Avulso (F9)</span>
+                </button>
+              </div>
+
+              <div class="posQuickShortcuts">
+                <button type="button" class="quickShortcutBtn" data-quick-action="xerox_pb">
+                  <span class="quickName">Xerox P&amp;B (#104)</span>
+                  <span class="quickPrice">R$ 1,00</span>
+                </button>
+                <button type="button" class="quickShortcutBtn" data-quick-action="print_pb">
+                  <span class="quickName">Imp. P/B (#1.1)</span>
+                  <span class="quickPrice">R$ 1,00</span>
+                </button>
+                <button type="button" class="quickShortcutBtn" data-quick-action="print_bw_eco">
+                  <span class="quickName">Imp. P/B (#190)</span>
+                  <span class="quickPrice">R$ 0,50</span>
+                </button>
+                <button type="button" class="quickShortcutBtn" data-quick-action="print_color">
+                  <span class="quickName">Imp. Colorida (#2)</span>
+                  <span class="quickPrice">R$ 2,00</span>
+                </button>
+                <button type="button" class="quickShortcutBtn" data-quick-action="acesso_net">
+                  <span class="quickName">Acesso Internet (#3)</span>
+                  <span class="quickPrice">R$ 0,00</span>
+                </button>
+                <button type="button" class="quickShortcutBtn" data-quick-action="recebimento">
+                  <span class="quickName">Receb. Whats (#20)</span>
+                  <span class="quickPrice">R$ 1,00</span>
+                </button>
+                <button type="button" class="quickShortcutBtn" data-quick-action="envelope">
+                  <span class="quickName">Envelope (#152)</span>
+                  <span class="quickPrice">R$ 2,00</span>
+                </button>
+                <button type="button" class="quickShortcutBtn" data-quick-action="scanner">
+                  <span class="quickName">Scanner (#286)</span>
+                  <span class="quickPrice">R$ 1,50</span>
+                </button>
+                <button type="button" class="quickShortcutBtn printPdfBtn" id="posLaunchPdfBtn" style="border-color: #0284c7; background: #f0f9ff;">
+                  <span class="quickName" style="color: #0284c7;">📄 Lançar PDF / Impressão</span>
+                  <span class="quickPrice">Páginas P&amp;B ou Color</span>
+                </button>
+              </div>
+
+              <!-- Abas das 7 Categorias Oficiais com Cores Padronizadas -->
+              <div class="posCategoryTabs" role="tablist">
+                <button type="button" class="posTabBtn active" data-cat="top">⭐ Mais Vendidos</button>
+                <button type="button" class="posTabBtn" data-cat="all">Todos</button>
+                <button type="button" class="posTabBtn catGrafica" data-cat="Gráfica Rápida">
+                  <span class="catDot" style="background:#0284c7;"></span>Gráfica Rápida
+                </button>
+                <button type="button" class="posTabBtn catPublicos" data-cat="Serviços Públicos">
+                  <span class="catDot" style="background:#059669;"></span>Serviços Públicos
+                </button>
+                <button type="button" class="posTabBtn catLan" data-cat="Lan House &amp; Serviços Digitais">
+                  <span class="catDot" style="background:#7c3aed;"></span>Lan House &amp; Digital
+                </button>
+                <button type="button" class="posTabBtn catInfo" data-cat="Informática &amp; Celular">
+                  <span class="catDot" style="background:#2563eb;"></span>Informática &amp; Celular
+                </button>
+                <button type="button" class="posTabBtn catEletro" data-cat="Eletrônicos &amp; Acessórios">
+                  <span class="catDot" style="background:#ea580c;"></span>Eletrônicos &amp; Cabos
+                </button>
+                <button type="button" class="posTabBtn catFood" data-cat="Bomboniere &amp; Bebidas">
+                  <span class="catDot" style="background:#e11d48;"></span>Bebidas &amp; Doces
+                </button>
+                <button type="button" class="posTabBtn catFinance" data-cat="Serviços Financeiros">
+                  <span class="catDot" style="background:#0d9488;"></span>Financeiro &amp; SPC
+                </button>
+              </div>
+
+              <!-- Barra de seleção de máquina para tempo -->
+              <div id="posMachineBar" class="posMachineBar" hidden>
+                <span>Terminal a liberar:</span>
+                <select id="posMachineSelect">
+                  <option value="">Selecione a estação...</option>
+                </select>
+              </div>
+
+              <!-- Grade de Cards de Itens -->
+              <div id="posGrid" class="posGrid"></div>
+            </div>
+
+            <!-- Coluna Direita: Cupom de Atendimento / Carrinho -->
+            <div class="posTicketCol">
+              <div class="posTicketCard">
+                <div class="posTicketHeader">
+                  <div class="ticketTitleRow">
+                    <h3>🧾 Cupom da Venda</h3>
+                    <span id="posTicketId" class="ticketRef">PEDIDO BALCÃO</span>
+                  </div>
+                </div>
+
+                <!-- Barra do Cliente Selecionado & Destino Integrada ao Cupom -->
+                <div class="posCustomerBar">
+                  <div class="posCustomerInfo">
+                    <div class="posCustomerText">
+                      <span class="customerLabel">CLIENTE</span>
+                      <strong id="posCustomerDisplay">CONSUMIDOR FINAL</strong>
+                    </div>
+                    <button type="button" id="posSelectCustomerBtn" class="posChangeCustBtn">Alterar</button>
+                  </div>
+
+                  <div class="posDestinationSelector">
+                    <span class="destinationLabel">DESTINO:</span>
+                    <select id="posDestinationSelect">
+                      <option value="counter">Balcão (Cobrar Agora)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Banner Inteligente de Oportunidades & Cross-Sell -->
+                <div id="posCrossSellBanner" class="posCrossSellBanner" hidden>
+                  <div class="crossSellIcon">💡</div>
+                  <div class="crossSellContent">
+                    <strong id="posCrossSellTitle">Oportunidade Comercial</strong>
+                    <p id="posCrossSellDesc">Ofereça serviços de alto valor</p>
+                  </div>
+                </div>
+
+                <!-- Corpo do Cupom -->
+                <div class="posTicketBody">
+                  <div id="posEmptyCart" class="posEmptyCart">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                    <p>Sem itens no carrinho</p>
+                    <span>Use o leitor de código de barras ou clique nos atalhos rápidos.</span>
+                  </div>
+
+                  <table id="posTicketTable" class="posTicketTable" hidden>
+                    <thead>
+                      <tr>
+                        <th style="width: 22px;">#</th>
+                        <th>Descrição &amp; Categoria</th>
+                        <th class="centerCol" style="width: 68px;">Qtd</th>
+                        <th class="money" style="width: 60px;">Unit.</th>
+                        <th class="money" style="width: 64px;">Total</th>
+                        <th class="actionCol" style="width: 24px;">Del</th>
+                      </tr>
+                    </thead>
+                    <tbody id="posTicketRows"></tbody>
+                  </table>
+                </div>
+
+                <!-- Totalizadores & Ações -->
+                <div class="posTicketFooter">
+                  <div class="ticketSummaryRow">
+                    <span>Volumes / Itens:</span>
+                    <strong id="posTotalQty">0 volumes (0 itens)</strong>
+                  </div>
+                  <div class="ticketSummaryRow">
+                    <span>Subtotal:</span>
+                    <strong id="posSubtotalVal">R$ 0,00</strong>
+                  </div>
+                  <div class="ticketSummaryRow discountRow">
+                    <div class="discountLabelWrap">
+                      <span>Desconto:</span>
+                      <input type="text" id="posDiscountInput" placeholder="R$ 0,00 ou %" class="posDiscountInput" title="Ex: 5.00 ou 10%">
+                    </div>
+                    <strong id="posDiscountVal" class="posDiscountVal">- R$ 0,00</strong>
+                  </div>
+                  <div class="ticketTotalRow">
+                    <span>TOTAL A PAGAR:</span>
+                    <strong id="posTotalVal" class="posGrandTotal">R$ 0,00</strong>
+                  </div>
+
+                  <div class="posTicketActions">
+                    <button type="button" id="posClearTicketBtn" class="posBtnClear" title="Atalho: F4 ou F8">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      <span>Limpar (F4)</span>
+                    </button>
+                    <button type="button" id="posSubmitTicketBtn" class="primary posBtnCheckout" title="Atalho: F2 ou F10">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
+                      <span>Finalizar Venda (F2)</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Overlay de Caixa Fechado (Padrão Speed) -->
+                <div id="posClosedShiftOverlay" class="posClosedShiftOverlay" hidden>
+                  <div class="closedBox">
+                    <div class="closedIcon">
+                      <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    </div>
+                    <h2>CAIXA FECHADO</h2>
+                    <p>Abra o caixa para iniciar as vendas do dia e registrar pagamentos na loja.</p>
+                    <button type="button" id="posQuickOpenBtn" class="primary posOpenBtn">
+                      <span>⚡ ABRIR C/ FUNDO PADRÃO (R$ 100)</span>
+                    </button>
+                    <button type="button" id="posCustomOpenBtn" class="textButton">
+                      Informar outro valor de abertura...
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gaveta Inferior de Conciliação e Auditoria -->
+          <div class="posAuditSection">
+            <div class="sectionHead">
+              <div>
+                <h2>Gestão Contábil do Turno &amp; Extrato</h2>
+                <p id="shiftDetail">Abra o caixa para iniciar o turno de atendimento</p>
+              </div>
+              <div class="headActions">
+                <button id="printSaleButton" hidden>Registrar impressão avulsa</button>
+                <button id="cashAdjustButton">Sangria / Suprimento</button>
+                <button id="cashToggleButton" class="secondaryBtn">Fechar Caixa</button>
+              </div>
+            </div>
+
+            <div class="metrics" id="cashMetrics" style="margin-bottom: 14px;"></div>
+
+            <div class="posAuditTabs" role="tablist">
+              <button type="button" class="posAuditTab active" data-audit-tab="due">Pendências &amp; Comandas (<span id="posDueCountBadge">0</span>)</button>
+              <button type="button" class="posAuditTab" data-audit-tab="payments">Extrato de Recebimentos do Turno</button>
+              <button type="button" class="posAuditTab" data-audit-tab="shifts">Histórico de Caixas Fechados</button>
+            </div>
+
+            <div id="auditTabDue" class="auditTabPanel">
+              <div id="dueList" class="tableWrap"></div>
+            </div>
+            <div id="auditTabPayments" class="auditTabPanel" hidden>
+              <div id="paymentList" class="tableWrap"></div>
+            </div>
+            <div id="auditTabShifts" class="auditTabPanel" hidden>
+              <div id="shiftList" class="tableWrap"></div>
+            </div>
+          </div>
         </section>
 
         <!-- Visão: Clientes -->
@@ -397,20 +659,226 @@
           </form>
         </section>
 
-        <!-- Visão: Relatórios -->
+        <!-- Visão: Central Executiva, DRE & Relatórios -->
         <section id="view-reports" class="view" hidden>
-          <div class="sectionHead">
+          <div class="sectionHead reportHeader">
             <div>
-              <h2>Relatórios Executivos de Performance</h2>
-              <p>Consolidado contábil de faturamento, volume de tempo e performance por atendente</p>
+              <h2>Central Executiva &amp; Relatórios Financeiros</h2>
+              <p>Métricas em tempo real de faturamento, margem de contribuição, DRE e curva de vendas</p>
             </div>
-            <input id="reportDate" type="date">
+            <div class="reportActionsBar">
+              <div class="reportPeriodGroup">
+                <button type="button" class="reportPeriodBtn active" data-period="month">Mês Atual</button>
+                <button type="button" class="reportPeriodBtn" data-period="today">Hoje</button>
+                <button type="button" class="reportPeriodBtn" data-period="7d">7 Dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="15d">15 Dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="30d">30 Dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="all">Tudo</button>
+              </div>
+              <input id="reportDate" type="date">
+              <button type="button" id="reportExportBtn" class="secondaryBtn" title="Exportar dados">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>PDF / Excel</span>
+              </button>
+              <button type="button" id="reportPrintBtn" class="primary" title="Imprimir Relatório (Ctrl+P)">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                <span>Imprimir</span>
+              </button>
+            </div>
           </div>
-          <div id="reportMetrics" class="metrics"></div>
-          <div class="sectionHead spaced"><h2>Produtividade por Terminal</h2></div><div id="reportMachines" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Itens Mais Vendidos</h2></div><div id="reportProducts" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Arrecadação por Operador</h2></div><div id="reportOperators" class="tableWrap"></div>
-          <div class="sectionHead spaced"><h2>Extrato de Lançamentos</h2></div><div id="reportCharges" class="tableWrap"></div>
+
+          <!-- Sub-abas da Central -->
+          <div class="reportSubNav" role="tablist">
+            <button type="button" class="reportTabBtn active" data-report-tab="executive">📊 Central Executiva</button>
+            <button type="button" class="reportTabBtn" data-report-tab="dre">📈 DRE Gerencial</button>
+            <button type="button" class="reportTabBtn" data-report-tab="fluxo">💰 Fluxo de Caixa</button>
+            <button type="button" class="reportTabBtn" data-report-tab="mov_caixa">💼 Movim. Caixa</button>
+            <button type="button" class="reportTabBtn" data-report-tab="ranking">🏆 Mais Vendidos &amp; Categorias</button>
+          </div>
+
+          <!-- Conteúdo: Central Executiva -->
+          <div id="tab-report-executive" class="reportTabContent">
+            <!-- Meta Diária Card -->
+            <div class="execGoalCard">
+              <div class="execGoalHeader">
+                <div class="execGoalTitle">
+                  <span class="execIcon">🎯</span>
+                  <strong>META DE FATURAMENTO DIÁRIO</strong>
+                  <span class="muted" style="margin-left: 8px;">Acompanhe seu progresso hoje</span>
+                </div>
+                <div class="execGoalRight">
+                  <span>RESTANTE: <strong id="execGoalRestante">R$ 465,00</strong></span>
+                  <span class="execStatusBadge inProgress" id="execGoalStatus">Em Progresso</span>
+                </div>
+              </div>
+              <div class="execGoalProgressRow">
+                <span class="execCurrentVal" id="execGoalNumbers">R$ 35,00 <small>/ R$ 500,00</small></span>
+                <span class="execGoalPct" id="execGoalPctBadge">7%</span>
+              </div>
+              <div class="execGoalProgressBarTrack">
+                <div class="execGoalProgressFill" id="execGoalFill" style="width: 7%;"></div>
+              </div>
+            </div>
+
+            <!-- 4 Cards Superiores -->
+            <div class="execKpisGrid">
+              <div class="execKpiCard">
+                <span class="execKpiLabel">VENDAS MÊS</span>
+                <strong class="execKpiValue" id="execMonthSalesVal">R$ 4.877,25</strong>
+                <span class="execKpiSub">Faturamento no período</span>
+              </div>
+              <div class="execKpiCard">
+                <span class="execKpiLabel">LUCRO MÊS</span>
+                <strong class="execKpiValue highlight" id="execMonthProfitVal">R$ 947,65</strong>
+                <span class="execKpiSub">Margem líquida estimada</span>
+              </div>
+              <div class="execKpiCard">
+                <span class="execKpiLabel">FIADO PENDENTE (A RECEBER)</span>
+                <strong class="execKpiValue warn" id="execFiadoVal">R$ 35,00</strong>
+                <span class="execKpiSub">Darci Piva (Atrasado)</span>
+              </div>
+              <div class="execKpiCard">
+                <span class="execKpiLabel">DESPESAS FIXAS (MÊS)</span>
+                <strong class="execKpiValue" id="execExpensesVal">R$ 0,00</strong>
+                <span class="execKpiSub">Aluguel, Luz, Internet</span>
+              </div>
+            </div>
+
+            <!-- Gráfico de Evolução e Picos -->
+            <div class="execCard fullWidth spacedTop">
+              <div class="sectionHead">
+                <div>
+                  <h3>📈 EVOLUÇÃO DIÁRIA &amp; PICOS DE MOVIMENTO <span class="badgePeak">Picos em Destaque</span></h3>
+                  <p>Acompanhe o faturamento dia a dia e identifique dias recordes</p>
+                </div>
+                <div class="chartTogglePills">
+                  <button type="button" class="chartPill active" id="btnChartRev">Faturamento (R$)</button>
+                  <button type="button" class="chartPill" id="btnChartVol">Volume (Vendas)</button>
+                </div>
+              </div>
+              <div class="execChartMetricsRow">
+                <div class="miniStat">
+                  <span class="miniLabel">TOTAL ACUMULADO</span>
+                  <strong class="miniVal" id="execChartTotalVal">R$ 868,10</strong>
+                  <span class="miniSub" id="execChartCountVal">97 atendimentos</span>
+                </div>
+                <div class="miniStat">
+                  <span class="miniLabel">MÉDIA DIÁRIA</span>
+                  <strong class="miniVal" id="execChartAvgVal">R$ 124,01</strong>
+                  <span class="miniSub">Linha de referência tracejada</span>
+                </div>
+                <div class="miniStat recordStat">
+                  <span class="miniLabel">PICO DO PERÍODO 🏆</span>
+                  <strong class="miniVal" id="execChartPeakVal">R$ 283,80</strong>
+                  <span class="miniSub" id="execChartPeakSub">Segunda-feira (26 vendas)</span>
+                </div>
+              </div>
+              <div class="execSvgChartWrap" id="execDailyChart"></div>
+            </div>
+
+            <!-- Faturamento por Categoria & Distribuição Pizza -->
+            <div class="execTwoCols spacedTop">
+              <div class="execCard">
+                <h3>🏷️ FATURAMENTO POR CATEGORIA</h3>
+                <p>Receita total agrupada por segmento (7 Categorias Oficiais)</p>
+                <div id="execCategoryBars" class="categoryBarsWrap"></div>
+              </div>
+              <div class="execCard">
+                <h3>💳 MEIOS DE RECEBIMENTO</h3>
+                <p>Distribuição das formas de pagamento no período</p>
+                <div id="execPaymentMethods" class="paymentMethodsWrap"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conteúdo: DRE Gerencial -->
+          <div id="tab-report-dre" class="reportTabContent" hidden>
+            <div class="dreContainer">
+              <div class="dreHeaderCard">
+                <div>
+                  <h3>DRE - Demonstrativo de Resultados Gerencial</h3>
+                  <p>Margem de Contribuição, Ponto de Equilíbrio e Lucro Líquido Real</p>
+                </div>
+                <div class="dreBadge" id="dreHealthBadge">Saudável &amp; Superavitário</div>
+              </div>
+              <div class="dreTableWrap">
+                <table class="dreTable">
+                  <tbody>
+                    <tr class="dreRow gross">
+                      <td><strong>(+) RECEITA OPERACIONAL BRUTA</strong><br><small class="muted">Total de vendas balcão e serviços faturados</small></td>
+                      <td class="money" id="dreGrossVal">R$ 4.884,25</td>
+                    </tr>
+                    <tr class="dreRow deduction">
+                      <td><strong>(-) DEDUÇÕES DA RECEITA BRUTA</strong><br><small class="muted">Descontos concedidos no balcão e fidelidade</small></td>
+                      <td class="money neg" id="dreDiscountVal">- R$ 7,00</td>
+                    </tr>
+                    <tr class="dreRow subtotal">
+                      <td><strong>(=) RECEITA OPERACIONAL LÍQUIDA</strong></td>
+                      <td class="money" id="dreNetVal">R$ 4.877,25</td>
+                    </tr>
+                    <tr class="dreRow cmv">
+                      <td><strong>(-) CUSTO DAS MERCADORIAS E INSUMOS (CMV)</strong><br><small class="muted">Toner, papéis, copos, bomboniere e peças</small></td>
+                      <td class="money neg" id="dreCmvVal">- R$ 3.929,60</td>
+                    </tr>
+                    <tr class="dreRow contribution">
+                      <td><strong>(=) MARGEM DE CONTRIBUIÇÃO / LUCRO BRUTO</strong><br><small class="muted">Margem Bruta da Operação: <span id="dreMarginPct">19.4%</span></small></td>
+                      <td class="money pos" id="dreMarginVal">R$ 947,65</td>
+                    </tr>
+                    <tr class="dreRow fixed">
+                      <td><strong>(-) DESPESAS FIXAS E OPERACIONAIS</strong><br><small class="muted">Luz, internet, aluguel, manutenção</small></td>
+                      <td class="money" id="dreFixedVal">R$ 0,00</td>
+                    </tr>
+                    <tr class="dreRow final">
+                      <td><strong>(=) RESULTADO LÍQUIDO DO PERÍODO</strong><br><small>Lucro Líquido Real (<span id="dreNetPct">19.4%</span> da receita)</small></td>
+                      <td class="money grandTotal" id="dreProfitVal">R$ 947,65</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Ponto de Equilíbrio / Simulador -->
+              <div class="breakEvenSection spacedTop">
+                <h3>⚖️ PONTO DE EQUILÍBRIO &amp; SIMULADOR DE CENÁRIOS</h3>
+                <div class="simControlsRow">
+                  <div class="simSliderGroup">
+                    <label><span>Despesas Fixas Mensais: <strong id="simExpensesDisplay">R$ 3.000,00</strong></span></label>
+                    <input type="range" id="simExpensesRange" min="500" max="10000" step="100" value="3000">
+                  </div>
+                  <div class="simSliderGroup">
+                    <label><span>Margem de Contribuição Média: <strong id="simMarginDisplay">20%</strong></span></label>
+                    <input type="range" id="simMarginRange" min="10" max="60" step="1" value="20">
+                  </div>
+                  <div class="simResultBox">
+                    <span>Ponto de Equilíbrio:</span>
+                    <strong id="simBreakEvenResult">R$ 15.000,00</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conteúdo: Fluxo de Caixa / Extrato -->
+          <div id="tab-report-fluxo" class="reportTabContent" hidden>
+            <div id="reportMetrics" class="metrics" style="margin-bottom: 16px;"></div>
+            <div class="sectionHead spaced"><h2>Extrato Detalhado de Lançamentos</h2></div>
+            <div id="reportCharges" class="tableWrap"></div>
+          </div>
+
+          <!-- Conteúdo: Mov. Caixa -->
+          <div id="tab-report-mov_caixa" class="reportTabContent" hidden>
+            <div class="sectionHead"><h2>Movimentações de Caixa (Aberturas, Fechamentos, Sangrias)</h2></div>
+            <div id="reportCashShiftsWrap" class="tableWrap"></div>
+          </div>
+
+          <!-- Conteúdo: Ranking & Categorias -->
+          <div id="tab-report-ranking" class="reportTabContent" hidden>
+            <div class="sectionHead spaced"><h2>Inteligência de Produtos &amp; Serviços (O Que Mais Vende)</h2></div>
+            <div id="reportProducts" class="tableWrap"></div>
+            <div class="sectionHead spaced"><h2>Produtividade por Terminal</h2></div>
+            <div id="reportMachines" class="tableWrap"></div>
+            <div class="sectionHead spaced"><h2>Arrecadação por Operador</h2></div>
+            <div id="reportOperators" class="tableWrap"></div>
+          </div>
         </section>
 
         <!-- Visão: Usuários -->
@@ -526,6 +994,158 @@
     </form>
   </dialog>
 
+  <!-- Diálogo de Pagamento / Fechamento do PDV Unificado -->
+  <dialog id="posPaymentDialog" class="posPaymentDialog">
+    <div class="posPaymentContainer">
+      <div class="modalHead">
+        <div>
+          <h2>Finalizar Venda · PDV Balcão</h2>
+          <p id="posPaymentSubtitle">Escolha a forma de pagamento e confirme a transação</p>
+        </div>
+        <button type="button" id="posPaymentCloseBtn" class="iconButton closeBtn" title="Fechar (Esc)">&#215;</button>
+      </div>
+
+      <div class="posPaymentTotalBox">
+        <span>VALOR TOTAL A COBRAR</span>
+        <strong id="posPaymentTotalDisplay">R$ 0,00</strong>
+        <span id="posPaymentDestDisplay" class="posDestBadge">Destino: Balcão (Consumidor Final)</span>
+      </div>
+
+      <div class="posPaymentMethodsGrid">
+        <button type="button" class="posMethodBtn active" data-pos-method="cash">
+          <span class="methodIcon">💵</span>
+          <span>Dinheiro</span>
+        </button>
+        <button type="button" class="posMethodBtn" data-pos-method="pix">
+          <span class="methodIcon">⚡</span>
+          <span>PIX</span>
+        </button>
+        <button type="button" class="posMethodBtn" data-pos-method="debit">
+          <span class="methodIcon">💳</span>
+          <span>Débito</span>
+        </button>
+        <button type="button" class="posMethodBtn" data-pos-method="credit">
+          <span class="methodIcon">💳</span>
+          <span>Crédito</span>
+        </button>
+        <button type="button" class="posMethodBtn" data-pos-method="fiado">
+          <span class="methodIcon">📝</span>
+          <span>Fiado / Prazo</span>
+        </button>
+      </div>
+
+      <!-- Botão e Painel de Pagamento Misto / Dividido -->
+      <div class="posSplitHeader">
+        <button type="button" id="posSplitToggleBtn" class="posSplitToggleBtn">
+          <span>⚡ Dividir / Pagamento Misto</span>
+        </button>
+      </div>
+
+      <div id="posSplitBox" class="posSplitBox" hidden>
+        <div class="splitInputsRow">
+          <select id="posSplitMethodSelect">
+            <option value="cash">Dinheiro</option>
+            <option value="pix">PIX</option>
+            <option value="debit">Cartão Débito</option>
+            <option value="credit">Cartão Crédito</option>
+          </select>
+          <input type="number" id="posSplitAmountInput" step="0.01" min="0.01" placeholder="Valor R$">
+          <button type="button" id="posSplitAddBtn" class="posSplitAddBtn">+ Adicionar Parcela</button>
+        </div>
+        <div id="posSplitList" class="posSplitList"></div>
+        <div class="posSplitSummary">
+          <span>Pago: <strong id="posSplitPaidVal">R$ 0,00</strong></span>
+          <span>Restante: <strong id="posSplitRemainingVal" class="posRemainingVal">R$ 0,00</strong></span>
+        </div>
+      </div>
+
+      <!-- Calculadora de Troco Dinheiro -->
+      <div id="posCashCalcBox" class="posCashCalcBox">
+        <label>
+          <span>Valor Entregue pelo Cliente:</span>
+          <div class="cashInputRow">
+            <input type="number" id="posPaidGivenInput" min="0" step="0.01" placeholder="R$ 0,00">
+            <div class="cashChips">
+              <button type="button" data-pos-cash-val="exact">Exato</button>
+              <button type="button" data-pos-cash-val="5">R$ 5</button>
+              <button type="button" data-pos-cash-val="10">R$ 10</button>
+              <button type="button" data-pos-cash-val="20">R$ 20</button>
+              <button type="button" data-pos-cash-val="50">R$ 50</button>
+              <button type="button" data-pos-cash-val="100">R$ 100</button>
+            </div>
+          </div>
+        </label>
+        <div id="posChangeDisplay" class="posChangeDisplay">Troco: R$ 0,00</div>
+      </div>
+
+      <!-- Alerta Pix -->
+      <div id="posPixInfoBox" class="posPixInfoBox" hidden>
+        <p><strong>Pagamento via PIX:</strong> Confirme a notificação do banco antes de liberar o comprovante.</p>
+      </div>
+
+      <!-- Alerta Fiado / A Prazo -->
+      <div id="posFiadoInfoBox" class="posFiadoInfoBox" hidden>
+        <p id="posFiadoNotice">Para registrar a prazo / fiado, o cliente precisa estar identificado na venda.</p>
+      </div>
+
+      <p id="posPaymentError" class="formError" hidden></p>
+
+      <div class="modalActions">
+        <button type="button" id="posPaymentCancelBtn">Voltar ao Carrinho</button>
+        <button type="button" id="posPaymentConfirmBtn" class="primary">
+          <span>Concluir Venda &amp; Emitir Recibo (Enter)</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Diálogo de Lançamento de Item Avulso (Sem Cadastro Prévio - F9) -->
+  <dialog id="posCustomItemDialog" class="posPaymentDialog">
+    <form id="posCustomItemForm" class="posPaymentContainer" method="dialog">
+      <div class="modalHead">
+        <div>
+          <h2>+ Lançar Item Avulso (F9)</h2>
+          <p>Lançamento ágil de serviço ou produto sem cadastro prévio</p>
+        </div>
+        <button type="button" id="posCustomItemCloseBtn" class="iconButton closeBtn" title="Fechar (Esc)">&#215;</button>
+      </div>
+
+      <div class="formGrid">
+        <label class="formField fullWidth">
+          <span>Descrição do Item / Serviço *</span>
+          <input type="text" id="posCustomName" required placeholder="Ex.: Xerox Encadernada, Consulta DETRAN rápida..." autocomplete="off">
+        </label>
+        <label class="formField">
+          <span>Valor Unitário (R$) *</span>
+          <input type="number" id="posCustomPrice" required min="0.01" step="0.01" placeholder="0,00">
+        </label>
+        <label class="formField">
+          <span>Quantidade *</span>
+          <input type="number" id="posCustomQty" required min="1" max="1000" value="1">
+        </label>
+        <label class="formField fullWidth">
+          <span>Categoria Oficial</span>
+          <select id="posCustomCategory">
+            <option value="Gráfica Rápida">Gráfica Rápida (#0284c7)</option>
+            <option value="Serviços Públicos">Serviços Públicos (#059669)</option>
+            <option value="Lan House &amp; Serviços Digitais">Lan House &amp; Serviços Digitais (#7c3aed)</option>
+            <option value="Informática &amp; Celular">Informática &amp; Celular (#2563eb)</option>
+            <option value="Eletrônicos &amp; Acessórios">Eletrônicos &amp; Acessórios (#ea580c)</option>
+            <option value="Bomboniere &amp; Bebidas">Bomboniere &amp; Bebidas (#e11d48)</option>
+            <option value="Serviços Financeiros">Serviços Financeiros (#0d9488)</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="modalActions">
+        <button type="button" id="posCustomItemCancelBtn">Cancelar (Esc)</button>
+        <button type="submit" id="posCustomItemAddBtn" class="primary">
+          <span>Adicionar ao Carrinho (Enter)</span>
+        </button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Diálogo de Comprovante de Transação (Receipt / Cupom Não Fiscal) -->
   <dialog id="receiptDialog" class="receiptDialog">
     <div class="receiptContainer">
@@ -568,7 +1188,7 @@
       <button type="button" id="monitorClose" class="iconButton closeBtn" title="Fechar (Esc)" aria-label="Fechar">&#215;</button>
     </div>
     <div class="monitorCanvasWrapper">
-      <img id="monitorImage" alt="Tela em tempo real da estação">
+      <img id="monitorImage" alt="Tela em tempo real da estação" hidden>
     </div>
     <div id="monitorBar" class="monitorBar">
       <button data-mctrl="text"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" class="btnIcon"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg><span>Digitar texto</span></button>
@@ -579,6 +1199,31 @@
       <button data-mctrl="restart" class="warnBtn">Reiniciar</button>
       <button data-mctrl="shutdown" class="dangerBtn">Desligar</button>
     </div>
+  <!-- Diálogo Rápido de Lançamento de Impressão / PDF -->
+  <dialog id="posPrintLaunchDialog" class="saleDialog">
+    <form id="posPrintLaunchForm">
+      <div class="modalHead">
+        <div>
+          <h2>📄 Lançar Impressão / PDF no Cupom</h2>
+          <p>Informe a quantidade de páginas do documento</p>
+        </div>
+        <button type="button" id="posPrintLaunchClose" class="iconButton closeBtn" title="Fechar (Esc)">&#215;</button>
+      </div>
+      <div style="display:flex; gap:16px; margin: 16px 0;">
+        <label style="flex:1;">
+          <span>Páginas P&amp;B (#1.1 - R$ 1,00/un)</span>
+          <input type="number" id="posPdfPagesBW" min="0" value="1" style="font-size:18px; padding:10px;">
+        </label>
+        <label style="flex:1;">
+          <span>Páginas Coloridas (#2 - R$ 2,00/un)</span>
+          <input type="number" id="posPdfPagesColor" min="0" value="0" style="font-size:18px; padding:10px;">
+        </label>
+      </div>
+      <div class="modalActions">
+        <button type="button" id="posPrintLaunchCancel">Cancelar</button>
+        <button type="submit" class="primary">Adicionar ao Cupom</button>
+      </div>
+    </form>
   </dialog>
 
   <!-- Toast Notification Flutuante -->
