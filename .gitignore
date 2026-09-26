@@ -8,3 +8,6 @@ Pendrive-Preparado/LanHouseManager-Estacoes/
 *.log
 *.tmp
 .impeccable/
+# Chave do cofre e configuracao com chaves de API: nunca versionar
+server/public/marketing/speedgeo/config.json
+cofre.chave

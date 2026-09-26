@@ -1,0 +1,30 @@
+Campaign,Ad Group,Keyword,Criterion Type,Max CPC,Final URL
+Campanha_FGTS_Varginha,FGTS_Transacional_Varginha,antecipar fgts varginha,Exact,3.50,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_varginha
+Campanha_FGTS_Varginha,FGTS_Transacional_Varginha,antecipacao fgts varginha,Exact,3.50,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_varginha
+Campanha_FGTS_Varginha,FGTS_Transacional_Varginha,antecipacao fgts varginha,Phrase,3.00,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_varginha
+Campanha_FGTS_Varginha,FGTS_WhatsApp_Pix,antecipacao fgts cai na hora pix,Phrase,3.20,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_pix
+Campanha_FGTS_Varginha,FGTS_WhatsApp_Pix,antecipar fgts pelo whatsapp,Phrase,3.20,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_whatsapp
+Campanha_FGTS_Varginha,FGTS_WhatsApp_Pix,antecipar saque aniversario na hora,Phrase,2.80,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_pix
+Campanha_FGTS_Varginha,FGTS_Negativado,antecipar fgts negativado,Phrase,3.00,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_negativado
+Campanha_FGTS_Varginha,FGTS_Negativado,emprestimo fgts negativado varginha,Phrase,3.20,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=fgts_negativado
+Campanha_Consignado_INSS_Varginha,INSS_Consignado_Local,emprestimo consignado inss varginha,Exact,3.80,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=inss_local
+Campanha_Consignado_INSS_Varginha,INSS_Consignado_Local,emprestimo para aposentado varginha,Exact,3.50,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=inss_local
+Campanha_Consignado_INSS_Varginha,INSS_Consignado_Local,consignado inss varginha,Phrase,3.20,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=inss_local
+Campanha_Consignado_INSS_Varginha,INSS_Portabilidade_Troco,portabilidade consignado com troco,Phrase,4.50,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=inss_portabilidade
+Campanha_Consignado_INSS_Varginha,INSS_Portabilidade_Troco,portabilidade de consignado inss,Phrase,4.00,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=inss_portabilidade
+Campanha_Consignado_INSS_Varginha,INSS_BPC_LOAS,emprestimo para bpc loas em varginha,Exact,3.20,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=bpc_loas
+Campanha_Consignado_INSS_Varginha,INSS_BPC_LOAS,emprestimo bpc loas varginha,Phrase,3.00,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=bpc_loas
+Campanha_Consignado_CLT_Varginha,CLT_Privado_Local,emprestimo consignado clt varginha,Exact,3.50,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=clt_privado
+Campanha_Consignado_CLT_Varginha,CLT_Privado_Local,consignado clt varginha,Phrase,3.00,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=clt_privado
+Campanha_Consignado_CLT_Varginha,CLT_Privado_Local,consignado carteira assinada varginha,Phrase,2.80,https://speedfinanceira.com.br/#simular?utm_source=google&utm_medium=cpc&utm_campaign=clt_privado
+Campanha_Veiculos_Garantia_Varginha,Financiamento_Veiculos_Local,financiamento de veiculos em varginha,Exact,4.50,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=financiamento_veiculos
+Campanha_Veiculos_Garantia_Varginha,Financiamento_Veiculos_Local,financiamento de carros usados varginha,Phrase,4.00,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=financiamento_veiculos
+Campanha_Veiculos_Garantia_Varginha,Financiamento_Veiculos_Local,simular financiamento veiculo varginha,Phrase,3.80,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=financiamento_veiculos
+Campanha_Veiculos_Garantia_Varginha,Garantia_Auto_Equity,emprestimo com garantia de veiculo em varginha,Exact,5.50,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=garantia_veiculo
+Campanha_Veiculos_Garantia_Varginha,Garantia_Auto_Equity,refinanciamento de veiculos varginha,Phrase,5.00,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=garantia_veiculo
+Campanha_Veiculos_Garantia_Varginha,Garantia_Auto_Equity,refinanciar carro quitado troco na mao,Phrase,4.80,https://speedfinanceira.com.br/#servicos?utm_source=google&utm_medium=cpc&utm_campaign=garantia_veiculo
+Campanha_Institucional_Local_Varginha,Institucional_Direto,speed financeira varginha,Exact,2.00,https://speedfinanceira.com.br/?utm_source=google&utm_medium=cpc&utm_campaign=institucional
+Campanha_Institucional_Local_Varginha,Institucional_Direto,speed financeira telefone,Phrase,1.80,https://speedfinanceira.com.br/?utm_source=google&utm_medium=cpc&utm_campaign=institucional
+Campanha_Institucional_Local_Varginha,Institucional_Direto,emprestimo em varginha,Exact,3.20,https://speedfinanceira.com.br/?utm_source=google&utm_medium=cpc&utm_campaign=institucional
+Campanha_Institucional_Local_Varginha,Institucional_Direto,financeira em varginha,Exact,3.00,https://speedfinanceira.com.br/?utm_source=google&utm_medium=cpc&utm_campaign=institucional
+Campanha_Institucional_Local_Varginha,Institucional_Direto,financeira centro varginha rua santa cruz,Phrase,2.50,https://speedfinanceira.com.br/?utm_source=google&utm_medium=cpc&utm_campaign=institucional

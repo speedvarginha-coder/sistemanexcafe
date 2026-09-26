@@ -86,6 +86,18 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           <span>Auditoria &amp; Relatórios</span>
         </button>
+        <button data-view="expenses" data-admin-only>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-2-2-2 2-3-2-3 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg>
+          <span>Despesas</span>
+        </button>
+        <button data-view="marketing" data-admin-only>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+          <span>Speed Marketing</span>
+        </button>
+        <button data-view="vault" data-admin-only>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Logins bancários</span>
+        </button>
         <button data-view="users">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
           <span>Operadores</span>
@@ -152,6 +164,7 @@
       <main>
         <!-- Visão: Atendimento (Estações) -->
         <section id="view-machines" class="view">
+          <div id="billsDueBanner" class="billsDueBanner" hidden></div>
           <div class="metricsHeader">
             <div class="overviewLabel">Indicadores de Desempenho Operacional (KPIs)</div>
             <div class="overviewHint">Atualização contínua a cada 3s · Gestão sem fricção</div>
@@ -367,8 +380,8 @@
 
               <div class="posQuickShortcuts">
                 <button type="button" class="quickShortcutBtn" data-quick-action="xerox_pb">
-                  <span class="quickName">Xerox P&amp;B (#104)</span>
-                  <span class="quickPrice">R$ 1,00</span>
+                  <span class="quickName">Xerox (#342)</span>
+                  <span class="quickPrice">R$ 0,50</span>
                 </button>
                 <button type="button" class="quickShortcutBtn" data-quick-action="print_pb">
                   <span class="quickName">Imp. P/B (#1.1)</span>
@@ -379,7 +392,7 @@
                   <span class="quickPrice">R$ 0,50</span>
                 </button>
                 <button type="button" class="quickShortcutBtn" data-quick-action="print_color">
-                  <span class="quickName">Imp. Colorida (#2)</span>
+                  <span class="quickName">Imp. Colorida (#2-B)</span>
                   <span class="quickPrice">R$ 2,00</span>
                 </button>
                 <button type="button" class="quickShortcutBtn" data-quick-action="acesso_net">
@@ -427,7 +440,7 @@
                   <span class="catDot" style="background:#e11d48;"></span>Bebidas &amp; Doces
                 </button>
                 <button type="button" class="posTabBtn catFinance" data-cat="Serviços Financeiros">
-                  <span class="catDot" style="background:#0d9488;"></span>Financeiro &amp; SPC
+                  <span class="catDot" style="background:#0b8a45;"></span>Financeiro &amp; SPC
                 </button>
               </div>
 
@@ -599,6 +612,7 @@
               <p>Contas de autoatendimento, controle de créditos e histórico de recargas</p>
             </div>
             <button id="addClientButton" class="primary">Cadastrar cliente</button>
+            <button id="addDebtButton" type="button" class="secondaryBtn">Registrar dívida (fiado)</button>
           </div>
           <div class="filterRow">
             <input id="clientSearch" type="search" placeholder="Localizar por nome, telefone ou login de acesso...">
@@ -614,6 +628,8 @@
               <p>Preços, códigos de barras, saldo de mercadorias e alerta de reposição</p>
             </div>
             <button id="addProductButton" class="primary">Cadastrar produto</button>
+            <button id="importProductsButton" type="button" class="secondaryBtn" data-admin-only>Importar nota, Excel, PDF ou foto</button>
+            <input type="file" id="importProductsInput" accept=".xml,.xlsx,.csv,.pdf,image/*" hidden>
           </div>
           <div id="stockAlerts" class="stockAlerts" hidden></div>
           <div class="filterRow">
@@ -660,221 +676,272 @@
         <section id="view-reports" class="view" hidden>
           <div class="sectionHead reportHeader">
             <div>
-              <h2>Central Executiva &amp; Relatórios Financeiros</h2>
-              <p>Métricas em tempo real de faturamento, margem de contribuição, DRE e curva de vendas</p>
+              <h2>Relatórios e Gestão da Loja</h2>
+              <p id="reportRangeLabel">Números reais das vendas, despesas, caixa e estoque</p>
             </div>
             <div class="reportActionsBar">
               <div class="reportPeriodGroup">
-                <button type="button" class="reportPeriodBtn active" data-period="month">Mês Atual</button>
                 <button type="button" class="reportPeriodBtn" data-period="today">Hoje</button>
-                <button type="button" class="reportPeriodBtn" data-period="7d">7 Dias</button>
-                <button type="button" class="reportPeriodBtn" data-period="15d">15 Dias</button>
-                <button type="button" class="reportPeriodBtn" data-period="30d">30 Dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="7d">7 dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="15d">15 dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="30d">30 dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="60d">60 dias</button>
+                <button type="button" class="reportPeriodBtn" data-period="90d">90 dias</button>
+                <button type="button" class="reportPeriodBtn active" data-period="month">Mês</button>
                 <button type="button" class="reportPeriodBtn" data-period="all">Tudo</button>
               </div>
-              <input id="reportDate" type="date">
-              <button type="button" id="reportExportBtn" class="secondaryBtn" title="Exportar dados">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>PDF / Excel</span>
-              </button>
-              <button type="button" id="reportPrintBtn" class="primary" title="Imprimir Relatório (Ctrl+P)">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                <span>Imprimir</span>
-              </button>
+              <input id="reportDate" type="date" title="Data de referência (o mês desta data)">
+              <button type="button" id="financeSettingsButton" class="secondaryBtn">Metas e taxas</button>
+              <button type="button" id="reportExportBtn" class="secondaryBtn">Exportar Excel</button>
+              <button type="button" id="reportPrintBtn" class="primary">Imprimir</button>
             </div>
           </div>
 
-          <!-- Sub-abas da Central -->
           <div class="reportSubNav" role="tablist">
-            <button type="button" class="reportTabBtn active" data-report-tab="executive">Central Executiva</button>
-            <button type="button" class="reportTabBtn" data-report-tab="dre">DRE Gerencial</button>
-            <button type="button" class="reportTabBtn" data-report-tab="fluxo">Fluxo de Caixa</button>
-            <button type="button" class="reportTabBtn" data-report-tab="mov_caixa">Movim. Caixa</button>
-            <button type="button" class="reportTabBtn" data-report-tab="ranking">Mais Vendidos &amp; Categorias</button>
+            <button type="button" class="reportTabBtn active" data-report-tab="geral">Visão geral</button>
+            <button type="button" class="reportTabBtn" data-report-tab="dre">DRE e contas</button>
+            <button type="button" class="reportTabBtn" data-report-tab="vendas">Vendas e Curva ABC</button>
+            <button type="button" class="reportTabBtn" data-report-tab="caixa">Caixa</button>
+            <button type="button" class="reportTabBtn" data-report-tab="clientes">Clientes e fiado</button>
+            <button type="button" class="reportTabBtn" data-report-tab="estoque">Estoque</button>
+            <button type="button" class="reportTabBtn" data-report-tab="maquinas">Máquinas e equipe</button>
           </div>
 
-          <!-- Conteúdo: Central Executiva -->
-          <div id="tab-report-executive" class="reportTabContent">
-            <!-- Meta Diária Card -->
-            <div class="execGoalCard">
-              <div class="execGoalHeader">
-                <div class="execGoalTitle">
-                  <span class="execIcon"></span>
-                  <strong>META DE FATURAMENTO DIÁRIO</strong>
-                  <span class="muted" style="margin-left: 8px;">Acompanhe seu progresso hoje</span>
-                </div>
-                <div class="execGoalRight">
-                  <span>RESTANTE: <strong id="execGoalRestante">R$ 465,00</strong></span>
-                  <span class="execStatusBadge inProgress" id="execGoalStatus">Em Progresso</span>
-                </div>
-              </div>
-              <div class="execGoalProgressRow">
-                <span class="execCurrentVal" id="execGoalNumbers">R$ 35,00 <small>/ R$ 500,00</small></span>
-                <span class="execGoalPct" id="execGoalPctBadge">7%</span>
-              </div>
-              <div class="execGoalProgressBarTrack">
-                <div class="execGoalProgressFill" id="execGoalFill" style="width: 7%;"></div>
-              </div>
+          <!-- Visao geral -->
+          <div id="tab-report-geral" class="reportTabContent">
+            <div id="rpKpis" class="rpGrid rpGrid4"></div>
+            <div class="rpGrid rpGridOverview spacedTop">
+              <div class="rpCard"><h3>Meta do mês</h3><div id="rpGoal"></div></div>
+              <div class="rpCard"><h3>Comparado ao período anterior</h3><div id="rpCompare"></div></div>
+              <div class="rpCard"><h3>Alertas do gestor</h3><div id="rpAlerts" class="rpAlerts"></div></div>
             </div>
-
-            <!-- 4 Cards Superiores -->
-            <div class="execKpisGrid">
-              <div class="execKpiCard">
-                <span class="execKpiLabel">VENDAS MÊS</span>
-                <strong class="execKpiValue" id="execMonthSalesVal">R$ 4.877,25</strong>
-                <span class="execKpiSub">Faturamento no período</span>
+            <div class="rpCard spacedTop">
+              <div class="rpCardHead"><h3>Vendas por dia</h3>
+                <div class="rpToggle"><button type="button" class="chartPill active" id="btnChartRev">Faturamento</button><button type="button" class="chartPill" id="btnChartVol">Quantidade</button></div>
               </div>
-              <div class="execKpiCard">
-                <span class="execKpiLabel">LUCRO MÊS</span>
-                <strong class="execKpiValue highlight" id="execMonthProfitVal">R$ 947,65</strong>
-                <span class="execKpiSub">Margem líquida estimada</span>
-              </div>
-              <div class="execKpiCard">
-                <span class="execKpiLabel">FIADO PENDENTE (A RECEBER)</span>
-                <strong class="execKpiValue warn" id="execFiadoVal">R$ 35,00</strong>
-                <span class="execKpiSub">Darci Piva (Atrasado)</span>
-              </div>
-              <div class="execKpiCard">
-                <span class="execKpiLabel">DESPESAS FIXAS (MÊS)</span>
-                <strong class="execKpiValue" id="execExpensesVal">R$ 0,00</strong>
-                <span class="execKpiSub">Aluguel, Luz, Internet</span>
-              </div>
+              <div id="rpDailyStats" class="rpMiniStats"></div>
+              <div id="execDailyChart" class="rpChart"></div>
             </div>
-
-            <!-- Gráfico de Evolução e Picos -->
-            <div class="execCard fullWidth spacedTop">
-              <div class="sectionHead">
-                <div>
-                  <h3>EVOLUÇÃO DIÁRIA &amp; PICOS DE MOVIMENTO <span class="badgePeak">Picos em Destaque</span></h3>
-                  <p>Acompanhe o faturamento dia a dia e identifique dias recordes</p>
-                </div>
-                <div class="chartTogglePills">
-                  <button type="button" class="chartPill active" id="btnChartRev">Faturamento (R$)</button>
-                  <button type="button" class="chartPill" id="btnChartVol">Volume (Vendas)</button>
-                </div>
+            <div class="rpCard spacedTop">
+              <div class="rpCardHead"><h3>Ano a ano: como a loja está indo mês a mês</h3>
+                <div class="rpToggle" id="rpYearMode"><button type="button" class="chartPill active" data-ym="salesCents">Vendas</button><button type="button" class="chartPill" data-ym="resultCents">Resultado</button><button type="button" class="chartPill" data-ym="expensesCents">Despesas</button><button type="button" class="chartPill" data-ym="count">Nº de vendas</button></div>
               </div>
-              <div class="execChartMetricsRow">
-                <div class="miniStat">
-                  <span class="miniLabel">TOTAL ACUMULADO</span>
-                  <strong class="miniVal" id="execChartTotalVal">R$ 868,10</strong>
-                  <span class="miniSub" id="execChartCountVal">97 atendimentos</span>
-                </div>
-                <div class="miniStat">
-                  <span class="miniLabel">MÉDIA DIÁRIA</span>
-                  <strong class="miniVal" id="execChartAvgVal">R$ 124,01</strong>
-                  <span class="miniSub">Linha de referência tracejada</span>
-                </div>
-                <div class="miniStat recordStat">
-                  <span class="miniLabel">PICO DO PERÍODO </span>
-                  <strong class="miniVal" id="execChartPeakVal">R$ 283,80</strong>
-                  <span class="miniSub" id="execChartPeakSub">Segunda-feira (26 vendas)</span>
-                </div>
-              </div>
-              <div class="execSvgChartWrap" id="execDailyChart"></div>
+              <div id="rpYearSummary" class="rpGrid rpGrid4"></div>
+              <div id="rpYearChart" class="rpChart"></div>
+              <div id="rpYearTable" class="tableWrap"></div>
             </div>
-
-            <!-- Faturamento por Categoria & Distribuição Pizza -->
-            <div class="execTwoCols spacedTop">
-              <div class="execCard">
-                <h3>FATURAMENTO POR CATEGORIA</h3>
-                <p>Receita total agrupada por segmento (7 Categorias Oficiais)</p>
-                <div id="execCategoryBars" class="categoryBarsWrap"></div>
-              </div>
-              <div class="execCard">
-                <h3>MEIOS DE RECEBIMENTO</h3>
-                <p>Distribuição das formas de pagamento no período</p>
-                <div id="execPaymentMethods" class="paymentMethodsWrap"></div>
-              </div>
+            <div class="rpCard rpPlanCard spacedTop">
+              <div class="rpCardHead"><h3>Diagnóstico e plano de ação</h3><span class="muted">calculado com os números do período</span></div>
+              <div id="rpPlan" class="rpPlan"></div>
+            </div>
+            <div class="rpCard spacedTop">
+              <div class="rpCardHead"><h3>Quando a loja vende</h3><span class="muted">quantidade de vendas por dia da semana e horário</span></div>
+              <div id="rpHeat" class="rpHeatWrap"></div>
+            </div>
+            <div class="rpGrid rpGrid2 spacedTop">
+              <div class="rpCard"><h3>Faturamento por categoria</h3><div id="execCategoryBars"></div></div>
+              <div class="rpCard"><h3>Formas de recebimento</h3><div id="execPaymentMethods"></div></div>
             </div>
           </div>
 
-          <!-- Conteúdo: DRE Gerencial -->
+          <!-- DRE e contas -->
           <div id="tab-report-dre" class="reportTabContent" hidden>
-            <div class="dreContainer">
-              <div class="dreHeaderCard">
-                <div>
-                  <h3>DRE - Demonstrativo de Resultados Gerencial</h3>
-                  <p>Margem de Contribuição, Ponto de Equilíbrio e Lucro Líquido Real</p>
-                </div>
-                <div class="dreBadge" id="dreHealthBadge">Saudável &amp; Superavitário</div>
+            <div class="rpGrid rpGrid2">
+              <div class="rpCard">
+                <div class="rpCardHead"><h3>DRE do período</h3><span class="rpBadge" id="dreHealthBadge"></span></div>
+                <div id="rpDre"></div>
+                <p class="muted rpNote" id="dreNote"></p>
+                <div class="rpCardHead" style="margin-top:12px"><h4 style="margin:0">Comissões e outras receitas</h4><button type="button" class="secondaryBtn" id="addIncomeButton">Lançar comissão</button></div>
+                <div id="rpIncomes"></div>
               </div>
-              <div class="dreTableWrap">
-                <table class="dreTable">
-                  <tbody>
-                    <tr class="dreRow gross">
-                      <td><strong>(+) RECEITA OPERACIONAL BRUTA</strong><br><small class="muted">Total de vendas balcão e serviços faturados</small></td>
-                      <td class="money" id="dreGrossVal">R$ 4.884,25</td>
-                    </tr>
-                    <tr class="dreRow deduction">
-                      <td><strong>(-) DEDUÇÕES DA RECEITA BRUTA</strong><br><small class="muted">Descontos concedidos no balcão e fidelidade</small></td>
-                      <td class="money neg" id="dreDiscountVal">- R$ 7,00</td>
-                    </tr>
-                    <tr class="dreRow subtotal">
-                      <td><strong>(=) RECEITA OPERACIONAL LÍQUIDA</strong></td>
-                      <td class="money" id="dreNetVal">R$ 4.877,25</td>
-                    </tr>
-                    <tr class="dreRow cmv">
-                      <td><strong>(-) CUSTO DAS MERCADORIAS E INSUMOS (CMV)</strong><br><small class="muted">Toner, papéis, copos, bomboniere e peças</small></td>
-                      <td class="money neg" id="dreCmvVal">- R$ 3.929,60</td>
-                    </tr>
-                    <tr class="dreRow contribution">
-                      <td><strong>(=) MARGEM DE CONTRIBUIÇÃO / LUCRO BRUTO</strong><br><small class="muted">Margem Bruta da Operação: <span id="dreMarginPct">19.4%</span></small></td>
-                      <td class="money pos" id="dreMarginVal">R$ 947,65</td>
-                    </tr>
-                    <tr class="dreRow fixed">
-                      <td><strong>(-) DESPESAS FIXAS E OPERACIONAIS</strong><br><small class="muted">Luz, internet, aluguel, manutenção</small></td>
-                      <td class="money" id="dreFixedVal">R$ 0,00</td>
-                    </tr>
-                    <tr class="dreRow final">
-                      <td><strong>(=) RESULTADO LÍQUIDO DO PERÍODO</strong><br><small>Lucro Líquido Real (<span id="dreNetPct">19.4%</span> da receita)</small></td>
-                      <td class="money grandTotal" id="dreProfitVal">R$ 947,65</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- Ponto de Equilíbrio / Simulador -->
-              <div class="breakEvenSection spacedTop">
-                <h3>PONTO DE EQUILÍBRIO &amp; SIMULADOR DE CENÁRIOS</h3>
-                <div class="simControlsRow">
-                  <div class="simSliderGroup">
-                    <label><span>Despesas Fixas Mensais: <strong id="simExpensesDisplay">R$ 3.000,00</strong></span></label>
-                    <input type="range" id="simExpensesRange" min="500" max="10000" step="100" value="3000">
-                  </div>
-                  <div class="simSliderGroup">
-                    <label><span>Margem de Contribuição Média: <strong id="simMarginDisplay">20%</strong></span></label>
-                    <input type="range" id="simMarginRange" min="10" max="60" step="1" value="20">
-                  </div>
-                  <div class="simResultBox">
-                    <span>Ponto de Equilíbrio:</span>
-                    <strong id="simBreakEvenResult">R$ 15.000,00</strong>
-                  </div>
+              <div class="rpCard">
+                <h3>Ponto de equilíbrio</h3>
+                <div id="rpBreakEven"></div>
+                <div class="rpSim">
+                  <label>Despesas fixas por mês: <strong id="simExpensesDisplay"></strong><input type="range" id="simExpensesRange" min="500" max="15000" step="50" value="5330"></label>
+                  <label>Margem de contribuição: <strong id="simMarginDisplay"></strong><input type="range" id="simMarginRange" min="5" max="90" step="1" value="30"></label>
+                  <div class="rpSimResult">Precisa vender por mês: <strong id="simBreakEvenResult"></strong></div>
                 </div>
               </div>
             </div>
+            <div class="rpCard spacedTop">
+              <h3>Receitas x despesas (últimos 12 meses)</h3>
+              <div id="rpMonthlySummary" class="rpGrid rpGrid4"></div>
+              <div id="rpMonthlyChart" class="rpChart"></div>
+              <div id="rpMonthly" class="tableWrap"></div>
+            </div>
+            <div class="rpCard spacedTop">
+              <div class="rpCardHead"><h3>Contas e despesas</h3>
+                <div class="rpActions">
+                  <button type="button" class="primary" id="uploadBillButton">Enviar PDF ou foto da conta</button>
+                  <button type="button" class="secondaryBtn" id="addExpenseButton">Lançar despesa</button>
+                  <input type="file" id="billFileInput" accept="application/pdf,image/*" hidden>
+                </div>
+              </div>
+              <p class="muted">Envie o PDF da conta (energia, água, internet, aluguel, imposto, boleto): o sistema lê o valor, o vencimento e a categoria, e você só confere.</p>
+              <h4>Contas a pagar</h4>
+              <div id="rpPayables" class="tableWrap"></div>
+              <h4>Despesas por categoria no período</h4>
+              <div id="rpExpenseCats"></div>
+              <h4>Despesas lançadas no período</h4>
+              <div id="expenseList" class="tableWrap"></div>
+            </div>
           </div>
 
-          <!-- Conteúdo: Fluxo de Caixa / Extrato -->
-          <div id="tab-report-fluxo" class="reportTabContent" hidden>
-            <div id="reportMetrics" class="metrics" style="margin-bottom: 16px;"></div>
-            <div class="sectionHead spaced"><h2>Extrato Detalhado de Lançamentos</h2></div>
-            <div id="reportCharges" class="tableWrap"></div>
+          <!-- Vendas e Curva ABC -->
+          <div id="tab-report-vendas" class="reportTabContent" hidden>
+            <div id="rpAbcSummary" class="rpGrid rpGrid3"></div>
+            <div class="rpCard spacedTop">
+              <div class="rpCardHead"><h3>Curva ABC dos produtos e serviços</h3>
+                <div class="rpToggle" id="rpAbcFilter">
+                  <button type="button" class="chartPill active" data-abc="">Todos</button><button type="button" class="chartPill" data-abc="A">Classe A</button><button type="button" class="chartPill" data-abc="B">Classe B</button><button type="button" class="chartPill" data-abc="C">Classe C</button>
+                </div>
+              </div>
+              <div id="rpAbc" class="tableWrap"></div>
+            </div>
+            <div class="rpGrid rpGrid2 spacedTop">
+              <div class="rpCard"><h3>Movimento por horário</h3><div id="reportHours"></div></div>
+              <div class="rpCard"><h3>Movimento por dia da semana</h3><div id="reportWeekdays"></div></div>
+            </div>
+            <div class="rpGrid rpGrid2 spacedTop">
+              <div class="rpCard"><h3>Faixas de valor das vendas</h3><div id="rpTicket"></div></div>
+              <div class="rpCard"><h3>Histórico do sistema anterior</h3><p class="muted">Unidades vendidas desde o início (serviços). Valor estimado pelo preço atual.</p><div id="rpLegacy" class="tableWrap rpScroll"></div></div>
+            </div>
           </div>
 
-          <!-- Conteúdo: Mov. Caixa -->
-          <div id="tab-report-mov_caixa" class="reportTabContent" hidden>
-            <div class="sectionHead"><h2>Movimentações de Caixa (Aberturas, Fechamentos, Sangrias)</h2></div>
-            <div id="reportCashShiftsWrap" class="tableWrap"></div>
+          <!-- Caixa -->
+          <div id="tab-report-caixa" class="reportTabContent" hidden>
+            <div id="reportMetrics" class="rpGrid rpGrid4"></div>
+            <div id="rpCash" class="rpGrid rpGrid4 spacedTop"></div>
+            <div class="rpCard spacedTop"><h3>Aberturas e fechamentos</h3><div id="reportCashShiftsWrap" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Sangrias e suprimentos</h3><div id="reportAdjustments" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><div class="rpCardHead"><h3>Lançamentos do período</h3><input id="rpChargeSearch" type="search" placeholder="Buscar lançamento" class="rpSearch"></div><div id="reportCharges" class="tableWrap"></div></div>
           </div>
 
-          <!-- Conteúdo: Ranking & Categorias -->
-          <div id="tab-report-ranking" class="reportTabContent" hidden>
-            <div class="sectionHead spaced"><h2>Inteligência de Produtos &amp; Serviços (O Que Mais Vende)</h2></div>
-            <div id="reportProducts" class="tableWrap"></div>
-            <div class="sectionHead spaced"><h2>Produtividade por Terminal</h2></div>
-            <div id="reportMachines" class="tableWrap"></div>
-            <div class="sectionHead spaced"><h2>Arrecadação por Operador</h2></div>
-            <div id="reportOperators" class="tableWrap"></div>
+          <!-- Clientes e fiado -->
+          <div id="tab-report-clientes" class="reportTabContent" hidden>
+            <div id="rpAging" class="rpGrid rpGrid4"></div>
+            <div class="rpCard spacedTop"><h3>Pendências a receber</h3><div id="reportOpenCharges" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Clientes que mais compram no período</h3><div id="rpClients" class="tableWrap"></div></div>
+          </div>
+
+          <!-- Estoque -->
+          <div id="tab-report-estoque" class="reportTabContent" hidden>
+            <div id="rpStock" class="rpGrid rpGrid4"></div>
+            <div class="rpCard spacedTop"><h3>Estoque para repor (zerado, negativo ou abaixo do mínimo)</h3><div id="reportLowStock" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Mercadoria parada (com estoque e sem venda há 60 dias)</h3><div id="rpStale" class="tableWrap"></div></div>
+          </div>
+
+          <!-- Maquinas e equipe -->
+          <div id="tab-report-maquinas" class="reportTabContent" hidden>
+            <div class="rpCard"><h3>Uso e faturamento por máquina</h3><div id="reportMachines" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Recebimentos por atendente</h3><div id="reportOperators" class="tableWrap"></div></div>
+          </div>
+        </section>
+
+        <!-- Visao: Despesas -->
+        <section id="view-expenses" class="view" hidden>
+          <div class="sectionHead reportHeader">
+            <div>
+              <h2>Despesas da Loja</h2>
+              <p>Contas, faturas do cartão e gastos: envie o PDF ou a foto e o sistema lê valor, vencimento e categoria.</p>
+            </div>
+            <div class="reportActionsBar">
+              <input id="expMonth" type="month" title="Mês">
+              <button type="button" class="primary" id="expImportBtn">Importar PDF ou foto</button>
+              <button type="button" class="secondaryBtn" id="expAddBtn">Lançar despesa</button>
+              <button type="button" class="secondaryBtn" id="expFixedBtn">Despesa fixa mensal</button>
+              <input type="file" id="expFileInput" accept="application/pdf,image/*" multiple hidden>
+            </div>
+          </div>
+          <div id="expDrop" class="expDrop">Arraste aqui o PDF ou a foto da conta, boleto ou fatura do cartão (pode ser mais de um)</div>
+          <div id="expKpis" class="rpGrid rpGrid4 spacedTop"></div>
+          <div class="rpGrid rpGrid2 spacedTop">
+            <div class="rpCard"><h3>Por categoria no mês</h3><div id="expByCategory"></div></div>
+            <div class="rpCard"><h3>Despesas nos últimos 12 meses</h3><div id="expTrend" class="rpChart"></div></div>
+          </div>
+          <div class="rpGrid rpGrid2 spacedTop">
+            <div class="rpCard"><h3>Contas a pagar</h3><div id="expPayables" class="tableWrap rpScroll"></div></div>
+            <div class="rpCard"><h3>Maiores fornecedores no mês</h3><div id="expSuppliers"></div></div>
+          </div>
+          <div class="rpCard spacedTop">
+            <div class="rpCardHead"><h3>Lançamentos do mês</h3>
+              <div class="rpActions">
+                <select id="expFilterCategory"><option value="">Todas as categorias</option></select>
+                <select id="expFilterStatus"><option value="">Todas</option><option value="open">A pagar</option><option value="late">Vencidas</option><option value="paid">Pagas</option></select>
+                <input id="expSearch" type="search" placeholder="Buscar descrição">
+              </div>
+            </div>
+            <div id="expTable" class="tableWrap"></div>
+          </div>
+        </section>
+
+        <!-- Visao: Speed Marketing (modulo com identidade propria da Speed Financeira) -->
+        <section id="view-marketing" class="view" hidden>
+          <div class="marketingTabs" id="marketingTabs">
+            <button type="button" class="active" data-mk="/marketing/">Painel de marketing</button>
+            <button type="button" data-mk="/marketing/speedgeo/dashboard.html">SpeedGeo (SEO local)</button>
+            <button type="button" data-mk="/marketing/arquivos/">Arquivos de pesquisa</button>
+            <a href="/marketing/" target="_blank" rel="noopener" id="marketingOpenTab">Abrir em nova aba</a>
+          </div>
+          <iframe id="marketingFrame" title="Speed Marketing" class="marketingFrame"></iframe>
+        </section>
+
+        <!-- Visao: Cofre de logins (promotoras, bancos e sistemas da Speed Financeira) -->
+        <section id="view-vault" class="view" hidden>
+          <div id="vaultLocked" class="vaultLocked" hidden>
+            <div class="vaultLockCard">
+              <h2>Cofre bloqueado</h2>
+              <p>A senha mestre está ativada. Digite-a para ver os logins.</p>
+              <form id="vaultUnlockForm">
+                <label><span>Senha mestre</span><input id="vaultMaster" type="password" autocomplete="off" required></label>
+                <button type="submit" class="primary">Abrir</button>
+                <p class="vaultError" id="vaultError" hidden></p>
+              </form>
+            </div>
+          </div>
+          <div id="vaultOpen" class="cvShell" hidden>
+            <aside class="cvSide">
+              <div class="cvBrand"><span class="cvLogo">S</span><div><strong>Cofre Speed</strong><small>logins criptografados</small></div></div>
+              <div class="cvSideLabel">Promotoras <span id="vaultPromoterCount"></span></div>
+              <div id="vaultPromoters" class="cvPromoters"></div>
+              <div class="cvSideLabel">Backup e ferramentas</div>
+              <button type="button" class="cvTool" id="vaultExportJson"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>Exportar backup (.json)</button>
+              <button type="button" class="cvTool" id="vaultImportButton"><svg viewBox="0 0 24 24"><path d="M12 21V9m0 0l-4 4m4-4l4 4M4 7V4h16v3"/></svg>Importar lista ou backup</button>
+              <button type="button" class="cvTool" id="vaultBanksButton"><svg viewBox="0 0 24 24"><path d="M3 10h18M5 10v8m4-8v8m6-8v8m4-8v8M3 21h18M12 3l9 5H3z"/></svg>Configurar bancos</button>
+              <div class="cvSideBottom">
+                <button type="button" class="cvDashed" id="vaultNewPromoter">+ Nova promotora</button>
+                <button type="button" class="cvDashed" id="vaultNewSystem">+ Novo sistema da Speed</button>
+              </div>
+            </aside>
+            <div class="cvMain">
+              <header class="cvHeader">
+                <div><h2>Todos os acessos</h2><small>Gestão de logins e acessos do correspondente bancário</small></div>
+                <div class="cvHeaderActions">
+                  <button type="button" class="cvBtn" id="vaultMasterButton"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Ativar senha mestre</span></button>
+                  <button type="button" class="cvBtn" id="vaultPdfButton"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/></svg>Exportar PDF</button>
+                  <button type="button" class="cvBtn primary" id="vaultNewButton">+ Novo login</button>
+                </div>
+              </header>
+              <nav class="cvTabs" id="vaultKinds">
+                <button type="button" class="active" data-kind="banco">Logins dos bancos</button>
+                <button type="button" data-kind="promotora">Portais das promotoras</button>
+                <button type="button" data-kind="sistema">Sistemas da Speed</button>
+              </nav>
+              <div id="vaultBankTools">
+                <div class="cvToolbar">
+                  <div class="cvSeg" id="vaultProducts"></div>
+                  <label class="cvSearch"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vaultSearch" type="search" placeholder="Buscar banco, login ou obs..."></label>
+                </div>
+                <div class="cvBankFilter"><span>Filtrar banco:</span><div id="vaultBanks" class="cvChips"></div></div>
+              </div>
+              <div id="vaultPortalHead" class="cvPortalHead" hidden>
+                <div><strong id="vaultPortalTitle">Portais e credenciais master das promotoras</strong><small id="vaultPortalText">Dados de acesso master e links dos portais das promotoras parceiras.</small></div>
+                <button type="button" class="cvBtn primary" id="vaultPortalNew">+ Promotora</button>
+              </div>
+              <div id="vaultCards" class="cvGrid"></div>
+              <div id="vaultSummary" class="cvStats"></div>
+            </div>
           </div>
         </section>
 
@@ -1129,7 +1196,7 @@
             <option value="Informática &amp; Celular">Informática &amp; Celular (#2563eb)</option>
             <option value="Eletrônicos &amp; Acessórios">Eletrônicos &amp; Acessórios (#ea580c)</option>
             <option value="Bomboniere &amp; Bebidas">Bomboniere &amp; Bebidas (#e11d48)</option>
-            <option value="Serviços Financeiros">Serviços Financeiros (#0d9488)</option>
+            <option value="Serviços Financeiros">Serviços Financeiros (#0b8a45)</option>
           </select>
         </label>
       </div>

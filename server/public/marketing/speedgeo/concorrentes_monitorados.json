@@ -1,0 +1,150 @@
+{
+  "atualizado_em": "2026-09-19T12:10:38.858257",
+  "total_concorrentes": 6,
+  "concorrentes": [
+    {
+      "nome": "Agibank (Unidade 1 - Varginha)",
+      "url": "https://agibank.com.br/?utm_source=google&utm_medium=maps&utm_campaign=lbm31012",
+      "tipo": "Banco com Loja de Rua",
+      "presenca_varginha": "Loja de rua com campanha ativa no Google Maps (lbm31012)",
+      "estrategia_local": "Captar aposentados pelo Google Maps com oferta de conta e cartão consignado",
+      "diferencial_speed": "Speed é multimarca (10+ bancos), não obriga abertura de conta e tem atendimento ágil no Centro",
+      "data_verificacao": "2026-09-19T12:10:38.858271",
+      "status_http": 200,
+      "tempo_resposta_ms": 128,
+      "titulo": "Agibank - Conta, Cartão, empréstimo e muito mais!",
+      "meta_description": "No Agibank você encontra o melhor atendimento tanto no digital quanto em uma loja. Empréstimo consignado, empréstimo fgts, cartão e muito mais.",
+      "rastreadores_detectados": [
+        "Google Tag Manager"
+      ],
+      "mencoes_locais": {
+        "varginha": false,
+        "consignado": true,
+        "inss": true,
+        "fgts": true,
+        "whatsapp": true
+      },
+      "observacoes": [
+        "Campanha Google Maps identificada: lbm31012"
+      ]
+    },
+    {
+      "nome": "Agibank (Unidade 2 - Varginha)",
+      "url": "https://agibank.com.br/?utm_source=google&utm_medium=maps&utm_campaign=lbm31072",
+      "tipo": "Segunda Unidade de Rua",
+      "presenca_varginha": "Segunda loja de rua em Varginha cadastrada no Google Maps (lbm31072)",
+      "estrategia_local": "Domínio geográfico duplo da cidade nas buscas do Maps",
+      "diferencial_speed": "Speed resgata clientes com taxas altas do Agibank via portabilidade com troco no Pix",
+      "data_verificacao": "2026-09-19T12:10:39.518571",
+      "status_http": 200,
+      "tempo_resposta_ms": 82,
+      "titulo": "Agibank - Conta, Cartão, empréstimo e muito mais!",
+      "meta_description": "No Agibank você encontra o melhor atendimento tanto no digital quanto em uma loja. Empréstimo consignado, empréstimo fgts, cartão e muito mais.",
+      "rastreadores_detectados": [
+        "Google Tag Manager"
+      ],
+      "mencoes_locais": {
+        "varginha": false,
+        "consignado": true,
+        "inss": true,
+        "fgts": true,
+        "whatsapp": true
+      },
+      "observacoes": [
+        "Campanha Google Maps identificada: lbm31072"
+      ]
+    },
+    {
+      "nome": "Help! Loja de Crédito (Rede Bmg)",
+      "url": "https://www.help.com.br/",
+      "tipo": "Loja de Rua de Crédito",
+      "presenca_varginha": "Loja física de rua com fachada forte",
+      "estrategia_local": "Foco estrito em aposentados e produtos Bmg",
+      "diferencial_speed": "Speed opera com Bmg e mais 9 bancos, garantindo aprovação em outro parceiro se o Bmg recusar",
+      "data_verificacao": "2026-09-19T12:10:40.125950",
+      "status_http": 200,
+      "tempo_resposta_ms": 232,
+      "titulo": "Loja de Crédito help! | Empréstimo, Cartões, Empréstimo FGTS e Mais",
+      "meta_description": "Precisa de dinheiro extra para resolver as finanças? Na help! tem empréstimos, cartão de crédito consignado, seguros e outros produtos para te ajudar.",
+      "rastreadores_detectados": [],
+      "mencoes_locais": {
+        "varginha": false,
+        "consignado": true,
+        "inss": true,
+        "fgts": true,
+        "whatsapp": true
+      },
+      "observacoes": []
+    },
+    {
+      "nome": "Credimais Empréstimos",
+      "url": "https://www.credimaisemprestimos.com.br/",
+      "tipo": "Correspondente Local Varginha",
+      "presenca_varginha": "Loja de rua tradicional com bom ranqueamento local",
+      "estrategia_local": "Captação orgânica local de aposentados e consignado",
+      "diferencial_speed": "Atendimento digital 100% integrado ao WhatsApp oficial (35) 3067-5017 com liberação imediata via Pix",
+      "data_verificacao": "2026-09-19T12:10:40.923952",
+      "status_http": 200,
+      "tempo_resposta_ms": 319,
+      "titulo": "Home - Grupo Credimais",
+      "meta_description": null,
+      "rastreadores_detectados": [],
+      "mencoes_locais": {
+        "varginha": false,
+        "consignado": false,
+        "inss": false,
+        "fgts": false,
+        "whatsapp": true
+      },
+      "observacoes": []
+    },
+    {
+      "nome": "Crefisa",
+      "url": "http://www.crefisa.com.br/",
+      "tipo": "Financeira de Crédito Pessoal",
+      "presenca_varginha": "Loja física de rua com apelo em negativados",
+      "estrategia_local": "Crédito pessoal de alto custo divulgado massivamente na TV",
+      "diferencial_speed": "Speed orienta antecipação de FGTS e consignado Bacen com juros até 10 vezes menores que a Crefisa",
+      "data_verificacao": "2026-09-19T12:10:41.748691",
+      "status_http": 200,
+      "tempo_resposta_ms": 601,
+      "titulo": "Crefisa, Empréstimo para Negativado.",
+      "meta_description": "Crefisa. Empréstimo pessoal para negativados. Tenha dinheiro rápido e até 45 dias para começar a pagar! Contrate pelo telefone ou online.",
+      "rastreadores_detectados": [
+        "Google Tag Manager"
+      ],
+      "mencoes_locais": {
+        "varginha": false,
+        "consignado": true,
+        "inss": true,
+        "fgts": true,
+        "whatsapp": true
+      },
+      "observacoes": []
+    },
+    {
+      "nome": "Banco Mercantil do Brasil",
+      "url": "https://bancomercantil.com.br/",
+      "tipo": "Banco Pagador do INSS com Agência Física",
+      "presenca_varginha": "Agência de rua oficial de pagamento do INSS em Varginha",
+      "estrategia_local": "Venda de consignado na boca do caixa no dia do pagamento do benefício",
+      "diferencial_speed": "Speed atende sem filas na Rua Santa Cruz 696, sem venda casada de seguros e com cotação multimarca",
+      "data_verificacao": "2026-09-19T12:10:42.889431",
+      "status_http": 403,
+      "tempo_resposta_ms": 125,
+      "titulo": null,
+      "meta_description": null,
+      "rastreadores_detectados": [],
+      "mencoes_locais": {
+        "varginha": false,
+        "consignado": false,
+        "inss": false,
+        "fgts": false,
+        "whatsapp": false
+      },
+      "observacoes": [
+        "HTTP Error 403: Forbidden"
+      ]
+    }
+  ]
+}

@@ -12,6 +12,8 @@
 )
 
 $ErrorActionPreference = "Stop"
+# Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
+$ProgressPreference = "SilentlyContinue"
 $AgentVersion = "0.3.0"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
@@ -339,6 +341,10 @@ function Sync-FolderContent {
         try { Copy-Item -LiteralPath $item.FullName -Destination $Destination -Recurse -Force -ErrorAction Stop } catch { $locked += $item.Name }
     }
     if ($locked.Count -gt 0) { Write-AgentLog "Restaurado com itens em uso mantidos em $($Destination):$($locked -join ', ')" }
+    # Sobrou arquivo do cliente anterior (nao existe no padrao): a limpeza NAO pode ser confirmada.
+    $baselineNames = @(Get-ChildItem -LiteralPath $Source -Force -ErrorAction SilentlyContinue | ForEach-Object { $_.Name })
+    $leftover = @(Get-ChildItem -LiteralPath $Destination -Force -ErrorAction SilentlyContinue | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -and $baselineNames -notcontains $_.Name } | ForEach-Object { $_.Name })
+    if ($leftover.Count -gt 0) { throw "Limpeza incompleta em $($Destination): arquivo(s) em uso $($leftover -join ', ')" }
 }
 
 function Get-ProtectedTarget {
@@ -913,7 +919,9 @@ function Show-PdfPrintReview {
     $form.BackColor = $dark
     $form.ForeColor = $white
     $form.TopMost = $true
-    $form.MaximizeBox = $false
+    # Abre maximizada para o cliente conferir a pagina em tamanho grande; pode restaurar e redimensionar.
+    $form.MaximizeBox = $true
+    $form.WindowState = "Maximized"
     $form.KeyPreview = $true
     $script:PrintReviewChoice = $null
     $script:PrintPreviewIndex = 0
@@ -922,6 +930,7 @@ function Show-PdfPrintReview {
     $summary = New-Object Windows.Forms.Panel
     $summary.Location = New-Object Drawing.Point(18, 18)
     $summary.Size = New-Object Drawing.Size(280, 605)
+    $summary.Anchor = "Top,Bottom,Left"
     $summary.BackColor = $panelColor
     $form.Controls.Add($summary)
 
@@ -1156,7 +1165,7 @@ function Restart-AgentRun {
 }
 
 function Get-ScreenJpeg {
-    param([int]$MaxWidth = 1280, [long]$Quality = 50)
+    param([int]$MaxWidth = 1152, [long]$Quality = 40)
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
     $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
@@ -1247,6 +1256,7 @@ function Close-ClientApps {
 
 $TechnicianUser = "Tecnico"
 $UpdaterTaskName = "LanHouseManager-Atualizador"
+$SessionTaskName = "LanHouseManager-AgenteSessao"
 
 # Resolve a conta pelo caminho da pasta do perfil (C:\Users\<pasta>). O nome da pasta pode diferir
 # do nome interno da conta (acento gravado de outra forma, conta renomeada), entao nao da para
@@ -1464,6 +1474,42 @@ function Register-AgentUpdater {
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Minutes 5) -MultipleInstances IgnoreNew -StartWhenAvailable
     Register-ScheduledTask -TaskName $UpdaterTaskName -Action $action -Trigger $triggers -Principal $principal -Settings $settings -Force | Out-Null
     Write-AgentLog "Tarefa de atualizacao automatica registrada ($UpdaterTaskName)."
+    Register-AgentSessionTask
+}
+
+function Register-AgentSessionTask {
+    $script = Join-Path $InstallRoot "LanHouseAgent.ps1"
+    # Tarefa sob demanda que abre o agente na sessao do usuario logado; o supervisor (SYSTEM) a dispara se o agente cair.
+    $runAction = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File `"$script`" -Action Run" -WorkingDirectory $InstallRoot
+    $runPrincipal = New-ScheduledTaskPrincipal -GroupId "S-1-5-32-545" -RunLevel Limited
+    $runSettings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
+    Register-ScheduledTask -TaskName $SessionTaskName -Action $runAction -Principal $runPrincipal -Settings $runSettings -Force | Out-Null
+    Write-AgentLog "Tarefa de supervisao do agente registrada ($SessionTaskName)."
+}
+
+# Supervisor (SYSTEM): cliente logado sem o agente rodando = sem bloqueio nem limpeza. Religa o agente na sessao dele.
+function Invoke-AgentSupervisor {
+    param([object]$Config)
+    # Estacao instalada antes desta versao: o atualizador (SYSTEM) cria a tarefa que faltava.
+    if (-not (Get-ScheduledTask -TaskName $SessionTaskName -ErrorAction SilentlyContinue)) { Register-AgentSessionTask }
+    $protected = @($Config.ProtectedUsers)
+    $processes = @(Get-CimInstance Win32_Process -Filter "Name='explorer.exe' OR Name='powershell.exe'" -ErrorAction SilentlyContinue)
+    foreach ($explorer in @($processes | Where-Object { $_.Name -eq "explorer.exe" })) {
+        $owner = (Invoke-CimMethod -InputObject $explorer -MethodName GetOwner -ErrorAction SilentlyContinue).User
+        if (-not $owner -or $protected -notcontains $owner) { continue }
+        $running = @($processes | Where-Object { $_.Name -eq "powershell.exe" -and $_.SessionId -eq $explorer.SessionId -and $_.CommandLine -match '(?i)-Action\s+"?Run' -and $_.CommandLine -match 'LanHouseAgent\.ps1' })
+        if ($running.Count -gt 0) { continue }
+        # Logo apos o login o atalho de inicializacao ainda esta abrindo o agente: da uma folga de 90 s.
+        if (((Get-Date) - $explorer.CreationDate).TotalSeconds -lt 90) { continue }
+        Start-ScheduledTask -TaskName $SessionTaskName
+        Write-AgentLog "Supervisor: agente parado na sessao de $owner; reiniciado."
+        try {
+            $base = "$($Config.ServerUrl)".TrimEnd("/"); $id = [Uri]::EscapeDataString($Config.MachineId)
+            $body = [System.Text.Encoding]::UTF8.GetBytes((@{ title = "Agente religado pelo supervisor"; detail = "O agente estava parado na sessao de $owner" } | ConvertTo-Json))
+            Invoke-RestMethod -Method Post -Uri "$base/api/client/$id/event" -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 5 | Out-Null
+        } catch { }
+        break
+    }
 }
 
 #endregion
@@ -1500,6 +1546,7 @@ function Invoke-AgentUpdate {
         $info = Invoke-RestMethod -Method Get -Uri "$base/api/client/$id/script-hash" -Headers @{ Authorization = "Bearer $($config.AgentToken)" } -TimeoutSec 10
         [void](Save-AgentScriptFromServer -Config $config -ServerHash ([string]$info.hash))
     } catch { Write-AgentLog "Atualizador: $($_.Exception.Message)" }
+    try { Invoke-AgentSupervisor -Config $config } catch { Write-AgentLog "Supervisor: $($_.Exception.Message)" }
 }
 
 #endregion
@@ -1577,6 +1624,24 @@ function Clear-ClientTraces {
 
 #region Impressao: revisao em processo proprio (o loop do agente nao para)
 
+function Open-PrintListener {
+    param([int]$Attempts = 1)
+    $listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, 18955)
+    for ($attempt = 1; ; $attempt++) {
+        try { $listener.Start(); break }
+        catch { if ($attempt -ge $Attempts) { throw }; Start-Sleep -Seconds 1 }
+    }
+    # Porta nao herdavel: telas e o cmd de reinicio abertos por este agente herdavam o socket
+    # e seguravam a porta 18955, impedindo o proximo agente de abrir a impressora virtual.
+    try {
+        if (-not ("LhmNet.Handle" -as [type])) {
+            Add-Type -Namespace LhmNet -Name Handle -MemberDefinition '[DllImport("kernel32.dll", SetLastError = true)] public static extern bool SetHandleInformation(IntPtr hObject, uint dwMask, uint dwFlags);'
+        }
+        [void][LhmNet.Handle]::SetHandleInformation($listener.Server.Handle, 1, 0)
+    } catch { Write-AgentLog "Nao foi possivel marcar a porta da impressora como nao herdavel: $($_.Exception.Message)" }
+    return $listener
+}
+
 function Start-PrintReviewProcess {
     param([string]$Path)
     return Start-AgentChild -ChildAction "PrintReview" -Extra @("-JobPath", "`"$Path`"")
@@ -1650,20 +1715,8 @@ function Invoke-AgentRun {
             if (-not (Get-VirtualPrinterName)) {
                 try { Install-VirtualPrintQueue } catch { }
             }
-            $printListener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, 18955)
             # Ao reiniciar, o agente anterior pode levar alguns segundos para liberar a porta.
-            for ($attempt = 1; ; $attempt++) {
-                try { $printListener.Start(); break }
-                catch { if ($attempt -ge 30) { throw }; Start-Sleep -Seconds 1 }
-            }
-            # Porta nao herdavel: telas e o cmd de reinicio abertos por este agente herdavam o socket
-            # e seguravam a porta 18955, impedindo o proximo agente de abrir a impressora virtual.
-            try {
-                if (-not ("LhmNet.Handle" -as [type])) {
-                    Add-Type -Namespace LhmNet -Name Handle -MemberDefinition '[DllImport("kernel32.dll", SetLastError = true)] public static extern bool SetHandleInformation(IntPtr hObject, uint dwMask, uint dwFlags);'
-                }
-                [void][LhmNet.Handle]::SetHandleInformation($printListener.Server.Handle, 1, 0)
-            } catch { Write-AgentLog "Nao foi possivel marcar a porta da impressora como nao herdavel: $($_.Exception.Message)" }
+            $printListener = Open-PrintListener -Attempts 30
             try {
                 if (-not (Set-VirtualPrinterDefault)) { throw "Impressora virtual nao encontrada." }
             } catch {
@@ -1691,6 +1744,7 @@ function Invoke-AgentRun {
     $lastScriptCheck = (Get-Date).AddSeconds(-50)
     $lastFailureEvent = [datetime]::MinValue
     $nextRestoreAt = [datetime]::MinValue
+    $restoreFailures = 0
     $monitorProcess = $null
     $lastCommand = $null
     $consecutiveFailures = 0
@@ -1748,6 +1802,13 @@ function Invoke-AgentRun {
             if (((Get-Date) - $lastScriptCheck).TotalSeconds -ge 60) {
                 $lastScriptCheck = Get-Date
                 Remove-ClientPrinterConnections
+                # Porta estava ocupada na partida: tenta de novo, para a impressao voltar sem reiniciar.
+                if (-not $printListener -and $config.VirtualPrinting) {
+                    try {
+                        $printListener = Open-PrintListener
+                        Send-AgentEvent -Config $config -Title "Impressão disponível" -Detail "Porta da Impressão Nexcafé liberada"
+                    } catch { $printListener = $null }
+                }
                 if ($printListener) { try { [void](Set-VirtualPrinterDefault) } catch { Write-AgentLog "Falha ao manter impressora padrao: $($_.Exception.Message)" } }
                 if (Update-AgentScriptIfNeeded -Config $config -ServerHash ([string]$command.scriptHash) -RunningHash $runningHash) { break }
             }
@@ -1771,11 +1832,22 @@ function Invoke-AgentRun {
                     Invoke-AgentRestore
                     $restoreDone = $true
                 } catch {
-                    Write-AgentLog "Falha na restauracao (nova tentativa em 15s): $($_.Exception.Message)"
-                    Send-AgentEvent -Config $config -Title "Falha na restauracao" -Detail $_.Exception.Message
+                    $restoreFailures++
+                    Write-AgentLog "Falha na restauracao ($restoreFailures, nova tentativa em 15s): $($_.Exception.Message)"
+                    if ($restoreFailures -eq 1) { Send-AgentEvent -Config $config -Title "Falha na restauracao" -Detail $_.Exception.Message }
                     $nextRestoreAt = (Get-Date).AddSeconds(15)
+                    # Arquivo travado por 1 minuto: reinicia UMA vez por limpeza (a limpeza roda de novo no login).
+                    if ($restoreFailures -ge 4 -and [int]$state.RebootForRestoreSeq -ne [int]$command.restoreSeq) {
+                        Add-OrUpdateProperty -Object $state -Name "RebootForRestoreSeq" -Value ([int]$command.restoreSeq)
+                        Save-State -State $state
+                        Send-AgentEvent -Config $config -Title "Limpeza travada: reiniciando" -Detail $_.Exception.Message
+                        shutdown.exe /r /t 10 /c "LanHouseManager: reiniciando para concluir a limpeza."
+                        break
+                    }
+                    if ($restoreFailures -eq 8) { Send-AgentEvent -Config $config -Title "Limpeza ainda incompleta" -Detail "Verifique a estacao: $($_.Exception.Message)" }
                 }
                 if ($restoreDone) {
+                    $restoreFailures = 0
                     $state.LastRestoreSeq = [int]$command.restoreSeq
                     Save-State -State $state
                     Send-AgentEvent -Config $config -Title "Restauracao executada" -Detail "Sequencia $($command.restoreSeq)" -RestoreSeq ([int]$command.restoreSeq)
@@ -1867,7 +1939,7 @@ public class LanHouseOverlayForm : Form {
     $form.ShowInTaskbar = $false
     $form.BackColor = $dark
     $panelWidth = 300
-    $panelHeight = 76
+    $panelHeight = 94
     $area = [System.Windows.Forms.Screen]::PrimaryScreen.WorkingArea
     $form.ClientSize = New-Object Drawing.Size($panelWidth, $panelHeight)
     $form.Opacity = 0.94
@@ -1912,6 +1984,15 @@ public class LanHouseOverlayForm : Form {
     $breakLabel.Size = New-Object Drawing.Size(($panelWidth - 24), 22)
     $form.Controls.Add($breakLabel)
 
+    $hintLabel = New-Object System.Windows.Forms.Label
+    $hintLabel.Text = "Clique aqui para encerrar seu acesso"
+    $hintLabel.Font = New-Object Drawing.Font("Segoe UI", 8, [Drawing.FontStyle]::Underline)
+    $hintLabel.ForeColor = $accent
+    $hintLabel.BackColor = [Drawing.Color]::Transparent
+    $hintLabel.Location = New-Object Drawing.Point(12, 68)
+    $hintLabel.Size = New-Object Drawing.Size(($panelWidth - 24), 20)
+    $form.Controls.Add($hintLabel)
+
     # Cantos arredondados e arrastar para outra posicao, sem roubar o foco.
     $radius = 14
     $shape = New-Object System.Drawing.Drawing2D.GraphicsPath
@@ -1929,8 +2010,62 @@ public class LanHouseOverlayForm : Form {
             $form.Location = New-Object Drawing.Point(($script:OverlayDragOrigin.X + $p.X - $script:OverlayDrag.X), ($script:OverlayDragOrigin.Y + $p.Y - $script:OverlayDrag.Y))
         }
     }
-    $dragUp = { $script:OverlayDrag = $null }
-    foreach ($control in @($form, $timeLabel, $totalLabel, $breakLabel)) {
+    # Clique sem arrastar (menos de 6 px) abre a confirmacao para o cliente encerrar o proprio acesso.
+    $dragUp = {
+        $start = $script:OverlayDrag
+        $script:OverlayDrag = $null
+        if (-not $start) { return }
+        $p = [System.Windows.Forms.Cursor]::Position
+        if ([math]::Abs($p.X - $start.X) + [math]::Abs($p.Y - $start.Y) -lt 6) { & $askEnd }
+    }
+    $askEnd = {
+        if (-not $script:OverlaySession -or $script:OverlayAsking) { return }
+        $script:OverlayAsking = $true
+        try {
+            $dialog = New-Object System.Windows.Forms.Form
+            $dialog.Text = "Encerrar acesso"
+            $dialog.FormBorderStyle = "FixedDialog"; $dialog.MaximizeBox = $false; $dialog.MinimizeBox = $false
+            $dialog.StartPosition = "CenterScreen"; $dialog.TopMost = $true; $dialog.ShowInTaskbar = $false
+            $dialog.ClientSize = New-Object Drawing.Size(420, 210)
+            $dialog.BackColor = $dark; $dialog.ForeColor = $white
+            $title = New-Object System.Windows.Forms.Label
+            $title.Text = "Deseja encerrar seu acesso agora?"
+            $title.Font = New-Object Drawing.Font("Segoe UI", 14, [Drawing.FontStyle]::Bold)
+            $title.Location = New-Object Drawing.Point(20, 18); $title.Size = New-Object Drawing.Size(380, 30)
+            $info = New-Object System.Windows.Forms.Label
+            $info.Text = "Tempo: $($timeLabel.Text)    Total: " + ("R$ {0:N2}" -f ($script:OverlayValueCents / 100)) + "`r`nO valor fica para pagar no caixa. Salve seus arquivos antes: ao encerrar, a máquina é limpa."
+            $info.Font = New-Object Drawing.Font("Segoe UI", 10); $info.ForeColor = $muted
+            $info.Location = New-Object Drawing.Point(20, 56); $info.Size = New-Object Drawing.Size(380, 70)
+            $yes = New-Object System.Windows.Forms.Button
+            $yes.Text = "Encerrar meu acesso"; $yes.FlatStyle = "Flat"; $yes.FlatAppearance.BorderSize = 0
+            $yes.BackColor = [Drawing.Color]::FromArgb(200, 55, 60); $yes.ForeColor = $white
+            $yes.Font = New-Object Drawing.Font("Segoe UI", 11, [Drawing.FontStyle]::Bold)
+            $yes.Location = New-Object Drawing.Point(20, 142); $yes.Size = New-Object Drawing.Size(185, 46)
+            $yes.DialogResult = [System.Windows.Forms.DialogResult]::Yes
+            $no = New-Object System.Windows.Forms.Button
+            $no.Text = "Continuar usando"; $no.FlatStyle = "Flat"; $no.FlatAppearance.BorderSize = 0
+            $no.BackColor = $accent; $no.ForeColor = $dark
+            $no.Font = New-Object Drawing.Font("Segoe UI", 11, [Drawing.FontStyle]::Bold)
+            $no.Location = New-Object Drawing.Point(215, 142); $no.Size = New-Object Drawing.Size(185, 46)
+            $no.DialogResult = [System.Windows.Forms.DialogResult]::No
+            $dialog.Controls.AddRange(@($title, $info, $yes, $no))
+            $dialog.AcceptButton = $no; $dialog.CancelButton = $no
+            if ($dialog.ShowDialog() -ne [System.Windows.Forms.DialogResult]::Yes) { return }
+            try {
+                $base = "$($config.ServerUrl)".TrimEnd("/")
+                $id = [Uri]::EscapeDataString($config.MachineId)
+                $body = [System.Text.Encoding]::UTF8.GetBytes((@{ sessionId = [string]$script:OverlaySession.id } | ConvertTo-Json))
+                Invoke-RestMethod -Method Post -Uri "$base/api/client/$id/end" -Headers @{ Authorization = "Bearer $($config.AgentToken)" } -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 10 | Out-Null
+                # O agente principal mostra a tela de bloqueio com o valor a pagar em seguida.
+                $script:OverlaySession = $null
+                if ($script:OverlayTimer) { $script:OverlayTimer.Stop() }
+                $form.Close()
+            } catch {
+                [System.Windows.Forms.MessageBox]::Show("Não foi possível encerrar agora. Chame o atendente.", "Encerrar acesso", "OK", "Warning") | Out-Null
+            }
+        } finally { $script:OverlayAsking = $false }
+    }
+    foreach ($control in @($form, $timeLabel, $totalLabel, $breakLabel, $hintLabel)) {
         $control.Cursor = [System.Windows.Forms.Cursors]::SizeAll
         $control.Add_MouseDown($dragDown); $control.Add_MouseMove($dragMove); $control.Add_MouseUp($dragUp)
     }

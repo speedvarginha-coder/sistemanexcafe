@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Notícias do Mercado — Speed Financeira (interno)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .brand-green { background-color: #019652; }
+        .no-print { }
+        @media print { .no-print { display: none; } }
+    </style>
+  <link rel="stylesheet" href="../css/compat-tw3.css">
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen">
+
+    <header class="brand-green text-white shadow-lg">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-lg bg-yellow-400 flex items-center justify-center text-gray-900 font-black text-xl shadow">S</div>
+                <div>
+                    <h1 class="text-lg font-black tracking-wide">Notícias do Mercado de Crédito</h1>
+                    <p class="text-xs text-green-100">Leitura interna — Speed Financeira • <i class="fas fa-lock text-yellow-300"></i> documento privado</p>
+                </div>
+            </div>
+            <span class="text-xs bg-green-900 px-3 py-1.5 rounded-lg border border-green-700 no-print">
+                <i class="fas fa-sync mr-1"></i> Atualize com: <code class="text-yellow-300">python monitor_noticias.py</code>
+            </span>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+
+        <!-- Resumo -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase">Última execução</p>
+                <p class="text-sm font-black text-gray-900 mt-1" id="noticias-data">-</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase">Itens no histórico</p>
+                <p class="text-2xl font-black text-gray-900" id="noticias-total">0</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 text-center">
+                <p class="text-xs text-gray-500 font-bold uppercase">Novos na última rodada</p>
+                <p class="text-2xl font-black text-green-700" id="noticias-novos">0</p>
+            </div>
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                <p class="text-xs text-red-600 font-bold uppercase">Para revisar</p>
+                <p class="text-2xl font-black text-red-600" id="noticias-revisar">0</p>
+            </div>
+        </div>
+
+        <!-- Revisar -->
+        <div id="revisar-box" class="mb-8"></div>
+
+        <!-- Por tema -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4"><i class="fas fa-newspaper text-green-700 mr-2"></i>Últimas notícias relevantes</h2>
+            <div id="noticias-por-tema"></div>
+        </div>
+
+        <p class="text-xs text-gray-400 text-center pb-6 no-print">
+            Documento interno gerado pelo SpeedGEO. Verifique sempre a fonte oficial antes de usar o conteúdo.
+        </p>
+    </main>
+
+    <script src="dados_noticias.js"></script>
+    <script>
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function render() {
+            const d = window.DADOS_NOTICIAS;
+            if (!d) {
+                document.getElementById('noticias-data').textContent = '-';
+                document.body.insertAdjacentHTML('beforeend', '<div class="fixed bottom-4 right-4 bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg text-sm z-50">dados_noticias.js não encontrado. Rode <b>python monitor_noticias.py</b> no speedgeo.</div>');
+                return;
+            }
+
+            document.getElementById('noticias-data').textContent = (d.ultima_execucao || '').replace('T', ' ').slice(0, 16);
+            document.getElementById('noticias-total').textContent = d.total_historico || 0;
+            document.getElementById('noticias-novos').textContent = d.novos || 0;
+
+            const revisar = d.itens_para_revisar || [];
+            document.getElementById('noticias-revisar').textContent = revisar.length;
+
+            document.getElementById('revisar-box').innerHTML = revisar.length ? (
+                '<div class="bg-red-50 border border-red-200 rounded-xl p-6">' +
+                '<h2 class="font-bold text-red-800 mb-3"><i class="fas fa-exclamation-triangle mr-1"></i> Possível MUDANÇA DE REGRA — ler antes de publicar</h2>' +
+                '<div class="space-y-2">' + revisar.map(r =>
+                    '<div class="bg-white border border-red-100 rounded-lg p-3">' +
+                    '<a href="' + esc(r.link) + '" target="_blank" rel="noopener" class="text-red-700 hover:underline font-semibold text-sm">' + esc(r.titulo) + '</a>' +
+                    '<p class="text-xs text-gray-500 mt-1">' + esc(r.fonte) + ' • ' + esc((r.grupos || []).join(', ')) + ' • palavras: ' + esc((r.revisar || []).join(', ')) + '</p>' +
+                    (r.descricao ? '<p class="text-xs text-gray-600 mt-2 leading-relaxed">' + esc(r.descricao) + '</p>' : '') +
+                    '</div>'
+                ).join('') + '</div></div>'
+            ) : '<div class="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800"><i class="fas fa-check-circle mr-1"></i> Nenhum item sinalizado para revisão.</div>';
+
+            const recentes = (d.recentes || []);
+            const temas = {};
+            recentes.forEach(r => {
+                const grupo = (r.grupos && r.grupos[0]) || 'Geral';
+                (temas[grupo] = temas[grupo] || []).push(r);
+            });
+
+            const box = document.getElementById('noticias-por-tema');
+            const keys = Object.keys(temas).sort();
+            if (!keys.length) {
+                box.innerHTML = '<p class="text-sm text-gray-500">Nenhum item novo na última rodada. Rode <code class="bg-gray-100 px-1 rounded">python monitor_noticias.py</code> para buscar novidades.</p>';
+                return;
+            }
+            box.innerHTML = keys.map(k =>
+                '<h3 class="font-bold text-gray-900 text-sm mt-5 mb-2 uppercase tracking-wide">' + esc(k) + ' <span class="text-gray-400 font-medium">(' + temas[k].length + ')</span></h3>' +
+                '<div class="space-y-2">' + temas[k].map(r =>
+                    '<div class="border border-gray-200 rounded-lg p-3 hover:border-green-400 transition">' +
+                    '<a href="' + esc(r.link) + '" target="_blank" rel="noopener" class="text-green-700 hover:underline font-semibold text-sm">' + esc(r.titulo) + '</a>' +
+                    '<p class="text-xs text-gray-500 mt-1">' + esc(r.fonte) + ' • ' + esc(r.data) +
+                    (r.revisar && r.revisar.length ? ' • <span class="text-red-600 font-semibold">revisar</span>' : '') + '</p>' +
+                    '</div>'
+                ).join('') + '</div>'
+            ).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', render);
+    </script>
+</body>
+</html>

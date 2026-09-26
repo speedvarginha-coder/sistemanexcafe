@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Speed Marketing • Painel de Social Mídia, Marketing & Anúncios</title>
+  
+  <!-- Fontes do Google -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS & FontAwesome -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Estilos Customizados -->
+  <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/compat-tw3.css">
+</head>
+<body class="min-h-screen flex flex-col dashboard-body">
+
+  <!-- CABEÇALHO PRINCIPAL -->
+  <header class="header-speed text-white shadow relative z-30">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap justify-between items-center gap-3">
+      <div class="flex items-center space-x-3 min-w-0 dashboard-brand">
+        <div class="w-10 h-10 rounded-2xl bg-yellow-400 flex items-center justify-center text-gray-900 font-black text-xl shadow-md rotate-2 shrink-0">S</div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <h1 class="font-display text-base sm:text-lg font-bold tracking-tight leading-tight">Speed Marketing</h1>
+            <span class="bg-green-900/60 text-yellow-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-white/10 uppercase tracking-wider whitespace-nowrap">Loja Varginha</span>
+          </div>
+          <p class="text-[11px] text-green-100 mt-0.5 dashboard-brand-subtitle">Gestão de Social Mídia, Divulgação em Anúncios & Vendas Locais</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3 text-xs shrink-0">
+        <span class="hidden md:inline-flex items-center gap-1.5 bg-green-900/40 border border-white/10 px-3 py-1 rounded-full whitespace-nowrap">
+          <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
+          <span>Operação Local Ativa</span>
+        </span>
+        <button onclick="exportarBackupDashboard()" title="Fazer Backup dos Dados (.json)" class="hidden sm:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white font-bold px-2.5 py-1.5 rounded-lg border border-white/20 transition shadow-sm whitespace-nowrap">
+          <i class="fas fa-download"></i><span>Backup</span>
+        </button>
+        <a href="https://wa.me/553530675017" target="_blank" rel="noopener noreferrer" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-3 py-1.5 rounded-lg transition shadow flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fab fa-whatsapp"></i><span>(35) 3067-5017</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- BARRA DE NAVEGAÇÃO DE ABAS (FIXADA NO TOPO AO ROLAR) -->
+  <div class="sticky-tabs-bar bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2 overflow-x-auto whitespace-nowrap" role="tablist" aria-label="Seções do dashboard">
+      <button id="tab-button-overview" type="button" role="tab" aria-selected="true" aria-controls="tab-overview" data-tab="overview" class="nav-tab-btn active">
+        <i class="fas fa-chart-pie"></i>
+        <span>Visão Geral</span>
+      </button>
+      <button id="tab-button-calendario" type="button" role="tab" aria-selected="false" aria-controls="tab-calendario" data-tab="calendario" class="nav-tab-btn">
+        <i class="fas fa-calendar-alt text-amber-500"></i>
+        <span>Calendário Semanal</span>
+      </button>
+      <button id="tab-button-social" type="button" role="tab" aria-selected="false" aria-controls="tab-social" data-tab="social" class="nav-tab-btn">
+        <i class="fab fa-instagram"></i>
+        <span>Social Mídia & Artes</span>
+      </button>
+      <button id="tab-button-marketing" type="button" role="tab" aria-selected="false" aria-controls="tab-marketing" data-tab="marketing" class="nav-tab-btn">
+        <i class="fas fa-bullhorn"></i>
+        <span>Marketing & WhatsApp</span>
+      </button>
+      <button id="tab-button-ads" type="button" role="tab" aria-selected="false" aria-controls="tab-ads" data-tab="ads" class="nav-tab-btn">
+        <i class="fas fa-ad"></i>
+        <span>Anúncios (Google & Meta)</span>
+      </button>
+      <button id="tab-button-gmb" type="button" role="tab" aria-selected="false" aria-controls="tab-gmb" data-tab="gmb" class="nav-tab-btn">
+        <i class="fab fa-google text-red-500"></i>
+        <span>Google & Raio-X Local</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTEÚDO PRINCIPAL -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-grow w-full">
+
+    <!-- ======================================================== -->
+    <!-- ABA 1: VISÃO GERAL (OVERVIEW)                            -->
+    <!-- ======================================================== -->
+    <section id="tab-overview" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-overview">
+      <section class="card-premium results-panel p-6 mb-6" aria-labelledby="resultsTitle">
+        <div class="results-heading"><div><span class="results-eyebrow">DADOS REALIZADOS · LANÇAMENTO MANUAL</span><h2 id="resultsTitle">Resultado do marketing</h2><p>Números agregados por origem. Sem dados de clientes.</p></div><label>Período<select id="resultsPeriod" class="art-input"><option value="all">Todo o período</option></select></label></div>
+        <p id="resultsEmpty" class="results-empty">Nenhum resultado registrado. Adicione o primeiro lançamento para acompanhar o que gera contratos.</p>
+        <div id="resultsContent" hidden>
+          <div class="results-kpis"><div><span>Comissão recebida</span><strong id="resultsCommission">—</strong></div><div><span>Contratos</span><strong id="resultsContracts">—</strong></div><div><span>Mídia</span><strong id="resultsSpend">—</strong></div><div><span>Saldo após mídia</span><strong id="resultsBalance">—</strong></div><div><span>Custo por contrato</span><strong id="resultsCpa">—</strong></div></div>
+          <div class="results-table-wrap"><table class="results-table"><caption>Resultados por origem no período selecionado</caption><thead><tr><th>Origem</th><th>Cliques para contato</th><th>Qualificados</th><th>Propostas</th><th>Contratos</th><th>Mídia</th><th>Comissão</th><th>Saldo</th></tr></thead><tbody id="resultsBySource"></tbody></table></div>
+          <p class="results-note">Campo vazio = dado desconhecido, não zero. Saldo após mídia = comissão recebida menos gasto em mídia; não é lucro líquido.</p>
+        </div>
+        <details id="resultsEntry" class="results-entry"><summary>Adicionar resultado</summary><form id="resultsForm"><input id="resultsEditId" type="hidden"><div class="results-form-grid">
+          <label>Data<input id="resultsDate" class="art-input" type="date" required></label>
+          <label>Origem<select id="resultsSource" class="art-input" required><option value="">Selecione</option><option value="google_ads">Google Ads</option><option value="meta_ads">Meta Ads</option><option value="google_maps">Perfil da Empresa no Google</option><option value="social_organico">Redes sociais orgânicas</option><option value="site_organico">Site orgânico</option><option value="indicacao">Indicação</option><option value="outros">Outros</option></select></label>
+          <label>Campanha (opcional)<input id="resultsCampaign" class="art-input" maxlength="80"></label>
+          <label>Gasto em mídia (R$)<input id="resultsSpendInput" class="art-input" type="number" min="0" max="100000000" step="0.01"></label>
+          <label>Cliques para contato<input id="resultsClicksInput" class="art-input" type="number" min="0" max="100000000" step="1"></label>
+          <label>Contatos qualificados<input id="resultsQualifiedInput" class="art-input" type="number" min="0" max="100000000" step="1"></label>
+          <label>Propostas<input id="resultsProposalsInput" class="art-input" type="number" min="0" max="100000000" step="1"></label>
+          <label>Contratos<input id="resultsContractsInput" class="art-input" type="number" min="0" max="100000000" step="1"></label>
+          <label>Comissão recebida (R$)<input id="resultsCommissionInput" class="art-input" type="number" min="0" max="100000000" step="0.01"></label>
+        </div><div class="results-form-actions"><button type="submit">Salvar resultado</button><button type="button" id="resultsCancelEdit" hidden>Cancelar edição</button><span id="resultsFormStatus" role="status"></span></div></form></details>
+        <div id="resultsRecords" class="results-records"></div>
+      </section>
+      <h2 class="text-sm font-bold text-gray-700 mb-3">Operação de marketing</h2>
+      <!-- KPIs Rápidos -->
+      <div class="dashboard-kpi-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-lg shrink-0">
+            <i class="fas fa-images"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Posts na Esteira</p>
+            <p class="text-2xl font-black text-gray-900 tabular-nums" id="kpi-tot-posts">0</p>
+          </div>
+        </div>
+
+        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-green-50 text-green-700 flex items-center justify-center text-lg shrink-0">
+            <i class="fas fa-check-double"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Prontos / Publicados</p>
+            <p class="text-2xl font-black text-green-700 tabular-nums" id="kpi-tot-aprovados">0</p>
+          </div>
+        </div>
+
+        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg shrink-0">
+            <i class="fab fa-google"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Palavras Ads</p>
+            <p class="text-2xl font-black text-blue-700 tabular-nums" id="kpi-tot-keywords">31</p>
+          </div>
+        </div>
+
+        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
+          <div class="w-11 h-11 rounded-xl bg-yellow-50 text-yellow-700 flex items-center justify-center text-lg shrink-0">
+            <i class="fab fa-whatsapp"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Copys WhatsApp</p>
+            <p class="text-2xl font-black text-yellow-700 tabular-nums" id="kpi-tot-copys">7</p>
+          </div>
+        </div>
+
+        <button type="button" onclick="switchTab('gmb')" class="card-premium dashboard-kpi-card p-4 flex items-center gap-3 cursor-pointer hover:border-red-300 transition text-left w-full" aria-label="Abrir a guia Google e Raio-X Local">
+          <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-lg shrink-0">
+            <i class="fab fa-google"></i>
+          </div>
+          <div class="min-w-0">
+             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Checklist local interno</p>
+             <p class="text-2xl font-black text-red-600 tabular-nums" id="kpi-gmb-score">—</p>
+          </div>
+        </button>
+      </div>
+
+      <!-- Grid de Acesso Rápido e Atividades -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Coluna Esquerda: Ações Rápidas -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="card-premium p-6">
+            <h3 class="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+              <i class="fas fa-rocket text-green-600"></i> Atalhos Operacionais da Loja
+            </h3>
+            <p class="text-xs text-gray-500 mb-4">Acesse as ferramentas essenciais de divulgação e comunicação diária com um clique.</p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <button onclick="switchTab('calendario')" class="p-4 rounded-xl border border-amber-200 bg-amber-50/30 hover:border-amber-500 hover:bg-amber-50/70 text-left transition flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                  <i class="fas fa-calendar-alt text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-gray-900">Régua Editorial Semanal</h4>
+                  <p class="text-[11px] text-gray-500 mt-0.5">O que postar de Seg a Sáb no Insta/Face e no Google Meu Negócio.</p>
+                </div>
+              </button>
+
+              <button onclick="switchTab('social')" class="p-4 rounded-xl border border-gray-200 hover:border-green-500 hover:bg-green-50/40 text-left transition flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+                  <i class="fab fa-instagram text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-gray-900">Revisar Posts de Redes</h4>
+                  <p class="text-[11px] text-gray-500 mt-0.5">Aprovar imagens, legendas e hashtags com mockup de smartphone.</p>
+                </div>
+              </button>
+
+              <button onclick="switchTab('gmb')" class="p-4 rounded-xl border border-gray-200 hover:border-red-400 hover:bg-red-50/30 text-left transition flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                  <i class="fab fa-google text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-gray-900">Google Meu Negócio</h4>
+                  <p class="text-[11px] text-gray-500 mt-0.5">Checklist da ficha, posts semanais GMB, fotos e respostas de reviews.</p>
+                </div>
+              </button>
+
+              <button onclick="switchTab('marketing')" class="p-4 rounded-xl border border-green-200 bg-green-50/30 hover:border-green-600 hover:bg-green-50/70 text-left transition flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                  <i class="fas fa-calculator text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-gray-900">Simulador de Balcão</h4>
+                  <p class="text-[11px] text-gray-500 mt-0.5">FGTS Pix e Portabilidade com cópia imediata para WhatsApp.</p>
+                </div>
+              </button>
+
+              <button onclick="switchTab('marketing')" class="p-4 rounded-xl border border-gray-200 hover:border-green-500 hover:bg-green-50/40 text-left transition flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
+                  <i class="fab fa-whatsapp text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-gray-900">Copys Rápidas WhatsApp</h4>
+                  <p class="text-[11px] text-gray-500 mt-0.5">Mensagens de alta conversão de FGTS Pix, Consignado e Portabilidade.</p>
+                </div>
+              </button>
+
+              <button onclick="switchTab('ads')" class="p-4 rounded-xl border border-gray-200 hover:border-green-500 hover:bg-green-50/40 text-left transition flex items-start gap-3">
+                <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                  <i class="fas fa-chart-line text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-gray-900">Calculadora de ROI Ads</h4>
+                  <p class="text-[11px] text-gray-500 mt-0.5">Simulação de orçamento, cliques, conversas e contratos fechados.</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Banner Dinâmico da Pauta de Hoje (atualizado automaticamente via calendario.js) -->
+          <div id="bannerPautaHoje"></div>
+        </div>
+
+        <!-- Coluna Direita: Posts Recentes na Fila -->
+        <div class="card-premium p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-3">
+              <h3 class="text-sm font-bold text-gray-900">Últimos Posts Gerados</h3>
+              <button onclick="switchTab('social')" class="text-xs text-green-700 font-bold hover:underline">Ver todos</button>
+            </div>
+            <div class="space-y-2.5" id="overview-recent-posts"></div>
+          </div>
+
+          <div class="mt-4 pt-3 border-t border-gray-100 text-center">
+            <span class="text-[11px] text-gray-500 flex items-center justify-center gap-1">
+              <i class="fas fa-shield-alt text-green-600"></i> Checklist preliminar • revisão humana necessária
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- ABA 2: CALENDÁRIO EDITORIAL SEMANAL (NO AUTOMÁTICO)      -->
+    <!-- ======================================================== -->
+    <section id="tab-calendario" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-calendario">
+      <!-- Cabeçalho da Aba Calendário -->
+      <div class="card-premium p-4 sm:p-5 mb-5 bg-gradient-to-r from-white via-amber-50/20 to-white">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm font-black shrink-0">
+                <i class="fas fa-calendar-alt"></i>
+              </span>
+              <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-snug">Régua Editorial Semanal • Postagens no Automático</h2>
+            </div>
+            <p class="text-xs text-gray-500 max-w-3xl leading-relaxed">
+              Guia diário para Instagram, Facebook e Google Meu Negócio. Escolha o dia, revise os avisos editoriais de cada produto e marque como feito.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-pink-600 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+              <i class="fab fa-instagram"></i> Instagram
+            </a>
+            <a href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-blue-600 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+              <i class="fab fa-facebook"></i> Facebook
+            </a>
+            <a href="https://business.google.com/posts" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-red-600 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+              <i class="fab fa-google"></i> Google Posts
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros e Controles -->
+      <div class="card-premium p-3 sm:p-4 mb-6 flex flex-col md:flex-row justify-between items-stretch md:items-center gap-3">
+        <!-- Filtro por Dia da Semana -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 whitespace-nowrap">
+          <span class="text-xs font-bold text-gray-500 uppercase mr-1 hidden sm:inline">Dia:</span>
+          <button data-day="todos" class="cal-day-filter active bg-green-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg border transition">Toda a Semana</button>
+          <button data-day="1" class="cal-day-filter bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg border transition">Segunda</button>
+          <button data-day="2" class="cal-day-filter bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg border transition">Terça</button>
+          <button data-day="3" class="cal-day-filter bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg border transition">Quarta</button>
+          <button data-day="4" class="cal-day-filter bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg border transition">Quinta</button>
+          <button data-day="5" class="cal-day-filter bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg border transition">Sexta</button>
+          <button data-day="6" class="cal-day-filter bg-white text-gray-700 hover:bg-gray-50 text-xs font-bold px-3 py-1.5 rounded-lg border transition">Sábado</button>
+        </div>
+
+        <!-- Filtro por Canal -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span class="text-xs font-bold text-gray-500 uppercase mr-1 hidden sm:inline">Canal:</span>
+          <button data-channel="todos" class="cal-channel-filter active bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-transparent transition">Todos</button>
+          <button data-channel="social" class="cal-channel-filter bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg border border-transparent transition flex items-center gap-1">
+            <i class="fab fa-instagram text-pink-600"></i> Insta/Face
+          </button>
+          <button data-channel="gmb" class="cal-channel-filter bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs font-bold px-3 py-1.5 rounded-lg border border-transparent transition flex items-center gap-1">
+            <i class="fab fa-google text-red-500"></i> Google
+          </button>
+        </div>
+      </div>
+
+      <!-- Container Dinâmico da Grade Semanal -->
+      <div id="calendarioCardsContainer" class="space-y-6 mb-8"></div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- ABA 3: SOCIAL MÍDIA & ESTEIRA DE POSTS                  -->
+    <!-- ======================================================== -->
+    <section id="tab-social" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-social">
+      <div class="social-workspace-heading card-premium mb-5">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-green-700">Fluxo editorial</p>
+          <h2 class="text-xl sm:text-2xl font-black text-gray-900">Posts e artes, no mesmo lugar</h2>
+          <p class="text-sm text-gray-600 mt-1">Escolha uma pauta no calendário, revise o post e crie a arte vinculada a ele.</p>
+        </div>
+        <div class="social-workspace-actions">
+          <button type="button" onclick="switchTab('calendario')" class="social-workspace-link">Ver calendário</button>
+          <button type="button" onclick="abrirCriadorDoPost()" class="social-workspace-primary">Criar arte do post</button>
+        </div>
+      </div>
+      <!-- Contadores de Status -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+        <div class="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total na Fila</p>
+          <p class="text-2xl font-black text-gray-900 tabular-nums" id="badge-tot-fila">0</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-3 text-center shadow-sm">
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Rascunhos</p>
+          <p class="text-2xl font-black text-gray-700 tabular-nums" id="badge-tot-rascunho">0</p>
+        </div>
+        <div class="bg-white rounded-xl border border-amber-200 p-3 text-center shadow-sm bg-amber-50/40">
+          <p class="text-[10px] text-amber-700 font-bold uppercase tracking-wider">Em Revisão</p>
+          <p class="text-2xl font-black text-amber-600 tabular-nums" id="badge-tot-revisao">0</p>
+        </div>
+        <div class="bg-white rounded-xl border border-green-200 p-3 text-center shadow-sm bg-green-50/40">
+          <p class="text-[10px] text-green-700 font-bold uppercase tracking-wider">Aprovados</p>
+          <p class="text-2xl font-black text-green-600 tabular-nums" id="badge-tot-aprovado">0</p>
+        </div>
+        <div class="bg-white rounded-xl border border-green-300 p-3 text-center shadow-sm bg-green-100/50">
+          <p class="text-[10px] text-green-900 font-bold uppercase tracking-wider">Publicados</p>
+          <p class="text-2xl font-black text-green-900 tabular-nums" id="badge-tot-publicado">0</p>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros e Ações -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm">
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <span class="text-xs font-bold text-gray-500 mr-1 uppercase">Filtrar:</span>
+          <button data-filter="todos" class="post-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition bg-gray-900 text-white">Todos</button>
+          <button data-filter="rascunho" class="post-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition bg-white text-gray-700 border-gray-200 hover:bg-gray-50">📝 Rascunhos</button>
+          <button data-filter="revisao" class="post-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition bg-white text-amber-700 border-amber-200 hover:bg-amber-50">🔍 Revisão</button>
+          <button data-filter="aprovado" class="post-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition bg-white text-green-700 border-green-200 hover:bg-green-50">✅ Aprovados</button>
+          <button data-filter="publicado" class="post-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold border transition bg-white text-green-800 border-gray-200 hover:bg-gray-50">🚀 Publicados</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button onclick="exportarJsonRevisao()" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5">
+            <i class="fas fa-download text-green-700"></i> Exportar JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Layout Split: Lista de Posts (Esquerda) e Mockup de Celular (Direita) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Coluna da Esquerda: Grid de Cards -->
+        <div class="lg:col-span-6">
+          <div id="postsContainer" class="grid grid-cols-1 gap-3"></div>
+        </div>
+
+        <!-- Coluna da Direita: Mockup Realista de Instagram -->
+        <div class="lg:col-span-6">
+          <div class="sticky top-[8.5rem]">
+            <div class="card-premium p-4 mb-4">
+              <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-3">
+                <span class="text-xs font-bold text-gray-600 uppercase tracking-wider flex items-center gap-1.5">
+                  <i class="fab fa-instagram text-pink-600"></i> Mockup ao Vivo
+                </span>
+                <span id="mockupStatusBadge" class="status-badge status-rascunho">rascunho</span>
+              </div>
+
+              <!-- Smartphone Frame -->
+              <div class="mockup-phone-frame">
+                <div class="phone-notch"></div>
+                
+                <!-- Instagram Header -->
+                <div class="ig-feed-header">
+                  <div class="flex items-center gap-2.5">
+                    <div class="ig-avatar text-xs font-black">S</div>
+                    <div>
+                      <p class="text-xs font-bold text-gray-900 leading-tight">speedfinanceira</p>
+                      <p class="text-[10px] text-gray-500 leading-tight">Varginha, Minas Gerais</p>
+                    </div>
+                  </div>
+                  <i class="fas fa-ellipsis-h text-gray-400 text-xs"></i>
+                </div>
+
+                <!-- Post Image -->
+                <div class="ig-image-container">
+                  <img id="mockupPostImage" src="" alt="Imagem do Post">
+                </div>
+
+                <!-- Instagram Actions -->
+                <div class="ig-actions text-gray-800">
+                  <div class="flex items-center gap-3">
+                    <i class="far fa-heart hover:text-red-500 cursor-pointer"></i>
+                    <i class="far fa-comment hover:text-gray-600 cursor-pointer"></i>
+                    <i class="far fa-paper-plane hover:text-gray-600 cursor-pointer"></i>
+                  </div>
+                  <i class="far fa-bookmark hover:text-gray-600 cursor-pointer"></i>
+                </div>
+
+                <!-- Caption Box -->
+                <div class="ig-caption-box" id="mockupPostCaption"></div>
+              </div>
+              <button type="button" onclick="abrirCriadorDoPost()" class="social-art-cta mt-4">Criar ou editar arte deste post <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+
+              <!-- Ações Rápidas de Aprovação -->
+              <div class="mt-4 pt-3 border-t border-gray-100 space-y-2">
+                <div class="flex items-center gap-2">
+                  <button onclick="alterarStatusPostSelecionado('aprovado')" class="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fas fa-check-circle"></i> Aprovar Post
+                  </button>
+                  <button onclick="alterarStatusPostSelecionado('publicado')" class="flex-1 bg-gray-900 hover:bg-black text-white font-bold text-xs py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
+                    <i class="fas fa-paper-plane"></i> Marcar Publicado
+                  </button>
+                </div>
+                <button onclick="copiarLegenda()" class="w-full bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-2 rounded-lg transition flex items-center justify-center gap-1.5">
+                  <i class="fas fa-copy text-green-700"></i> Copiar Legenda Completa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="socialArtMount"></div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- CRIADOR DE ARTES E CARROSSÉIS                            -->
+    <!-- ======================================================== -->
+    <section id="tab-artes" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-artes">
+      <div class="card-premium p-5 sm:p-6 mb-6 bg-gradient-to-r from-white to-green-50">
+        <h2 class="text-xl sm:text-2xl font-black text-gray-900">Criador de Artes</h2>
+        <p id="artPostContext" class="text-sm text-gray-600 mt-1">Selecione um post acima ou escolha uma pauta no calendário para começar.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div class="lg:col-span-5 space-y-5">
+          <div class="card-premium p-5 space-y-4">
+            <h3 class="font-bold text-gray-900">Formato e identidade</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="text-xs font-semibold text-gray-700">Tipo de publicação
+                <select id="artMode" class="art-input mt-1"><option value="single">Imagem única</option><option value="carousel">Carrossel</option></select>
+              </label>
+              <label class="text-xs font-semibold text-gray-700">Tamanho
+                <select id="artFormat" class="art-input mt-1"><option value="portrait">Retrato 1080 × 1350</option><option value="square">Quadrado 1080 × 1080</option></select>
+              </label>
+              <label class="text-xs font-semibold text-gray-700 sm:col-span-2">Paleta da marca
+                <select id="artTemplate" class="art-input mt-1"><option value="brand">Verde Speed</option><option value="offer">Amarelo em destaque</option><option value="clean">Claro editorial</option></select>
+              </label>
+            </div>
+            <button id="artFromPost" type="button" class="w-full px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-green-800 text-xs font-bold hover:bg-green-100">Recarregar texto do post selecionado</button>
+          </div>
+
+          <div class="card-premium p-5 space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <h3 class="font-bold text-gray-900">Slides <span id="artSlideCount" class="text-xs font-normal text-gray-500"></span></h3>
+              <button id="artAddSlide" type="button" class="px-3 py-1.5 rounded-lg bg-green-700 text-white text-xs font-bold hover:bg-green-800">Adicionar slide</button>
+            </div>
+            <div id="artSlideList" class="flex flex-wrap gap-2" aria-label="Selecionar slide"></div>
+            <div class="grid grid-cols-2 gap-2">
+              <button id="artDuplicateSlide" type="button" class="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 text-xs font-bold hover:bg-gray-50">Duplicar slide</button>
+              <button id="artRemoveSlide" type="button" class="px-3 py-2 rounded-lg border border-red-200 text-red-700 text-xs font-bold hover:bg-red-50">Excluir slide</button>
+            </div>
+          </div>
+
+          <div class="card-premium p-5 space-y-4">
+            <h3 class="font-bold text-gray-900">Conteúdo do slide <span id="artCurrentSlide">1</span></h3>
+            <label class="block text-xs font-semibold text-gray-700">Composição
+              <select id="artComposition" class="art-input mt-1">
+                <option value="editorial">Editorial: título e formas</option>
+                <option value="portrait">Pessoa + mensagem</option>
+                <option value="scene">Cena ou produto + mensagem</option>
+              </select>
+            </label>
+            <p id="artCompositionHint" class="text-[11px] text-gray-500"></p>
+            <label class="block text-xs font-semibold text-gray-700">Título
+              <textarea id="artTitle" class="art-input mt-1" rows="2" maxlength="140" placeholder="Título principal"></textarea>
+            </label>
+            <label class="block text-xs font-semibold text-gray-700">Texto de apoio
+              <textarea id="artBody" class="art-input mt-1" rows="4" maxlength="400" placeholder="Explique a ideia em poucas linhas"></textarea>
+            </label>
+            <label class="block text-xs font-semibold text-gray-700">Chamada para ação
+              <input id="artCta" class="art-input mt-1" maxlength="90" placeholder="Ex.: Saiba mais na loja">
+            </label>
+            <label class="block text-xs font-semibold text-gray-700">Imagem do slide
+              <select id="artImageSource" class="art-input mt-1">
+                <option value="none">Sem imagem</option>
+                <option value="sample">Casal ilustrativo do site</option>
+                <option value="custom">Minha foto</option>
+              </select>
+            </label>
+            <label class="block text-xs font-semibold text-gray-700">Enviar foto própria
+              <input id="artPhoto" type="file" accept="image/png,image/jpeg,image/webp" class="art-input mt-1 text-xs">
+            </label>
+            <label class="block text-xs font-semibold text-gray-700">Enquadramento da imagem
+              <select id="artPhotoFocus" class="art-input mt-1">
+                <option value="center">Centralizado</option>
+                <option value="left">Foco à esquerda</option>
+                <option value="right">Foco à direita</option>
+              </select>
+            </label>
+            <button id="artRemovePhoto" type="button" class="text-xs font-semibold text-red-700 hover:underline">Remover imagem deste slide</button>
+            <p class="text-[11px] text-gray-500">A foto do casal é ilustrativa, não representa clientes reais. Use fotos próprias com autorização. Arquivos enviados ficam só nesta sessão; texto, composição e escolha da imagem ilustrativa ficam no rascunho local.</p>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7">
+          <div class="card-premium p-4 sm:p-5 lg:sticky lg:top-32">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <h3 class="font-bold text-gray-900">Prévia do slide</h3>
+              <span id="artPreviewSize" class="text-xs font-semibold text-gray-500">1080 × 1350 px</span>
+            </div>
+            <div class="art-preview-wrap"><canvas id="artCanvas" width="1080" height="1350" role="img" aria-label="Prévia visual da arte"></canvas></div>
+            <p id="artStatus" class="text-xs text-gray-600 mt-3 min-h-[1.25rem]" role="status" aria-live="polite"></p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+              <button id="artDownloadSlide" type="button" class="px-4 py-2.5 rounded-lg border border-green-700 text-green-800 text-xs font-bold hover:bg-green-50">Baixar slide em PNG</button>
+              <button id="artDownloadAll" type="button" class="px-4 py-2.5 rounded-lg bg-green-700 text-white text-xs font-bold hover:bg-green-800">Baixar carrossel em ZIP</button>
+            </div>
+            <div class="art-ai-prompt mt-5">
+              <h4 class="font-bold text-gray-900">Alternativa no ChatGPT Imagem</h4>
+              <p class="text-xs text-gray-600 mt-1">Se não gostar da arte, gere um comando com o conteúdo deste slide. Revise o resultado antes de publicar.</p>
+              <textarea id="artImagePrompt" class="art-input mt-3" rows="8" aria-label="Comando para ChatGPT Imagem" placeholder="Clique em Gerar comando para criar uma instrução editável."></textarea>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <button id="artGeneratePrompt" type="button" class="px-3 py-2 rounded-lg border border-green-700 text-green-800 text-xs font-bold hover:bg-green-50">Gerar comando</button>
+                <button id="artCopyPrompt" type="button" class="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-bold hover:bg-black">Copiar comando</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- ABA 3: MARKETING DA LOJA & WHATSAPP                     -->
+    <!-- ======================================================== -->
+    <section id="tab-marketing" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-marketing">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Central de Marketing & Disparos WhatsApp</h2>
+        <p class="text-xs text-gray-500">Mensagens testadas e validadas para prospecção, atendimento balcão e solicitação de avaliações 5 estrelas.</p>
+      </div>
+
+      <!-- Gerador de Links Rastreáveis com UTM -->
+      <div class="card-premium p-5 mb-8 bg-gradient-to-br from-white to-green-50/40">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="w-7 h-7 rounded-lg bg-green-700 text-white flex items-center justify-center text-xs">
+            <i class="fas fa-link"></i>
+          </span>
+          <h3 class="text-sm font-bold text-gray-900">Gerador de Link Rastreável (UTM)</h3>
+        </div>
+        <p class="text-xs text-gray-500 mb-4">Crie links para colocar na bio do Instagram, panfletos ou anúncios, sabendo exatamente de onde vieram os clientes.</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          <div>
+            <label class="block text-[11px] font-bold text-gray-700 uppercase mb-1">Produto Promovido:</label>
+            <select id="utmProduto" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white">
+              <option value="fgts">Antecipação FGTS Pix</option>
+              <option value="inss">Consignado INSS / Aposentados</option>
+              <option value="portabilidade">Portabilidade com Troco</option>
+              <option value="bpc">BPC / LOAS</option>
+              <option value="clt">Consignado Privado CLT</option>
+              <option value="veiculos">Refinanciamento de Veículos</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-gray-700 uppercase mb-1">Canal de Origem (Source):</label>
+            <select id="utmCanal" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white">
+              <option value="instagram_bio">Instagram (Link da Bio)</option>
+              <option value="instagram_stories">Instagram Stories / Direct</option>
+              <option value="facebook_post">Facebook (Post / Página)</option>
+              <option value="whatsapp_status">WhatsApp Status</option>
+              <option value="panfleto_rua">Panfleto Físico / QR Code</option>
+              <option value="google_meu_negocio">Google Meu Negócio (Ficha)</option>
+            </select>
+          </div>
+
+          <div class="flex items-end">
+            <button onclick="gerarLinkUtmCustomizado()" class="w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 px-4 rounded-lg transition shadow-sm">
+              <i class="fas fa-magic mr-1"></i> Gerar Link Rastreável
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <input type="text" id="utmResultado" aria-label="Link UTM gerado" readonly value="https://speedfinanceira.com.br/?utm_source=instagram_bio&amp;utm_medium=social_dashboard&amp;utm_campaign=fgts_varginha#simular" class="flex-grow min-w-0 bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono text-gray-700">
+          <button onclick="copiarTextoDoId('utmResultado')" class="bg-gray-900 hover:bg-black text-white font-bold text-xs px-4 py-2 rounded-lg transition shrink-0">
+            <i class="fas fa-copy mr-1"></i> Copiar Link
+          </button>
+        </div>
+      </div>
+
+      <!-- MINISIMULADOR DE BALCÃO PARA WHATSAPP (FGTS & PORTABILIDADE) -->
+      <div class="card-premium p-5 sm:p-6 mb-8 bg-gradient-to-br from-white via-green-50/20 to-white border-l-4 border-green-600">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-gray-100 gap-2 mb-5">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-8 h-8 rounded-lg bg-green-700 text-white flex items-center justify-center text-sm shadow-sm">
+                <i class="fas fa-calculator"></i>
+              </span>
+              <h3 class="text-base font-bold text-gray-900">
+                Minisimulador de Balcão para Respostas Rápidas no WhatsApp
+              </h3>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Monte cenários preliminares durante o atendimento e copie uma mensagem transparente para solicitar a proposta oficial.
+            </p>
+          </div>
+          <span class="text-[11px] font-bold text-green-800 bg-green-100 px-2.5 py-1 rounded-full whitespace-nowrap self-start sm:self-auto">
+            ⚡ 1 Clique para Copiar
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- CARD 1: SIMULADOR FGTS PIX -->
+          <div class="p-5 rounded-2xl bg-white border border-green-200 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-md bg-green-100 text-green-700 flex items-center justify-center text-xs font-bold">
+                    <i class="fas fa-bolt"></i>
+                  </span>
+                  <h4 class="text-sm font-bold text-gray-900">Antecipação FGTS Saque-Aniversário</h4>
+                </div>
+                <span class="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">Via Pix</span>
+              </div>
+
+              <div class="mb-4">
+                <label for="simFgtsSaldo" class="block text-[11px] font-bold text-gray-700 uppercase mb-1.5">
+                  Saldo Aproximado no App FGTS:
+                </label>
+                <div class="relative">
+                  <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 font-bold text-xs">R$</span>
+                  <input type="number" id="simFgtsSaldo" value="3000" min="300" step="100" class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                </div>
+
+                <div class="flex flex-wrap gap-1.5 mt-2">
+                  <button type="button" onclick="setSaldoFgtsRapido(1000)" class="text-[10px] font-bold px-2 py-1 bg-gray-100 hover:bg-green-100 text-gray-700 hover:text-green-800 rounded transition border border-gray-200 whitespace-nowrap">R$ 1.000</button>
+                  <button type="button" onclick="setSaldoFgtsRapido(2500)" class="text-[10px] font-bold px-2 py-1 bg-gray-100 hover:bg-green-100 text-gray-700 hover:text-green-800 rounded transition border border-gray-200 whitespace-nowrap">R$ 2.500</button>
+                  <button type="button" onclick="setSaldoFgtsRapido(5000)" class="text-[10px] font-bold px-2 py-1 bg-gray-100 hover:bg-green-100 text-gray-700 hover:text-green-800 rounded transition border border-gray-200 whitespace-nowrap">R$ 5.000</button>
+                  <button type="button" onclick="setSaldoFgtsRapido(10000)" class="text-[10px] font-bold px-2 py-1 bg-gray-100 hover:bg-green-100 text-gray-700 hover:text-green-800 rounded transition border border-gray-200 whitespace-nowrap">R$ 10.000</button>
+                </div>
+              </div>
+
+              <!-- Resultado FGTS -->
+              <div class="p-3.5 bg-green-50 border border-green-200 rounded-xl mb-4">
+                <p class="text-[10px] font-bold text-green-800 uppercase tracking-wider">Teto bruto indicativo:</p>
+                <p class="text-2xl font-black text-green-700 tabular-nums whitespace-nowrap" id="simFgtsValorLiberado">R$ 1.860,00</p>
+                <p class="text-[11px] text-green-900 mt-1 flex items-center gap-1">
+                  <i class="fas fa-info-circle text-green-600"></i> <span id="simFgtsRegra">Valor líquido sujeito a juros, elegibilidade e análise da instituição.</span>
+                </p>
+              </div>
+            </div>
+
+            <button type="button" onclick="copiarPropostaFGTSWhatsApp()" class="w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
+              <i class="fab fa-whatsapp text-sm"></i> Copiar Proposta FGTS para WhatsApp
+            </button>
+          </div>
+
+          <!-- CARD 2: SIMULADOR PORTABILIDADE -->
+          <div class="p-5 rounded-2xl bg-white border border-blue-200 shadow-sm flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-md bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold">
+                    <i class="fas fa-exchange-alt"></i>
+                  </span>
+                  <h4 class="text-sm font-bold text-gray-900">Portabilidade Consignada com Troco</h4>
+                </div>
+                <span class="text-[10px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded">INSS / SIAPE</span>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div>
+                  <label for="simPortParcela" class="block text-[11px] font-bold text-gray-700 uppercase mb-1.5">
+                    Valor da Parcela Atual:
+                  </label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 font-bold text-xs">R$</span>
+                    <input type="number" id="simPortParcela" value="350" min="50" step="10" class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                  </div>
+                </div>
+
+                <div>
+                  <label for="simPortPrazo" class="block text-[11px] font-bold text-gray-700 uppercase mb-1.5">
+                    Prazo Restante:
+                  </label>
+                  <select id="simPortPrazo" class="w-full py-2 px-3 border border-gray-300 rounded-lg text-xs font-bold text-gray-900 bg-white focus:ring-2 focus:ring-blue-500">
+                    <option value="36">36 meses restantes</option>
+                    <option value="48">48 meses restantes</option>
+                    <option value="60" selected>60 meses restantes</option>
+                    <option value="72">72 meses restantes</option>
+                    <option value="84">84 meses restantes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div>
+                  <label for="simPortSaldo" class="block text-[11px] font-bold text-gray-700 uppercase mb-1.5">Saldo devedor atual:</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 font-bold text-xs">R$</span>
+                    <input type="number" id="simPortSaldo" value="12000" min="100" step="100" class="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500">
+                  </div>
+                </div>
+                <div>
+                  <label for="simPortTaxaNova" class="block text-[11px] font-bold text-gray-700 uppercase mb-1.5">Taxa nova estimada:</label>
+                  <div class="relative">
+                    <input type="number" id="simPortTaxaNova" value="1.50" min="0.01" max="10" step="0.01" class="w-full pr-14 pl-3 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500">
+                    <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 font-bold text-xs">% a.m.</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Resultados Portabilidade -->
+              <div class="grid grid-cols-2 gap-2 mb-4">
+                <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                  <p class="text-[10px] font-bold text-blue-800 uppercase">Opção 1: Troco no Pix</p>
+                  <p class="text-base font-black text-blue-800 tabular-nums whitespace-nowrap" id="simPortTrocoPix">R$ 3.430,00 no Pix</p>
+                  <p class="text-[10px] text-blue-600 mt-0.5 whitespace-nowrap">Mantendo mesma parcela</p>
+                </div>
+
+                <div class="p-3 bg-purple-50 border border-purple-200 rounded-xl">
+                  <p class="text-[10px] font-bold text-purple-800 uppercase">Opção 2: Reduz Parcela</p>
+                  <p class="text-base font-black text-purple-800 tabular-nums whitespace-nowrap" id="simPortNovaParcela">R$ 287,00/mês</p>
+                  <p class="text-[10px] text-purple-600 mt-0.5 truncate" id="simPortEconomiaTotal">Economia de R$ 3.780</p>
+                </div>
+              </div>
+              <p class="text-[10px] text-gray-500 mb-4 leading-relaxed">Cenário matemático preliminar. Resultado real depende do saldo devedor confirmado, taxa, CET, margem e aprovação da instituição.</p>
+            </div>
+
+            <button type="button" onclick="copiarPropostaPortabilidadeWhatsApp()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-sm whitespace-nowrap">
+              <i class="fab fa-whatsapp text-sm"></i> Copiar Opções de Portabilidade para WhatsApp
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grade de Copys WhatsApp -->
+      <div class="mb-8">
+        <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <i class="fab fa-whatsapp text-green-600"></i> Banco de Copys para Disparo WhatsApp
+        </h3>
+        <div id="marketingCopysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      </div>
+
+      <!-- Pedidos de Avaliação no Google -->
+      <div>
+        <h3 class="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <i class="fas fa-star text-yellow-500"></i> Acelerador de Avaliações 5 Estrelas no Google Maps
+        </h3>
+        <p class="text-xs text-gray-500 mb-4">Mais avaliações no Google aumentam diretamente as recomendações da loja no Google Maps e em IAs como ChatGPT e Gemini.</p>
+        <div id="marketingReviewsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- ABA 4: ANÚNCIOS (GOOGLE ADS & META ADS)                  -->
+    <!-- ======================================================== -->
+    <section id="tab-ads" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-ads">
+      <div class="mb-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Central de Divulgação em Anúncios (Tráfego Pago)</h2>
+        <p class="text-xs text-gray-500">Planejamento, simulação de retorno financeiro e palavras-chave de alta intenção para Varginha e região.</p>
+      </div>
+
+      <!-- CALCULADORA DE ROI E ORÇAMENTO -->
+      <div class="card-premium p-6 mb-8 border-2 border-green-600/30">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-5">
+          <div>
+            <span class="bg-green-100 text-green-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Simulador Financeiro</span>
+            <h3 class="text-lg font-bold text-gray-900 mt-1">Calculadora de Investimento & ROI de Anúncios</h3>
+          </div>
+          <span class="text-xs text-gray-500 flex items-center gap-1">
+            <i class="fas fa-info-circle text-blue-600"></i> Cenário hipotético ajustável; não representa resultados reais
+          </span>
+        </div>
+
+        <!-- Sliders Interativos -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between items-center mb-1 text-xs">
+                <span class="font-bold text-gray-700">Orçamento Mensal:</span>
+                <span class="font-black text-green-700 tabular-nums" id="valOrcamento">R$ 1.000</span>
+              </div>
+              <input type="range" id="sliderOrcamento" min="300" max="5000" step="100" value="1000" class="w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+              <span class="text-[10px] text-gray-400">R$ 300 a R$ 5.000</span>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1 text-xs">
+                <span class="font-bold text-gray-700">CPC Médio Estimado:</span>
+                <span class="font-black text-gray-900 tabular-nums" id="valCpc">R$ 3.20</span>
+              </div>
+              <input type="range" id="sliderCpc" min="1.50" max="6.00" step="0.10" value="3.20" class="w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+              <span class="text-[10px] text-gray-400">R$ 1,50 a R$ 6,00</span>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between items-center mb-1 text-xs">
+                <span class="font-bold text-gray-700">Taxa de Conversão em Leads:</span>
+                <span class="font-black text-gray-900 tabular-nums" id="valConvLead">12%</span>
+              </div>
+              <input type="range" id="sliderConvLead" min="5" max="30" step="1" value="12" class="w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+              <span class="text-[10px] text-gray-400">% de cliques que iniciam conversa no WhatsApp</span>
+            </div>
+
+            <div>
+              <div class="flex justify-between items-center mb-1 text-xs">
+                <span class="font-bold text-gray-700">Taxa de Fechamento de Vendas:</span>
+                <span class="font-black text-gray-900 tabular-nums" id="valFechamento">20%</span>
+              </div>
+              <input type="range" id="sliderFechamento" min="5" max="50" step="1" value="20" class="w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+              <span class="text-[10px] text-gray-400">% de conversas que viram contratos fechados</span>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div>
+              <div class="flex justify-between items-center mb-1 text-xs">
+                <span class="font-bold text-gray-700">Comissão / Ganho Médio por Contrato:</span>
+                <span class="font-black text-green-700 tabular-nums" id="valComissao">R$ 850</span>
+              </div>
+              <input type="range" id="sliderComissao" min="300" max="2500" step="50" value="850" class="w-full h-2 bg-gray-200 rounded-lg cursor-pointer">
+              <span class="text-[10px] text-gray-400">Hipótese de comissão por contrato para esta simulação</span>
+            </div>
+
+            <div class="p-3 bg-gray-50 rounded-xl border border-gray-200 text-[11px] text-gray-600">
+              <p><strong>Custo por Lead (CPL):</strong> <span class="font-bold text-gray-900" id="resCpl">R$ 26.67</span></p>
+              <p><strong>Custo por Contrato (CPA):</strong> <span class="font-bold text-gray-900" id="resCpa">R$ 133.33</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Projeções de Resultados -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+          <div class="text-center">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Cliques Estimados</p>
+            <p class="text-xl font-black text-gray-800 tabular-nums" id="resCliques">312</p>
+          </div>
+          <div class="text-center">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Conversas projetadas</p>
+            <p class="text-xl font-black text-blue-700 tabular-nums" id="resLeads">37</p>
+          </div>
+          <div class="text-center">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Contratos projetados</p>
+            <p class="text-xl font-black text-green-700 tabular-nums" id="resContratos">7</p>
+          </div>
+          <div class="text-center">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Comissão projetada</p>
+            <p class="text-xl font-black text-gray-900 tabular-nums" id="resFaturamento">R$ 5.950</p>
+          </div>
+          <div class="text-center">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Saldo após mídia projetado</p>
+            <p class="text-xl font-black text-green-700 tabular-nums" id="resLucroLiquido">R$ 4.950</p>
+          </div>
+          <div class="text-center">
+            <p class="text-[10px] text-gray-500 font-bold uppercase">Retorno sobre mídia projetado</p>
+            <p class="text-xl font-black text-yellow-600 tabular-nums" id="resRoi">495% (5.9x)</p>
+          </div>
+        </div>
+        <p class="text-[11px] text-gray-500 mt-3">Projeção antes de custos operacionais, tributos e outras despesas. Use os lançamentos realizados da Visão Geral para avaliar resultados.</p>
+      </div>
+
+      <!-- GOOGLE ADS: BANCO DE PALAVRAS-CHAVE MAPEADAS -->
+      <div class="card-premium p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-3 mb-4">
+          <div>
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fab fa-google text-red-500"></i> Campanhas do Google Ads (31 Termos de Varginha)
+            </h3>
+            <p class="text-xs text-gray-500">Estrutura importável diretamente no Google Ads Editor para Varginha e cidades atendidas.</p>
+          </div>
+          <span class="status-badge bg-blue-100 text-blue-800" id="adKeywordsCountBadge">31 palavras-chave</span>
+        </div>
+
+        <!-- Filtros e Busca -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+          <input type="text" id="adSearchInput" placeholder="Buscar palavra-chave ou produto..." class="border border-gray-300 rounded-lg px-3 py-2 text-xs bg-white">
+          <select id="adCampaignFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-xs bg-white">
+            <option value="todas">Todas as Campanhas</option>
+            <option value="fgts">Campanha FGTS Saque-Aniversário</option>
+            <option value="inss">Campanha Consignado INSS & Portabilidade</option>
+            <option value="clt">Campanha Consignado CLT</option>
+            <option value="veiculos">Campanha Financiamento & Garantia Veicular</option>
+            <option value="institucional">Campanha Institucional Local</option>
+          </select>
+        </div>
+
+        <div class="overflow-x-auto border border-gray-200 rounded-xl">
+          <table class="w-full text-left">
+            <thead class="bg-gray-50 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+              <tr>
+                <th class="py-2.5 px-3">Palavra-Chave</th>
+                <th class="py-2.5 px-3">Campanha</th>
+                <th class="py-2.5 px-3">Correspondência</th>
+                <th class="py-2.5 px-3">CPC Máx. Sugerido</th>
+                <th class="py-2.5 px-3">URL Rastreável (UTM)</th>
+              </tr>
+            </thead>
+            <tbody id="googleAdsKeywordsTable"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- META ADS STUDIO (INSTAGRAM & FACEBOOK) -->
+      <div class="mb-8">
+        <h3 class="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <i class="fab fa-meta text-blue-600"></i> Meta Ads Studio (Públicos e Estratégias do Sul de Minas)
+        </h3>
+        <p class="text-xs text-gray-500 mb-4">Modelos de anúncios e segmentações de raio geográfico para o Gerenciador de Anúncios do Instagram e Facebook.</p>
+        <div id="metaAdsContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5"></div>
+      </div>
+
+      <!-- CHECKLIST DE COMPLIANCE DE ANÚNCIOS -->
+      <div class="card-premium p-5 bg-yellow-50/40 border-yellow-200">
+        <h4 class="text-sm font-bold text-yellow-900 mb-2 flex items-center gap-2">
+          <i class="fas fa-balance-scale text-yellow-600"></i> Checklist de Conformidade para Anúncios Financeiros
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-700">
+          <div class="flex items-start gap-2 bg-white p-3 rounded-lg border border-yellow-100">
+            <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+            <div>
+              <strong>Nunca prometa dinheiro garantido sem análise:</strong>
+              <p class="text-gray-500 text-[11px] mt-0.5">O Google e o Facebook reprovam anúncios com "100% aprovado". Use "Sujeito à análise e aprovação cadastral".</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2 bg-white p-3 rounded-lg border border-yellow-100">
+            <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+            <div>
+              <strong>Sem cobrança antecipada:</strong>
+              <p class="text-gray-500 text-[11px] mt-0.5">Sempre destaque que a Speed Financeira nunca solicita depósitos ou taxas antes da liberação.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2 bg-white p-3 rounded-lg border border-yellow-100">
+            <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+            <div>
+              <strong>Endereço e Contato Local Explícito:</strong>
+              <p class="text-gray-500 text-[11px] mt-0.5">Passa confiança máxima: Rua Santa Cruz, 696 - Centro, Varginha/MG e fone oficial (35) 3067-5017.</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2 bg-white p-3 rounded-lg border border-yellow-100">
+            <i class="fas fa-check-circle text-green-600 mt-0.5"></i>
+            <div>
+              <strong>Identificação do correspondente:</strong>
+              <p class="text-gray-500 text-[11px] mt-0.5">Informe corretamente a condição de correspondente, as instituições contratantes e os canais oficiais aplicáveis. A citação da resolução, isoladamente, não certifica a peça.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- ABA 5: GOOGLE & RAIO-X LOCAL                             -->
+    <!-- ======================================================== -->
+    <section id="tab-gmb" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-gmb">
+      <div class="card-premium p-5 sm:p-6 mb-6 bg-gradient-to-r from-white via-blue-50/30 to-green-50/30">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Inteligência local da loja</p>
+            <h2 class="text-xl sm:text-2xl font-black text-gray-900">Raio-X Local • Speed Financeira Varginha</h2>
+            <p class="text-xs text-gray-600 mt-1 max-w-3xl">Consolida consistência NAP, visibilidade em IA, concorrentes e oportunidades locais usando as coletas já existentes do projeto.</p>
+          </div>
+          <span id="raioxAtualizado" class="text-[11px] font-bold text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-full max-w-full">Carregando dados...</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Consistência NAP</p><p id="raioxNap" class="text-2xl font-black text-red-600">—</p><p id="raioxNapMeta" class="text-[10px] text-gray-500 mt-1">Diretórios corretos</p></div>
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Visibilidade em IA</p><p id="raioxIa" class="text-2xl font-black text-blue-700">—</p><p id="raioxIaMeta" class="text-[10px] text-gray-500 mt-1">Citações monitoradas</p></div>
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Concorrentes diretos</p><p id="raioxConcorrentes" class="text-2xl font-black text-purple-700">—</p><p class="text-[10px] text-gray-500 mt-1">Perfis acompanhados</p></div>
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Temas monitorados</p><p id="raioxTemas" class="text-2xl font-black text-green-700">—</p><p class="text-[10px] text-gray-500 mt-1">Perguntas locais em IA</p></div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
+        <div class="card-premium p-5 lg:col-span-2">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>Posicionamento geográfico</h3><p class="text-[11px] text-gray-500 mt-1">Situação atual e caminho para o monitoramento por grade no Google Maps.</p></div>
+            <span class="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-1 rounded-full whitespace-nowrap">GeoGrid a configurar</span>
+          </div>
+          <div class="raiox-map-placeholder rounded-2xl border border-blue-100 p-5 min-h-[280px] flex flex-col justify-between">
+            <div class="grid grid-cols-5 gap-2 max-w-md mx-auto w-full" aria-label="Grade ilustrativa sem dados de posição">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span class="loja" title="Speed Financeira"></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <div class="bg-white/90 border border-gray-200 rounded-xl p-3 text-xs text-gray-600 mt-4">
+              <strong class="text-gray-900">Sem posições inventadas:</strong> o projeto ainda não coleta ranking ponto a ponto do Google Maps. A grade fica pronta para receber latitude, longitude, palavra-chave e posição quando essa coleta for conectada.
+            </div>
+          </div>
+        </div>
+
+        <div class="card-premium p-5">
+          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-store text-purple-600 mr-2"></i>Concorrentes monitorados</h3>
+          <p class="text-[11px] text-gray-500 mb-4">Sites e ofertas observados. Esta coleta não mede posição no Maps nem avaliações.</p>
+          <div id="raioxConcorrentesLista" class="space-y-2 max-h-[390px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="card-premium p-5">
+          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-bullseye text-orange-500 mr-2"></i>Melhorias estratégicas</h3>
+          <p class="text-[11px] text-gray-500 mb-4">Prioridades derivadas dos dados atuais.</p>
+          <div id="raioxOportunidades" class="space-y-3"></div>
+        </div>
+        <div class="card-premium p-5">
+          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-key text-yellow-500 mr-2"></i>Temas locais monitorados</h3>
+          <p class="text-[11px] text-gray-500 mb-4">Visibilidade da marca nas perguntas acompanhadas.</p>
+          <div id="raioxTemasLista" class="space-y-2"></div>
+        </div>
+      </div>
+
+      <div class="card-premium p-5 sm:p-6 mb-8">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Diagnóstico para execução</p>
+            <h3 class="text-lg font-black text-gray-900">Plano de ação do Raio-X</h3>
+            <p class="text-xs text-gray-600 mt-1">Cada prioridade mostra a evidência, a ação e o que conferir na próxima coleta. Registrar execução não altera os números medidos.</p>
+          </div>
+          <span id="raioxPlanoProgresso" class="text-xs font-bold text-green-800 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">Carregando ações...</span>
+        </div>
+        <div id="raioxDetalhado" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+      </div>
+
+      <div class="card-premium p-5 sm:p-6 mb-8">
+        <h3 class="text-base font-bold text-gray-900 mb-2">Prioridades da busca local em 2026</h3>
+        <p class="text-xs text-gray-600 mb-4">A pesquisa da Whitespark reúne opiniões de especialistas. Use estas frentes para orientar ações e acompanhe os resultados com medições reais por termo e região.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-700">
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Perfil da Empresa</strong>Validar categoria principal e adicionais, serviços predefinidos, horário real, endereço e localização do pino.</div>
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Avaliações e experiência</strong>Acompanhar nota, volume, recência, respostas, fotos reais, cliques para ligar e rotas.</div>
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Site e presença local</strong>Conferir NAP indexável, páginas úteis por serviço, referências locais e cadastros consistentes.</div>
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Medição e integridade</strong>Medir posições em GeoGrid antes e depois das ações. Manter nome e horário verdadeiros, sem avaliações artificiais ou conteúdo repetitivo.</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-3 my-8" aria-hidden="true">
+        <div class="h-px bg-gray-200 flex-grow"></div>
+        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Gestão operacional do perfil</span>
+        <div class="h-px bg-gray-200 flex-grow"></div>
+      </div>
+
+      <!-- Cabeçalho da Aba GMB -->
+      <div class="card-premium p-4 sm:p-5 mb-5 bg-gradient-to-r from-white via-red-50/15 to-white">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-sm font-black shrink-0">
+                <i class="fab fa-google"></i>
+              </span>
+              <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-snug">Gestão do Google Meu Negócio & Ficha Local</h2>
+            </div>
+            <p class="text-xs text-gray-500 max-w-3xl leading-relaxed">Otimize a presença da Speed Financeira no Google Maps e na busca de Varginha para atrair clientes de rua, ligações e citações em IAs.</p>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="https://business.google.com/" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+              <i class="fab fa-google text-red-500"></i> Painel Google
+            </a>
+            <a href="https://share.google/TYMb8tNCjBYdCTloP" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+              <i class="fas fa-map-marked-alt text-green-700"></i> Ver Ficha no Google
+            </a>
+            <button onclick="copiarTexto('https://share.google/TYMb8tNCjBYdCTloP')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs py-2 px-3.5 rounded-lg transition shadow flex items-center gap-1.5 whitespace-nowrap">
+              <i class="fas fa-star text-yellow-800"></i> Copiar Link de Review
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAINEL DE SCORE E SAÚDE DA FICHA (3 CARDS COM ALTURAS EQUILIBRADAS) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-6 items-stretch">
+        <!-- Score Circular -->
+        <div class="card-premium p-5 flex flex-col justify-between items-center text-center">
+          <div class="w-full flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
+            <span class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fab fa-google text-red-500"></i> Ficha Google
+            </span>
+              <span class="status-badge bg-gray-100 text-gray-700 text-[10px]" id="gmbStatusBadge">Conferir perfil</span>
+          </div>
+
+          <div class="relative w-32 h-32 flex items-center justify-center my-2">
+            <svg class="w-32 h-32 transform -rotate-90" viewBox="0 0 128 128">
+              <circle cx="64" cy="64" r="46" stroke="#f1f5f9" stroke-width="10" fill="transparent"/>
+              <circle cx="64" cy="64" r="46" stroke="#e2e8f0" stroke-width="10" fill="transparent"/>
+              <circle id="gmbScoreRing" cx="64" cy="64" r="46" stroke="#019652" stroke-width="10" fill="transparent" stroke-linecap="round" style="transition: stroke-dashoffset 0.8s ease;"/>
+            </svg>
+            <div class="gmb-score-center">
+              <span id="gmbScoreValue" class="font-black text-gray-900 tabular-nums">—</span>
+              <span class="gmb-score-caption">Índice<br>interno</span>
+            </div>
+          </div>
+
+          <div class="w-full pt-2 border-t border-gray-100">
+             <p id="gmbScoreLabel" class="text-xs font-bold text-gray-800">Execução do checklist</p>
+            <p class="text-[11px] text-gray-500 mt-0.5 whitespace-nowrap">
+              <span class="font-bold text-green-700" id="gmbItemsOk">—</span> concluídos • 
+              <span class="font-bold text-amber-600" id="gmbItemsPend">—</span> pendentes
+            </p>
+          </div>
+        </div>
+
+        <!-- Consistência NAP & Diretórios -->
+        <div class="card-premium p-5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
+              <span class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fas fa-map-marker-alt text-green-600"></i> Consistência NAP
+              </span>
+              <span class="text-xs font-black text-green-700 tabular-nums bg-green-50 border border-green-200 px-2 py-0.5 rounded-full" id="napScoreLabel">18.2%</span>
+            </div>
+
+            <p class="text-[11px] text-gray-500 mb-1.5 flex justify-between items-center">
+              <span>Alinhamento em diretórios</span>
+              <span class="font-semibold text-gray-700" id="napScoreMeta">Meta: 60%</span>
+            </p>
+
+            <div class="w-full bg-gray-200 h-2.5 rounded-full overflow-hidden mb-3">
+              <div id="napScoreBar" class="h-full rounded-full transition-all duration-700" style="width: 18.2%; background: #dc2626;"></div>
+            </div>
+
+            <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[11px] text-red-900 space-y-1 leading-relaxed">
+              <p class="font-bold flex items-center gap-1.5 text-red-700">
+                <i class="fas fa-exclamation-triangle"></i> Atenção aos 9 erros de telefone:
+              </p>
+              <p class="text-red-800">
+                 Diretórios antigos publicam o fone <strong class="whitespace-nowrap font-bold text-red-900">3113-0458</strong>. Dados divergentes prejudicam a confiança e podem confundir clientes. Corrija para <strong class="whitespace-nowrap font-bold text-gray-900">(35) 3067-5017</strong>.
+              </p>
+            </div>
+          </div>
+
+          <div class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px]">
+            <span class="text-gray-500">44 diretórios locais</span>
+            <a href="speedgeo/relatorio_nap.html" target="_blank" rel="noopener noreferrer" class="text-green-700 font-bold hover:underline whitespace-nowrap">Ver Relatório NAP →</a>
+          </div>
+        </div>
+
+        <!-- Dados Oficiais da Loja (NAP Padrão) -->
+        <div class="card-premium p-5 flex flex-col justify-between bg-gradient-to-br from-white to-gray-50/40">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
+              <span class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="fas fa-store text-yellow-600"></i> Dados Oficiais (NAP)
+              </span>
+              <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Padrão</span>
+            </div>
+
+            <div class="space-y-1.5 text-xs text-gray-700 leading-relaxed" id="boxNapPadrao">
+              <p><strong class="text-gray-900">Nome:</strong> <span class="whitespace-nowrap">Speed Financeira</span></p>
+              <p><strong class="text-gray-900">Endereço:</strong> Rua Santa Cruz, 696 - Centro</p>
+              <p><strong class="text-gray-900">Cidade/UF:</strong> <span class="whitespace-nowrap">Varginha - MG</span> • <span class="whitespace-nowrap">CEP: 37002-090</span></p>
+              <p><strong class="text-gray-900">Telefone:</strong> <span class="whitespace-nowrap font-bold text-green-800">(35) 3067-5017</span></p>
+              <p><strong class="text-gray-900">Site:</strong> <span class="whitespace-nowrap text-green-700">speedfinanceira.com.br</span></p>
+            </div>
+          </div>
+
+          <button onclick="copiarTexto('Speed Financeira\nRua Santa Cruz, 696 - Centro, Varginha - MG\nCEP: 37002-090\nTelefone/WhatsApp: (35) 3067-5017\nSite: https://speedfinanceira.com.br')" class="mt-3 w-full bg-gray-900 hover:bg-black text-white font-bold text-xs py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm whitespace-nowrap">
+            <i class="fas fa-copy"></i> Copiar Dados Oficiais
+          </button>
+        </div>
+      </div>
+
+      <!-- CENTRAL DE CORREÇÃO NAP (9 TELEFONES INCORRETOS) -->
+      <div id="centralCorrecaoNap" class="card-premium p-5 sm:p-6 mb-8 border-l-4 border-red-500">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-gray-100 gap-2 mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-lg bg-red-100 text-red-600 flex items-center justify-center text-xs">
+                <i class="fas fa-phone-slash"></i>
+              </span>
+              <h3 class="text-base font-bold text-gray-900">
+                Central de Correção NAP (9 Diretórios com Telefone Antigo)
+              </h3>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">
+              Estes 9 sites ainda publicam o número antigo <strong class="whitespace-nowrap font-bold text-red-700">3113-0458</strong>. Abra cada ficha, envie o texto padrão e marque como corrigido para subir o score.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="napErrosContador" class="text-xs font-bold px-3 py-1 bg-red-50 text-red-700 border border-red-200 rounded-full whitespace-nowrap">
+              9 pendentes • 0 corrigidos
+            </span>
+          </div>
+        </div>
+
+        <div id="centralCorrecaoNapContainer" class="space-y-3"></div>
+      </div>
+
+      <!-- SEÇÃO 1: CHECKLIST INTERNO ORIENTADO PELA PESQUISA WHITESPARK 2026 -->
+      <div class="card-premium p-5 sm:p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-gray-100 gap-2 mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+                <i class="fas fa-tasks text-green-700"></i> Checklist local orientado pela Whitespark 2026
+              </h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200 whitespace-nowrap">Local Search 2026</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-0.5">Priorização operacional inspirada na pesquisa com 47 especialistas e 187 fatores. Não representa pesos oficiais do Google nem garante posição. Marque os critérios para atualizar o índice interno de execução.</p>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <a href="https://whitespark.ca/local-search-ranking-factors/" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+              <i class="fas fa-external-link-alt text-[10px]"></i> Pesquisa Whitespark 2026
+            </a>
+          </div>
+        </div>
+
+        <!-- Régua interna dos grupos de trabalho -->
+        <div class="p-3.5 bg-gray-50 rounded-xl border border-gray-200 mb-5">
+          <p class="text-[10px] font-bold text-gray-600 uppercase tracking-wider mb-2 flex items-center gap-1">
+            <i class="fas fa-chart-pie text-gray-500"></i> Pesos internos de execução por grupo, baseados nas tendências da pesquisa:
+          </p>
+          <div class="flex flex-wrap gap-2 text-[11px]">
+            <span class="px-2 py-1 rounded-lg border bg-pink-50 text-pink-900 border-pink-200 font-bold whitespace-nowrap">Perfil Google: 32 pts</span>
+            <span class="px-2 py-1 rounded-lg border bg-purple-50 text-purple-900 border-purple-200 font-bold whitespace-nowrap">Avaliações: 20 pts</span>
+            <span class="px-2 py-1 rounded-lg border bg-blue-50 text-blue-900 border-blue-200 font-bold whitespace-nowrap">Site: 15 pts</span>
+            <span class="px-2 py-1 rounded-lg border bg-indigo-50 text-indigo-900 border-indigo-200 font-bold whitespace-nowrap">Interações: 9 pts</span>
+            <span class="px-2 py-1 rounded-lg border bg-green-50 text-green-900 border-green-200 font-bold whitespace-nowrap">Links locais: 8 pts</span>
+            <span class="px-2 py-1 rounded-lg border bg-yellow-50 text-yellow-900 border-yellow-200 font-bold whitespace-nowrap">Citações/NAP: 6 pts</span>
+            <span class="px-2 py-1 rounded-lg border bg-teal-50 text-teal-900 border-teal-200 font-bold whitespace-nowrap">Localização: 6 pts</span>
+            <span class="px-2 py-1 rounded-lg border bg-red-50 text-red-900 border-red-200 font-bold whitespace-nowrap">Redes sociais: 4 pts</span>
+          </div>
+        </div>
+
+        <div id="gmbChecklistContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- SEÇÃO 2: MODELOS DE POSTS SEMANAIS PARA O GMB -->
+      <div class="card-premium p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
+          <div>
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-bullhorn text-yellow-500"></i> Posts Semanais para o Google Meu Negócio (GMB)
+            </h3>
+             <p class="text-xs text-gray-500">Use publicações para informar ofertas e serviços reais. A frequência de posts, isoladamente, não garante prioridade no Google Maps.</p>
+          </div>
+          <a href="https://business.google.com/posts" target="_blank" rel="noopener noreferrer" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-1.5 px-3 rounded-lg transition flex items-center gap-1 shadow-sm">
+            <i class="fab fa-google"></i> Criar Post no Google
+          </a>
+        </div>
+
+        <div id="gmbPostsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      </div>
+
+      <!-- SEÇÃO 3: CENTRAL DE RESPOSTA A AVALIAÇÕES (REVIEWS) -->
+      <div class="card-premium p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
+          <div>
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-star text-yellow-500"></i> Modelos de Resposta para Avaliações no Google
+            </h3>
+            <p class="text-xs text-gray-500">Responder todas as avaliações (positivas e negativas) em até 48h é o fator nº 1 de confiança no Google Maps.</p>
+          </div>
+          <button onclick="copiarTexto('https://share.google/TYMb8tNCjBYdCTloP')" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-1.5 px-3 rounded-lg transition flex items-center gap-1">
+            <i class="fas fa-link text-green-700"></i> Link da Ficha para Clientes
+          </button>
+        </div>
+
+        <div id="gmbAvaliacoesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      </div>
+
+      <!-- SEÇÃO 4 & 5: Q&A E FOTOS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Q&A do Google -->
+        <div class="card-premium p-6">
+          <div class="pb-3 border-b border-gray-100 mb-4">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-question-circle text-blue-600"></i> Perguntas & Respostas Frequentes (Q&A)
+            </h3>
+            <p class="text-xs text-gray-500 mt-0.5">Adicione você mesmo essas perguntas na sua ficha para esclarecer dúvidas antes do cliente chamar.</p>
+          </div>
+          <div id="gmbQAContainer" class="space-y-3 max-h-[500px] overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- Checklist de Fotos -->
+        <div class="card-premium p-6">
+          <div class="pb-3 border-b border-gray-100 mb-4">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-camera text-purple-600"></i> Checklist de Fotos da Loja para o Google
+            </h3>
+            <p class="text-xs text-gray-500 mt-0.5">Empresas com fotos reais de fachada, equipe e interior recebem 42% mais pedidos de rota no Maps.</p>
+          </div>
+          <div id="gmbFotosContainer" class="max-h-[500px] overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL DE EDIÇÃO DE POST -->
+  <div id="modalEdicaoPost" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm hidden" role="dialog" aria-modal="true" aria-labelledby="modalEdicaoTitulo" aria-hidden="true">
+    <div class="bg-white rounded-2xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+        <h3 id="modalEdicaoTitulo" class="font-bold text-gray-900 text-sm flex items-center gap-2">
+          <i class="fas fa-pen text-green-700"></i> Editar Conteúdo & Legenda
+        </h3>
+        <button type="button" onclick="fecharModalEdicao()" class="text-gray-400 hover:text-gray-700 text-lg" aria-label="Fechar edição">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 flex-grow text-xs">
+        <input type="hidden" id="editPostId">
+
+        <div>
+          <label for="editManchete" class="block font-bold text-gray-700 uppercase mb-1">Manchete da Imagem:</label>
+          <input type="text" id="editManchete" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs text-gray-900">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="editSub" class="block font-bold text-gray-700 uppercase mb-1">Subtítulo / Apoio:</label>
+            <input type="text" id="editSub" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs text-gray-900">
+          </div>
+          <div>
+            <label for="editCta" class="block font-bold text-gray-700 uppercase mb-1">Botão CTA:</label>
+            <input type="text" id="editCta" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs text-gray-900">
+          </div>
+        </div>
+
+        <div>
+          <label for="editStatus" class="block font-bold text-gray-700 uppercase mb-1">Status de Aprovação:</label>
+          <select id="editStatus" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs text-gray-900 bg-white">
+            <option value="rascunho">📝 Rascunho</option>
+            <option value="revisao">🔍 Em Revisão</option>
+            <option value="aprovado">✅ Aprovado para Publicação</option>
+            <option value="publicado">🚀 Publicado</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="editLegenda" class="block font-bold text-gray-700 uppercase mb-1">Legenda Completa (Instagram / Facebook):</label>
+          <textarea id="editLegenda" rows="8" oninput="verificarComplianceEdicao()" class="w-full border border-gray-300 rounded-lg p-2.5 text-xs text-gray-900 font-sans leading-relaxed"></textarea>
+        </div>
+
+        <div id="complianceIndicator"></div>
+      </div>
+
+      <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-end gap-2">
+        <button onclick="fecharModalEdicao()" class="px-4 py-2 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-200 transition">
+          Cancelar
+        </button>
+        <button onclick="salvarEdicaoPost()" class="px-4 py-2 rounded-lg text-xs font-bold bg-green-700 hover:bg-green-800 text-white transition shadow-sm">
+          Salvar Alterações
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RODAPÉ INSTITUCIONAL & CENTRAL DE BACKUP -->
+  <footer class="bg-gray-900 text-gray-400 py-6 border-t border-gray-800 text-xs mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <div class="flex flex-col md:flex-row justify-between items-center gap-4 pb-4 border-b border-gray-800">
+        <div class="flex items-center gap-2">
+          <span class="w-6 h-6 rounded-lg bg-yellow-400 text-gray-900 font-black text-xs flex items-center justify-center">S</span>
+          <span class="font-bold text-white">Speed Financeira</span> • Rua Santa Cruz, 696 - Centro - Varginha/MG
+          <span class="text-gray-500 hidden sm:inline">• Correspondente Bancário (Resolução CMN nº 4.935/2021)</span>
+        </div>
+
+        <!-- Central de Backup e Restauração -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-[11px] text-gray-400 font-semibold mr-1 flex items-center gap-1">
+            <i class="fas fa-database text-green-400"></i> Seus Dados:
+          </span>
+          <button onclick="exportarBackupDashboard()" class="bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg border border-gray-700 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+            <i class="fas fa-file-export text-green-400"></i> Exportar Backup (.json)
+          </button>
+          
+          <label class="bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg border border-gray-700 transition flex items-center gap-1.5 cursor-pointer shadow-sm whitespace-nowrap">
+            <i class="fas fa-file-import text-blue-400"></i> Restaurar Backup
+            <input type="file" id="backupFileInput" accept=".json" onchange="importarBackupDashboard(event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+      <div class="pt-3 flex flex-col sm:flex-row justify-between items-center gap-2 text-gray-500 text-[11px]">
+        <p>Painel de Controle Interno de Marketing • Dados operacionais armazenados localmente neste navegador.</p>
+        <p class="whitespace-nowrap font-medium text-gray-400">Versão 2.0 • 2026</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- SCRIPTS DOS DADOS E APLICAÇÃO -->
+  <script src="social/posts_fila.js"></script>
+  <script src="speedgeo/dados_monitor.js"></script>
+  <script src="speedgeo/dados_concorrentes.js"></script>
+  <script src="speedgeo/dados_diretorios.js"></script>
+  <script src="js/data_ads.js"></script>
+  <script src="js/data_marketing.js"></script>
+  <script src="js/data_gmb.js"></script>
+  <script src="js/data_calendario.js"></script>
+  <script src="js/data_nap_erros.js"></script>
+  <script src="js/gmb.js"></script>
+  <script src="js/calendario.js"></script>
+  <script src="js/simulador.js"></script>
+  <script src="js/raiox.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/resultados.js"></script>
+  <script src="js/criador_artes.js"></script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+{
+  "empresa": {
+    "nome_oficial": "Speed Financeira – Empréstimo Consignado e Financiamento em Varginha",
+    "nome_curto": "Speed Financeira",
+    "endereco": "Rua Santa Cruz, 696 - Centro - Varginha/MG",
+    "cep": "37002-090",
+    "telefone_whatsapp": "(35) 3067-5017",
+    "telefone_whatsapp_raw": "553530675017",
+    "email": "speed.varginha@gmail.com",
+    "site": "https://speedfinanceira.com.br",
+    "cnpj": "29.497.887/0001-57",
+    "coordenadas": {
+      "latitude": -21.553545,
+      "longitude": -45.440096
+    },
+    "horarios": "Segunda a sexta: 08:00 às 18:00 | Sábado: 09:00 às 12:30",
+    "cidades_atendidas": [
+      "Varginha", "Três Corações", "Três Pontas", "Elói Mendes",
+      "Boa Esperança", "Cambuquira", "São Lourenço", "Pouso Alegre",
+      "Carmo da Cachoeira", "Alfenas"
+    ]
+  },
+  "concorrentes_monitorados": [
+    {
+      "id": "agibank-loja1",
+      "nome": "Agibank (Unidade 1 - Varginha)",
+      "url_monitorada": "https://agibank.com.br/?utm_source=google&utm_medium=maps&utm_campaign=lbm31012",
+      "dominio": "agibank.com.br",
+      "tipo": "Banco com Loja de Rua",
+      "presenca_varginha": "Loja de rua com campanha ativa no Google Maps (lbm31012)",
+      "estrategia_local": "Captar aposentados pelo Google Maps com oferta de conta e cartão consignado",
+      "diferencial_speed": "Speed é multimarca (10+ bancos), não obriga abertura de conta e tem atendimento ágil no Centro"
+    },
+    {
+      "id": "agibank-loja2",
+      "nome": "Agibank (Unidade 2 - Varginha)",
+      "url_monitorada": "https://agibank.com.br/?utm_source=google&utm_medium=maps&utm_campaign=lbm31072",
+      "dominio": "agibank.com.br",
+      "tipo": "Segunda Unidade de Rua",
+      "presenca_varginha": "Segunda loja de rua em Varginha cadastrada no Google Maps (lbm31072)",
+      "estrategia_local": "Domínio geográfico duplo da cidade nas buscas do Maps",
+      "diferencial_speed": "Speed resgata clientes com taxas altas do Agibank via portabilidade com troco no Pix"
+    },
+    {
+      "id": "help-credito",
+      "nome": "Help! Loja de Crédito (Rede Bmg)",
+      "url_monitorada": "https://www.help.com.br/",
+      "dominio": "help.com.br",
+      "tipo": "Loja de Rua de Crédito",
+      "presenca_varginha": "Loja física de rua com fachada forte",
+      "estrategia_local": "Foco estrito em aposentados e produtos Bmg",
+      "diferencial_speed": "Speed opera com Bmg e mais 9 bancos, garantindo aprovação em outro parceiro se o Bmg recusar"
+    },
+    {
+      "id": "credimais",
+      "nome": "Credimais Empréstimos",
+      "url_monitorada": "https://www.credimaisemprestimos.com.br/",
+      "dominio": "credimaisemprestimos.com.br",
+      "tipo": "Correspondente Local Varginha",
+      "presenca_varginha": "Loja de rua tradicional com bom ranqueamento local",
+      "estrategia_local": "Captação orgânica local de aposentados e consignado",
+      "diferencial_speed": "Atendimento digital 100% integrado ao WhatsApp oficial (35) 3067-5017 com liberação imediata via Pix"
+    },
+    {
+      "id": "crefisa",
+      "nome": "Crefisa",
+      "url_monitorada": "http://www.crefisa.com.br/",
+      "dominio": "crefisa.com.br",
+      "tipo": "Financeira de Crédito Pessoal",
+      "presenca_varginha": "Loja física de rua com apelo em negativados",
+      "estrategia_local": "Crédito pessoal de alto custo divulgado massivamente na TV",
+      "diferencial_speed": "Speed orienta antecipação de FGTS e consignado Bacen com juros até 10 vezes menores que a Crefisa"
+    },
+    {
+      "id": "banco-mercantil",
+      "nome": "Banco Mercantil do Brasil",
+      "url_monitorada": "https://bancomercantil.com.br/",
+      "dominio": "bancomercantil.com.br",
+      "tipo": "Banco Pagador do INSS com Agência Física",
+      "presenca_varginha": "Agência de rua oficial de pagamento do INSS em Varginha",
+      "estrategia_local": "Venda de consignado na boca do caixa no dia do pagamento do benefício",
+      "diferencial_speed": "Speed atende sem filas na Rua Santa Cruz 696, sem venda casada de seguros e com cotação multimarca"
+    }
+  ],
+  "categorias_pautas": [
+    {
+      "id": "consignado-inss",
+      "titulo_categoria": "Empréstimo Consignado INSS",
+      "publico_alvo": "Aposentados e pensionistas do INSS em Varginha e região",
+      "pautas": [
+        {
+          "slug": "melhor-opcao-emprestimo-consignado-varginha",
+          "titulo": "Qual a melhor opção de empréstimo consignado em Varginha em 2026?",
+          "data_programada": "2026-09-22T09:00:00-03:00",
+          "meta_description": "Procurando a melhor opção de empréstimo consignado em Varginha? Compare taxas, bancos e veja como a Speed Financeira garante aprovação rápida e sem burocracia.",
+          "pergunta_ia": "Qual a melhor opção de empréstimo consignado em Varginha?",
+          "palavras_chave": ["melhor empréstimo consignado Varginha", "consignado INSS Varginha", "financeira Varginha", "Speed Financeira"],
+          "pontos_obrigatorios": [
+            "Teto de juros do INSS fixado pelo Bacen",
+            "Margem consignável de 35% para empréstimo + 5% para cartão",
+            "Localização física na Rua Santa Cruz, 696 no Centro de Varginha",
+            "WhatsApp direto (35) 3067-5017",
+            "Comparativo de vantagens em relação aos bancos tradicionais"
+          ]
+        },
+        {
+          "slug": "aposentados-podem-fazer-emprestimo-consignado-varginha",
+          "titulo": "Aposentados e pensionistas podem fazer empréstimo consignado em Varginha? Veja regras",
+          "data_programada": "2026-10-01T09:00:00-03:00",
+          "meta_description": "Saiba como aposentados e pensionistas do INSS podem contratar consignado em Varginha com segurança, limites de idade e liberação rápida na Speed Financeira.",
+          "pergunta_ia": "Aposentados podem fazer empréstimos consignados em Varginha?",
+          "palavras_chave": ["empréstimo aposentado Varginha", "regras consignado INSS Varginha", "crédito pensionista Varginha"],
+          "pontos_obrigatorios": [
+            "Documentos necessários (RG/CNH, comprovante de residência, extrato de pagamento Meu INSS)",
+            "Desbloqueio de benefício pelo aplicativo Meu INSS",
+            "Atendimento presencial e suporte passo a passo para idosos",
+            "Alerta de segurança contra golpes de empréstimo falso no Sul de Minas"
+          ]
+        },
+        {
+          "slug": "quanto-custa-emprestimo-consignado-inss-varginha",
+          "titulo": "Quanto custa um empréstimo consignado INSS em Varginha? Simulação e taxas",
+          "data_programada": "2026-10-08T09:00:00-03:00",
+          "meta_description": "Descubra quanto custa contratar um consignado INSS em Varginha: simulação de parcelas, taxas de juros máximas e como calcular o Custo Efetivo Total (CET).",
+          "pergunta_ia": "Quanto custa um Empréstimo Consignado INSS em Varginha?",
+          "palavras_chave": ["quanto custa consignado Varginha", "taxa consignado INSS Varginha", "simulação consignado Varginha"],
+          "pontos_obrigatorios": [
+            "O que compõe o Custo Efetivo Total (CET)",
+            "Tabela de prazos (até 108 parcelas)",
+            "Exemplo prático de simulação de valores",
+            "Como solicitar uma simulação gratuita pelo WhatsApp (35) 3067-5017"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "saque-fgts",
+      "titulo_categoria": "Antecipação do Saque-Aniversário FGTS",
+      "publico_alvo": "Trabalhadores CLT com saldo no FGTS (ativos ou inativos)",
+      "pautas": [
+        {
+          "slug": "como-antecipar-fgts-varginha-pix-imediato",
+          "titulo": "Como antecipar o Saque-Aniversário do FGTS em Varginha com liberação imediata via Pix",
+          "data_programada": "2026-09-24T09:00:00-03:00",
+          "meta_description": "Precisa de dinheiro rápido? Veja como antecipar o Saque-Aniversário do FGTS em Varginha: até 5 saques anuais (regra até 31/10/2026) com liberação via Pix. Aprovação em minutos na Speed Financeira.",
+          "pergunta_ia": "Como funciona a antecipação do FGTS em Varginha?",
+          "palavras_chave": ["antecipar FGTS Varginha", "empréstimo FGTS Varginha", "saque aniversário FGTS Varginha", "FGTS via Pix Varginha"],
+          "pontos_obrigatorios": [
+            "Como funciona a modalidade saque-aniversário",
+            "Não desconta do salário mensal (débito anual direto na conta do FGTS)",
+            "Disponível para negativados (sem consulta ao SPC/Serasa)",
+            "Passo a passo no app do FGTS autorizando o banco parceiro",
+            "Recebimento em poucos minutos no Pix da sua conta"
+          ]
+        },
+        {
+          "slug": "vale-a-pena-antecipar-saque-aniversario-fgts",
+          "titulo": "Vale a pena antecipar o Saque-Aniversário do FGTS? Análise de prós e contras",
+          "data_programada": "2026-10-06T09:00:00-03:00",
+          "meta_description": "Descubra se compensa antecipar o FGTS: comparação com cheque especial, cartão de crédito e orientações para uso inteligente do recurso em Varginha.",
+          "pergunta_ia": "Compensa fazer antecipação do saque aniversário FGTS?",
+          "palavras_chave": ["vale a pena antecipar FGTS", "juros empréstimo FGTS", "crédito negativado Varginha"],
+          "pontos_obrigatorios": [
+            "Comparativo de taxas: juros do FGTS vs Cartão de Crédito e Cheque Especial",
+            "Situações recomendadas: quitar dívidas caras, emergências médicas, reformas",
+            "O que acontece em caso de demissão sem justa causa",
+            "Consultoria financeira gratuita na Speed Financeira em Varginha"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portabilidade-refinanciamento",
+      "titulo_categoria": "Portabilidade e Refinanciamento",
+      "publico_alvo": "Pessoas que já têm consignado e querem diminuir parcelas ou receber troco",
+      "pautas": [
+        {
+          "slug": "portabilidade-consignado-varginha-reduzir-juros",
+          "titulo": "Portabilidade de empréstimo consignado em Varginha: como reduzir juros e pegar troco",
+          "data_programada": "2026-09-29T09:00:00-03:00",
+          "meta_description": "Tem consignado com taxa alta? Faça a portabilidade em Varginha: transfira sua dívida para um banco com juros menores e receba a diferença em dinheiro na sua conta.",
+          "pergunta_ia": "Como fazer portabilidade de crédito consignado em Varginha?",
+          "palavras_chave": ["portabilidade consignado Varginha", "reduzir juros consignado Varginha", "troco consignado INSS"],
+          "pontos_obrigatorios": [
+            "Direito garantido pelo Banco Central sem custo de transferência",
+            "Diferença entre reduzir a parcela ou pegar dinheiro de troco",
+            "Como solicitar o extrato de empréstimos consignados (Hiscon)",
+            "Atendimento Speed Financeira para pesquisar as melhores taxas entre mais de 10 bancos"
+          ]
+        },
+        {
+          "slug": "refinanciamento-consignado-como-funciona",
+          "titulo": "Refinanciamento de consignado: quando é a hora certa de refinanciar seu contrato",
+          "data_programada": "2026-10-13T09:00:00-03:00",
+          "meta_description": "Descubra como refinanciar parcelas já pagas do seu empréstimo consignado em Varginha e liberar crédito extra sem comprometer sua renda.",
+          "pergunta_ia": "Como funciona o refinanciamento de empréstimo consignado?",
+          "palavras_chave": ["refinanciar consignado Varginha", "crédito extra consignado", "refinanciamento INSS Varginha"],
+          "pontos_obrigatorios": [
+            "Quantas parcelas precisam estar pagas para compensar refinanciar",
+            "Manutenção do mesmo valor de parcela com liberação de novo saldo",
+            "Avaliação rápida na Rua Santa Cruz, 696 ou pelo WhatsApp (35) 3067-5017"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seguranca-golpes",
+      "titulo_categoria": "Segurança e Proteção ao Consumidor",
+      "publico_alvo": "Moradores de Varginha e região buscando crédito seguro",
+      "pautas": [
+        {
+          "slug": "como-identificar-golpe-falso-emprestimo-varginha",
+          "titulo": "Como se proteger do golpe do falso empréstimo em Varginha e Sul de Minas",
+          "data_programada": "2026-10-15T09:00:00-03:00",
+          "meta_description": "Nunca pague taxa adiantada para liberar empréstimo! Aprenda a identificar golpistas na internet e saiba por que a Speed Financeira é referência de segurança há 10 anos.",
+          "pergunta_ia": "A Speed Financeira cobra taxa adiantada para liberar empréstimo?",
+          "palavras_chave": ["golpe do empréstimo Varginha", "taxa adiantada empréstimo", "Speed Financeira é confiável"],
+          "pontos_obrigatorios": [
+            "Regra fundamental: NENHUMA instituição séria cobra depósito ou taxa prévia",
+            "Como golpistas usam nomes de financeiras para enganar vítimas por WhatsApp",
+            "Confirmação de canal oficial da Speed: Telefone fixo e WhatsApp oficial (35) 3067-5017",
+            "Loja física com endereço conhecido: Rua Santa Cruz, 696 no Centro de Varginha",
+            "CNPJ oficial ativo 29.497.887/0001-57"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "financiamento-veicular",
+      "titulo_categoria": "Financiamento de Veículos",
+      "publico_alvo": "Quem quer comprar carro ou moto com entrada e parcelas",
+      "pautas": [
+        {
+          "slug": "financiamento-veiculos-varginha",
+          "titulo": "Financiamento de veículos em Varginha em 2026: taxas, entrada e como simular",
+          "data_programada": "2026-10-20T09:00:00-03:00",
+          "meta_description": "Saiba como financiar carro ou moto em Varginha: entrada mínima, taxas de juros, CET, alienação e como a Speed Financeira simula em vários bancos.",
+          "pergunta_ia": "Qual a melhor forma de financiar um veículo em Varginha?",
+          "palavras_chave": ["financiamento de veículos Varginha", "financiamento de carros usados Varginha", "financiamento de moto Varginha", "simular financiamento veículo"],
+          "pontos_obrigatorios": [
+            "Como funciona: entrada + parcelas fixas com veículo como garantia (alienação)",
+            "Diferença entre financiar veículo novo e usado",
+            "Consórcio vs financiamento: qual compensa",
+            "Simulação gratuita e comparação entre bancos na Speed Financeira"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "garantias-veiculo-imovel",
+      "titulo_categoria": "Empréstimos com Garantia",
+      "publico_alvo": "Quem tem veículo ou imóvel quitado e precisa de crédito barato",
+      "pautas": [
+        {
+          "slug": "emprestimo-garantia-veiculo-varginha",
+          "titulo": "Empréstimo com garantia de veículo em Varginha: libere até 80% da FIPE e continue usando o carro",
+          "data_programada": "2026-10-27T09:00:00-03:00",
+          "meta_description": "Veja como usar o veículo quitado como garantia para conseguir crédito com juros baixos em Varginha, mesmo negativado, sem entregar o carro.",
+          "pergunta_ia": "Vale a pena fazer empréstimo com garantia de veículo em Varginha?",
+          "palavras_chave": ["empréstimo com garantia de veículo em Varginha", "refinanciamento de veículos Varginha", "empréstimo carro quitado troco"],
+          "pontos_obrigatorios": [
+            "Como funciona a alienação fiduciária: o carro fica como garantia mas você continua usando",
+            "Quanto libera: até 80% do valor da tabela FIPE",
+            "Aceita negativados (sem consulta SPC/Serasa)",
+            "Prazo e taxas menores que o crédito pessoal",
+            "Simulação na Speed Financeira sem compromisso"
+          ]
+        },
+        {
+          "slug": "credito-garantia-imovel-varginha",
+          "titulo": "Crédito com garantia de imóvel em Varginha: home equity com juros baixos e prazo longo",
+          "data_programada": "2026-11-05T09:00:00-03:00",
+          "meta_description": "Libere até 60% do valor do seu imóvel em Varginha com juros bem menores que o crédito pessoal, prazos de até 240 meses e sem vender a casa.",
+          "pergunta_ia": "Como funciona o crédito com garantia de imóvel em Varginha?",
+          "palavras_chave": ["crédito com garantia de imóvel Varginha", "home equity Varginha taxas", "empréstimo com casa de garantia"],
+          "pontos_obrigatorios": [
+            "Como funciona a alienação do imóvel",
+            "Quanto libera: até 60% do valor avaliado",
+            "Prazos de até 240 meses e juros reduzidos",
+            "Para quem vale a pena e cuidados essenciais",
+            "Avaliação gratuita com a equipe da Speed Financeira"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "consignado-clt",
+      "titulo_categoria": "Consignado CLT (Crédito do Trabalhador)",
+      "publico_alvo": "Trabalhadores de carteira assinada e empresas da região",
+      "pautas": [
+        {
+          "slug": "consignado-clt-varginha",
+          "titulo": "Empréstimo consignado CLT em Varginha: crédito com desconto em folha para quem tem carteira assinada",
+          "data_programada": "2026-11-12T09:00:00-03:00",
+          "meta_description": "Saiba como funciona o consignado CLT em Varginha: margem de até 35% do salário, desconto em folha, juros menores e como contratar pela Speed Financeira.",
+          "pergunta_ia": "Como funciona o empréstimo consignado CLT em Varginha?",
+          "palavras_chave": ["empréstimo consignado clt Varginha", "consignado carteira assinada Varginha", "crédito consignado privado empresa"],
+          "pontos_obrigatorios": [
+            "O que é o crédito consignado privado (CLT) e o desconto em folha",
+            "Margem consignável de até 35% do salário",
+            "Dependência do convênio da empresa com o banco",
+            "Vantagens sobre o crédito pessoal tradicional",
+            "Como contratar com a Speed Financeira"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bpc-loas",
+      "titulo_categoria": "BPC/LOAS e Segurança",
+      "publico_alvo": "Beneficiários do BPC e famílias em situação de vulnerabilidade",
+      "pautas": [
+        {
+          "slug": "emprestimo-bpc-loas-varginha",
+          "titulo": "Empréstimo BPC/LOAS em Varginha: o que a lei permite e como contratar com segurança",
+          "data_programada": "2026-11-19T09:00:00-03:00",
+          "meta_description": "Beneficiários do BPC/LOAS podem contratar empréstimo consignado em Varginha pelas novas regras do INSS: margem de 35%, desconto no benefício e cuidados contra golpes.",
+          "pergunta_ia": "Quem recebe BPC/LOAS pode fazer empréstimo consignado em Varginha?",
+          "palavras_chave": ["empréstimo bpc loas em Varginha", "empréstimo para bpc loas", "crédito bpc inss"],
+          "pontos_obrigatorios": [
+            "O que é o BPC/LOAS e por que tem natureza assistencial",
+            "Por que o consignado é proibido para BPC",
+            "Alternativas legais de crédito para quem recebe BPC",
+            "Alerta de golpe: falsos 'empréstimos BPC' cobrando taxas",
+            "Orientação gratuita na Speed Financeira em Varginha"
+          ]
+        }
+      ]
+    }
+  ]
+}

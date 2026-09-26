@@ -470,7 +470,9 @@ async function monitorLoop(id) {
           monitorUrl = url;
         }
         const age = Math.round((Date.now() - at) / 1000);
-        $("#monitorStatus").textContent = age <= 2 ? "ao vivo" : `última imagem há ${age}s`;
+        const interval = Number(response.headers.get("x-screen-interval")) || 0;
+        const speed = interval ? ` · ${(1000 / interval).toFixed(1).replace(".", ",")} quadros/s` : "";
+        $("#monitorStatus").textContent = age <= 2 ? `ao vivo${speed}` : `última imagem há ${age}s`;
       } else if (response.status === 204) {
         $("#monitorStatus").textContent = "aguardando a estação enviar a tela...";
       } else {
@@ -759,7 +761,7 @@ const OFFICIAL_CATEGORIES = {
   "Informática & Celular": { name: "Informática & Celular", color: "#2563eb", badgeClass: "badgeCatInfo", short: "Info/Cel" },
   "Eletrônicos & Acessórios": { name: "Eletrônicos & Acessórios", color: "#ea580c", badgeClass: "badgeCatEletro", short: "Eletrônicos" },
   "Bomboniere & Bebidas": { name: "Bomboniere & Bebidas", color: "#e11d48", badgeClass: "badgeCatFood", short: "Bomboniere" },
-  "Serviços Financeiros": { name: "Serviços Financeiros", color: "#0d9488", badgeClass: "badgeCatFinance", short: "Financeiro" }
+  "Serviços Financeiros": { name: "Serviços Financeiros", color: "#0b8a45", badgeClass: "badgeCatFinance", short: "Financeiro" }
 };
 
 function getCategoryInfo(category) {
@@ -775,10 +777,10 @@ function getCategoryInfo(category) {
 }
 
 const QUICK_SHORTCUTS = {
-  xerox_pb: { name: "Xerox P&B (#104)", category: "Gráfica Rápida", priceCents: 100, code: "104" },
+  xerox_pb: { name: "Xerox (#342)", category: "Gráfica Rápida", priceCents: 50, code: "342" },
   print_pb: { name: "Impressão P/B (#1.1)", category: "Gráfica Rápida", priceCents: 100, code: "1.1" },
   print_bw_eco: { name: "Impressão P/B (#190)", category: "Gráfica Rápida", priceCents: 50, code: "190" },
-  print_color: { name: "Impressão Colorida (#2)", category: "Gráfica Rápida", priceCents: 200, code: "2" },
+  print_color: { name: "Impressão Colorida (#2-B)", category: "Gráfica Rápida", priceCents: 200, code: "2-B" },
   acesso_net: { name: "Acesso a Internet (#3)", category: "Lan House & Serviços Digitais", priceCents: 0, code: "3" },
   recebimento: { name: "Recebimento Whats (#20)", category: "Lan House & Serviços Digitais", priceCents: 100, code: "20" },
   envelope: { name: "Envelope Pardo (#152)", category: "Gráfica Rápida", priceCents: 200, code: "152" },
@@ -966,7 +968,7 @@ function renderPOS() {
         const inCartCount = (posCart.get(it.id)?.quantity) || 0;
         const isStock = it.type === "stock";
         const outOfStock = isStock && it.stock <= 0;
-        const noMoreStock = isStock && inCartCount >= it.stock;
+        const noMoreStock = false;
         const catInfo = getCategoryInfo(it.category);
         const stockLow = isStock && it.stock <= (it.minStock || 5);
         const badgeClass = isStock ? (stockLow ? "stockBadge low" : "stockBadge") : catInfo.badgeClass;
@@ -1102,7 +1104,7 @@ function addPosProduct(id, quantity = 1) {
       category: p.category,
       priceCents: p.priceCents,
       quantity: qtyToAdd,
-      maxStock: p.type === "stock" ? p.stock : null
+      maxStock: null
     });
   }
   playChime("success");
@@ -1752,7 +1754,7 @@ function setupPOSListeners() {
     }
 
     if (bw > 0) {
-      const prodBW = state.products.find(p => p.active && (p.code === "1.1" || p.code === "104" || p.name.toLowerCase().includes("impressão p/b") || p.name.toLowerCase().includes("xerox")));
+      const prodBW = state.products.find(p => p.active && p.code === "1.1") || state.products.find(p => p.active && p.name.toLowerCase().includes("impressão p/b"));
       if (prodBW) {
         addPosProduct(prodBW.id, bw);
       } else {
@@ -1765,14 +1767,14 @@ function setupPOSListeners() {
     }
 
     if (color > 0) {
-      const prodColor = state.products.find(p => p.active && (p.code === "2" || p.name.toLowerCase().includes("colorida")));
+      const prodColor = state.products.find(p => p.active && p.code === "2-B") || state.products.find(p => p.active && p.name.toLowerCase() === "impressão colorida");
       if (prodColor) {
         addPosProduct(prodColor.id, color);
       } else {
         const id = "custom_print_color";
         const cur = posCart.get(id);
         if (cur) cur.quantity += color;
-        else posCart.set(id, { id, type: "custom", name: "Impressão Colorida (#2)", code: "2", category: "Gráfica Rápida", priceCents: 200, quantity: color, maxStock: null });
+        else posCart.set(id, { id, type: "custom", name: "Impressão Colorida (#2-B)", code: "2-B", category: "Gráfica Rápida", priceCents: 200, quantity: color, maxStock: null });
         playChime("success");
       }
     }
@@ -2096,13 +2098,73 @@ setupReportListeners();
 function renderClients() {
   const term = $("#clientSearch").value.trim().toLowerCase();
   const items = state.clients.filter(item => !term || `${item.name} ${item.phone} ${item.login || ""}`.toLowerCase().includes(term));
-  $("#clientList").innerHTML = table(["Nome", "Login", "Saldo de tempo", "Telefone", "Status", "Ação"], items.map(item => `<tr><td>${html(item.name)}</td><td>${html(item.login || "-")}</td><td>${item.login ? formatCredit(item.creditSeconds) : "-"}</td><td>${html(item.phone || "-")}</td><td>${item.active ? "Ativo" : "Inativo"}</td><td class="actionsCell"><button data-action="editClient" data-id="${item.id}">Editar</button><button data-action="rechargeClient" data-id="${item.id}">Recarregar</button></td></tr>`), "Nenhum cliente cadastrado.");
+  const dueOf = id => (state.openCharges || []).filter(c => c.clientId === id).reduce((s, c) => s + c.amountCents - c.paidCents, 0);
+  // Saldo aparece sempre; sem login o cliente usa o saldo pelo balcao (modalidade "Usar saldo").
+  $("#clientList").innerHTML = table(["Nome", "Login da estação", "Saldo de tempo", "Deve", "Telefone", "Status", "Ação"], items.map(item => { const due = dueOf(item.id); return `<tr><td>${html(item.name)}</td><td>${item.login ? html(item.login) : '<span class="muted">sem login</span>'}</td><td>${item.creditSeconds ? `<strong>${formatCredit(item.creditSeconds)}</strong>` : '<span class="muted">0min</span>'}${item.creditSeconds && !item.login ? '<br><small class="muted">crie o login em Editar para usar na estação</small>' : ""}</td><td>${due ? `<strong class="bad">${currency(due)}</strong>` : '<span class="muted">-</span>'}</td><td>${html(item.phone || "-")}</td><td>${item.active ? "Ativo" : "Inativo"}</td><td class="actionsCell"><button data-action="editClient" data-id="${item.id}">Editar</button><button data-action="rechargeClient" data-id="${item.id}">Recarregar</button><button data-action="debtClient" data-id="${item.id}">Fiado</button>${due ? `<button data-action="debtsView" data-id="${item.id}">Ver dívidas</button>` : ""}</td></tr>`; }), "Nenhum cliente cadastrado.");
 }
+
+// ---- Fiado / dividas de clientes, com print da conversa como prova ----
+async function uploadProofs(chargeId, files) {
+  for (const file of files) {
+    if (file.size > 15 * 1024 * 1024) { toast(`${file.name}: arquivo muito grande`); continue; }
+    const type = file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : "image/jpeg");
+    const response = await fetch(`/api/charges/${encodeURIComponent(chargeId)}/proof`, { method: "POST", headers: { "content-type": type }, body: await file.arrayBuffer() });
+    if (!response.ok) toast(`${file.name}: ${(await response.json().catch(() => ({}))).error || "não foi possível anexar"}`);
+  }
+}
+function openDebtModal(clientId = "") {
+  const clients = state.clients.filter(c => c.active).slice().sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  openModal("Registrar dívida (fiado)",
+    select("clientId", "Cliente", [["", "Cliente novo (preencher abaixo)"], ...clients.map(c => [c.id, c.name])], clientId) +
+    field("newName", "Nome do cliente novo", "text", "", 'maxlength="80"') +
+    field("newPhone", "Telefone do cliente novo", "tel", "", 'maxlength="30"') +
+    field("description", "O que ele deve", "text", "", 'maxlength="120" placeholder="Ex.: impressões, recarga, xerox" required') +
+    field("amount", "Valor (R$)", "number", "", 'min="0.01" step="0.01" required') +
+    field("date", "Data da dívida", "date", new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }), "required") +
+    select("old", "Tipo", [["false", "Venda de agora (entra nas vendas do dia)"], ["true", "Dívida antiga (anterior ao sistema)"]], "false") +
+    field("note", "Observação", "text", "", 'maxlength="300"') +
+    '<label><span>Prova (print da conversa, foto ou PDF)</span><input type="file" id="debtProofInput" accept="image/*,application/pdf" multiple></label>',
+    async values => {
+      let id = values.clientId;
+      if (!id) {
+        if (!values.newName.trim()) throw new Error("Escolha o cliente ou informe o nome do cliente novo.");
+        id = (await api("/api/clients", { name: values.newName, phone: values.newPhone })).client.id;
+      }
+      const files = [...($("#debtProofInput")?.files || [])];
+      const result = await api(`/api/clients/${encodeURIComponent(id)}/debt`, { description: values.description, amount: values.amount, date: values.date, old: values.old === "true", note: values.note });
+      if (files.length) await uploadProofs(result.charge.id, files);
+      toast("Dívida registrada.");
+    }, "Registrar dívida");
+}
+// Link do WhatsApp com a mensagem de cobranca pronta.
+function whatsappLink(phone, name, cents) {
+  let digits = String(phone || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.length <= 11) digits = "55" + digits;
+  const text = `Olá, ${String(name || "").split(" ")[0]}! Aqui é da Speed Lan House. Consta em aberto o valor de ${currency(cents)}. Pode passar na loja ou pagar por Pix. Obrigado!`;
+  return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+}
+function openDebtsView(clientId) {
+  const client = state.clients.find(c => c.id === clientId); if (!client) return;
+  const debts = (state.openCharges || []).filter(c => c.clientId === clientId);
+  const total = debts.reduce((s, c) => s + c.amountCents - c.paidCents, 0);
+  const rows = debts.map(c => `<tr><td>${new Date(c.at).toLocaleDateString("pt-BR")}</td><td>${html(c.description)}${c.note ? `<br><small class="muted">${html(c.note)}</small>` : ""}</td><td class="money">${currency(c.amountCents - c.paidCents)}</td><td>${(c.proofs || []).map((p, i) => `<a href="/api/charges/${encodeURIComponent(c.id)}/proof/${p.id}" target="_blank" rel="noopener">${p.ext === ".pdf" ? "PDF" : `<img src="/api/charges/${encodeURIComponent(c.id)}/proof/${p.id}" alt="Prova ${i + 1}" class="proofThumb">`}</a>`).join(" ") || '<span class="muted">sem prova</span>'}<br><label class="proofAdd">+ anexar<input type="file" accept="image/*,application/pdf" multiple data-proof-for="${c.id}" hidden></label></td></tr>`).join("");
+  $("#formDialog").classList.add("wide");
+  openModal(`Dívidas de ${client.name}`, `<p class="quoteBox">Total em aberto: <strong>${currency(total)}</strong>${client.phone ? ` · telefone ${html(client.phone)}` : ""}. Para receber, use <strong>Receber</strong> na lista de pendências do Caixa.${whatsappLink(client.phone, client.name, total) ? ` <a class="waButton" href="${whatsappLink(client.phone, client.name, total)}" target="_blank" rel="noopener">Cobrar no WhatsApp</a>` : " Cadastre o telefone para cobrar pelo WhatsApp."}</p><div class="tableWrap"><table class="dataTable"><thead><tr><th>Data</th><th>Descrição</th><th>Em aberto</th><th>Provas</th></tr></thead><tbody>${rows}</tbody></table></div>`, () => Promise.resolve(), "Fechar");
+}
+document.addEventListener("change", async event => {
+  const input = event.target.closest("[data-proof-for]"); if (!input) return;
+  await uploadProofs(input.dataset.proofFor, [...input.files]);
+  toast("Prova anexada.");
+  await loadState();
+  const charge = (state.openCharges || []).find(c => c.id === input.dataset.proofFor);
+  if (charge) openDebtsView(charge.clientId);
+});
 
 function renderProducts() {
   const term = $("#productSearch").value.trim().toLowerCase();
   const items = state.products.filter(item => !term || `${item.name} ${item.code}`.toLowerCase().includes(term));
-  $("#productList").innerHTML = table(["Descrição", "Código", "Categoria", "Preço", "Estoque", "Ações"], items.map(item => `<tr><td>${html(item.name)}${!item.active ? ' <span class="muted">(inativo)</span>' : ""}</td><td>${html(item.code || "-")}</td><td>${html(item.category || "-")}</td><td class="money">${currency(item.priceCents)}</td><td>${item.type === "service" ? "Serviço" : item.stock}</td><td class="actionsCell"><button class="primary" data-action="sellProduct" data-id="${item.id}" ${!item.active ? "disabled" : ""}>Vender</button>${state.user.role === "admin" ? `<button data-action="editProduct" data-id="${item.id}">Editar</button>${item.type === "stock" ? `<button data-action="stockProduct" data-id="${item.id}">Estoque</button>` : ""}` : ""}</td></tr>`), "Nenhum produto cadastrado.");
+  $("#productList").innerHTML = table(["Descrição", "Código", "Categoria", "Preço", "Custo", "Margem", "Estoque", "Ações"], items.map(item => `<tr><td>${html(item.name)}${!item.active ? ' <span class="muted">(inativo)</span>' : ""}</td><td>${html(item.code || "-")}</td><td>${html(item.category || "-")}</td><td class="money">${currency(item.priceCents)}</td><td class="money">${Number.isInteger(item.costCents) ? currency(item.costCents) : '<span class="muted">sem custo</span>'}</td><td>${Number.isInteger(item.costCents) && item.priceCents > 0 ? Math.round((item.priceCents - item.costCents) / item.priceCents * 100) + "%" : "-"}</td><td>${item.type === "service" ? "Serviço" : item.stock}</td><td class="actionsCell"><button class="primary" data-action="sellProduct" data-id="${item.id}" ${!item.active ? "disabled" : ""}>Vender</button>${state.user.role === "admin" ? `<button data-action="editProduct" data-id="${item.id}">Editar</button>${item.type === "stock" ? `<button data-action="stockProduct" data-id="${item.id}">Estoque</button>` : ""}` : ""}</td></tr>`), "Nenhum produto cadastrado.");
   const alerts = state.products.filter(item => item.active && item.type === "stock" && item.stock <= (item.minStock || 0));
   $("#stockAlerts").hidden = !alerts.length;
   $("#stockAlerts").textContent = alerts.length ? `${alerts.length} item(ns) precisam de reposição: ${alerts.slice(0, 5).map(item => item.name).join(", ")}` : "";
@@ -2128,392 +2190,1060 @@ function renderUsers() {
 let reportPeriod = "month";
 let chartMode = "rev";
 
-function renderReport() {
-  if (!report) {
-    const rm = $("#reportMetrics");
-    if (rm) rm.innerHTML = "";
-    return;
-  }
+// ================= Relatorios gerenciais =================
+const pctText = (part, total) => total > 0 ? `${(part / total * 100).toFixed(1).replace(".", ",")}%` : "-";
+const setHtml = (selector, value) => { const el = $(selector); if (el) el.innerHTML = value; };
+const setTextSafe = (selector, value) => { const el = $(selector); if (el) el.textContent = value; };
+const dayLabel = day => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
+const monthLabel = month => new Date(`${month}-15T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
+const kpi = (label, value, sub = "", tone = "") => `<div class="rpKpi ${tone}"><span>${html(label)}</span><strong>${value}</strong><small>${sub}</small></div>`;
+const bar = (value, max, color = "var(--primary)") => `<div class="rpBar"><i style="width:${Math.max(1.5, max ? value / max * 100 : 0)}%;background:${color}"></i></div>`;
+const EXPENSE_CATEGORIES = ["Aluguel", "Energia", "Água", "Internet", "Salários", "Impostos", "Contabilidade", "Tarifas bancárias", "Cartão de crédito", "Sistemas e assinaturas", "Compras de mercadoria", "Insumos gráficos", "Manutenção", "Marketing e anúncios", "Transporte e combustível", "Alimentação", "Retirada do dono", "Outros"];
+const STRATEGIES = ["", "Porta de entrada", "Alta margem", "Alto ticket", "Recorrente", "Venda casada", "Rever preço", "Baixa rentabilidade", "Candidato a eliminar"];
+let abcFilter = "";
 
-  // 1. Tabelas Legadas (Garante compatibilidade total e validação de testes)
-  const rm = $("#reportMetrics");
-  if (rm) {
-    rm.innerHTML = metric(currency(report.salesCents), "Vendas") + 
-      metric(currency(report.receivedCents), "Recebido") + 
-      metric(report.sessions, "Sessões encerradas") + 
-      metric(report.minutes + " min", "Tempo usado");
-  }
-  const rMach = $("#reportMachines");
-  if (rMach) {
-    rMach.innerHTML = table(["Estação", "Sessões", "Minutos"], (report.byMachine || []).map(item => `<tr><td>${html(item.machineId)}</td><td>${item.count}</td><td>${item.minutes}</td></tr>`), "Sem sessões no período.");
-  }
-  const rProd = $("#reportProducts");
-  if (rProd) {
-    rProd.innerHTML = table(["Produto / Serviço", "Unidades", "Total"], (report.byProduct || []).map(item => `<tr><td>${html(item.name)}</td><td>${item.quantity}</td><td class="money">${currency(item.amountCents)}</td></tr>`), "Sem produtos vendidos no período.");
-  }
-  const rOp = $("#reportOperators");
-  if (rOp) {
-    rOp.innerHTML = table(["Atendente", "Recebimentos", "Valor"], (report.byOperator || []).map(item => `<tr><td>${html(item.name)}</td><td>${item.payments}</td><td class="money">${currency(item.receivedCents)}</td></tr>`), "Sem recebimentos no período.");
-  }
-  const rChg = $("#reportCharges");
-  if (rChg) {
-    rChg.innerHTML = table(["Hora", "Descrição", "Valor", "Pago"], (report.charges || []).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td></tr>`), "Sem vendas no período.");
-  }
-  const rShifts = $("#reportCashShiftsWrap");
-  if (rShifts && state?.cashShifts) {
-    rShifts.innerHTML = table(["Abertura", "Fechamento", "Operador", "Fundo Inicial", "Vendas Dinheiro", "Total Esperado", "Conferido", "Diferença", "Status"], state.cashShifts.map(s => {
-      const diff = (s.closingCents ?? 0) - (s.expectedCents ?? 0);
-      const diffColor = diff === 0 ? "var(--free-accent)" : diff > 0 ? "var(--primary)" : "var(--danger-accent)";
-      return `<tr>
-        <td>${dateTime(s.openedAt)}</td>
-        <td>${s.closedAt ? dateTime(s.closedAt) : '<span class="statusBadge active">Aberto</span>'}</td>
-        <td>${html(s.operator || "-")}</td>
-        <td class="money">${currency(s.openingCents)}</td>
-        <td class="money">${currency(s.cashSalesCents ?? 0)}</td>
-        <td class="money">${currency(s.expectedCents ?? 0)}</td>
-        <td class="money">${s.closingCents != null ? currency(s.closingCents) : "-"}</td>
-        <td class="money" style="color:${diffColor}; font-weight:700;">${s.closingCents != null ? (diff >= 0 ? `+${currency(diff)}` : currency(diff)) : "-"}</td>
-        <td>${s.closedAt ? (diff === 0 ? "Exato" : diff > 0 ? "Sobra" : "Quebra") : "Em Aberto"}</td>
-      </tr>`;
-    }), "Nenhum histórico de caixa.");
-  }
+// Grafico de barras verticais simples (SVG), com destaque do maior valor.
+function barChart(items, { value, label, title, color = "var(--primary)", peakColor = "var(--accent)", height = 220, average = true, width = 820 }) {
+  if (!items.length) return `<p class="muted">Sem dados no período.</p>`;
+  const left = 8, bottom = 28, top = 22;
+  const chartH = height - top - bottom, step = (width - left * 2) / items.length;
+  const max = Math.max(1, ...items.map(value)) * 1.12;
+  const peak = items.reduce((best, item) => value(item) > value(best) ? item : best, items[0]);
+  const labelEvery = Math.ceil(items.length / 14);
+  const avg = items.reduce((sum, item) => sum + value(item), 0) / items.length;
+  const avgY = top + chartH - avg / max * chartH;
+  const bars = items.map((item, i) => {
+    const h = Math.max(2, value(item) / max * chartH), w = Math.max(3, Math.min(46, step - 4));
+    const x = left + i * step + (step - w) / 2, y = top + chartH - h;
+    return `<g><title>${html(title(item))}</title><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="${item === peak ? peakColor : color}"/>${i % labelEvery === 0 ? `<text x="${x + w / 2}" y="${height - 9}" text-anchor="middle" font-size="10" fill="var(--text-muted)">${html(label(item))}</text>` : ""}</g>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${width} ${height}" class="rpSvg" role="img">${average ? `<line x1="${left}" x2="${width - left}" y1="${avgY}" y2="${avgY}" stroke="var(--text-subtle)" stroke-dasharray="4 4"/><text x="${width - left}" y="${avgY - 4}" text-anchor="end" font-size="10" fill="var(--text-muted)">média</text>` : ""}${bars}</svg>`;
+}
 
-  // 2. Central Executiva: Meta Diária
-  const goalTargetCents = 50000; // Meta sugerida: R$ 500,00
-  const todayStr = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-  const todayCharges = (report.charges || []).filter(c => c.at && c.at.startsWith(todayStr));
-  const todaySalesCents = todayCharges.length ? todayCharges.reduce((sum, c) => sum + c.amountCents, 0) : (report.period === "today" ? report.salesCents : Math.min(report.salesCents, 3500));
-  const remainingCents = Math.max(0, goalTargetCents - todaySalesCents);
-  const goalPct = Math.min(100, Math.round((todaySalesCents / goalTargetCents) * 100));
+// Receita x custos por mes: barras lado a lado e resultado em texto.
+function monthlyChart(rows) {
+  const width = 820, height = 240, top = 16, bottom = 30, left = 8;
+  const chartH = height - top - bottom, step = (width - left * 2) / rows.length;
+  const max = Math.max(1, ...rows.map(r => Math.max(r.salesCents, r.expensesCents + r.cmvCents + r.feesCents))) * 1.1;
+  const bars = rows.map((r, i) => {
+    const w = Math.max(4, Math.min(24, step / 2 - 4)), x = left + i * step + step / 2 - w;
+    const hs = r.salesCents / max * chartH, hc = (r.expensesCents + r.cmvCents + r.feesCents) / max * chartH;
+    return `<g><title>${monthLabel(r.month)}: vendas ${currency(r.salesCents)}, custos e despesas ${currency(r.expensesCents + r.cmvCents + r.feesCents)}, resultado ${currency(r.resultCents)}</title>
+      <rect x="${x}" y="${top + chartH - hs}" width="${w}" height="${Math.max(1, hs)}" rx="2" fill="var(--primary)"/>
+      <rect x="${x + w + 2}" y="${top + chartH - hc}" width="${w}" height="${Math.max(1, hc)}" rx="2" fill="var(--danger-accent)"/>
+      <text x="${x + w}" y="${height - 10}" text-anchor="middle" font-size="10" fill="var(--text-muted)">${monthLabel(r.month)}</text></g>`;
+  }).join("");
+  const minR = Math.min(0, ...rows.map(r => r.resultCents));
+  const y = v => top + chartH - (v - minR) / (max - minR) * chartH;
+  const line = rows.map((r, i) => `${(left + i * step + step / 2).toFixed(1)},${y(r.resultCents).toFixed(1)}`).join(" ");
+  const dots = rows.map((r, i) => r.salesCents || r.expensesCents ? `<circle cx="${(left + i * step + step / 2).toFixed(1)}" cy="${y(r.resultCents).toFixed(1)}" r="3.5" fill="#2563eb"><title>Resultado ${monthLabel(r.month)}: ${currency(r.resultCents)}</title></circle>` : "").join("");
+  return `<div class="rpLegend"><span><i style="background:var(--primary)"></i>Vendas</span><span><i style="background:var(--danger-accent)"></i>Custos, taxas e despesas</span><span><i style="background:#2563eb"></i>Resultado</span></div><svg viewBox="0 0 ${width} ${height}" class="rpSvg" role="img">${bars}<polyline points="${line}" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linejoin="round"/>${dots}</svg>`;
+}
 
-  const goalRestante = $("#execGoalRestante");
-  if (goalRestante) goalRestante.textContent = currency(remainingCents);
-  const goalStatus = $("#execGoalStatus");
-  if (goalStatus) {
-    goalStatus.textContent = goalPct >= 100 ? "Meta Atingida! " : "Em Progresso";
-    goalStatus.className = `execStatusBadge ${goalPct >= 100 ? "completed" : "inProgress"}`;
+// Mini grafico de linha para os cartoes.
+function sparkline(values, color = "var(--primary)") {
+  if (values.length < 2) return "";
+  const w = 120, h = 34, max = Math.max(...values, 1), min = Math.min(...values, 0);
+  const pts = values.map((v, i) => `${(i / (values.length - 1) * w).toFixed(1)},${(h - 3 - (v - min) / (max - min || 1) * (h - 6)).toFixed(1)}`).join(" ");
+  return `<svg class="rpSpark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+
+// Velocimetro circular da meta.
+function gauge(percent) {
+  const p = Math.max(0, Math.min(100, percent)), r = 52, c = 2 * Math.PI * r;
+  const color = p >= 100 ? "var(--primary)" : p >= 70 ? "#1fae5b" : "var(--accent)";
+  return `<svg viewBox="0 0 130 130" class="rpGauge"><circle cx="65" cy="65" r="${r}" fill="none" stroke="var(--border-subtle)" stroke-width="12"/><circle cx="65" cy="65" r="${r}" fill="none" stroke="${color}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${(c * p / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 65 65)"/><text x="65" y="63" text-anchor="middle" font-size="24" font-weight="800" fill="var(--text-main)">${String(Math.round(percent * 10) / 10).replace(".", ",")}%</text><text x="65" y="83" text-anchor="middle" font-size="11" fill="var(--text-muted)">da meta</text></svg>`;
+}
+
+// Rosca simples para participacao (formas de pagamento).
+function donut(parts) {
+  const total = parts.reduce((sum, p) => sum + p.value, 0);
+  if (!total) return "";
+  const r = 46, c = 2 * Math.PI * r;
+  let offset = 0;
+  const arcs = parts.filter(p => p.value).map(p => { const len = c * p.value / total; const arc = `<circle cx="60" cy="60" r="${r}" fill="none" stroke="${p.color}" stroke-width="18" stroke-dasharray="${len.toFixed(2)} ${(c - len).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 60 60)"><title>${html(p.label)}: ${pctText(p.value, total)}</title></circle>`; offset += len; return arc; }).join("");
+  return `<svg viewBox="0 0 120 120" class="rpDonut">${arcs}</svg>`;
+}
+
+const delta = (cur, prev, inverse = false) => {
+  if (!prev) return `<span class="muted">-</span>`;
+  const d = Math.round((cur - prev) / prev * 100);
+  const good = inverse ? d <= 0 : d >= 0;
+  return `<span class="rpDelta ${d === 0 ? "" : good ? "up" : "down"}">${d > 0 ? "▲" : d < 0 ? "▼" : "="} ${Math.abs(d)}%</span>`;
+};
+
+function renderOverview() {
+  const r = report, dre = r.dre || {};
+  const periodName = { today: "hoje", month: "no mês", "7d": "em 7 dias", "15d": "em 15 dias", "30d": "em 30 dias", "60d": "em 60 dias", "90d": "em 90 dias", all: "desde o início" }[r.period] || "";
+  const days = r.byDay || [];
+  const uncostedShare = (dre.uncostedRevenueCents || 0) + (dre.legacyCents || 0);
+  const cmp = r.compare;
+  const change = cmp && cmp.previous.salesCents ? Math.round((cmp.current.salesCents - cmp.previous.salesCents) / cmp.previous.salesCents * 100) : null;
+  setHtml("#rpKpis",
+    `<div class="rpKpi"><span>Vendas ${periodName}</span><strong>${currency(r.salesCents)}</strong><small>${r.salesCount} vendas · ticket ${currency(r.averageTicketCents)}${r.unitsPerSale ? ` · ${String(r.unitsPerSale).replace(".", ",")} itens/venda` : ""}</small>${sparkline(days.map(d => d.salesCents))}</div>` +
+    `<div class="rpKpi ${change === null ? "" : change >= 0 ? "good" : "bad"}"><span>Contra o período anterior</span><strong>${change === null ? "-" : `${change >= 0 ? "+" : ""}${change}%`}</strong><small>${cmp ? `antes: ${currency(cmp.previous.salesCents)}` : "sem período anterior"}</small>${sparkline((r.prevByDay || []).map(d => d.salesCents), "var(--text-subtle)")}</div>` +
+    `<div class="rpKpi ${dre.profitCents >= 0 ? "good" : "bad"}"><span>Resultado ${periodName}</span><strong>${currency(dre.profitCents)}</strong><small>${uncostedShare > r.salesCents * 0.2 ? `custo desconhecido em ${pctText(uncostedShare, r.salesCents)} das vendas` : "vendas - custo - taxas - despesas"}</small></div>` +
+    `<div class="rpKpi ${r.dueCents ? "warn" : ""}"><span>A receber</span><strong>${currency(r.dueCents)}</strong><small>${(r.openCharges || []).length} pendência(s)${(r.agingBuckets || []).slice(2).some(b => b.dueCents) ? " · há atrasadas" : ""}</small></div>`);
+
+  const g = r.goal || {};
+  setHtml("#rpGoal", g.monthGoalCents ? `<div class="rpGoalBox">${gauge(g.percent)}<div class="rpGoalInfo"><strong>${currency(g.monthSalesCents)}</strong><span>de ${currency(g.monthGoalCents)}</span>
+      <div class="rpGoalLine"><span>Ritmo por dia</span><b>${currency(g.paceCents)}</b></div>
+      <div class="rpGoalLine"><span>Projeção do mês</span><b class="${g.projectionCents >= g.monthGoalCents ? "good" : "bad"}">${currency(g.projectionCents)}</b></div>
+      <div class="rpGoalLine"><span>Precisa por dia</span><b>${currency(g.neededPerDayCents)}</b></div>
+      <div class="rpGoalLine"><span>Dias úteis restantes</span><b>${g.remainingDays}</b></div></div></div>
+      <div class="rpToday"><span>Hoje</span><strong>${currency(r.todayCents)}</strong>${g.dailyGoalCents ? `${bar(r.todayCents, g.dailyGoalCents, r.todayCents >= g.dailyGoalCents ? "var(--primary)" : "var(--accent)")}<small>meta do dia ${currency(g.dailyGoalCents)}</small>` : ""}</div>`
+    : `<p class="muted">Defina a meta em <strong>Metas e taxas</strong>.</p>`);
+
+  setHtml("#rpCompare", cmp ? `<table class="rpCompare"><thead><tr><th></th><th>Agora</th><th>Antes</th><th></th></tr></thead><tbody>${[
+    ["Vendas", cmp.current.salesCents, cmp.previous.salesCents, currency],
+    ["Nº de vendas", cmp.current.count, cmp.previous.count, v => String(v)],
+    ["Ticket médio", cmp.current.ticketCents, cmp.previous.ticketCents, currency],
+    ["Recebido", cmp.current.receivedCents, cmp.previous.receivedCents, currency],
+    ["Tempo de máquina", cmp.current.timeCents, cmp.previous.timeCents, currency],
+    ["Impressões das estações", cmp.current.printCents, cmp.previous.printCents, currency],
+    ["Despesas", cmp.current.expensesCents, cmp.previous.expensesCents, currency, true]
+  ].map(([label, cur, prev, fmt, inverse]) => `<tr><td>${label}</td><td><strong>${fmt(cur)}</strong></td><td class="muted">${fmt(prev)}</td><td>${delta(cur, prev, inverse)}</td></tr>`).join("")}</tbody></table><p class="muted rpNote">Anterior: ${dayLabel(r.range.prevStart)} a ${dayLabel(r.range.prevEnd)}</p>` : `<p class="muted">Escolha um período (hoje, 7, 15, 30 dias ou mês) para comparar.</p>`);
+
+  setHtml("#rpAlerts", (r.alerts || []).length ? r.alerts.map(a => `<div class="rpAlert ${a.level}"><strong>${html(a.title)}</strong><span>${html(a.text)}</span></div>`).join("") : `<div class="rpAlert ok"><strong>Tudo em ordem</strong><span>Nenhum alerta no período.</span></div>`);
+  renderPlan();
+  renderHeat();
+  renderYearly();
+}
+
+// Plano de acao: cada item traz o impacto calculado com os numeros reais do periodo.
+function renderPlan() {
+  const r = report, g = r.goal || {}, items = [];
+  const periodDays = Math.max(1, (r.byDay || []).length);
+  const salesPerDay = r.salesCount / periodDays;
+  const workDaysMonth = (g.workedDays || 0) + (g.remainingDays || 0) || 26;
+  const monthlySales = Math.round(salesPerDay * workDaysMonth);
+  if (g.monthGoalCents && g.remainingDays && g.projectionCents < g.monthGoalCents && r.averageTicketCents) {
+    const neededSales = Math.ceil(g.neededPerDayCents / r.averageTicketCents);
+    items.push({ tone: "warn", title: "Meta do mês", value: `${currency(g.neededPerDayCents)}/dia`, text: `Faltam ${currency(g.monthGoalCents - g.monthSalesCents)}. No ticket atual (${currency(r.averageTicketCents)}) são cerca de ${neededSales} vendas por dia; hoje a média é ${Math.round(salesPerDay)}. Se a meta estiver alta demais para o mês, ajuste em Metas e taxas para acompanhar o ritmo real.` });
   }
-  const goalNumbers = $("#execGoalNumbers");
-  if (goalNumbers) goalNumbers.innerHTML = `${currency(todaySalesCents)} <small>/ ${currency(goalTargetCents)}</small>`;
-  const goalPctBadge = $("#execGoalPctBadge");
-  if (goalPctBadge) goalPctBadge.textContent = `${goalPct}%`;
-  const goalFill = $("#execGoalFill");
-  if (goalFill) goalFill.style.width = `${Math.max(4, goalPct)}%`;
+  if (r.salesCount && monthlySales) items.push({ tone: "ok", title: "Aumentar o ticket médio", value: `+${currency(monthlySales * 100)}/mês`, text: `Cada R$ 1,00 a mais por atendimento rende cerca de ${currency(monthlySales * 100)} por mês (${monthlySales} vendas/mês). Ofereça junto: envelope, plastificação, cópia extra, bebida.` });
+  const hours = (r.byHour || []).filter(h => h.hour >= 8 && h.hour <= 19 && h.count);
+  if (hours.length >= 3) {
+    const peak = hours.reduce((a, b) => b.count > a.count ? b : a), weak = hours.reduce((a, b) => b.count < a.count ? b : a);
+    items.push({ tone: "info", title: "Horários", value: `pico às ${String(peak.hour).padStart(2, "0")}h`, text: `Às ${String(peak.hour).padStart(2, "0")}h saem ${peak.count} vendas no período; às ${String(weak.hour).padStart(2, "0")}h só ${weak.count}. Reforce troco e atendimento no pico e use o horário fraco para serviços demorados (currículos, cadastros, digitalizações).` });
+  }
+  const week = (r.byWeekday || []).filter(d => d.days);
+  if (week.length >= 3) {
+    const avg = d => d.salesCents / d.days;
+    const best = week.reduce((a, b) => avg(b) > avg(a) ? b : a), worst = week.reduce((a, b) => avg(b) < avg(a) ? b : a);
+    items.push({ tone: "info", title: "Dias da semana", value: `${best.name}: ${currency(Math.round(avg(best)))}`, text: `${best.name} é o melhor dia (média ${currency(Math.round(avg(best)))}); ${worst.name} o mais fraco (${currency(Math.round(avg(worst)))}). Programe promoções e divulgação para ${worst.name}.` });
+  }
+  const bm = r.byMethod || {}, received = Object.values(bm).reduce((a, b) => a + b, 0);
+  const cardCents = (bm.debit || 0) + (bm.credit || 0) + (bm.card || 0);
+  if (received && r.dre?.feesCents) items.push({ tone: "info", title: "Custo das maquininhas", value: `${currency(r.dre.feesCents)}`, text: `Taxas pagas no período sobre ${currency(cardCents)} em cartão (${pctText(cardCents, received)} do recebido). Incentivar Pix ou dinheiro nos valores pequenos reduz esse custo.` });
+  else if (received && cardCents) items.push({ tone: "info", title: "Custo das maquininhas", value: pctText(cardCents, received), text: `${currency(cardCents)} entraram no cartão. Cadastre as taxas em Metas e taxas para ver quanto isso custa no DRE.` });
+  const late = (r.agingBuckets || []).slice(1).reduce((sum, b) => sum + b.dueCents, 0);
+  if (late) items.push({ tone: "danger", title: "Cobrar pendências", value: currency(late), text: "Valores em aberto há mais de 7 dias. Veja a lista em Clientes e fiado e cobre pelo WhatsApp." });
+  const abc = r.abc || [];
+  if (abc.length >= 5) {
+    const top3 = abc.slice(0, 3).reduce((sum, row) => sum + row.amountCents, 0), total = abc.reduce((sum, row) => sum + row.amountCents, 0);
+    items.push({ tone: "info", title: "Concentração", value: pctText(top3, total), text: `${abc.slice(0, 3).map(row => row.name).join(", ")} fazem ${pctText(top3, total)} das vendas com itens. Esses itens nunca podem faltar nem atrasar.` });
+  }
+  const st = r.stock || {};
+  if (st.withoutCostProducts) items.push({ tone: "warn", title: "Cadastrar custos", value: `${st.withoutCostProducts} itens`, text: "Sem o preço de custo o lucro real não aparece. Comece pelos que mais vendem: impressões, xerox, envelope e bebidas." });
+  if (!r.expensesCents && !(r.payables || []).length) items.push({ tone: "warn", title: "Lançar despesas", value: "DRE", text: "Envie os PDFs das contas do mês (energia, água, internet, aluguel) na aba DRE e contas para o resultado ficar real." });
+  setHtml("#rpPlan", items.length ? items.map(i => `<div class="rpPlanItem ${i.tone}"><span>${html(i.title)}</span><strong>${html(i.value)}</strong><p>${html(i.text)}</p></div>`).join("") : `<p class="muted">Sem dados suficientes no período.</p>`);
+}
 
-  // 3. 4 Cards Superiores
-  const monthSalesVal = $("#execMonthSalesVal");
-  if (monthSalesVal) monthSalesVal.textContent = currency(report.salesCents);
-  const profitEstCents = Math.round(report.salesCents * 0.22); // ~22% margem operacional
-  const monthProfitVal = $("#execMonthProfitVal");
-  if (monthProfitVal) monthProfitVal.textContent = currency(profitEstCents);
-  const fiadoVal = $("#execFiadoVal");
-  if (fiadoVal) fiadoVal.textContent = currency(report.dueCents || (state?.cashSummary?.pendingCents || 3500));
-  const expensesVal = $("#execExpensesVal");
-  if (expensesVal) expensesVal.textContent = currency(0);
-
-  // 4. Gráfico Diário de Evolução e Picos
-  renderExecChart();
-
-  // 5. Categorias Oficiais (7 Categorias)
-  renderCategoryBars();
-
-  // 6. Meios de Recebimento
-  renderPaymentMethods();
-
-  // 7. DRE Gerencial
-  renderDRE();
+// Mapa de calor: dias da semana x horas (8h as 20h).
+function renderHeat() {
+  const heat = report.heat || [];
+  const order = [1, 2, 3, 4, 5, 6, 0], names = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const hours = Array.from({ length: 13 }, (_, i) => i + 8);
+  const max = Math.max(1, ...order.flatMap(d => hours.map(h => heat[d]?.[h] || 0)));
+  const total = order.reduce((sum, d) => sum + hours.reduce((s, h) => s + (heat[d]?.[h] || 0), 0), 0);
+  if (!total) { setHtml("#rpHeat", `<p class="muted">Sem vendas no período.</p>`); return; }
+  setHtml("#rpHeat", `<table class="rpHeat"><thead><tr><th></th>${hours.map(h => `<th>${h}h</th>`).join("")}</tr></thead><tbody>${order.map(d => `<tr><th>${names[d]}</th>${hours.map(h => { const v = heat[d]?.[h] || 0; const a = v ? 0.12 + 0.88 * v / max : 0; return `<td style="background:${v ? `rgba(11,138,69,${a.toFixed(2)})` : "var(--bg-card-subtle)"};color:${a > 0.55 ? "#fff" : "var(--text-secondary)"}" title="${names[d]} ${h}h: ${v} vendas">${v || ""}</td>`; }).join("")}</tr>`).join("")}</tbody></table>`);
 }
 
 function renderExecChart() {
-  const chartWrap = $("#execDailyChart");
-  if (!chartWrap || !report) return;
-
-  const dayMap = new Map();
-  const charges = report.charges || [];
-  for (const c of charges) {
-    const d = c.at ? c.at.slice(0, 10) : new Date().toLocaleDateString("en-CA");
-    if (!dayMap.has(d)) dayMap.set(d, { date: d, salesCents: 0, count: 0 });
-    const item = dayMap.get(d);
-    item.salesCents += c.amountCents;
-    item.count += 1;
+  if (!report) return;
+  const days = (report.byDay || []).slice(-62), prev = report.prevByDay || [];
+  const value = d => chartMode === "rev" ? d.salesCents : d.count;
+  const total = days.reduce((sum, d) => sum + d.salesCents, 0), count = days.reduce((sum, d) => sum + d.count, 0);
+  const peak = days.reduce((best, d) => !best || value(d) > value(best) ? d : best, null);
+  setHtml("#rpDailyStats", days.length ? `<div><span>Total</span><strong>${currency(total)}</strong></div><div><span>Média por dia</span><strong>${currency(Math.round(total / days.length))}</strong></div><div><span>Vendas por dia</span><strong>${Math.round(count / days.length)}</strong></div><div><span>Melhor dia</span><strong>${dayLabel(peak.date)} · ${chartMode === "rev" ? currency(peak.salesCents) : `${peak.count} vendas`}</strong></div>` : "");
+  let chart = barChart(days, { value, label: d => dayLabel(d.date), title: d => `${dayLabel(d.date)}: ${currency(d.salesCents)} em ${d.count} vendas` });
+  // Linha do periodo anterior, dia a dia na mesma posicao.
+  if (days.length > 1 && prev.length > 1 && report.period !== "all") {
+    const width = 820, height = 220, left = 8, top = 22, chartH = height - top - 28, step = (width - left * 2) / days.length;
+    const max = Math.max(1, ...days.map(value)) * 1.12;
+    const prevMap = new Map(prev.map(d => [d.date, d]));
+    const DAY = 86400000, start = Date.parse(report.range.start), prevStart = Date.parse(report.range.prevStart);
+    // Mesmo dia do periodo anterior (1o com 1o, 2o com 2o...), sem vendas = zero.
+    const pts = days.map((d, i) => { const p = prevMap.get(new Date(prevStart + Math.round((Date.parse(d.date) - start) / DAY) * DAY).toISOString().slice(0, 10)); return `${(left + i * step + step / 2).toFixed(1)},${(top + chartH - Math.min(p ? value(p) : 0, max) / max * chartH).toFixed(1)}`; }).join(" ");
+    chart = chart.replace("</svg>", `<polyline points="${pts}" fill="none" stroke="#475569" stroke-width="2" stroke-dasharray="5 4" opacity=".75"/></svg>`);
+    chart = `<div class="rpLegend"><span><i style="background:var(--primary)"></i>Período atual</span><span><i style="background:#475569"></i>Período anterior</span><span><i style="background:var(--accent)"></i>Melhor dia</span></div>` + chart;
   }
-
-  let days = [...dayMap.values()].sort((a, b) => a.date.localeCompare(b.date));
-  if (!days.length) {
-    days = [{ date: new Date().toLocaleDateString("en-CA"), salesCents: report.salesCents || 0, count: 1 }];
-  }
-
-  let peak = days[0];
-  let totalSales = 0;
-  let totalCount = 0;
-  for (const day of days) {
-    totalSales += day.salesCents;
-    totalCount += day.count;
-    if (chartMode === "rev" ? (day.salesCents > peak.salesCents) : (day.count > peak.count)) {
-      peak = day;
-    }
-  }
-
-  const avgSales = Math.round(totalSales / (days.length || 1));
-  const avgCount = Math.max(1, Math.round(totalCount / (days.length || 1)));
-
-  const totalEl = $("#execChartTotalVal");
-  if (totalEl) totalEl.textContent = currency(totalSales);
-  const countEl = $("#execChartCountVal");
-  if (countEl) countEl.textContent = `${totalCount} atendimentos`;
-  const avgEl = $("#execChartAvgVal");
-  if (avgEl) avgEl.textContent = chartMode === "rev" ? currency(avgSales) : `${avgCount} vendas/dia`;
-  const peakEl = $("#execChartPeakVal");
-  if (peakEl) peakEl.textContent = chartMode === "rev" ? currency(peak.salesCents) : `${peak.count} vendas`;
-  const peakSub = $("#execChartPeakSub");
-  if (peakSub) {
-    const dObj = new Date(peak.date + "T12:00:00");
-    const dayOfWeek = dObj.toLocaleDateString("pt-BR", { weekday: "long" });
-    peakSub.textContent = `${dayOfWeek.charAt(0).toUpperCase() + dayOfWeek.slice(1)} (${peak.count} vendas)`;
-  }
-
-  const width = 800;
-  const height = 220;
-  const paddingLeft = 45;
-  const paddingBottom = 35;
-  const paddingTop = 30;
-  const chartW = width - paddingLeft - 20;
-  const chartH = height - paddingTop - paddingBottom;
-
-  const maxVal = Math.max(1, ...(days.map(d => chartMode === "rev" ? d.salesCents : d.count))) * 1.15;
-  const avgVal = chartMode === "rev" ? avgSales : avgCount;
-  const avgY = paddingTop + chartH - (avgVal / maxVal * chartH);
-
-  const colWidth = Math.min(48, Math.max(16, Math.floor(chartW / days.length - 8)));
-  const step = chartW / days.length;
-
-  let svgBars = "";
-  days.forEach((d, idx) => {
-    const val = chartMode === "rev" ? d.salesCents : d.count;
-    const barH = Math.max(4, (val / maxVal) * chartH);
-    const x = paddingLeft + (idx * step) + (step - colWidth) / 2;
-    const y = paddingTop + chartH - barH;
-    const isPeak = d.date === peak.date;
-    const fillColor = isPeak ? "url(#goldGradient)" : "var(--primary)";
-    const labelDate = d.date.slice(8, 10) + "/" + d.date.slice(5, 7);
-
-    svgBars += `
-      <g class="chartBarGroup">
-        ${isPeak ? `<text x="${x + colWidth/2}" y="${y - 8}" text-anchor="middle" fill="#d97706" font-size="11" font-weight="700">PICO</text>` : ""}
-        <rect x="${x}" y="${y}" width="${colWidth}" height="${barH}" rx="4" fill="${fillColor}" />
-        <text x="${x + colWidth/2}" y="${height - 12}" text-anchor="middle" fill="var(--text-secondary)" font-size="10">${labelDate}</text>
-      </g>
-    `;
-  });
-
-  chartWrap.innerHTML = `
-    <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; overflow:visible;" aria-label="Gráfico de Vendas">
-      <defs>
-        <linearGradient id="goldGradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#f59e0b" />
-          <stop offset="100%" stop-color="#d97706" />
-        </linearGradient>
-      </defs>
-      <line x1="${paddingLeft}" y1="${avgY}" x2="${width - 20}" y2="${avgY}" stroke="var(--border)" stroke-dasharray="4,4" stroke-width="1.5" />
-      <text x="${width - 15}" y="${avgY + 4}" fill="var(--text-muted)" font-size="9" text-anchor="end">Média</text>
-      ${svgBars}
-    </svg>
-  `;
+  setHtml("#execDailyChart", chart);
 }
 
 function renderCategoryBars() {
-  const wrap = $("#execCategoryBars");
-  if (!wrap || !report) return;
-
-  const cats = report.byCategory || {};
-  const total = report.salesCents || 1;
-  const entries = Object.entries(cats).sort((a, b) => b[1].revenueCents - a[1].revenueCents);
-
-  wrap.innerHTML = entries.map(([name, data]) => {
-    const pct = ((data.revenueCents / total) * 100).toFixed(1);
-    const color = data.color || "#0284c7";
-    return `
-      <div class="catBarItem">
-        <div class="catBarHead">
-          <div class="catBarTitle">
-            <span class="catDot" style="background:${color};"></span>
-            <strong>${html(name)}</strong>
-          </div>
-          <div class="catBarValues">
-            <span class="catBarMoney">${currency(data.revenueCents)}</span>
-            <span class="catBarPct">(${pct}%)</span>
-          </div>
-        </div>
-        <div class="catBarTrack">
-          <div class="catBarFill" style="width: ${Math.max(1, pct)}%; background:${color};"></div>
-        </div>
-      </div>
-    `;
-  }).join("");
+  if (!report) return;
+  const all = Object.entries(report.byCategory || {}).filter(([, d]) => d.revenueCents);
+  const legacy = all.find(([name]) => name === "Sistema anterior");
+  const entries = all.filter(([name]) => name !== "Sistema anterior").sort((a, b) => b[1].revenueCents - a[1].revenueCents);
+  const total = entries.reduce((sum, [, d]) => sum + d.revenueCents, 0);
+  const max = entries[0]?.[1].revenueCents || 1;
+  const donutHtml = entries.length > 1 ? `<div class="rpCatDonut">${donut(entries.map(([name, d]) => ({ label: name, value: d.revenueCents, color: d.color || "#64748b" })))}<div><strong>${currency(total)}</strong><span>${entries.length} categorias</span></div></div>` : "";
+  setHtml("#execCategoryBars", donutHtml + (entries.length ? entries.map(([name, d]) => `<div class="rpRow"><div class="rpRowHead"><strong>${html(name)}</strong><span>${currency(d.revenueCents)} (${pctText(d.revenueCents, total)})</span></div>${bar(d.revenueCents, max, d.color || "var(--primary)")}</div>`).join("") : `<p class="muted">Sem vendas com categoria no período.</p>`) +
+    (legacy ? `<p class="muted rpNote">${currency(legacy[1].revenueCents)} vieram do sistema anterior, que não informa a categoria. As categorias acima são das vendas feitas no sistema novo.</p>` : ""));
 }
 
 function renderPaymentMethods() {
-  const wrap = $("#execPaymentMethods");
-  if (!wrap || !report) return;
+  if (!report) return;
+  const bm = report.byMethod || {}, fee = report.dre?.byFee || {};
+  const methods = [["Dinheiro", "cash", "#15803d"], ["Pix", "pix", "#14b8a6"], ["Débito", "debit", "#2563eb"], ["Crédito", "credit", "#7c3aed"], ["Cartão (sem tipo)", "card", "#64748b"]].filter(([, key]) => bm[key] || key !== "card");
+  const total = methods.reduce((sum, [, key]) => sum + (bm[key] || 0), 0);
+  setHtml("#execPaymentMethods", total ? `<div class="rpPay">${donut(methods.map(([label, key, color]) => ({ label, value: bm[key] || 0, color })))}<div class="rpPayList">${methods.map(([name, key, color]) => `<div><i style="background:${color}"></i><span>${name}</span><strong>${currency(bm[key] || 0)}</strong><small>${pctText(bm[key] || 0, total)}${fee[key] ? ` · taxa ${currency(fee[key])}` : ""}</small></div>`).join("")}</div></div>` : `<p class="muted">Sem recebimentos no período.</p>`);
+}
 
-  const bm = report.byMethod || { cash: 0, pix: 0, card: 0 };
-  const total = (bm.cash + bm.pix + bm.card + (bm.debit || 0) + (bm.credit || 0)) || 1;
+// ---- Ano a ano: 12 meses de cada ano lado a lado ----
+let yearMode = "salesCents";
+const MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const YEAR_COLORS = ["var(--primary)", "#f2b705", "#64748b", "#2563eb", "#9333ea"];
+function renderYearly() {
+  const yearly = report?.yearly || {};
+  const years = Object.keys(yearly).sort().reverse().slice(0, 5); // ano atual primeiro
+  if (!years.length) { setHtml("#rpYearChart", `<p class="muted">Sem movimento.</p>`); return; }
+  const fmt = v => yearMode === "count" ? String(v) : currency(v);
+  const value = (y, m) => yearly[y][m][yearMode];
+  const refDate = report.date || new Date().toISOString().slice(0, 10);
+  const refYear = refDate.slice(0, 4), refMonth = Number(refDate.slice(5, 7)) - 1;
+  const [cur, prev] = [years.find(y => y === refYear) || years[0], years.find(y => y < (years.find(z => z === refYear) || years[0]))];
+  // Acumulado do ano ate o mes de referencia, comparado com o mesmo periodo do ano anterior.
+  const ytd = y => y ? yearly[y].slice(0, refMonth + 1).reduce((s, r) => s + r[yearMode], 0) : null;
+  const yearTotal = y => yearly[y].reduce((s, r) => s + r[yearMode], 0);
+  const best = MONTH_NAMES.map((name, m) => ({ name, v: value(cur, m) })).reduce((a, b) => b.v > a.v ? b : a);
+  const monthsWith = yearly[cur].filter(r => r.salesCents || r.expensesCents).length || 1;
+  setHtml("#rpYearSummary",
+    kpi(`${cur} até ${MONTH_NAMES[refMonth]}`, fmt(ytd(cur)), prev ? `mesmo período de ${prev}: ${fmt(ytd(prev))}` : "primeiro ano com dados no sistema") +
+    kpi(prev ? `Contra ${prev}` : "Comparação", prev && ytd(prev) ? `${ytd(cur) >= ytd(prev) ? "+" : ""}${Math.round((ytd(cur) - ytd(prev)) / Math.abs(ytd(prev)) * 100)}%` : "-", prev ? "no acumulado do ano" : "o ano anterior aparece aqui quando houver dados", prev && ytd(prev) ? (ytd(cur) >= ytd(prev) ? "good" : "bad") : "") +
+    kpi("Média por mês", fmt(Math.round(yearTotal(cur) / monthsWith)), `${monthsWith} mês(es) com movimento em ${cur}`) +
+    kpi("Melhor mês do ano", best.v ? best.name : "-", best.v ? fmt(best.v) : ""));
 
-  const methods = [
-    { name: "Dinheiro", icon: "", color: "#16a34a", val: bm.cash },
-    { name: "Pix Instantâneo", icon: "", color: "#0d9488", val: bm.pix },
-    { name: "Cartão / Outros", icon: "", color: "#2563eb", val: (bm.card || 0) + (bm.debit || 0) + (bm.credit || 0) }
-  ];
+  // Barras agrupadas por mes: um ano em cada cor.
+  const width = 900, height = 260, top = 18, bottom = 30, left = 10;
+  const chartH = height - top - bottom, step = (width - left * 2) / 12;
+  const shown = years.slice(0, 3);
+  const all = shown.flatMap(y => yearly[y].map(r => r[yearMode]));
+  const max = Math.max(1, ...all), min = Math.min(0, ...all);
+  const y0 = top + chartH - (0 - min) / (max - min) * chartH;
+  const bw = Math.min(26, (step - 8) / shown.length);
+  let bars = "";
+  MONTH_NAMES.forEach((name, m) => {
+    shown.forEach((y, k) => {
+      const v = value(y, m), h = Math.abs(v) / (max - min) * chartH;
+      const x = left + m * step + (step - bw * shown.length) / 2 + k * bw;
+      bars += `<rect x="${x.toFixed(1)}" y="${(v >= 0 ? y0 - h : y0).toFixed(1)}" width="${(bw - 2).toFixed(1)}" height="${Math.max(v ? 1.5 : 0, h).toFixed(1)}" rx="2" fill="${YEAR_COLORS[k]}"${m > refMonth && y === refYear ? ' opacity=".25"' : ""}><title>${name}/${y}: ${fmt(v)}</title></rect>`;
+    });
+    bars += `<text x="${(left + m * step + step / 2).toFixed(1)}" y="${height - 10}" text-anchor="middle" font-size="12" fill="${m === refMonth ? "var(--text-main)" : "var(--text-muted)"}" font-weight="${m === refMonth ? 800 : 400}">${name}</text>`;
+  });
+  setHtml("#rpYearChart", `<div class="rpLegend">${shown.map((y, k) => `<span><i style="background:${YEAR_COLORS[k]}"></i>${y}</span>`).join("")}</div><svg viewBox="0 0 ${width} ${height}" class="rpSvg" role="img"><line x1="${left}" x2="${width - left}" y1="${y0}" y2="${y0}" stroke="var(--border)"/>${bars}</svg>`);
 
-  wrap.innerHTML = `
-    <div class="payMethodsGrid">
-      ${methods.map(m => {
-        const pct = ((m.val / total) * 100).toFixed(1);
-        return `
-          <div class="payMethodCard">
-            <div class="payMethodTop">
-              <span class="payIcon">${m.icon}</span>
-              <strong>${html(m.name)}</strong>
-            </div>
-            <strong class="payAmount" style="color:${m.color};">${currency(m.val)}</strong>
-            <div class="payTrack">
-              <div class="payFill" style="width:${Math.max(2, pct)}%; background:${m.color};"></div>
-            </div>
-            <span class="payPct">${pct}% do faturamento</span>
-          </div>
-        `;
-      }).join("")}
-    </div>
-  `;
+  // Tabela: mes x ano, com variacao contra o ano anterior.
+  const head = ["Mês", ...years, ...(years.length > 1 ? [`${years[0]} x ${years[1]}`] : [])];
+  const rows = MONTH_NAMES.map((name, m) => {
+    const cells = years.map(y => `<td class="money">${value(y, m) ? fmt(value(y, m)) : '<span class="muted">-</span>'}</td>`).join("");
+    const a = value(years[0], m), b = years[1] ? value(years[1], m) : 0;
+    const diff = years.length > 1 ? `<td>${a && b ? delta(a, b, yearMode === "expensesCents") : '<span class="muted">-</span>'}</td>` : "";
+    return `<tr class="${m === refMonth ? "rpCurrentRow" : ""}"><td><strong>${name}</strong></td>${cells}${diff}</tr>`;
+  });
+  rows.push(`<tr class="rpTotalRow"><td><strong>Total</strong></td>${years.map(y => `<td class="money"><strong>${fmt(yearTotal(y))}</strong></td>`).join("")}${years.length > 1 ? `<td>${delta(yearTotal(years[0]), yearTotal(years[1]), yearMode === "expensesCents")}</td>` : ""}</tr>`);
+  setHtml("#rpYearTable", table(head, rows));
+}
+document.addEventListener("click", event => {
+  const btn = event.target.closest("#rpYearMode [data-ym]"); if (!btn) return;
+  yearMode = btn.dataset.ym;
+  document.querySelectorAll("#rpYearMode [data-ym]").forEach(b => b.classList.toggle("active", b === btn));
+  renderYearly();
+});
+
+// Tabela paginada: 25 linhas por vez com botao "mostrar mais".
+const pagedState = {};
+function pagedTable(key, columns, rows, empty, size = 25, note = "") {
+  const prev = pagedState[key];
+  pagedState[key] = { columns, rows, empty, size, note, shown: prev && prev.rows.length === rows.length ? prev.shown : size };
+  return renderPaged(key);
+}
+function renderPaged(key) {
+  const s = pagedState[key], rest = s.rows.length - s.shown;
+  return table(s.columns, s.rows.slice(0, s.shown), s.empty) +
+    (rest > 0 ? `<div class="rpMoreRow"><button type="button" class="rpMore" data-more="${key}">Mostrar mais ${Math.min(rest, 50)}</button><span class="muted">${s.shown} de ${s.rows.length}</span></div>` : "") +
+    (s.note ? `<p class="muted rpNote">${html(s.note)}</p>` : "");
+}
+document.addEventListener("click", event => {
+  const key = event.target.closest("[data-more]")?.dataset.more; if (!key || !pagedState[key]) return;
+  pagedState[key].shown += 50;
+  setHtml(`#${key}`, renderPaged(key));
+});
+
+function renderReport() {
+  if (!report) return;
+  const r = report, dre = r.dre || {};
+  const periodName = { today: "hoje", month: "no mês", "7d": "nos últimos 7 dias", "15d": "nos últimos 15 dias", "30d": "nos últimos 30 dias", "60d": "nos últimos 60 dias", "90d": "nos últimos 90 dias", all: "desde o início" }[r.period] || "";
+  const rangeText = r.period === "all" ? "Todo o histórico" : r.range?.start === r.range?.end ? dayLabel(r.range.start) : `${dayLabel(r.range.start)} a ${dayLabel(r.range.end)}`;
+  setTextSafe("#reportRangeLabel", `Período: ${rangeText} · números reais das vendas, despesas, caixa e estoque`);
+
+  // ---- Visao geral ----
+  renderOverview();
+  renderExecChart();
+  renderCategoryBars();
+  renderPaymentMethods();
+  renderDRE();
+
+  // ---- Vendas e Curva ABC ----
+  const abc = r.abc || [];
+  const classSum = cls => abc.filter(row => row.abcClass === cls).reduce((sum, row) => sum + row.amountCents, 0);
+  const abcTotal = abc.reduce((sum, row) => sum + row.amountCents, 0);
+  setHtml("#rpAbcSummary", ["A", "B", "C"].map(cls => kpi(`Classe ${cls}`, `${abc.filter(row => row.abcClass === cls).length} itens`, `${currency(classSum(cls))} (${pctText(classSum(cls), abcTotal)} do faturamento)`, cls === "A" ? "good" : cls === "B" ? "warn" : "")).join(""));
+  renderAbc();
+  const maxHour = Math.max(1, ...(r.byHour || []).map(row => row.count));
+  const busiest = (r.byHour || []).filter(row => row.count).sort((a, b) => b.count - a.count)[0];
+  setHtml("#reportHours", (busiest ? `<p class="muted">Maior movimento às <strong>${String(busiest.hour).padStart(2, "0")}h</strong>: reforce troco e atendimento nesse horário.</p>` : "") +
+    barChart((r.byHour || []).filter(row => row.hour >= 7 && row.hour <= 21), { value: row => row.count, label: row => `${String(row.hour).padStart(2, "0")}h`, title: row => `${row.hour}h: ${row.count} vendas, ${currency(row.salesCents)}`, height: 230, average: false, width: 480 }));
+  setHtml("#reportWeekdays", table(["Dia", "Vendas", "Faturamento", "Média por dia", ""], (r.byWeekday || []).map(row => `<tr><td>${row.name}</td><td>${row.count}</td><td class="money">${currency(row.salesCents)}</td><td class="money">${row.days ? currency(Math.round(row.salesCents / row.days)) : "-"}</td><td style="width:30%">${bar(row.days ? row.salesCents / row.days : 0, Math.max(1, ...(r.byWeekday || []).map(x => x.days ? x.salesCents / x.days : 0)))}</td></tr>`), "Sem vendas."));
+  const maxBand = Math.max(1, ...(r.ticketBands || []).map(b => b.count));
+  const totalBand = (r.ticketBands || []).reduce((sum, b) => sum + b.count, 0);
+  setHtml("#rpTicket", (r.ticketBands || []).map(b => `<div class="rpRow"><div class="rpRowHead"><strong>${b.max === null ? `Acima de ${currency(b.min)}` : `${currency(b.min)} a ${currency(b.max)}`}</strong><span>${b.count} vendas (${pctText(b.count, totalBand)}) · ${currency(b.salesCents)}</span></div>${bar(b.count, maxBand, "var(--accent)")}</div>`).join("") +
+    (totalBand ? `<p class="muted">Ticket médio: <strong>${currency(r.averageTicketCents)}</strong>. Vender um item a mais por atendimento (envelope, plastificação, bebida) é o jeito mais rápido de subir o faturamento.</p>` : ""));
+  setHtml("#rpLegacy", pagedTable("rpLegacy", ["Serviço", "Unidades", "Valor estimado"], (r.legacyUnits || []).map(row => `<tr><td>${html(row.name)} <span class="muted">#${html(row.code || "")}</span></td><td>${row.units}</td><td class="money">${currency(row.estimatedCents)}</td></tr>`), "Sem histórico."));
+
+  // ---- Caixa ----
+  setHtml("#reportMetrics", kpi("Vendas", currency(r.salesCents)) + kpi("Recebido", currency(r.receivedCents)) + kpi("Sessões encerradas", String(r.sessions)) + kpi("Tempo de máquina usado", `${Math.round((r.minutes || 0) / 60)} h`, `${r.minutes || 0} min`));
+  const cash = r.cash || {};
+  setHtml("#rpCash", kpi("Sangrias", currency(cash.withdrawalsCents)) + kpi("Suprimentos", currency(cash.suppliesCents)) + kpi("Faltas no caixa", currency(-cash.shortCents || 0), "", cash.shortCents ? "bad" : "") + kpi("Sobras no caixa", currency(cash.overCents), "", cash.overCents ? "warn" : ""));
+  const shiftsHtml = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado", "Diferença"], (state?.cashShifts || []).map(s => {
+    const expected = s.closingExpectedCents ?? s.expectedCashCents ?? null, counted = s.closingCountedCents ?? s.countedCashCents ?? null;
+    const diff = expected !== null && counted !== null ? counted - expected : null;
+    return `<tr><td>${dateTime(s.openedAt)}</td><td>${s.closedAt ? dateTime(s.closedAt) : '<span class="statusBadge active">Aberto</span>'}</td><td>${html(s.closedBy || s.openedBy || "-")}</td><td class="money">${expected !== null ? currency(expected) : "-"}</td><td class="money">${counted !== null ? currency(counted) : "-"}</td><td class="money ${diff < 0 ? "bad" : diff > 0 ? "warn" : ""}">${diff === null ? "-" : diff === 0 ? "Exato" : currency(diff)}</td></tr>`;
+  }), "Nenhum caixa registrado.");
+  setHtml("#reportCashShiftsWrap", shiftsHtml);
+  setHtml("#reportAdjustments", pagedTable("reportAdjustments", ["Data", "Tipo", "Motivo", "Valor", "Operador"], (state?.cashAdjustments || []).map(a => `<tr><td>${dateTime(a.at)}</td><td>${a.direction === "in" ? "Suprimento" : "Sangria"}</td><td>${html(a.reason || "-")}</td><td class="money">${currency(a.amountCents)}</td><td>${html(a.operator || "-")}</td></tr>`), "Nenhuma sangria ou suprimento."));
+  const chargeTerm = ($("#rpChargeSearch")?.value || "").trim().toLowerCase();
+  const chargeRows = (r.charges || []).filter(item => !chargeTerm || String(item.description).toLowerCase().includes(chargeTerm));
+  setHtml("#reportCharges", pagedTable("reportCharges", ["Data", "Descrição", "Valor", "Pago"], chargeRows.map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td></tr>`), "Nenhum lançamento encontrado.", 25, r.salesCount > (r.charges || []).length ? `Mostrando as ${(r.charges || []).length} vendas mais recentes de ${r.salesCount}; os totais consideram todas.` : ""));
+
+  // ---- Clientes e fiado ----
+  setHtml("#rpAging", (r.agingBuckets || []).map((b, i) => kpi(b.label, currency(b.dueCents), `${b.count} pendência(s)`, b.dueCents && i >= 2 ? "bad" : b.dueCents && i === 1 ? "warn" : "")).join(""));
+  setHtml("#reportOpenCharges", pagedTable("reportOpenCharges", ["Data", "Descrição", "Cliente", "Dias", "Falta receber"], (r.openCharges || []).map(row => `<tr><td>${dateTime(row.at)}</td><td>${html(row.description)}</td><td>${html(row.clientName || "-")}${(() => { const c = row.clientId && state?.clients?.find(x => x.id === row.clientId); const link = c && whatsappLink(c.phone, c.name, row.dueCents); return link ? ` <a class="waButton small" href="${link}" target="_blank" rel="noopener">WhatsApp</a>` : ""; })()}</td><td>${Math.floor((Date.now() - Date.parse(row.at)) / 86400000)}</td><td class="money">${currency(row.dueCents)}</td></tr>`), "Nenhuma pendência."));
+  setHtml("#rpClients", table(["Cliente", "Compras", "Total comprado", "Deve", "Última compra"], (r.clients || []).map(c => `<tr><td>${html(c.name)}</td><td>${c.count}</td><td class="money">${currency(c.salesCents)}</td><td class="money ${c.dueCents ? "bad" : ""}">${currency(c.dueCents)}</td><td>${dateTime(c.lastAt)}</td></tr>`), "Nenhuma venda com cliente identificado. Selecione o cliente no caixa para acompanhar quem mais compra."));
+
+  // ---- Estoque ----
+  const st = r.stock || {};
+  setHtml("#rpStock", kpi("Mercadoria em estoque (custo)", st.valueCents ? currency(st.valueCents) : "sem custo", st.withoutCost ? `${st.withoutCost} item(ns) com estoque ainda sem preço de custo` : "pelo preço de custo cadastrado", st.valueCents ? "" : "warn") + kpi("Mesmo estoque a preço de venda", currency(st.saleValueCents), "quanto entra se vender tudo") + kpi("Para repor", String(r.lowStockCount || 0), `${st.negative || 0} negativos · ${(r.lowStock || []).filter(x => x.stock === 0).length} zerados`, r.lowStockCount ? "warn" : "") + kpi("Produtos sem preço de custo", String(st.withoutCostProducts || 0), "cadastre em Catálogo ou pela nota fiscal", st.withoutCostProducts ? "warn" : ""));
+  const situation = row => row.stock < 0 ? '<span class="rpTag bad">Negativo</span>' : row.stock === 0 ? '<span class="rpTag warn">Zerado</span>' : '<span class="rpTag">Abaixo do mínimo</span>';
+  // Sugestao: voltar ao dobro do minimo (minimo 5 quando nao cadastrado); negativo indica venda sem entrada de nota.
+  const suggestion = row => Math.max(0, Math.max(row.minStock || 5, 5) * 2 - Math.max(row.stock, 0));
+  setHtml("#reportLowStock", pagedTable("reportLowStock", ["Código", "Produto", "Situação", "Estoque", "Mínimo", "Comprar"], (r.lowStock || []).map(row => `<tr><td>${html(row.code || "-")}</td><td>${html(row.name)}</td><td>${situation(row)}</td><td class="${row.stock < 0 ? "bad" : ""}"><strong>${row.stock}</strong></td><td>${row.minStock}</td><td><strong>${suggestion(row)}</strong></td></tr>`), "Nenhum produto para repor.", 25, "Estoque negativo quase sempre é mercadoria que entrou sem nota: dê entrada pela nota fiscal em Catálogo & Estoque."));
+  setHtml("#rpStale", pagedTable("rpStale", ["Código", "Produto", "Estoque", "Valor parado (custo)"], (st.stale || []).map(row => `<tr><td>${html(row.code || "-")}</td><td>${html(row.name)}</td><td>${row.stock}</td><td class="money">${row.valueCents === null ? '<span class="muted">sem custo</span>' : currency(row.valueCents)}</td></tr>`), "Nenhuma mercadoria parada."));
+
+  // ---- Maquinas e equipe ----
+  setHtml("#reportMachines", table(["Estação", "Sessões", "Horas de uso", "Faturamento de tempo", "Por hora de uso"], (r.byMachine || []).map(m => `<tr><td>${html(m.name || m.machineId)}</td><td>${m.count}</td><td>${(m.minutes / 60).toFixed(1).replace(".", ",")}</td><td class="money">${currency(m.revenueCents || 0)}</td><td class="money">${m.minutes ? currency(Math.round((m.revenueCents || 0) / (m.minutes / 60))) : "-"}</td></tr>`), "Sem uso de máquinas no período."));
+  setHtml("#reportOperators", table(["Atendente", "Recebimentos", "Valor"], (r.byOperator || []).map(item => `<tr><td>${html(item.name)}</td><td>${item.payments}</td><td class="money">${currency(item.receivedCents)}</td></tr>`), "Sem recebimentos no período."));
+}
+
+function renderAbc() {
+  if (!report) return;
+  const rows = (report.abc || []).filter(row => !abcFilter || row.abcClass === abcFilter);
+  const productById = new Map((state?.products || []).map(p => [p.id, p]));
+  const admin = state?.user?.role === "admin";
+  setHtml("#rpAbc", pagedTable("rpAbc", ["Classe", "Produto / serviço", "Qtd", "Faturamento", "% acumulado", "Custo", "Lucro", "Margem", "Estratégia"], rows.map(row => {
+    const product = productById.get(row.productId);
+    const margin = row.profitCents !== null && row.amountCents ? Math.round(row.profitCents / row.amountCents * 100) : null;
+    const strategy = !product ? '<span class="muted">-</span>' : `<select data-strategy="${html(product.id)}" ${admin ? "" : "disabled"}>${STRATEGIES.map(s => `<option value="${html(s)}" ${s === (product.strategy || "") ? "selected" : ""}>${s || "Definir..."}</option>`).join("")}</select>`;
+    return `<tr><td><span class="rpClass ${row.abcClass}">${row.abcClass}</span></td><td>${html(row.name)}${product?.code ? ` <span class="muted">#${html(product.code)}</span>` : ""}</td><td>${row.quantity}</td><td class="money">${currency(row.amountCents)}</td><td>${String(row.cumulative).replace(".", ",")}%</td><td class="money">${row.costCents === null ? '<span class="muted">sem custo</span>' : currency(row.costCents)}</td><td class="money">${row.profitCents === null ? "-" : currency(row.profitCents)}</td><td class="${margin !== null && margin < 20 ? "bad" : ""}">${margin === null ? "-" : `${margin}%`}</td><td>${strategy}</td></tr>`;
+  }), "Sem itens vendidos no período. As vendas do sistema anterior não têm itens: veja o histórico abaixo."));
 }
 
 function renderDRE() {
   if (!report) return;
-  const gross = report.salesCents;
-  const discount = 0;
-  const net = gross - discount;
-  const cmv = Math.round(net * 0.78);
-  const margin = net - cmv;
-  const marginPct = net > 0 ? ((margin / net) * 100).toFixed(1) : "0.0";
-  const fixed = 0;
-  const profit = margin - fixed;
-  const netPct = net > 0 ? ((profit / net) * 100).toFixed(1) : "0.0";
-
-  const grossEl = $("#dreGrossVal");
-  if (grossEl) grossEl.textContent = currency(gross);
-  const discEl = $("#dreDiscountVal");
-  if (discEl) discEl.textContent = `- ${currency(discount)}`;
-  const netEl = $("#dreNetVal");
-  if (netEl) netEl.textContent = currency(net);
-  const cmvEl = $("#dreCmvVal");
-  if (cmvEl) cmvEl.textContent = `- ${currency(cmv)}`;
-  const marginEl = $("#dreMarginVal");
-  if (marginEl) marginEl.textContent = currency(margin);
-  const marginPctEl = $("#dreMarginPct");
-  if (marginPctEl) marginPctEl.textContent = `${marginPct}%`;
-  const fixedEl = $("#dreFixedVal");
-  if (fixedEl) fixedEl.textContent = currency(fixed);
-  const profitEl = $("#dreProfitVal");
-  if (profitEl) profitEl.textContent = currency(profit);
-  const netPctEl = $("#dreNetPct");
-  if (netPctEl) netPctEl.textContent = `${netPct}%`;
-
+  const r = report, dre = r.dre || {};
+  const net = dre.netCents || 0, sales = r.salesCents || 0;
+  const line = (label, value, cls = "", note = "") => `<tr class="${cls}"><td>${label}${note ? `<small>${note}</small>` : ""}</td><td class="money">${currency(value)}</td><td class="pct">${pctText(Math.abs(value), dre.grossCents || sales)}</td></tr>`;
+  const uncosted = (dre.uncostedRevenueCents || 0) + (dre.legacyCents || 0);
+  setHtml("#rpDre", `<table class="rpDre"><tbody>
+    ${line("(+) Receita bruta", dre.grossCents, "strong", "vendas pelo preço de tabela")}
+    ${line("(-) Descontos concedidos", -(dre.discountCents || 0), "neg")}
+    ${line("(-) Taxas de cartão e Pix", -(dre.feesCents || 0), "neg", (state?.settings?.feeDebitPct || state?.settings?.feeCreditPct) ? "pelas taxas cadastradas" : "cadastre as taxas em Metas e taxas")}
+    ${line("(=) Receita líquida", net, "sub")}
+    ${line("(-) Custo das mercadorias (CMV)", -(dre.cmvCents || 0), "neg", `custo cadastrado cobre ${pctText(dre.costedRevenueCents || 0, sales)} das vendas`)}
+    ${line("(=) Lucro bruto", dre.grossProfitCents, "sub")}
+    ${dre.incomesCents ? line("(+) Comissões e outras receitas", dre.incomesCents, "", "Speed Financeira e receitas fora do caixa") : ""}
+    ${line("(-) Despesas do período", -(dre.expensesCents || 0), "neg", "aluguel, energia, internet, salários...")}
+    ${line("(=) Resultado do período", dre.profitCents, `total ${dre.profitCents >= 0 ? "good" : "bad"}`)}
+  </tbody></table>`);
+  setHtml("#rpIncomes", (r.incomes || []).length ? table(["Data", "Descrição", "Valor", ""], r.incomes.map(i => `<tr><td>${new Date(i.at).toLocaleDateString("pt-BR")}</td><td>${html(i.description)} <span class="muted">${html(i.category)}</span></td><td class="money">${currency(i.amountCents)}</td><td>${state?.user?.role === "admin" ? `<button data-income-del="${i.id}">Excluir</button>` : ""}</td></tr>`)) : "");
+  setTextSafe("#dreNote", uncosted ? `${currency(uncosted)} das vendas não têm custo conhecido (${currency(dre.legacyCents || 0)} do sistema anterior, sem itens, e ${currency(dre.uncostedRevenueCents || 0)} de produtos sem preço de custo). Nelas o custo entra como zero, então o resultado real é menor.` : "");
   const badge = $("#dreHealthBadge");
   if (badge) {
-    badge.textContent = profit >= 0 ? "Saudável & Superavitário" : "Atenção Operacional";
-    badge.className = `dreBadge ${profit >= 0 ? "healthy" : "warning"}`;
+    const incomplete = sales > 0 && uncosted > sales * 0.2;
+    badge.textContent = incomplete ? "Custo incompleto" : dre.profitCents >= 0 ? "Resultado positivo" : "Resultado negativo";
+    badge.className = `rpBadge ${incomplete ? "warn" : dre.profitCents >= 0 ? "good" : "bad"}`;
   }
+
+  const be = r.breakEven || {};
+  setHtml("#rpBreakEven", `<div class="rpGoalGrid">
+    <div><span>Despesas médias por mês</span><strong>${be.avgExpensesCents ? currency(be.avgExpensesCents) : "-"}</strong></div>
+    <div><span>Margem de contribuição</span><strong>${be.contributionPct === null ? "-" : `${String(be.contributionPct).replace(".", ",")}%`}</strong></div>
+    <div><span>Ponto de equilíbrio</span><strong>${be.breakEvenCents ? currency(be.breakEvenCents) : "-"}</strong></div>
+  </div><p class="muted">${be.breakEvenCents ? (be.reliable ? "Quanto a loja precisa vender por mês para pagar custos e despesas." : "Estimativa: poucos produtos com custo cadastrado. Use o simulador abaixo com a sua margem real.") : "Lance as despesas e cadastre o custo dos produtos para calcular. Use o simulador abaixo enquanto isso."}</p>`);
+  const expRange = $("#simExpensesRange"), marginRange = $("#simMarginRange");
+  if (expRange && be.avgExpensesCents && !expRange.dataset.touched) expRange.value = Math.min(15000, Math.max(500, Math.round(be.avgExpensesCents / 100)));
+  if (marginRange && be.contributionPct > 0 && !marginRange.dataset.touched) marginRange.value = Math.min(90, Math.max(5, Math.round(be.contributionPct)));
+  updateBreakEven();
+
+  const monthly = r.monthly || [];
+  const active = monthly.filter(m => m.salesCents || m.expensesCents);
+  const sumOf = key => active.reduce((s, m) => s + m[key], 0);
+  const best = active.reduce((a, m) => !a || m.resultCents > a.resultCents ? m : a, null);
+  setHtml("#rpMonthlySummary", active.length ? kpi("Receitas (12 meses)", currency(sumOf("salesCents")), `média ${currency(Math.round(sumOf("salesCents") / active.length))}/mês`) +
+    kpi("Custos e despesas", currency(sumOf("cmvCents") + sumOf("feesCents") + sumOf("expensesCents")), `média ${currency(Math.round((sumOf("cmvCents") + sumOf("feesCents") + sumOf("expensesCents")) / active.length))}/mês`, "bad") +
+    kpi("Resultado", currency(sumOf("resultCents")), `margem ${pctText(sumOf("resultCents"), sumOf("salesCents"))}`, sumOf("resultCents") >= 0 ? "good" : "bad") +
+    kpi("Melhor mês", best ? monthLabel(best.month) : "-", best ? `resultado ${currency(best.resultCents)}` : "") : "");
+  setHtml("#rpMonthlyChart", monthlyChart(monthly));
+  setHtml("#rpMonthly", table(["Mês", "Vendas", "Custo (CMV)", "Taxas", "Despesas", "Resultado", "Margem"], monthly.filter(m => m.salesCents || m.expensesCents).map(m => `<tr><td>${monthLabel(m.month)}</td><td class="money">${currency(m.salesCents)}</td><td class="money">${currency(m.cmvCents)}</td><td class="money">${currency(m.feesCents)}</td><td class="money">${currency(m.expensesCents)}</td><td class="money ${m.resultCents < 0 ? "bad" : "good"}"><strong>${currency(m.resultCents)}</strong></td><td>${pctText(m.resultCents, m.salesCents)}</td></tr>`), "Sem movimento nos últimos 12 meses."));
+
+  const admin = state?.user?.role === "admin";
+  const fileLink = item => item.fileId ? `<a href="/api/expenses/${encodeURIComponent(item.id)}/file" target="_blank" rel="noopener">PDF</a>` : "";
+  setHtml("#rpPayables", table(["Vencimento", "Categoria", "Descrição", "Valor", "", ""], (r.payables || []).map(item => {
+    const late = new Date(item.at) < new Date(new Date().toDateString());
+    return `<tr><td class="${late ? "bad" : ""}">${new Date(item.at).toLocaleDateString("pt-BR")}${late ? " (vencida)" : ""}</td><td>${html(item.category)}</td><td>${html(item.description)}</td><td class="money">${currency(item.amountCents)}</td><td>${fileLink(item)}</td><td>${admin ? `<button data-expense-pay="${item.id}">Marcar paga</button>` : ""}</td></tr>`;
+  }), "Nenhuma conta a pagar."));
+  const cats = Object.entries(r.byExpenseCategory || {}).sort((a, b) => b[1] - a[1]);
+  const maxCat = cats[0]?.[1] || 1;
+  setHtml("#rpExpenseCats", cats.length ? cats.map(([name, value]) => `<div class="rpRow"><div class="rpRowHead"><strong>${html(name)}</strong><span>${currency(value)} (${pctText(value, r.expensesCents)})</span></div>${bar(value, maxCat, "var(--danger-accent)")}</div>`).join("") : `<p class="muted">Nenhuma despesa no período.</p>`);
+  setHtml("#expenseList", table(["Data", "Categoria", "Descrição", "Valor", "Situação", ""], (r.expenses || []).map(item => `<tr><td>${new Date(item.at).toLocaleDateString("pt-BR")}</td><td>${html(item.category)}</td><td>${html(item.description)} ${fileLink(item)}</td><td class="money">${currency(item.amountCents)}</td><td>${item.paid === false ? '<span class="bad">A pagar</span>' : "Paga"}</td><td>${admin && !item.legacy ? `<button data-expense-delete="${item.id}">Excluir</button>` : ""}</td></tr>`), "Nenhuma despesa lançada no período."));
 }
 
 function updateBreakEven() {
-  const expRange = $("#simExpensesRange");
-  const marginRange = $("#simMarginRange");
-  const expDisplay = $("#simExpensesDisplay");
-  const marginDisplay = $("#simMarginDisplay");
-  const resultDisplay = $("#simBreakEvenResult");
-  if (!expRange || !marginRange || !resultDisplay) return;
+  const exp = Number($("#simExpensesRange")?.value) || 0, margin = Number($("#simMarginRange")?.value) || 1;
+  setTextSafe("#simExpensesDisplay", currency(exp * 100));
+  setTextSafe("#simMarginDisplay", `${margin}%`);
+  setTextSafe("#simBreakEvenResult", currency(Math.round(exp / (margin / 100)) * 100));
+}
 
-  const expenses = Number(expRange.value) || 0;
-  const margin = Number(marginRange.value) || 1;
+function expenseFields(values = {}) {
+  return select("category", "Categoria", EXPENSE_CATEGORIES.map(name => [name, name]), values.category || "Aluguel") +
+    field("description", "Descrição", "text", values.description || "", 'maxlength="120"') +
+    field("amount", "Valor (R$)", "number", values.amountCents ? (values.amountCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required') +
+    field("date", "Vencimento / data", "date", values.dueDate || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }), "required") +
+    select("paid", "Situação", [["false", "A pagar"], ["true", "Já paga"]], values.paid === true ? "true" : "false") +
+    (values.fileId ? `<input type="hidden" name="fileId" value="${html(values.fileId)}">` : "");
+}
+function saveExpense(values) { return api("/api/expenses", { ...values, paid: values.paid === "true" }).then(() => loadReport()); }
 
-  if (expDisplay) expDisplay.textContent = currency(expenses * 100);
-  if (marginDisplay) marginDisplay.textContent = `${margin}%`;
+function openFinanceSettings() {
+  const s = state?.settings || {};
+  const pct = v => String(v ?? 0);
+  openModal("Metas e taxas",
+    field("monthGoal", "Meta de vendas do mês (R$)", "number", ((s.monthGoalCents || 0) / 100).toFixed(2), 'min="0" step="0.01" required') +
+    field("dailyGoal", "Meta de vendas por dia (R$)", "number", ((s.dailyGoalCents || 0) / 100).toFixed(2), 'min="0" step="0.01" required') +
+    select("workDays", "Dias de funcionamento por semana", [["6", "6 (fecha domingo)"], ["7", "7 (todos os dias)"], ["5", "5 (fecha sábado e domingo)"]], String(s.workDays || 6)) +
+    field("feeDebit", "Taxa do débito (%)", "number", pct(s.feeDebitPct), 'min="0" max="20" step="0.01"') +
+    field("feeCredit", "Taxa do crédito (%)", "number", pct(s.feeCreditPct), 'min="0" max="20" step="0.01"') +
+    field("feeCard", "Taxa de cartão sem tipo (%)", "number", pct(s.feeCardPct), 'min="0" max="20" step="0.01"') +
+    field("feePix", "Taxa do Pix (%)", "number", pct(s.feePixPct), 'min="0" max="20" step="0.01"') +
+    field("printBWCost", "Custo de papel e tinta por página P&B (R$)", "number", ((s.printBWCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
+    field("printColorCost", "Custo de papel e tinta por página colorida (R$)", "number", ((s.printColorCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
+    select("panelOnlyHere", "Onde o painel pode ser aberto", [["false", "Em qualquer computador da loja (com senha)"], ["true", "Só neste computador (caixa)"]], String(Boolean(s.panelOnlyHere))),
+    values => api("/api/settings/finance", values).then(() => loadReport()));
+}
 
-  const breakEven = Math.round(expenses / (margin / 100));
-  resultDisplay.textContent = currency(breakEven * 100);
+function exportReportCsv() {
+  if (!report) { toast("Nenhum dado para exportar."); return; }
+  const r = report, rows = [];
+  const cell = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const money = c => ((c || 0) / 100).toFixed(2).replace(".", ",");
+  rows.push(["DRE", "Valor"], ["Receita bruta", money(r.dre.grossCents)], ["Descontos", money(r.dre.discountCents)], ["Taxas", money(r.dre.feesCents)], ["Receita liquida", money(r.dre.netCents)], ["CMV", money(r.dre.cmvCents)], ["Lucro bruto", money(r.dre.grossProfitCents)], ["Despesas", money(r.dre.expensesCents)], ["Resultado", money(r.dre.profitCents)], []);
+  rows.push(["Curva ABC", "Classe", "Quantidade", "Faturamento", "Custo", "Lucro"]);
+  for (const a of r.abc || []) rows.push([a.name, a.abcClass, a.quantity, money(a.amountCents), a.costCents === null ? "" : money(a.costCents), a.profitCents === null ? "" : money(a.profitCents)]);
+  rows.push([], ["Mes", "Vendas", "CMV", "Taxas", "Despesas", "Resultado"]);
+  for (const m of r.monthly || []) rows.push([m.month, money(m.salesCents), money(m.cmvCents), money(m.feesCents), money(m.expensesCents), money(m.resultCents)]);
+  rows.push([], ["Data", "Descricao", "Valor", "Pago"]);
+  for (const c of r.charges || []) rows.push([new Date(c.at).toLocaleString("pt-BR"), c.description, money(c.amountCents), money(c.paidCents)]);
+  const blob = new Blob(["﻿" + rows.map(row => row.map(cell).join(";")).join("\n")], { type: "text/csv;charset=utf-8" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `relatorio_${r.period}_${r.date}.csv`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 5000);
 }
 
 function setupReportListeners() {
-  document.querySelectorAll(".reportPeriodBtn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".reportPeriodBtn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const period = btn.dataset.period || "month";
-      loadReport(period);
-    });
+  document.querySelectorAll(".reportPeriodBtn").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll(".reportPeriodBtn").forEach(b => b.classList.toggle("active", b === btn));
+    loadReport(btn.dataset.period || "month");
+  }));
+  document.querySelectorAll(".reportTabBtn").forEach(btn => btn.addEventListener("click", () => {
+    document.querySelectorAll(".reportTabBtn").forEach(b => b.classList.toggle("active", b === btn));
+    document.querySelectorAll(".reportTabContent").forEach(content => { content.hidden = content.id !== `tab-report-${btn.dataset.reportTab}`; });
+  }));
+  $("#reportDate")?.addEventListener("change", () => loadReport());
+  $("#rpChargeSearch")?.addEventListener("input", () => renderReport());
+  $("#btnChartRev")?.addEventListener("click", () => { chartMode = "rev"; $("#btnChartRev").classList.add("active"); $("#btnChartVol").classList.remove("active"); renderExecChart(); });
+  $("#btnChartVol")?.addEventListener("click", () => { chartMode = "vol"; $("#btnChartVol").classList.add("active"); $("#btnChartRev").classList.remove("active"); renderExecChart(); });
+  for (const id of ["#simExpensesRange", "#simMarginRange"]) $(id)?.addEventListener("input", event => { event.target.dataset.touched = "1"; updateBreakEven(); });
+  $("#rpAbcFilter")?.addEventListener("click", event => {
+    const btn = event.target.closest("[data-abc]"); if (!btn) return;
+    abcFilter = btn.dataset.abc;
+    document.querySelectorAll("#rpAbcFilter [data-abc]").forEach(b => b.classList.toggle("active", b === btn));
+    renderAbc();
   });
-
-  document.querySelectorAll(".reportTabBtn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".reportTabBtn").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
-      const tab = btn.dataset.reportTab;
-      document.querySelectorAll(".reportTabContent").forEach(content => {
-        content.hidden = content.id !== `tab-report-${tab}`;
-      });
-    });
+  $("#rpAbc")?.addEventListener("change", event => {
+    const sel = event.target.closest("[data-strategy]"); if (!sel) return;
+    api(`/api/products/${encodeURIComponent(sel.dataset.strategy)}/strategy`, { strategy: sel.value }).then(() => { const p = state.products.find(x => x.id === sel.dataset.strategy); if (p) p.strategy = sel.value; toast("Estratégia salva."); }).catch(cause => toast(cause.message));
   });
-
-  $("#btnChartRev")?.addEventListener("click", () => {
-    chartMode = "rev";
-    $("#btnChartRev")?.classList.add("active");
-    $("#btnChartVol")?.classList.remove("active");
-    renderExecChart();
+  $("#reportPrintBtn")?.addEventListener("click", () => window.print());
+  $("#reportExportBtn")?.addEventListener("click", exportReportCsv);
+  $("#financeSettingsButton")?.addEventListener("click", openFinanceSettings);
+  $("#addExpenseButton")?.addEventListener("click", () => openModal("Lançar despesa", expenseFields({ paid: true }), saveExpense));
+  $("#uploadBillButton")?.addEventListener("click", () => $("#billFileInput")?.click());
+  $("#billFileInput")?.addEventListener("change", event => { const file = event.target.files[0]; event.target.value = ""; importExpenseFiles([file]); });
+  $("#view-reports")?.addEventListener("click", event => {
+    const payId = event.target.closest("[data-expense-pay]")?.dataset.expensePay;
+    if (payId) { api(`/api/expenses/${encodeURIComponent(payId)}/pay`, {}).then(() => loadReport()).catch(cause => toast(cause.message)); return; }
+    const delId = event.target.closest("[data-expense-delete]")?.dataset.expenseDelete;
+    if (delId && confirm("Excluir esta despesa?")) api(`/api/expenses/${encodeURIComponent(delId)}/delete`, {}).then(() => loadReport()).catch(cause => toast(cause.message));
   });
-  $("#btnChartVol")?.addEventListener("click", () => {
-    chartMode = "vol";
-    $("#btnChartVol")?.classList.add("active");
-    $("#btnChartRev")?.classList.remove("active");
-    renderExecChart();
-  });
-
-  $("#simExpensesRange")?.addEventListener("input", updateBreakEven);
-  $("#simMarginRange")?.addEventListener("input", updateBreakEven);
-
-  $("#reportPrintBtn")?.addEventListener("click", () => {
-    window.print();
-  });
-
-  $("#reportExportBtn")?.addEventListener("click", () => {
-    if (!report || !report.charges) { toast("Nenhum dado para exportar."); return; }
-    const rows = [["Data", "Hora", "Descricao", "Categoria", "Valor_R$", "Pago_R$"]];
-    for (const c of report.charges) {
-      const dt = c.at ? new Date(c.at).toLocaleString("pt-BR") : "";
-      const val = (c.amountCents / 100).toFixed(2);
-      const paid = (c.paidCents / 100).toFixed(2);
-      rows.push([
-        dt.split(" ")[0] || "",
-        dt.split(" ")[1] || "",
-        `"${(c.description || "").replace(/"/g, '""')}"`,
-        `"${c.category || "Geral"}"`,
-        val,
-        paid
-      ]);
-    }
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + rows.map(e => e.join(";")).join("\n");
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `relatorio_${reportPeriod}_${new Date().toLocaleDateString("en-CA")}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast("Relatório exportado com sucesso!");
-  });
+  // Arrastar o PDF da conta para a aba DRE tambem envia.
+  $("#tab-report-dre")?.addEventListener("dragover", event => event.preventDefault());
+  $("#tab-report-dre")?.addEventListener("drop", event => { event.preventDefault(); importExpenseFiles([...event.dataTransfer.files]); });
 }
 
+// ================= Despesas =================
+let expenseData = { expenses: [], categories: [] }, expenseMonthSales = null;
+const expMonthValue = () => $("#expMonth")?.value || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }).slice(0, 7);
+const expDay = item => new Date(item.at).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+const expToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+const expSourceLabel = item => item.legacy ? "sistema anterior" : item.groupId && item.source !== "manual" ? (item.source || "importado") : item.fileId ? "conta enviada" : item.groupId ? "fixa mensal" : "manual";
+
+async function loadExpenses() {
+  if (!$("#expMonth").value) $("#expMonth").value = expMonthValue();
+  try {
+    expenseData = await api("/api/expenses");
+    const month = expMonthValue();
+    const rep = await api(`/api/reports?date=${month}-01&period=month`).catch(() => null);
+    expenseMonthSales = rep ? rep.salesCents : null;
+    const select = $("#expFilterCategory"), current = select.value;
+    select.innerHTML = `<option value="">Todas as categorias</option>` + expenseData.categories.map(c => `<option ${c === current ? "selected" : ""}>${html(c)}</option>`).join("");
+    renderExpenses();
+  } catch (cause) { toast(cause.message); }
+}
+
+function renderExpenses() {
+  const month = expMonthValue(), today = expToday();
+  const all = expenseData.expenses || [];
+  const inMonth = all.filter(e => expDay(e).startsWith(month));
+  const prevMonth = new Date(`${month}-15T12:00:00`); prevMonth.setMonth(prevMonth.getMonth() - 1);
+  const prevKey = prevMonth.toISOString().slice(0, 7);
+  const sum = list => list.reduce((s, e) => s + e.amountCents, 0);
+  const total = sum(inMonth), prevTotal = sum(all.filter(e => expDay(e).startsWith(prevKey)));
+  const open = all.filter(e => e.paid === false);
+  const late = open.filter(e => expDay(e) < today);
+  const week = open.filter(e => expDay(e) >= today && expDay(e) <= new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
+  setHtml("#expKpis",
+    kpi("Despesas do mês", currency(total), prevTotal ? `mês anterior ${currency(prevTotal)} (${total >= prevTotal ? "+" : ""}${Math.round((total - prevTotal) / prevTotal * 100)}%)` : `${inMonth.length} lançamento(s)`) +
+    kpi("Peso sobre as vendas", expenseMonthSales ? pctText(total, expenseMonthSales) : "-", expenseMonthSales ? `vendas do mês ${currency(expenseMonthSales)}` : "sem vendas no mês", expenseMonthSales && total > expenseMonthSales * 0.5 ? "bad" : "") +
+    kpi("A pagar", currency(sum(open)), `${open.length} conta(s) · ${week.length} vencem em 7 dias`, open.length ? "warn" : "") +
+    kpi("Vencidas", currency(sum(late)), `${late.length} conta(s)`, late.length ? "bad" : "good"));
+
+  const byCat = {};
+  for (const e of inMonth) byCat[e.category] = (byCat[e.category] || 0) + e.amountCents;
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
+  setHtml("#expByCategory", cats.length ? cats.map(([name, value]) => `<div class="rpRow"><div class="rpRowHead"><strong>${html(name)}</strong><span>${currency(value)} (${pctText(value, total)})</span></div>${bar(value, cats[0][1], "var(--danger-accent)")}</div>`).join("") : `<p class="muted">Nenhuma despesa neste mês. Importe as contas ou lance à mão.</p>`);
+
+  const months = [];
+  for (let i = 11; i >= 0; i--) { const d = new Date(`${month}-15T12:00:00`); d.setMonth(d.getMonth() - i); months.push(d.toISOString().slice(0, 7)); }
+  const trend = months.map(m => ({ month: m, total: sum(all.filter(e => expDay(e).startsWith(m))) }));
+  setHtml("#expTrend", barChart(trend, { value: r => r.total, label: r => monthLabel(r.month), title: r => `${monthLabel(r.month)}: ${currency(r.total)}`, color: "var(--danger-accent)", peakColor: "#9f1239", height: 240, width: 520 }));
+
+  const admin = state?.user?.role === "admin";
+  const fileLink = e => e.fileId ? `<a href="/api/expenses/${encodeURIComponent(e.id)}/file" target="_blank" rel="noopener">ver</a>` : "";
+  setHtml("#expPayables", table(["Vencimento", "Descrição", "Valor", ""], open.slice().sort((a, b) => a.at.localeCompare(b.at)).map(e => `<tr><td class="${expDay(e) < today ? "bad" : ""}">${new Date(e.at).toLocaleDateString("pt-BR")}${expDay(e) < today ? " (vencida)" : ""}</td><td>${html(e.description)} <span class="muted">${html(e.category)}</span> ${fileLink(e)}</td><td class="money">${currency(e.amountCents)}</td><td>${admin ? `<button data-exp-pay="${e.id}">Paga</button>` : ""}</td></tr>`), "Nenhuma conta a pagar."));
+
+  const bySupplier = {};
+  for (const e of inMonth) { const key = e.description.replace(/\s+\d+\/\d+$/, "").trim(); bySupplier[key] = (bySupplier[key] || 0) + e.amountCents; }
+  const sup = Object.entries(bySupplier).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  setHtml("#expSuppliers", sup.length ? sup.map(([name, value]) => `<div class="rpRow"><div class="rpRowHead"><strong>${html(name)}</strong><span>${currency(value)} (${pctText(value, total)})</span></div>${bar(value, sup[0][1], "var(--accent)")}</div>`).join("") : `<p class="muted">Sem lançamentos no mês.</p>`);
+
+  const cat = $("#expFilterCategory").value, status = $("#expFilterStatus").value, term = $("#expSearch").value.trim().toLowerCase();
+  const rows = inMonth.filter(e => (!cat || e.category === cat) && (!term || e.description.toLowerCase().includes(term)) &&
+    (!status || (status === "open" && e.paid === false) || (status === "paid" && e.paid !== false) || (status === "late" && e.paid === false && expDay(e) < today)))
+    .sort((a, b) => b.at.localeCompare(a.at));
+  setHtml("#expTable", pagedTable("expTable", ["Data", "Categoria", "Descrição", "Valor", "Situação", "Origem", ""], rows.map(e => `<tr>
+    <td>${new Date(e.at).toLocaleDateString("pt-BR")}</td>
+    <td>${admin && !e.legacy ? `<select data-exp-cat="${e.id}">${expenseData.categories.concat(expenseData.categories.includes(e.category) ? [] : [e.category]).map(c => `<option ${c === e.category ? "selected" : ""}>${html(c)}</option>`).join("")}</select>` : html(e.category)}</td>
+    <td>${html(e.description)} ${fileLink(e)}</td>
+    <td class="money">${currency(e.amountCents)}</td>
+    <td>${e.paid === false ? `<span class="${expDay(e) < today ? "bad" : "warn"}">${expDay(e) < today ? "Vencida" : "A pagar"}</span>` : "Paga"}</td>
+    <td class="muted">${html(expSourceLabel(e))}</td>
+    <td class="actionsCell">${admin && !e.legacy ? `${e.paid === false ? `<button data-exp-pay="${e.id}">Paga</button>` : ""}<button data-exp-edit="${e.id}">Editar</button><button data-exp-del="${e.id}">Excluir</button>` : ""}</td></tr>`), "Nenhum lançamento com esses filtros."));
+}
+
+function expenseForm(values = {}, fixed = false) {
+  const cats = (expenseData.categories.length ? expenseData.categories : EXPENSE_CATEGORIES);
+  return select("category", "Categoria", cats.map(c => [c, c]), values.category && cats.includes(values.category) ? values.category : (values.category ? "Outros" : "Aluguel")) +
+    field("description", "Descrição / fornecedor", "text", values.description || "", 'maxlength="120" required') +
+    field("amount", "Valor (R$)", "number", values.amountCents ? (values.amountCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required') +
+    field("date", fixed ? "Primeiro vencimento" : "Vencimento / data", "date", values.dueDate || values.date || expToday(), "required") +
+    (fixed ? field("repeatMonths", "Repetir por quantos meses", "number", "12", 'min="2" max="24" required') : select("paid", "Situação", [["false", "A pagar"], ["true", "Já paga"]], values.paid === true ? "true" : "false")) +
+    (values.fileId ? `<input type="hidden" name="fileId" value="${html(values.fileId)}"><input type="hidden" name="source" value="conta enviada">` : "");
+}
+const afterExpenseSave = () => Promise.all([loadExpenses(), currentView === "reports" ? loadReport() : null]);
+
+async function importExpenseFile(file) {
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { toast(`${file.name}: arquivo muito grande (máximo 20 MB).`); return; }
+  const type = file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : /\.png$/i.test(file.name) ? "image/png" : "image/jpeg");
+  toast(`Lendo ${file.name}...`);
+  const response = await fetch("/api/expenses/read", { method: "POST", headers: { "content-type": type }, body: await file.arrayBuffer() });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok || !result.ok) throw new Error(`${file.name}: ${result.error || "não foi possível ler"}`);
+  const s = result.suggestion || {};
+  if (result.kind === "card" && result.items.length) return openCardReview(result, file.name);
+  const note = result.empty ? "Não foi possível ler o texto. Preencha conferindo a conta (o arquivo fica anexado)." : `Lido ${result.ocr ? "pela foto (OCR)" : "do PDF"}${s.fromBarcode ? ", valor e vencimento pela linha digitável" : ""}. Confira antes de salvar.`;
+  openModal(`Conta: ${file.name}`, `<p class="quoteBox">${html(note)}</p>` + expenseForm({ ...s, fileId: result.fileId }), values => api("/api/expenses", { ...values, paid: values.paid === "true" }).then(afterExpenseSave), "Salvar conta");
+}
+
+// Fatura do cartao: uma linha por compra, com categoria sugerida; o dono marca o que lancar.
+function openCardReview(result, name) {
+  const cats = expenseData.categories.length ? expenseData.categories : EXPENSE_CATEGORIES;
+  const items = result.items;
+  const rows = items.map((it, i) => `<tr><td><input type="checkbox" name="inc_${i}" checked></td><td><input type="date" name="date_${i}" value="${it.date}"></td><td><input name="desc_${i}" value="${html(it.description)}" maxlength="120"></td><td><select name="cat_${i}">${cats.map(c => `<option ${c === it.category ? "selected" : ""}>${html(c)}</option>`).join("")}</select></td><td><input type="number" name="amt_${i}" value="${(it.amountCents / 100).toFixed(2)}" step="0.01" min="0.01"></td></tr>`).join("");
+  const total = items.reduce((s, it) => s + it.amountCents, 0);
+  $("#formDialog").classList.add("wide");
+  openModal(`Fatura do cartão: ${name}`,
+    `<p class="quoteBox">${items.length} compra(s) encontradas, somando ${currency(total)}${result.suggestion.amountCents ? ` (total da fatura: ${currency(result.suggestion.amountCents)})` : ""}. Pagamentos e estornos já ficaram de fora. Confira as categorias e desmarque o que não é da loja.</p>` +
+    select("mode", "Lançar como", [["items", "Cada compra na sua categoria (recomendado)"], ["total", "Um lançamento só com o total"]], "items") +
+    select("paid", "Situação", [["false", "Fatura a pagar"], ["true", "Fatura já paga"]], "false") +
+    `<div class="tableWrap expReview"><table class="dataTable"><thead><tr><th></th><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+    values => {
+      const chosen = items.map((_, i) => values[`inc_${i}`] ? { date: values[`date_${i}`], description: values[`desc_${i}`], category: values[`cat_${i}`], amount: values[`amt_${i}`] } : null).filter(Boolean);
+      if (!chosen.length) throw new Error("Marque ao menos uma compra.");
+      const paid = values.paid === "true";
+      const request = values.mode === "total"
+        ? api("/api/expenses", { category: "Cartão de crédito", description: result.suggestion.description || "Fatura do cartão", amount: chosen.reduce((s, c) => s + Number(c.amount), 0).toFixed(2), date: result.suggestion.dueDate || expToday(), paid, fileId: result.fileId, source: "fatura" })
+        : api("/api/expenses/bulk", { items: chosen, fileId: result.fileId, source: result.suggestion.description || "fatura", paid });
+      return request.then(() => { toast(`${chosen.length} lançamento(s) da fatura salvos.`); afterExpenseSave(); });
+    }, "Lançar despesas");
+}
+
+async function importExpenseFiles(files) {
+  for (const file of files) {
+    try { await importExpenseFile(file); await new Promise(r => { const d = $("#formDialog"); if (!d.open) return r(); d.addEventListener("close", r, { once: true }); }); }
+    catch (cause) { toast(cause.message); }
+  }
+}
+
+function setupExpenseListeners() {
+  $("#formDialog").addEventListener("close", () => $("#formDialog").classList.remove("wide"));
+  $("#expMonth")?.addEventListener("change", loadExpenses);
+  for (const id of ["#expFilterCategory", "#expFilterStatus"]) $(id)?.addEventListener("change", renderExpenses);
+  $("#expSearch")?.addEventListener("input", renderExpenses);
+  $("#expImportBtn")?.addEventListener("click", () => $("#expFileInput").click());
+  $("#expFileInput")?.addEventListener("change", event => { const files = [...event.target.files]; event.target.value = ""; importExpenseFiles(files); });
+  $("#expAddBtn")?.addEventListener("click", () => openModal("Lançar despesa", expenseForm({ paid: true }), values => api("/api/expenses", { ...values, paid: values.paid === "true", source: "manual" }).then(afterExpenseSave)));
+  $("#expFixedBtn")?.addEventListener("click", () => openModal("Despesa fixa mensal", `<p class="quoteBox">Cria o lançamento a pagar em todos os meses (aluguel, internet, salário, contador...). Cada mês você marca como paga.</p>` + expenseForm({}, true), values => api("/api/expenses", { ...values, paid: false, source: "fixa mensal" }).then(afterExpenseSave)));
+  const drop = $("#expDrop");
+  drop?.addEventListener("click", () => $("#expFileInput").click());
+  drop?.addEventListener("dragover", event => { event.preventDefault(); drop.classList.add("over"); });
+  drop?.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop?.addEventListener("drop", event => { event.preventDefault(); drop.classList.remove("over"); importExpenseFiles([...event.dataTransfer.files]); });
+  $("#view-expenses")?.addEventListener("click", event => {
+    const pay = event.target.closest("[data-exp-pay]")?.dataset.expPay;
+    if (pay) return api(`/api/expenses/${encodeURIComponent(pay)}/pay`, {}).then(afterExpenseSave).catch(cause => toast(cause.message));
+    const del = event.target.closest("[data-exp-del]")?.dataset.expDel;
+    if (del && confirm("Excluir esta despesa?")) return api(`/api/expenses/${encodeURIComponent(del)}/delete`, {}).then(afterExpenseSave).catch(cause => toast(cause.message));
+    const edit = event.target.closest("[data-exp-edit]")?.dataset.expEdit;
+    if (edit) {
+      const e = expenseData.expenses.find(x => x.id === edit); if (!e) return;
+      openModal("Editar despesa", expenseForm({ ...e, date: expDay(e), paid: e.paid !== false }), values => api(`/api/expenses/${encodeURIComponent(edit)}/update`, { ...values, paid: values.paid === "true" }).then(afterExpenseSave));
+    }
+  });
+  $("#view-expenses")?.addEventListener("change", event => {
+    const sel = event.target.closest("[data-exp-cat]"); if (!sel) return;
+    api(`/api/expenses/${encodeURIComponent(sel.dataset.expCat)}/update`, { category: sel.value }).then(() => { const e = expenseData.expenses.find(x => x.id === sel.dataset.expCat); if (e) e.category = sel.value; renderExpenses(); toast("Categoria atualizada."); }).catch(cause => toast(cause.message));
+  });
+}
+setupExpenseListeners();
+// ---- Cofre de logins bancarios ----
+let vault = { masterMode: false, unlocked: false, items: [], banks: [] }, vaultKind = "banco", vaultPromoter = "", vaultProduct = "", vaultBank = "";
+const VAULT_PRODUCTS = ["INSS", "CLT", "FGTS", "SIAPE", "Bolsa Família", "Cartão benefício", "Crédito pessoal", "Veículo", "Seguro", "Conta digital"];
+const PRODUCT_HINT = { INSS: "Aposentados", CLT: "Consignado", FGTS: "Saque-Aniversário", SIAPE: "Servidor federal" };
+const PROMOTER_COLORS = ["#7c3aed", "#0d9488", "#db2777", "#2563eb", "#ea580c", "#0891b2", "#65a30d", "#9333ea"];
+const ICON = {
+  copy: '<svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h9"/></svg>',
+  eye: '<svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3m-8 0l1 13h8l1-13"/></svg>',
+  ext: '<svg viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></svg>',
+  note: '<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h4"/></svg>',
+  cal: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4m8-4v4"/></svg>'
+};
+const promoterColor = name => { let h = 0; for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return PROMOTER_COLORS[h % PROMOTER_COLORS.length]; };
+const promoterTag = name => name ? `<span class="cvTag" style="--c:${promoterColor(name)}">${html(name)}</span>` : "";
+const siteUrl = url => /^https?:\/\//i.test(url) ? url : "https://" + url;
+
+async function loadVault() {
+  try { vault = await api("/api/vault"); } catch (cause) { toast(cause.message); return; }
+  renderVault();
+}
+function vaultCall(path, data) {
+  return api(path, data).catch(cause => { if (/bloqueado/i.test(cause.message)) { vault.unlocked = false; vault.items = []; renderVault(); } throw cause; });
+}
+function copyText(text) {
+  // Na rede local (http) o navegador nao libera o clipboard moderno: usa o metodo antigo.
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text).then(() => toast("Copiado."));
+  const area = document.createElement("textarea"); area.value = text; area.style.position = "fixed"; area.style.opacity = "0";
+  document.body.appendChild(area); area.select(); document.execCommand("copy"); area.remove(); toast("Copiado.");
+  return Promise.resolve();
+}
+const vaultPromoterNames = () => [...new Set(vault.items.filter(i => i.kind === "promotora").map(i => i.name).concat(vault.items.map(i => i.promoter)).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+const vaultBankNames = () => [...new Set((vault.banks || []).map(b => b.name).concat(vault.items.filter(i => i.kind === "banco").map(i => i.name)).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+function credRow(i, label, value, secret) {
+  if (!value) return `<div class="cvCred"><span>${label}:</span><code class="muted">-</code><i></i><i></i></div>`;
+  return `<div class="cvCred"><span>${label}:</span><code ${secret ? `data-secret="${i.id}"` : ""}>${secret ? "••••••••" : html(value)}</code>${secret ? `<button type="button" class="cvIcon" data-show="${i.id}" title="Mostrar">${ICON.eye}</button>` : "<i></i>"}<button type="button" class="cvIcon" data-${secret ? "copy-pass" : "copy-login"}="${i.id}" title="Copiar">${ICON.copy}</button></div>`;
+}
+function bankCard(i) {
+  return `<article class="cvCard ${i.active === false ? "off" : ""}">
+    <div class="cvCardHead"><div><strong>${html(i.name)}</strong> <span class="cvStatus ${i.active === false ? "off" : ""}">${i.active === false ? "inativo" : "ativo"}</span><div>${promoterTag(i.promoter)}</div></div>
+      <div class="cvCardActions"><button type="button" class="cvIcon" data-vault-edit="${i.id}" title="Editar">${ICON.edit}</button><button type="button" class="cvIcon" data-vault-del="${i.id}" title="Excluir">${ICON.trash}</button></div></div>
+    <div class="cvCredBox">${credRow(i, "Usuário", i.login, false)}${credRow(i, "Senha", i.password, true)}</div>
+    ${(i.products || []).length ? `<div class="cvProducts">${i.products.map(p => `<span class="cvProd p-${html(p.replace(/\W/g, ""))}">${html(p)}</span>`).join("")}</div>` : ""}
+    ${i.notes ? `<div class="cvNote">${ICON.note}<span>${html(i.notes)}</span></div>` : ""}
+    <div class="cvFoot"><span>${ICON.cal}Atualizado em ${new Date(i.updatedAt).toLocaleDateString("pt-BR")}</span>${i.url ? `<a href="${html(siteUrl(i.url))}" target="_blank" rel="noopener noreferrer">Abrir site ${ICON.ext}</a>` : ""}</div>
+  </article>`;
+}
+function portalCard(i) {
+  const boxed = (label, value, secret) => `<div class="cvPortalField"><div><span>${label}</span><code ${secret ? `data-secret="${i.id}"` : ""}>${value ? (secret ? "••••••••" : html(value)) : "-"}</code></div>${value ? `${secret ? `<button type="button" class="cvIcon boxed" data-show="${i.id}" title="Mostrar">${ICON.eye}</button>` : ""}<button type="button" class="cvIcon boxed" data-${secret ? "copy-pass" : "copy-login"}="${i.id}" title="Copiar">${ICON.copy}</button>` : ""}</div>`;
+  return `<article class="cvCard portal ${i.active === false ? "off" : ""}">
+    <div class="cvCardHead"><span class="cvTag big" style="--c:${promoterColor(i.name)}">${html(i.name)}</span>
+      <div class="cvCardActions"><button type="button" class="cvIcon" data-vault-edit="${i.id}" title="Editar">${ICON.edit}</button><button type="button" class="cvIcon" data-vault-del="${i.id}" title="Excluir">${ICON.trash}</button></div></div>
+    ${boxed("Usuário", i.login, false)}${boxed("Senha", i.password, true)}
+    ${i.notes ? `<div class="cvNote">${ICON.note}<span>${html(i.notes)}</span></div>` : ""}
+    ${i.url ? `<a class="cvPortalBtn" href="${html(siteUrl(i.url))}" target="_blank" rel="noopener noreferrer">Portal de acesso ${ICON.ext}</a>` : `<button type="button" class="cvPortalBtn empty" data-vault-edit="${i.id}">Cadastrar link do portal</button>`}
+  </article>`;
+}
+
+function renderVault() {
+  $("#vaultLocked").hidden = vault.unlocked; $("#vaultOpen").hidden = !vault.unlocked;
+  if (!vault.unlocked) return;
+  $("#vaultMasterButton span").textContent = vault.masterMode ? "Bloquear cofre" : "Ativar senha mestre";
+  const items = vault.items, promoters = vaultPromoterNames();
+  const countFor = p => items.filter(i => i.kind === "banco" && i.promoter === p).length;
+  setTextSafe("#vaultPromoterCount", `(${promoters.length})`);
+  setHtml("#vaultPromoters", `<button type="button" class="cvPromoter ${!vaultPromoter ? "active" : ""}" data-promoter=""><span>Todas as promotoras</span><b>${items.filter(i => i.kind === "banco").length}</b></button>` +
+    promoters.map(p => `<button type="button" class="cvPromoter ${p === vaultPromoter ? "active" : ""}" data-promoter="${html(p)}"><span><i style="background:${promoterColor(p)}"></i>${html(p)}</span>${countFor(p) ? `<b>${countFor(p)}</b>` : ""}</button>`).join(""));
+  document.querySelectorAll("#vaultKinds [data-kind]").forEach(b => b.classList.toggle("active", b.dataset.kind === vaultKind));
+  const bankMode = vaultKind === "banco";
+  $("#vaultBankTools").hidden = !bankMode; $("#vaultPortalHead").hidden = bankMode;
+  if (!bankMode) {
+    setTextSafe("#vaultPortalTitle", vaultKind === "promotora" ? "Portais e credenciais master das promotoras" : "Sistemas da Speed Financeira");
+    setTextSafe("#vaultPortalText", vaultKind === "promotora" ? "Acesso master e links dos portais das promotoras parceiras." : "Acessos aos sistemas próprios da Speed (CRM, site, e-mail, simuladores...).");
+    setTextSafe("#vaultPortalNew", vaultKind === "promotora" ? "+ Promotora" : "+ Sistema");
+  }
+  const banksLogins = items.filter(i => i.kind === "banco" && (!vaultPromoter || i.promoter === vaultPromoter));
+  const products = VAULT_PRODUCTS.filter(p => banksLogins.some(i => (i.products || []).includes(p)));
+  setHtml("#vaultProducts", ["", ...(products.length ? products : ["INSS", "CLT", "FGTS"])].map(p => `<button type="button" class="${p === vaultProduct ? "active" : ""}" data-product="${html(p)}">${p || "Todos"}</button>`).join(""));
+  const bankCount = name => banksLogins.filter(i => i.name === name).length;
+  setHtml("#vaultBanks", `<button type="button" class="cvChip ${!vaultBank ? "active" : ""}" data-bank="">Todos</button>` +
+    vaultBankNames().filter(b => (vault.banks || []).find(x => x.name === b)?.active !== false || bankCount(b)).map(b => `<button type="button" class="cvChip ${b === vaultBank ? "active" : ""}" data-bank="${html(b)}">${html(b)}${bankCount(b) ? ` <b>${bankCount(b)}</b>` : ""}</button>`).join(""));
+  const term = ($("#vaultSearch").value || "").toLowerCase().trim();
+  let list;
+  if (bankMode) list = banksLogins.filter(i => (!vaultProduct || (i.products || []).includes(vaultProduct)) && (!vaultBank || i.name === vaultBank) && (!term || [i.name, i.promoter, i.login, i.notes, i.url].join(" ").toLowerCase().includes(term)));
+  else list = items.filter(i => i.kind === vaultKind && (!vaultPromoter || vaultKind !== "promotora" || i.name === vaultPromoter));
+  list.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  const empty = bankMode
+    ? (items.some(i => i.kind === "banco") ? "Nenhum login com esses filtros." : "Nenhum login de banco ainda. Clique em <strong>+ Novo login</strong> ou importe sua lista.")
+    : `Nenhum ${vaultKind === "promotora" ? "portal de promotora" : "sistema"} cadastrado ainda.`;
+  setHtml("#vaultCards", list.length ? list.map(bankMode ? bankCard : portalCard).join("") : `<div class="cvEmpty"><p>${empty}</p>${items.length ? "" : `<div><button type="button" class="cvBtn primary" data-empty="new">+ Novo login</button><button type="button" class="cvBtn" data-empty="import">Importar lista</button></div>`}</div>`);
+  const stat = (label, value, sub) => `<div class="cvStat"><span>${label}</span><strong>${value}</strong><small>${sub}</small></div>`;
+  setHtml("#vaultSummary", stat("Total de logins", items.filter(i => i.kind === "banco").length, "logins de bancos") + stat("Bancos ativos", vaultBankNames().filter(b => (vault.banks || []).find(x => x.name === b)?.active !== false).length, "na lista de bancos") + stat("Promotoras", promoters.length, "parceiras") + stat("Segurança", vault.masterMode ? "Senha mestre" : "Criptografado", vault.masterMode ? "fecha em 15 min sem uso" : "senha mestre desativada"));
+}
+
+function openVaultForm(item = {}) {
+  const kind = item.kind || vaultKind || "banco";
+  const isBank = kind === "banco";
+  const banks = vaultBankNames(), promoters = vaultPromoterNames();
+  const products = item.products || [];
+  const titles = { banco: item.id ? "Editar login do banco" : "Cadastrar novo login", promotora: item.id ? "Editar promotora" : "Nova promotora", sistema: item.id ? "Editar sistema" : "Novo sistema da Speed" };
+  const opts = (list, current, placeholder) => `<option value="">${placeholder}</option>` + [...new Set([...list, current].filter(Boolean))].map(v => `<option ${v === current ? "selected" : ""}>${html(v)}</option>`).join("");
+  $("#formDialog").classList.add("cvDialog");
+  openModal(titles[kind],
+    `<input type="hidden" name="kind" value="${kind}">` +
+    (isBank
+      ? `<label><span class="cvLabelRow">Banco / instituição financeira <button type="button" class="cvLink" data-form-banks>+ Gerenciar bancos</button></span><select name="name" required>${opts(banks, item.name, "Selecione o banco")}</select></label>
+         <label><span class="cvLabelRow">Promotora vinculada <button type="button" class="cvLink" data-form-promoter>+ Nova promotora</button></span><select name="promoter">${opts(promoters, item.promoter || vaultPromoter, "Sem promotora (direto no banco)")}</select></label>
+         <div class="cvField"><span>Produtos autorizados (selecione um ou mais)</span><div class="cvProductPick">${VAULT_PRODUCTS.map(p => `<label class="cvPick"><input type="checkbox" name="prod_${html(p)}" ${products.includes(p) ? "checked" : ""}><span>${html(p)}${PRODUCT_HINT[p] ? `<small>${PRODUCT_HINT[p]}</small>` : ""}</span></label>`).join("")}</div></div>`
+      : field("name", kind === "promotora" ? "Nome da promotora" : "Nome do sistema", "text", item.name || "", 'maxlength="80" required')) +
+    field("url", isBank ? "Site do banco (link de acesso, opcional)" : "Link do portal", "text", item.url || "", 'maxlength="300" placeholder="Exemplo: https://portal.banco.com.br"') +
+    `<div class="cvTwo">${field("login", "Login / usuário", "text", item.login || "", 'maxlength="200" autocomplete="off" placeholder="Ex.: joao.corban ou 123456"')}<label><span>Senha</span><div class="cvPassWrap"><input name="password" type="password" value="${html(item.password || "")}" maxlength="200" autocomplete="new-password" placeholder="Senha de acesso"><button type="button" class="cvIcon" data-toggle-pass title="Mostrar">${ICON.eye}</button></div></label></div>` +
+    `<label><span>Observações / informações adicionais (opcional)</span><textarea name="notes" rows="3" maxlength="1000" placeholder="Ex.: token necessário, trocar senha a cada 30 dias, telefone do suporte...">${html(item.notes || "")}</textarea></label>` +
+    select("active", "Situação", [["true", "Ativo"], ["false", "Inativo"]], String(item.active !== false)),
+    values => {
+      if (!values.name) throw new Error(isBank ? "Selecione o banco." : "Informe o nome.");
+      return vaultCall("/api/vault/items", { ...values, id: item.id, active: values.active === "true", products: isBank ? VAULT_PRODUCTS.filter(p => values[`prod_${p}`]) : [] }).then(result => { vault.items = result.items; renderVault(); toast("Salvo."); });
+    }, item.id ? "Salvar alterações" : "Salvar login");
+}
+function openBanksManager(afterSave) {
+  const rows = (vault.banks || []).map((b, k) => `<tr><td><input name="bn_${k}" value="${html(b.name)}" maxlength="60"></td><td><input name="bu_${k}" value="${html(b.url || "")}" maxlength="300" placeholder="https://"></td><td><select name="ba_${k}"><option value="true" ${b.active !== false ? "selected" : ""}>Ativo</option><option value="false" ${b.active === false ? "selected" : ""}>Inativo</option></select></td></tr>`).join("");
+  const n = (vault.banks || []).length;
+  $("#formDialog").classList.add("wide");
+  openModal("Configurar bancos", `<p class="quoteBox">Lista de bancos que aparecem no cadastro de logins. Para remover, apague o nome. Para adicionar vários, escreva um por linha no campo abaixo.</p>
+    <div class="tableWrap expReview"><table class="dataTable"><thead><tr><th>Banco</th><th>Site</th><th>Situação</th></tr></thead><tbody>${rows || '<tr><td colspan="3" class="muted">Nenhum banco na lista.</td></tr>'}</tbody></table></div>
+    <label><span>Adicionar bancos (um por linha)</span><textarea name="newBanks" rows="4" placeholder="C6&#10;Facta&#10;Mercantil"></textarea></label>`,
+    values => {
+      const banks = [];
+      for (let k = 0; k < n; k++) if (values[`bn_${k}`]?.trim()) banks.push({ name: values[`bn_${k}`].trim(), url: values[`bu_${k}`] || "", active: values[`ba_${k}`] !== "false" });
+      for (const line of String(values.newBanks || "").split(/\r?\n/)) if (line.trim()) banks.push({ name: line.trim(), url: "", active: true });
+      return vaultCall("/api/vault/banks", { banks }).then(result => { vault.banks = result.banks; renderVault(); toast("Lista de bancos salva."); if (afterSave) setTimeout(afterSave, 50); });
+    }, "Salvar bancos");
+}
+function exportVaultPdf() {
+  const promoters = vault.items.filter(i => i.kind === "promotora"), logins = vault.items.filter(i => i.kind === "banco"), systems = vault.items.filter(i => i.kind === "sistema");
+  const block = (title, list, withPromoter) => list.length ? `<h2>${title} (${list.length})</h2>${list.map(i => `<div class="it"><b>${html(i.name)}</b>${withPromoter && i.promoter ? ` · ${html(i.promoter)}` : ""}${(i.products || []).length ? ` · ${html(i.products.join(", "))}` : ""}<br>Usuário: <code>${html(i.login || "-")}</code> &nbsp; Senha: <code>${html(i.password || "-")}</code>${i.url ? `<br>Site: ${html(i.url)}` : ""}${i.notes ? `<br><i>${html(i.notes)}</i>` : ""}</div>`).join("")}` : "";
+  const w = window.open("", "_blank");
+  if (!w) { toast("Libere janelas pop-up para exportar."); return; }
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Cofre Speed - logins</title><style>body{font-family:Segoe UI,Arial;margin:28px;color:#111}h1{font-size:20px;margin:0}h2{font-size:15px;border-bottom:2px solid #0b8a45;padding-bottom:4px;margin-top:22px}.it{padding:8px 0;border-bottom:1px solid #ddd;font-size:13px;line-height:1.5}code{background:#f1f5f2;padding:1px 5px;border-radius:4px}p{color:#666;font-size:12px}</style></head><body>
+    <h1>Speed Financeira · relatório de logins</h1><p>Gerado em ${new Date().toLocaleString("pt-BR")} · documento confidencial: guarde em local seguro e não compartilhe.</p>
+    ${block("Logins dos bancos", logins, true)}${block("Portais das promotoras", promoters)}${block("Sistemas da Speed", systems)}
+    ${(vault.banks || []).length ? `<h2>Bancos cadastrados (${vault.banks.length})</h2><p style="color:#111;font-size:13px">${vault.banks.map(b => html(b.name) + (b.active === false ? " (inativo)" : "")).join(" · ")}</p>` : ""}
+    <script>window.onload=()=>window.print()<\/script></body></html>`);
+  w.document.close();
+}
+function exportVaultJson() {
+  if (!confirm("O backup em .json contém todas as senhas em texto aberto. Guarde o arquivo num lugar seguro. Continuar?")) return;
+  const blob = new Blob([JSON.stringify({ tipo: "cofre-speed", geradoEm: new Date().toISOString(), bancos: vault.banks, acessos: vault.items.map(({ id, ...rest }) => rest) }, null, 2)], { type: "application/json" });
+  const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `cofre-speed-${new Date().toISOString().slice(0, 10)}.json`; link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 5000);
+}
+
+$("#vaultUnlockForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  $("#vaultError").hidden = true;
+  try { await api("/api/vault/unlock", { master: $("#vaultMaster").value }); $("#vaultMaster").value = ""; await loadVault(); }
+  catch (cause) { $("#vaultError").textContent = cause.message; $("#vaultError").hidden = false; }
+});
+$("#vaultMasterButton")?.addEventListener("click", () => {
+  if (vault.masterMode) return api("/api/vault/lock", {}).then(loadVault);
+  openModal("Ativar senha mestre", `<p class="quoteBox">Opcional. Com a senha mestre, o cofre pede essa senha para abrir e fecha sozinho após 15 minutos sem uso. <strong>Se esquecer a senha mestre, os logins não podem ser recuperados.</strong></p>` +
+    field("master", "Senha mestre (mínimo 8 caracteres)", "password", "", 'minlength="8" required autocomplete="new-password"') + field("confirm", "Repita a senha mestre", "password", "", 'required autocomplete="new-password"'),
+    values => { if (values.master !== values.confirm) throw new Error("As duas senhas não conferem."); return api("/api/vault/setup", { master: values.master }).then(loadVault); }, "Ativar");
+});
+$("#vaultNewButton")?.addEventListener("click", () => openVaultForm({ kind: vaultKind }));
+$("#vaultPortalNew")?.addEventListener("click", () => openVaultForm({ kind: vaultKind }));
+$("#vaultNewPromoter")?.addEventListener("click", () => openVaultForm({ kind: "promotora" }));
+$("#vaultNewSystem")?.addEventListener("click", () => openVaultForm({ kind: "sistema" }));
+$("#vaultBanksButton")?.addEventListener("click", () => openBanksManager());
+$("#vaultPdfButton")?.addEventListener("click", exportVaultPdf);
+$("#vaultExportJson")?.addEventListener("click", exportVaultJson);
+$("#vaultSearch")?.addEventListener("input", renderVault);
+$("#formDialog").addEventListener("close", () => $("#formDialog").classList.remove("cvDialog"));
+// Atalhos dentro do formulario: gerenciar bancos / nova promotora (salvam e voltam ao cadastro do login).
+document.addEventListener("click", event => {
+  if (event.target.closest("[data-toggle-pass]")) { const input = event.target.closest(".cvPassWrap").querySelector("input"); input.type = input.type === "password" ? "text" : "password"; return; }
+  if (event.target.closest("[data-form-banks]")) { $("#formDialog").close(); openBanksManager(() => openVaultForm({ kind: "banco" })); return; }
+  if (event.target.closest("[data-form-promoter]")) { $("#formDialog").close(); openVaultForm({ kind: "promotora" }); }
+});
+$("#vaultKinds")?.addEventListener("click", event => {
+  const btn = event.target.closest("[data-kind]"); if (!btn) return;
+  vaultKind = btn.dataset.kind; renderVault();
+});
+$("#view-vault")?.addEventListener("click", event => {
+  const t = event.target, find = id => vault.items.find(i => i.id === id);
+  const empty = t.closest("[data-empty]")?.dataset.empty; if (empty === "new") return openVaultForm({ kind: vaultKind }); if (empty === "import") return $("#vaultImportButton").click();
+  const promoterBtn = t.closest("[data-promoter]"); if (promoterBtn) { vaultPromoter = promoterBtn.dataset.promoter; renderVault(); return; }
+  const productBtn = t.closest("[data-product]"); if (productBtn) { vaultProduct = productBtn.dataset.product; renderVault(); return; }
+  const bankBtn = t.closest("[data-bank]"); if (bankBtn) { vaultBank = bankBtn.dataset.bank; renderVault(); return; }
+  const btn = t.closest("button[data-copy-login],button[data-copy-pass],button[data-show],button[data-vault-edit],button[data-vault-del]"); if (!btn) return;
+  const d = btn.dataset;
+  if (d.copyLogin) return copyText(find(d.copyLogin)?.login || "");
+  if (d.copyPass) return copyText(find(d.copyPass)?.password || "");
+  if (d.show) {
+    const code = btn.closest("article").querySelector(`[data-secret="${d.show}"]`);
+    code.textContent = code.textContent === "••••••••" ? find(d.show)?.password || "" : "••••••••";
+    return;
+  }
+  if (d.vaultEdit) return openVaultForm(find(d.vaultEdit));
+  if (d.vaultDel && confirm("Excluir este acesso?")) vaultCall(`/api/vault/items/${encodeURIComponent(d.vaultDel)}/delete`, {}).then(result => { vault.items = result.items; renderVault(); });
+});
+
+// Importa o relatorio de logins em texto (formato do "Cofre Corban"): bancos, promotoras e lista de bancos.
+function parseVaultReport(text) {
+  const title = s => s.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()).replace(/\bDe\b|\bDa\b|\bDo\b/g, w => w.toLowerCase());
+  const clean = v => { const s = String(v || "").trim(); return /^\(?n[aã]o informado\)?$/i.test(s) ? "" : s; };
+  const items = [], banks = [];
+  let current = null;
+  // Backup .json do proprio cofre.
+  try { const data = JSON.parse(text); if (data && Array.isArray(data.acessos)) return { items: data.acessos, banks: data.bancos || [] }; } catch { }
+  const productsOf = v => String(v || "").split(/[,;/]/).map(s => s.trim()).filter(Boolean).map(p => (VAULT_PRODUCTS.find(x => x.toLowerCase() === p.toLowerCase()) || p.toUpperCase()));
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    let m;
+    if ((m = line.match(/^\[\d+\]\s*(BANCO|PROMOTORA|SISTEMA)\s*:\s*(.+)$/i))) {
+      const kind = m[1].toLowerCase() === "banco" ? "banco" : m[1].toLowerCase() === "promotora" ? "promotora" : "sistema";
+      let name = title(m[2].trim());
+      if (kind === "banco") name = name.replace(/^Banco\s+/i, "");
+      current = { kind, name, promoter: "", products: [], login: "", password: "", url: "", notes: "", active: true };
+      items.push(current);
+      continue;
+    }
+    if (current && (m = line.match(/^-\s*([^:]+?)\s*:\s*(.*)$/))) {
+      const key = m[1].toLowerCase(), value = m[2].trim();
+      if (/promotora/.test(key)) current.promoter = title(value);
+      else if (/produto/.test(key)) current.products = productsOf(value);
+      else if (/usu[aá]rio|login/.test(key)) current.login = clean(value);
+      else if (/senha/.test(key)) current.password = clean(value);
+      else if (/portal|link|site/.test(key)) current.url = clean(value);
+      else if (/observa/.test(key)) current.notes = value;
+      continue;
+    }
+    if ((m = line.match(/^\d+\.\s*(.+?)\s*\|\s*Status:\s*(\w+)\s*\|\s*Portal:\s*(.*)$/i))) {
+      current = null;
+      banks.push({ name: m[1].trim(), url: clean(m[3]), active: !/inativo/i.test(m[2]) });
+      continue;
+    }
+    if (/^-{5,}|^={5,}/.test(line)) current = null;
+  }
+  // Login de banco usa o mesmo nome da lista de bancos ("Banco Pan" -> "Pan").
+  const norm = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  for (const it of items) if (it.kind === "banco") { const b = banks.find(x => norm(it.name).includes(norm(x.name)) || norm(x.name).includes(norm(it.name))); if (b) { it.name = b.name; if (!b.url && it.url) b.url = it.url; } }
+  return { items, banks };
+}
+$("#vaultImportButton")?.addEventListener("click", () => {
+  $("#formDialog").classList.add("wide");
+  openModal("Importar lista de logins",
+    `<p class="quoteBox">Cole o relatório de logins (bancos, promotoras e lista de bancos) ou o conteúdo de um backup .json do cofre. O sistema mostra quantos itens encontrou antes de gravar; os que já existem com o mesmo nome e tipo são atualizados.</p><label><span>Texto</span><textarea name="report" rows="14" class="vaultImportText" required placeholder="[01] BANCO: BANCO PAN&#10;     - Promotora Vinculada : X3 Promotora&#10;     - Usuário / Login     : ..."></textarea></label><p id="vaultImportPreview" class="muted"></p>`,
+    async values => {
+      const { items, banks } = parseVaultReport(values.report || "");
+      if (!items.length && !banks.length) throw new Error("Não encontrei logins nesse texto.");
+      if (banks.length) {
+        const merged = [...(vault.banks || [])];
+        for (const b of banks) { const cur = merged.find(x => x.name.toLowerCase() === b.name.toLowerCase()); if (cur) { cur.url = cur.url || b.url; } else merged.push(b); }
+        for (const it of items) if (it.kind === "banco" && !merged.some(x => x.name.toLowerCase() === it.name.toLowerCase())) merged.push({ name: it.name, url: it.url || "", active: true });
+        vault.banks = (await vaultCall("/api/vault/banks", { banks: merged })).banks;
+      }
+      const norm = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+      let result;
+      for (const item of items) {
+        const existing = vault.items.find(i => i.kind === item.kind && norm(i.name) === norm(item.name) && norm(i.promoter || "") === norm(item.promoter || ""));
+        result = await vaultCall("/api/vault/items", { ...item, id: existing?.id, login: item.login || existing?.login || "", password: item.password || existing?.password || "", url: item.url || existing?.url || "", notes: item.notes || existing?.notes || "", products: item.products.length ? item.products : existing?.products || [] });
+        vault.items = result.items;
+      }
+      renderVault();
+      toast(`${items.length} acesso(s) e ${banks.length} banco(s) importados.`);
+    }, "Importar");
+  const area = document.querySelector("#modalFields textarea[name=report]");
+  area?.addEventListener("input", () => {
+    const { items, banks } = parseVaultReport(area.value);
+    const count = kind => items.filter(i => i.kind === kind).length;
+    setTextSafe("#vaultImportPreview", items.length || banks.length ? `Encontrados: ${count("banco")} login(s) de banco, ${count("promotora")} promotora(s), ${count("sistema")} sistema(s) e ${banks.length} banco(s) para a lista.` : "");
+  });
+});
+
+// ---- Entrada/cadastro de produtos por nota fiscal (XML), Excel, CSV, PDF ou foto ----
+function productFileType(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".xml")) return "application/xml";
+  if (name.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  if (name.endsWith(".csv")) return "text/csv";
+  if (name.endsWith(".pdf")) return "application/pdf";
+  if (/\.(jpe?g|jfif)$/.test(name)) return "image/jpeg";
+  if (name.endsWith(".png")) return "image/png";
+  return file.type || "application/octet-stream";
+}
+async function importProductsFile(file) {
+  if (!file) return;
+  toast(`Lendo ${file.name}...`);
+  try {
+    const response = await fetch("/api/products/import-read", { method: "POST", headers: { "content-type": productFileType(file) }, body: await file.arrayBuffer() });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.ok) throw new Error(result.error || "Não foi possível ler o arquivo");
+    if (result.empty) throw new Error(result.kind === "danfe" ? "Não encontrei itens neste PDF/foto. Se tiver, envie o XML da nota (vem no e-mail do fornecedor): ele traz tudo certinho." : "Nenhum item encontrado no arquivo.");
+    openProductImportReview(result, file.name);
+  } catch (cause) { toast(cause.message); }
+}
+function openProductImportReview(result, name) {
+  const categories = [...new Set(state.products.map(p => p.category).filter(Boolean))].sort();
+  const markupDefault = 100;
+  const newPrice = cost => cost ? (cost * (1 + markupDefault / 100) / 100).toFixed(2) : "";
+  const rows = result.items.map((it, i) => {
+    const existing = it.productId ? state.products.find(p => p.id === it.productId) : null;
+    const qty = Math.max(0, Math.round(it.quantity || 0));
+    return `<tr data-row="${i}">
+      <td><input type="checkbox" name="inc_${i}" checked></td>
+      <td><strong>${html(it.name)}</strong><br><small class="muted">${html([it.code && `cód. ${it.code}`, it.ean && `EAN ${it.ean}`, it.unit].filter(Boolean).join(" · "))}</small></td>
+      <td><select name="act_${i}">${existing ? `<option value="existing" selected>Entrada em: ${html(existing.name)}</option>` : ""}<option value="new" ${existing ? "" : "selected"}>Cadastrar novo</option></select></td>
+      <td><input type="number" name="qty_${i}" value="${qty}" min="0" step="1"></td>
+      <td><input type="number" name="cost_${i}" value="${it.unitCostCents ? (it.unitCostCents / 100).toFixed(2) : ""}" min="0" step="0.01" data-cost="${i}"></td>
+      <td><input type="number" name="price_${i}" value="${existing ? "" : (it.priceCents ? (it.priceCents / 100).toFixed(2) : newPrice(it.unitCostCents))}" min="0" step="0.01" placeholder="${existing ? `atual ${(existing.priceCents / 100).toFixed(2)}` : ""}" data-price="${i}" ${existing ? 'data-existing="1"' : ""}></td>
+      <td><select name="cat_${i}">${[it.category, ...categories].filter((c, k, a) => c && a.indexOf(c) === k).map(c => `<option ${c === (existing?.category || it.category) ? "selected" : ""}>${html(c)}</option>`).join("")}</select></td>
+    </tr>`;
+  }).join("");
+  const matched = result.items.filter(it => it.productId).length;
+  const header = result.kind === "nfe" ? `Nota ${html(result.number || "")} de ${html(result.supplier || "fornecedor")}${result.totalCents ? ` · total ${currency(result.totalCents)}` : ""}.` : result.kind === "danfe" ? `DANFE lida ${result.supplier ? `(${html(result.supplier)}) ` : ""}por texto: confira quantidades e valores.` : "Planilha lida.";
+  $("#formDialog").classList.add("wide");
+  openModal(`Importar produtos: ${name}`,
+    `<p class="quoteBox">${header} ${result.items.length} item(ns): ${matched} já cadastrado(s) (entra no estoque e atualiza o custo) e ${result.items.length - matched} novo(s). Confira antes de gravar.</p>
+     <div class="importBar"><label>Margem para preço dos novos (%) <input type="number" id="importMarkup" value="${markupDefault}" min="0" step="1"></label><button type="button" class="secondaryBtn" id="importApplyMarkup">Aplicar margem</button><span class="muted">Preço vazio num produto existente mantém o preço atual.</span></div>
+     <div class="tableWrap expReview"><table class="dataTable"><thead><tr><th></th><th>Item no arquivo</th><th>Ação</th><th>Qtd entrada</th><th>Custo un. (R$)</th><th>Preço venda (R$)</th><th>Categoria</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+    values => {
+      const items = result.items.map((it, i) => {
+        if (!values[`inc_${i}`]) return null;
+        const existing = values[`act_${i}`] === "existing";
+        const cost = Math.round(Number(values[`cost_${i}`] || 0) * 100), price = values[`price_${i}`] === "" ? null : Math.round(Number(values[`price_${i}`]) * 100);
+        return { productId: existing ? it.productId : null, name: it.name, code: it.code, ean: it.ean, category: values[`cat_${i}`], quantity: Number(values[`qty_${i}`] || 0), unitCostCents: cost || null, priceCents: price };
+      }).filter(Boolean);
+      if (!items.length) throw new Error("Marque ao menos um item.");
+      return api("/api/products/import-apply", { items, source: result.kind === "nfe" ? `NF ${result.number || ""} ${result.supplier || ""}`.trim() : name }).then(r => toast(`${r.updated} atualizado(s), ${r.created} novo(s), +${r.units} unidade(s) no estoque.`));
+    }, "Gravar produtos");
+  $("#importApplyMarkup")?.addEventListener("click", () => {
+    const pct = Number($("#importMarkup").value) || 0;
+    document.querySelectorAll("#modalFields [data-price]").forEach(input => {
+      if (input.dataset.existing) return;
+      const cost = Number(document.querySelector(`#modalFields [data-cost="${input.dataset.price}"]`)?.value || 0);
+      if (cost) input.value = (cost * (1 + pct / 100)).toFixed(2);
+    });
+  });
+}
+$("#importProductsButton")?.addEventListener("click", () => $("#importProductsInput").click());
+$("#importProductsInput")?.addEventListener("change", event => { const file = event.target.files[0]; event.target.value = ""; importProductsFile(file); });
+
+$("#addDebtButton")?.addEventListener("click", () => openDebtModal());
+document.addEventListener("click", event => { const go = event.target.closest("[data-view-go]")?.dataset.viewGo; if (go) view(go); });
+$("#addIncomeButton")?.addEventListener("click", () => openModal("Lançar comissão ou outra receita",
+  select("category", "Tipo", [["Comissão Speed Financeira", "Comissão Speed Financeira"], ["Outra receita", "Outra receita"]], "Comissão Speed Financeira") +
+  field("description", "Descrição", "text", "", 'maxlength="120" placeholder="Ex.: consignado INSS - cliente Maria" required') +
+  field("amount", "Valor (R$)", "number", "", 'min="0.01" step="0.01" required') +
+  field("date", "Data", "date", new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }), "required"),
+  values => api("/api/incomes", values).then(() => loadReport())));
+document.addEventListener("click", event => { const id = event.target.closest("[data-income-del]")?.dataset.incomeDel; if (id && confirm("Excluir esta receita?")) api(`/api/incomes/${encodeURIComponent(id)}/delete`, {}).then(() => loadReport()); });
+$("#marketingTabs")?.addEventListener("click", event => {
+  const btn = event.target.closest("[data-mk]"); if (!btn) return;
+  document.querySelectorAll("#marketingTabs [data-mk]").forEach(b => b.classList.toggle("active", b === btn));
+  $("#marketingFrame").setAttribute("src", btn.dataset.mk);
+  $("#marketingOpenTab").setAttribute("href", btn.dataset.mk);
+});
+
+function renderBillsBanner() {
+  const el = $("#billsDueBanner"); if (!el) return;
+  const bills = state.billsDue || [];
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const late = bills.filter(b => new Date(b.at).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) < today);
+  el.hidden = !bills.length;
+  if (bills.length) el.innerHTML = `<strong>${late.length ? `${late.length} conta(s) vencida(s)` : "Contas vencendo"}:</strong> ${bills.slice(0, 4).map(b => `${html(b.description)} ${currency(b.amountCents)} (${new Date(b.at).toLocaleDateString("pt-BR")})`).join(" · ")}${bills.length > 4 ? ` e mais ${bills.length - 4}` : ""} <button type="button" data-view-go="expenses">Ver despesas</button>`;
+}
 function render() {
   if (!state) return;
+  renderBillsBanner();
+  document.querySelectorAll("[data-admin-only]").forEach(el => { el.hidden = state.user.role !== "admin"; });
   renderMachines();
   renderCash();
   renderClients();
@@ -2527,7 +3257,10 @@ function view(name) {
   currentView = name;
   for (const section of document.querySelectorAll(".view")) section.hidden = section.id !== `view-${name}`;
   for (const button of document.querySelectorAll("[data-view]")) button.classList.toggle("active", button.dataset.view === name);
-  $("#pageTitle").textContent = { machines: "Atendimento", cash: "Caixa & PDV", clients: "Clientes & Saldo", products: "Catálogo & Estoque", settings: "Tarifas & Rede", reports: "Auditoria & Relatórios", users: "Operadores" }[name];
+  $("#pageTitle").textContent = { machines: "Atendimento", cash: "Caixa & PDV", clients: "Clientes & Saldo", products: "Catálogo & Estoque", settings: "Tarifas & Rede", reports: "Auditoria & Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários" }[name];
+  if (name === "vault") loadVault();
+  if (name === "expenses") loadExpenses();
+  if (name === "marketing" && !$("#marketingFrame").getAttribute("src")) $("#marketingFrame").setAttribute("src", "/marketing/");
   if (name === "reports") loadReport();
   if (name === "cash") {
     renderPOS();
@@ -2915,12 +3648,10 @@ $("#saleSearch").addEventListener("keydown", event => {
   const startsCode = !exactCode && !exactBarcode && !exactName && state.products.find(item => item.active && item.code && item.code.toLowerCase().startsWith(lookup.toLowerCase()));
   const first = exactCode || exactBarcode || exactName || startsCode || state.products.find(item => item.active && (item.code?.toLowerCase().includes(lookup.toLowerCase()) || item.name.toLocaleLowerCase("pt-BR").includes(lookup.toLocaleLowerCase("pt-BR"))));
 
-  if (first && (first.type !== "stock" || (saleCart.get(first.id) || 0) + qty <= first.stock)) {
+  if (first) {
     saleCart.set(first.id, (saleCart.get(first.id) || 0) + qty);
     event.currentTarget.value = "";
     renderSale();
-  } else if (first && first.type === "stock") {
-    toast(`Estoque insuficiente para ${first.name} (disponível: ${first.stock}).`);
   } else {
     toast(`Item "${lookup}" não localizado.`);
   }
@@ -3031,7 +3762,7 @@ $("#pairClose").addEventListener("click", () => $("#pairDialog").close());
 
 $("#addMachineButton").addEventListener("click", () => openModal("Adicionar Terminal Manualmente", field("id", "ID da Estação", "text", "", 'placeholder="pc-01" required pattern="[A-Za-z0-9_-]{2,32}"') + field("name", "Nome exibido", "text", "", 'placeholder="PC 01"'), async values => { const result = await api("/api/machines/register", values); showPair(result.pairingCode); }, "Homologar"));
 $("#addClientButton").addEventListener("click", () => openModal("Novo Cliente", field("name", "Nome Completo", "text", "", "required") + field("phone", "Telefone / WhatsApp", "tel") + field("login", "Login de Acesso (Autoatendimento)", "text", "", 'autocomplete="off"') + field("password", "Senha de Acesso", "password", "", 'autocomplete="new-password"'), values => api("/api/clients", values)));
-$("#addProductButton").addEventListener("click", () => openModal("Novo Produto ou Serviço", field("name", "Descrição do Item", "text", "", "required") + field("code", "Código de Barras / EAN") + field("category", "Categoria") + select("type", "Tipo", [["stock", "Produto Físico com Estoque"], ["service", "Serviço Avulso"]], "stock") + field("price", "Preço de Venda (R$)", "number", "", 'min="0.01" step="0.01" required') + field("stock", "Estoque Inicial", "number", "0", 'min="0" required') + field("minStock", "Alerta de Estoque Mínimo", "number", "0", 'min="0" required'), values => api("/api/products", values)));
+$("#addProductButton").addEventListener("click", () => openModal("Novo Produto ou Serviço", field("name", "Descrição do Item", "text", "", "required") + field("code", "Código de Barras / EAN") + field("category", "Categoria") + select("type", "Tipo", [["stock", "Produto Físico com Estoque"], ["service", "Serviço Avulso"]], "stock") + field("price", "Preço de Venda (R$)", "number", "", 'min="0" step="0.01" required') + field("cost", "Preço de Custo (R$) — deixe vazio se não souber", "number", "", 'min="0" step="0.01"') + field("stock", "Estoque Inicial", "number", "0", 'min="0" required') + field("minStock", "Alerta de Estoque Mínimo", "number", "0", 'min="0" required'), values => api("/api/products", values)));
 $("#addUserButton").addEventListener("click", () => openModal("Novo Operador", field("name", "Usuário de Acesso", "text", "", "required") + field("password", "Senha Inicial", "password", "", 'minlength="10" required') + select("role", "Perfil Operacional", [["attendant", "Atendente de Balcão"], ["admin", "Administrador Geral"]], "attendant"), values => api("/api/users", values)));
 
 $("#settingsForm").addEventListener("submit", async event => {
@@ -3240,13 +3971,17 @@ document.addEventListener("click", async event => {
     } else if (action === "editClient") {
       const client = state.clients.find(item => item.id === id); if (!client) return;
       openModal("Editar Dados do Cliente", field("name", "Nome Completo", "text", client.name, "required") + field("phone", "Telefone de Contato", "tel", client.phone) + field("login", "Login de Acesso", "text", client.login || "", 'autocomplete="off"') + field("password", "Nova Senha (deixe vazio para preservar)", "password", "", 'autocomplete="new-password"') + select("active", "Status da Conta", [["true", "Ativo"], ["false", "Inativo"]], String(client.active)), values => api(`/api/clients/${id}`, { ...values, active: values.active === "true" }));
+    } else if (action === "debtClient") {
+      openDebtModal(id);
+    } else if (action === "debtsView") {
+      openDebtsView(id);
     } else if (action === "rechargeClient") {
       const client = state.clients.find(item => item.id === id); if (!client) return;
       const ref = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       openModal(`Recarregar Saldo · ${client.name}`, field("amount", "Valor da Recarga (R$)", "number", "", 'min="0.01" step="0.01" required') + paymentField(), values => api(`/api/clients/${id}/recharge`, { ...values, ref }), "Confirmar Recarga");
     } else if (action === "editProduct") {
       const product = state.products.find(item => item.id === id); if (!product) return;
-      openModal("Editar Item do Catálogo", field("name", "Descrição do Produto", "text", product.name, "required") + field("code", "Código / EAN", "text", product.code) + field("category", "Categoria", "text", product.category) + field("price", "Preço Unitário (R$)", "number", (product.priceCents / 100).toFixed(2), 'min="0.01" step="0.01" required') + field("minStock", "Estoque Mínimo", "number", product.minStock || 0, 'min="0" required') + select("active", "Status", [["true", "Ativo"], ["false", "Inativo"]], String(product.active)), values => api(`/api/products/${id}/update`, { ...values, active: values.active === "true" }));
+      openModal("Editar Item do Catálogo", field("name", "Descrição do Produto", "text", product.name, "required") + field("code", "Código / EAN", "text", product.code) + field("category", "Categoria", "text", product.category) + field("price", "Preço Unitário (R$)", "number", (product.priceCents / 100).toFixed(2), 'min="0" step="0.01" required') + field("cost", "Preço de Custo (R$) — vazio = não cadastrado", "number", Number.isInteger(product.costCents) ? (product.costCents / 100).toFixed(2) : "", 'min="0" step="0.01"') + field("minStock", "Estoque Mínimo", "number", product.minStock || 0, 'min="0" required') + select("active", "Status", [["true", "Ativo"], ["false", "Inativo"]], String(product.active)), values => api(`/api/products/${id}/update`, { ...values, active: values.active === "true" }));
     } else if (action === "stockProduct") {
       openModal("Ajuste Manual de Estoque", field("delta", "Quantidade (+ entrada / - saída)", "number", "", "required") + field("reason", "Motivo da Movimentação", "text", "", "required"), values => api(`/api/products/${id}/stock`, values));
     } else if (action === "sellProduct") {

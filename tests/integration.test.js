@@ -58,7 +58,6 @@ test("operacao completa: login, agente, tempo, caixa, produto e relatorio", asyn
     assert.equal((await request(`/api/charges/${state.charges[0].id}/pay`, { amount: 3.00, method: "pix" })).status, 200);
     const product = await request("/api/products", { name: "Agua", code: "123", category: "Bebidas", type: "stock", price: 3, stock: 2 });
     assert.equal(product.status, 201);
-    assert.equal((await request(`/api/products/${product.payload.product.id}/sell`, { quantity: 3, paymentMethod: "cash" })).status, 409);
     assert.equal((await request(`/api/products/${product.payload.product.id}/sell`, { quantity: 1, paymentMethod: "cash" })).status, 200);
     assert.equal((await request("/api/print/sale", { pages: 2, color: false, paymentMethod: "cash" })).status, 201);
     state = (await request("/api/state")).payload;
@@ -920,7 +919,7 @@ test("cancelar pendencia: so administrador, com motivo, preserva o que ja foi pa
   }
 });
 
-test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto e estoque", async () => {
+test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto, estoque negativo e DRE", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
   const server = createApp({ dataDir });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -939,7 +938,7 @@ test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto e
     await request("/api/setup", { name: "admin", password: "senha-teste-123" });
     await request("/api/login", { name: "admin", password: "senha-teste-123" });
     await request("/api/cash/open", { opening: 0 });
-    const water = (await request("/api/products", { name: "Agua", type: "stock", price: 2.5, stock: 3 })).payload.product;
+    const water = (await request("/api/products", { name: "Agua", type: "stock", price: 2.5, stock: 3, cost: 1 })).payload.product;
     const client = (await request("/api/clients", { name: "Ana" })).payload.client;
     const sale = (items, extra, ref) => request("/api/sales", { items, ref, ...extra });
 
@@ -954,7 +953,7 @@ test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto e
     assert.equal(state.products[0].stock, 2);
 
     assert.equal((await sale([{ productId: water.id, quantity: 1 }], { payments: [{ method: "cash", amountCents: 100 }, { method: "pix", amountCents: 150 }] }, "e")).status, 201, "misto que fecha o total");
-    assert.equal((await sale([{ productId: water.id, quantity: 1 }, { productId: water.id, quantity: 1 }], { paymentMethod: "cash" }, "f")).status, 409, "estoque somado entre linhas do mesmo produto");
+    assert.equal((await sale([{ productId: water.id, quantity: 1 }, { productId: water.id, quantity: 1 }], { paymentMethod: "cash" }, "f")).status, 201, "vende mesmo sem estoque (acerto depois)");
     const fiado = await sale([{ productId: water.id, quantity: 1 }], { payments: [{ method: "cash", amountCents: 50 }, { method: "fiado" }], clientId: client.id, discountCents: 50 }, "g");
     assert.equal(fiado.status, 201);
     assert.equal(fiado.payload.charge.amountCents, 200, "desconto registrado de verdade");
@@ -962,9 +961,252 @@ test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto e
     state = (await request("/api/state")).payload;
     assert.equal(state.openCharges.length, 1);
     assert.equal(state.openCharges[0].clientId, client.id);
-    assert.equal(state.products[0].stock, 0);
+    assert.equal(state.products[0].stock, -2, "estoque fica negativo e aparece no alerta");
+    assert.equal((await request("/api/expenses", { category: "Aluguel", amount: 30 })).status, 200);
     const report = (await request("/api/reports")).payload;
     assert.equal(report.byMethod.debit + report.byMethod.credit, 250 + 530);
+    assert.equal(report.salesCents, 250 + 530 + 250 + 500 + 200);
+    assert.equal(report.expensesCents, 3000);
+    assert.equal(report.lowStockCount, 1);
+    const water2 = (await request("/api/state")).payload.products[0];
+    if (Number.isInteger(water2.costCents)) {
+      assert.equal(report.dre.cmvCents, 5 * water2.costCents, "CMV pelo custo cadastrado");
+      assert.equal(report.dre.uncostedRevenueCents, 530, "item avulso sem custo fica separado");
+    }
+    assert.equal(report.dre.profitCents, report.salesCents - report.dre.cmvCents - 3000);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("despesas: foto lida por OCR, fatura do cartao em lote, despesa fixa mensal, edicao e modulo de marketing", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const ocrText = "Fatura do cartão de crédito\nVencimento 10/10/2026\n12/09 ATACADAO 100,00\n13/09 POSTO SHELL 50,00\n14/09 Pagamento recebido -80,00";
+  const server = createApp({ dataDir, ocrRunner: async () => ({ ok: true, text: ocrText }) });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data, type) {
+    const headers = { origin: base };
+    if (cookie) headers.cookie = cookie;
+    let body;
+    if (Buffer.isBuffer(data)) { headers["content-type"] = type; body = data; }
+    else if (data !== undefined) { headers["content-type"] = "application/json"; body = JSON.stringify(data); }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body, redirect: "manual" });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    const text = await response.text();
+    let payload; try { payload = JSON.parse(text); } catch { payload = text; }
+    return { status: response.status, payload, location: response.headers.get("location") };
+  }
+  try {
+    assert.equal((await request("/marketing/")).status, 302, "sem login nao abre o marketing");
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+
+    const photo = await request("/api/expenses/read", Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]), "image/jpeg");
+    assert.equal(photo.status, 200);
+    assert.equal(photo.payload.ocr, true, "foto passa pelo OCR");
+    assert.equal(photo.payload.kind, "card", "fatura do cartao reconhecida");
+    assert.deepEqual(photo.payload.items.map(i => [i.category, i.amountCents]), [["Compras de mercadoria", 10000], ["Transporte e combustível", 5000]], "pagamento da fatura fica de fora");
+    assert.equal((await request("/api/expenses/bulk", { items: photo.payload.items, fileId: photo.payload.fileId, source: "Fatura" })).payload.count, 2);
+
+    const fixed = await request("/api/expenses", { category: "Aluguel", description: "Aluguel loja", amount: 2935, date: "2026-01-31", paid: false, repeatMonths: 3 });
+    assert.equal(fixed.status, 200);
+    let list = (await request("/api/expenses")).payload.expenses;
+    const rent = list.filter(e => e.description === "Aluguel loja").map(e => e.at.slice(0, 10)).sort();
+    assert.deepEqual(rent, ["2026-01-31", "2026-02-28", "2026-03-31"], "despesa fixa repete no ultimo dia do mes");
+    const target = list.find(e => e.description === "POSTO SHELL");
+    assert.equal((await request(`/api/expenses/${target.id}/update`, { category: "Manutenção", amount: 55 })).status, 200);
+    list = (await request("/api/expenses")).payload.expenses;
+    assert.equal(list.find(e => e.id === target.id).amountCents, 5500);
+    assert.equal(list.find(e => e.id === target.id).category, "Manutenção");
+    assert.equal((await request("/api/expenses/read", Buffer.from("texto"), "text/plain")).status, 415);
+
+    assert.equal((await request("/api/marketing/store", { set: { speed_roi_settings: "{\"a\":1}" } })).status, 200);
+    assert.equal((await request("/api/marketing/store", { set: { outra: "x" } })).status, 400, "so chaves do painel Speed");
+    const page = await request("/marketing/");
+    assert.equal(page.status, 200);
+    assert.match(page.payload, /__NEXCAFE_MARKETING__ = \{"speed_roi_settings":"\{\\"a\\":1\}"\}/, "dados salvos entram na pagina");
+    assert.equal((await request("/marketing/../db.json")).status, 404);
+    const client = (await request("/api/clients", { name: "Joao Devedor", phone: "35 9999" })).payload.client;
+    const debt = await request(`/api/clients/${client.id}/debt`, { description: "Impressoes", amount: 12.5, date: "2026-05-10", old: true });
+    assert.equal(debt.status, 201);
+    assert.equal(debt.payload.charge.at.slice(0, 10), "2026-05-10", "divida antiga fica na data dela");
+    const proof = await request(`/api/charges/${debt.payload.charge.id}/proof`, Buffer.from([0x89, 0x50, 0x4e, 0x47]), "image/png");
+    assert.equal(proof.status, 201);
+    const open = (await request("/api/state")).payload.openCharges.find(c => c.id === debt.payload.charge.id);
+    assert.equal(open.amountCents - open.paidCents, 1250);
+    assert.equal(open.proofs.length, 1, "print anexado como prova");
+    assert.equal((await request(`/api/charges/${debt.payload.charge.id}/proof/${open.proofs[0].id}`)).status, 200);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("produtos: entrada pela nota fiscal (XML) atualiza estoque e custo e cadastra os novos", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir, ocrRunner: async () => ({ ok: true, text: "" }) });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data, type) {
+    const headers = { origin: base };
+    if (cookie) headers.cookie = cookie;
+    let body;
+    if (Buffer.isBuffer(data)) { headers["content-type"] = type; body = data; }
+    else if (data !== undefined) { headers["content-type"] = "application/json"; body = JSON.stringify(data); }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    const coca = (await request("/api/products", { name: "Coca Lata 350ml", code: "90", type: "stock", price: 5, stock: 0 })).payload.product;
+    const xml = `<nfeProc><NFe><infNFe><ide><nNF>55</nNF></ide><emit><xNome>ATACADAO</xNome></emit>
+      <det nItem="1"><prod><cProd>A1</cProd><cEAN>7894900011517</cEAN><xProd>Coca Lata 350ml</xProd><NCM>22021000</NCM><uCom>UN</uCom><qCom>12.0000</qCom><vUnCom>3.25</vUnCom><vProd>39.00</vProd></prod></det>
+      <det nItem="2"><prod><cProd>B2</cProd><cEAN>SEM GTIN</cEAN><xProd>Papel A4 Chamex</xProd><NCM>48021000</NCM><uCom>PC</uCom><qCom>5</qCom><vUnCom>25.90</vUnCom><vProd>129.50</vProd></prod></det></infNFe></NFe></nfeProc>`;
+    const read = await request("/api/products/import-read", Buffer.from(xml), "application/xml");
+    assert.equal(read.status, 200);
+    assert.equal(read.payload.supplier, "ATACADAO");
+    assert.equal(read.payload.items[0].productId, coca.id, "reconhece o produto ja cadastrado pelo nome");
+    assert.equal(read.payload.items[1].productId, null);
+    const items = read.payload.items.map(it => ({ ...it, category: "Bomboniere & Bebidas", priceCents: it.productId ? null : 3990 }));
+    const applied = await request("/api/products/import-apply", { items, source: "NF 55" });
+    assert.deepEqual([applied.payload.updated, applied.payload.created, applied.payload.units], [1, 1, 17]);
+    const products = (await request("/api/state")).payload.products;
+    const cocaAfter = products.find(p => p.id === coca.id);
+    assert.equal(cocaAfter.stock, 12, "entrada da nota soma no estoque");
+    assert.equal(cocaAfter.costCents, 325, "custo atualizado pela nota");
+    assert.equal(cocaAfter.priceCents, 500, "preco mantido");
+    assert.equal(cocaAfter.barcode, "7894900011517", "codigo de barras gravado");
+    const papel = products.find(p => p.name === "Papel A4 Chamex");
+    assert.deepEqual([papel.stock, papel.costCents, papel.priceCents], [5, 2590, 3990]);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("cliente encerra o proprio acesso pelo relogio: sessao fecha, maquina bloqueia e o valor fica a receber", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data, token) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (token) headers.authorization = `Bearer ${token}`;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    const created = await request("/api/machines/register", { id: "pc-40", name: "PC 40" });
+    const token = (await request("/api/agent/enroll", { id: "pc-40", name: "PC 40", code: created.payload.pairingCode })).payload.token;
+    await request("/api/cash/open", { opening: 0 });
+    await request("/api/client/pc-40/command", undefined, token);
+    const started = await request("/api/machines/pc-40/start", { minutes: 60, billingMode: "open" });
+    assert.equal(started.status, 200, JSON.stringify(started.payload));
+    const command = (await request("/api/client/pc-40/command", undefined, token)).payload;
+    assert.equal((await request("/api/client/pc-40/end", { sessionId: "outra" }, token)).status, 409, "pedido velho de outra sessao e recusado");
+    assert.equal((await request("/api/client/pc-40/end", {}, cookie ? undefined : token)).status, 401, "so o agente da propria estacao encerra");
+    const ended = await request("/api/client/pc-40/end", { sessionId: command.session.id }, token);
+    assert.equal(ended.status, 200);
+    assert.ok(ended.payload.dueCents > 0, "tempo usado vira valor a receber");
+    const after = (await request("/api/client/pc-40/command", undefined, token)).payload;
+    assert.equal(after.locked, true);
+    assert.match(after.lockMessage, /Pague R\$ \d+,\d{2} no caixa/);
+    const state = (await request("/api/state")).payload;
+    assert.equal(state.openCharges.filter(c => c.machineId === "pc-40").length, 1, "pendencia no caixa");
+    assert.equal(state.machines.find(m => m.id === "pc-40").restoreSeq, 1, "maquina e limpa apos o encerramento");
+    assert.equal((await request("/api/client/pc-40/end", { sessionId: command.session.id }, token)).payload.alreadyEnded, true, "clique duplo nao cobra duas vezes");
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("cofre de logins: senha mestre, dados cifrados no arquivo, bloqueio e tentativas limitadas", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data) {
+    const headers = { origin: base };
+    if (cookie) headers.cookie = cookie;
+    if (data !== undefined) headers["content-type"] = "application/json";
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    const first = (await request("/api/vault")).payload;
+    assert.equal(first.unlocked, true, "abre direto para o administrador, sem senha mestre");
+    assert.equal(first.masterMode, false);
+    const saved = await request("/api/vault/items", { kind: "banco", name: "Pan", promoter: "X3 Promotora", products: ["INSS", "FGTS"], login: "pan_vendas_84", password: "Senh@Secreta99", url: "https://pan.example" });
+    assert.equal(saved.payload.items[0].password, "Senh@Secreta99");
+    let file = fs.readFileSync(path.join(dataDir, "db.json"), "utf8");
+    assert.ok(!file.includes("Senh@Secreta99") && !file.includes("pan_vendas_84"), "senha e login nao ficam em texto no banco");
+    assert.equal((await request("/api/vault/setup", { master: "curta" })).status, 400);
+    const activated = await request("/api/vault/setup", { master: "mestre-forte-1" });
+    assert.equal(activated.payload.items[0].password, "Senh@Secreta99", "ativar senha mestre mantem os logins");
+    assert.equal((await request("/api/vault/lock", {})).status, 200);
+    assert.equal((await request("/api/vault")).payload.items.length, 0, "bloqueado nao mostra nada");
+    assert.equal((await request("/api/vault/items", { name: "Teste" })).status, 423);
+    for (let i = 0; i < 5; i++) assert.equal((await request("/api/vault/unlock", { master: "errada" })).status, 401);
+    assert.equal((await request("/api/vault/unlock", { master: "mestre-forte-1" })).status, 429, "trava apos 5 tentativas erradas");
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("custo por pagina entra no CMV, comissao soma no resultado e contas a vencer aparecem no estado", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data) {
+    const headers = { origin: base };
+    if (cookie) headers.cookie = cookie;
+    if (data !== undefined) headers["content-type"] = "application/json";
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    await request("/api/cash/open", { opening: 0 });
+    assert.equal((await request("/api/settings/finance", { monthGoal: 1000, dailyGoal: 50, feeDebit: 0, feeCredit: 0, feeCard: 0, feePix: 0, workDays: 6, printBWCost: 0.12, printColorCost: 0.6, panelOnlyHere: false })).status, 200);
+    assert.equal((await request("/api/print/sale", { pages: 10, color: false, paymentMethod: "cash" })).status, 201);
+    assert.equal((await request("/api/incomes", { description: "Comissão consignado", amount: 80 })).status, 200);
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+    await request("/api/expenses", { category: "Energia", description: "CEMIG", amount: 30, date: today, paid: false });
+    const report = (await request("/api/reports?period=month")).payload;
+    assert.equal(report.dre.cmvCents, 120, "10 paginas x R$ 0,12");
+    assert.equal(report.dre.incomesCents, 8000);
+    assert.equal(report.dre.profitCents, report.salesCents + 8000 - 120 - 3000);
+    const month = Number(today.slice(5, 7)) - 1;
+    assert.equal(report.yearly[today.slice(0, 4)][month].resultCents, report.monthly[11].resultCents, "resultado anual do mes bate com o mensal (inclui comissao)");
+    const state = (await request("/api/state")).payload;
+    assert.equal(state.billsDue.length, 1, "conta do dia aparece no aviso");
   } finally {
     await new Promise(resolve => server.close(resolve));
     fs.rmSync(dataDir, { recursive: true, force: true });

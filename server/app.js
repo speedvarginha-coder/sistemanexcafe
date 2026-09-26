@@ -6,6 +6,8 @@ const crypto = require("node:crypto");
 const dgram = require("node:dgram");
 const { execFile } = require("node:child_process");
 const { buildZip } = require("./installer-package");
+const { readBill, analyzeText, extractText } = require("./pdf-conta");
+const { readProducts } = require("./importar-produtos");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -86,6 +88,11 @@ function money(value, field = "Valor") {
   if (!Number.isFinite(n) || n < 0 || n > 100000) throw err(400, `${field} invalido`);
   return Math.round(n * 100);
 }
+// Custo opcional: vazio = nao cadastrado (o DRE separa a receita sem custo em vez de inventar margem).
+function optionalCost(value) {
+  if (value === undefined || value === null || String(value).trim() === "") return null;
+  return money(String(value).replace(",", "."), "Custo");
+}
 function machineId(value) {
   const result = label(value, 32).toLowerCase();
   if (!/^[a-z0-9][a-z0-9_-]{1,31}$/.test(result)) throw err(400, "ID invalido: use 2 a 32 letras, numeros, _ ou -");
@@ -103,7 +110,7 @@ function verifyPassword(password, user) {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 function defaults() {
-  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }] }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], printJobs: [], waitList: [] };
+  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }] }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, vault: { salt: null, check: null, items: [], updatedAt: null } };
 }
 function normalize(db) {
   const empty = defaults();
@@ -127,7 +134,12 @@ function normalize(db) {
       machine.session.rateCentsHour = db.settings.rateCentsHour;
     }
   }
-  for (const key of ["events", "users", "loginSessions", "clients", "products", "charges", "payments", "sessionHistory", "stockMovements", "cashShifts", "cashAdjustments", "printJobs"]) db[key] ||= [];
+  for (const key of ["events", "users", "loginSessions", "clients", "products", "charges", "payments", "sessionHistory", "stockMovements", "cashShifts", "cashAdjustments", "printJobs", "expenses", "incomes"]) db[key] ||= [];
+  db.marketing ||= { store: {}, updatedAt: null };
+  db.vault ||= { salt: null, check: null, items: [], updatedAt: null };
+  db.vault.banks ||= [];
+  // Despesa do sistema anterior veio com categoria generica: aluguel volta para Aluguel.
+  for (const item of db.expenses) if (item.legacy && /^Despesas Fixas/.test(item.category) && /aluguel/i.test(item.description)) item.category = "Aluguel";
   return db;
 }
 
@@ -148,11 +160,21 @@ const defaultPrintRunner = {
 };
 
 const DEFAULT_DATA_DIR = path.join(__dirname, "data");
+const EXPENSE_CATEGORIES = ["Aluguel", "Energia", "Água", "Internet", "Salários", "Impostos", "Contabilidade", "Tarifas bancárias", "Cartão de crédito", "Sistemas e assinaturas", "Compras de mercadoria", "Insumos gráficos", "Manutenção", "Marketing e anúncios", "Transporte e combustível", "Alimentação", "Retirada do dono", "Outros"];
 // Copia diaria em outro disco: se o disco do sistema falhar, caixa, clientes e saldos nao se perdem.
 const DEFAULT_OFFSITE_DIR = process.env.LHM_BACKUP_DIR || (process.platform === "win32" ? "C:\\LanHouseManager-Backup" : "");
 const OFFSITE_KEEP_DAYS = 30;
 
-function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir } = {}) {
+function defaultOcrRunner(file) {
+  return new Promise(resolve => {
+    execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(__dirname, "ocr.ps1"), "-Path", file], { timeout: 90000, maxBuffer: 8 * 1024 * 1024, windowsHide: true, encoding: "utf8" }, (error, stdout, stderr) => {
+      if (error) return resolve({ ok: false, error: (String(stderr).match(/PDF protegido[^\r\n]*|OCR do Windows[^\r\n]*/) || [])[0] || "Nao foi possivel ler a imagem" });
+      resolve({ ok: true, text: String(stdout) });
+    });
+  });
+}
+
+function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner } = {}) {
   const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
   const dbPath = path.join(dataDir, "db.json");
   fs.mkdirSync(dataDir, { recursive: true });
@@ -190,7 +212,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       { key: "cashShifts", date: item => item.closedAt },
       { key: "events", date: item => item.at },
     ];
-    const buckets = new Map();
+    const buckets = new Map(), keeps = {};
     for (const { key, date } of fields) {
       const keep = [];
       for (const item of db[key]) {
@@ -203,14 +225,20 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
           (buckets.get(month)[key] ||= []).push(item);
         } else keep.push(item);
       }
-      if (keep.length !== db[key].length) db[key] = keep;
+      if (keep.length !== db[key].length) keeps[key] = keep;
     }
     if (buckets.size === 0) return false;
     for (const [month, bucket] of buckets) {
       const file = path.join(dataDir, `archive-${month}.json`);
       let existing = {};
       if (fs.existsSync(file)) {
-        try { existing = JSON.parse(fs.readFileSync(file, "utf8")); } catch { console.error(`Arquivo de arquivo invalido, recriando: ${file}`); }
+        try { existing = JSON.parse(fs.readFileSync(file, "utf8")); }
+        catch {
+          // Nunca sobrescreve um arquivo mensal ilegivel: guarda a copia e deixa os registros no banco.
+          fs.copyFileSync(file, `${file}.corrompido-${Date.now()}`);
+          console.error(`Arquivo mensal ilegivel, arquivamento adiado: ${file}`);
+          return false;
+        }
       }
       for (const key of Object.keys(bucket)) {
         const merged = (existing[key] || []).concat(bucket[key]);
@@ -219,6 +247,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       fs.writeFileSync(`${file}.tmp`, JSON.stringify(existing), "utf8");
       fs.renameSync(`${file}.tmp`, file);
     }
+    // So agora (arquivos mensais gravados) os registros saem do banco.
+    for (const [key, keep] of Object.entries(keeps)) db[key] = keep;
     return true;
   }
   function pruneBackups() {
@@ -238,6 +268,15 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         try {
           fs.mkdirSync(offsiteDir, { recursive: true });
           fs.copyFileSync(dbPath, path.join(offsiteDir, `db-${day}.json`));
+          // Anexos (PDF/fotos das contas, prints das dividas) e arquivos mensais: copia o que ainda nao esta la.
+          if (fs.existsSync(vaultKeyFile)) { fs.mkdirSync(path.join(offsiteDir, "anexos"), { recursive: true }); fs.copyFileSync(vaultKeyFile, path.join(offsiteDir, "anexos", "cofre.chave")); }
+          for (const sub of ["contas", "provas"]) {
+            const from = path.join(dataDir, sub), to = path.join(offsiteDir, "anexos", sub);
+            if (!fs.existsSync(from)) continue;
+            fs.mkdirSync(to, { recursive: true });
+            for (const name of fs.readdirSync(from)) if (!fs.existsSync(path.join(to, name))) fs.copyFileSync(path.join(from, name), path.join(to, name));
+          }
+          for (const name of fs.readdirSync(dataDir)) if (/^archive-\d{4}-\d{2}\.json$/.test(name)) fs.copyFileSync(path.join(dataDir, name), path.join(offsiteDir, name));
           const cutoff = Date.now() - OFFSITE_KEEP_DAYS * DAY_MS;
           for (const name of fs.readdirSync(offsiteDir)) {
             const match = name.match(/^db-(\d{4}-\d{2}-\d{2})\.json$/);
@@ -407,59 +446,64 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const openCharges = db.charges.filter(item => item.amountCents > item.paidCents);
     const cashReceivedCents = shiftPayments.filter(item => item.method === "cash").reduce((sum, item) => sum + item.amountCents, 0);
     const adjustmentCents = shiftAdjustments.reduce((sum, item) => sum + (item.direction === "in" ? item.amountCents : -item.amountCents), 0);
-    return { ok: true, user: publicUser(user), settings: db.settings, machines: Object.values(db.machines).map(publicMachine), events: db.events.slice(0, 60), clients: db.clients.map(publicClient), products: db.products, charges: db.charges.slice(0, 200), openCharges, payments: db.payments.slice(0, 150), cashShift: shift, cashSummary: { expectedCashCents: shift ? shift.openingCents + cashReceivedCents + adjustmentCents : 0, receivedCents: shiftPayments.reduce((sum, item) => sum + item.amountCents, 0), pendingCents: openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0) }, cashShifts: db.cashShifts.slice(0, 30), cashAdjustments: db.cashAdjustments.slice(0, 150), users: user.role === "admin" ? db.users.map(publicUser) : [], printers: user.role === "admin" ? db.printerShares : [], printJobs: db.printJobs.slice(0, 20), waitList: db.waitList, serverTime: now() };
+    return { ok: true, user: publicUser(user), settings: db.settings, machines: Object.values(db.machines).map(publicMachine), events: db.events.slice(0, 60), clients: db.clients.map(publicClient), products: db.products, charges: db.charges.slice(0, 200), openCharges, payments: db.payments.slice(0, 150), cashShift: shift, cashSummary: { expectedCashCents: shift ? shift.openingCents + cashReceivedCents + adjustmentCents : 0, receivedCents: shiftPayments.reduce((sum, item) => sum + item.amountCents, 0), pendingCents: openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0) }, cashShifts: db.cashShifts.slice(0, 30), cashAdjustments: db.cashAdjustments.slice(0, 150), users: user.role === "admin" ? db.users.map(publicUser) : [], printers: user.role === "admin" ? db.printerShares : [], printJobs: db.printJobs.slice(0, 20), waitList: db.waitList, billsDue: user.role === "admin" ? db.expenses.filter(item => item.paid === false && Date.parse(item.at) < Date.now() + 3 * 86400000).map(item => ({ id: item.id, at: item.at, description: item.description, amountCents: item.amountCents })) : [], serverTime: now() };
   }
+  // Datas locais (America/Sao_Paulo) no formato AAAA-MM-DD; comparacao por texto.
+  function localDay(value) { return new Date(value).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }); }
+  function shiftDay(day, days) { const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
+  function periodRange(date, period) {
+    if (period === "month") {
+      const start = `${date.slice(0, 7)}-01`;
+      const end = shiftDay(`${shiftDay(start, 32).slice(0, 7)}-01`, -1);
+      const prevStart = `${shiftDay(start, -1).slice(0, 7)}-01`;
+      return { start, end, prevStart, prevEnd: shiftDay(start, -1) };
+    }
+    if (period === "all") return { start: "0000-00-00", end: "9999-12-31", prevStart: null, prevEnd: null };
+    const days = { "7d": 7, "15d": 15, "30d": 30, "60d": 60, "90d": 90 }[period] || 1;
+    const start = shiftDay(date, 1 - days);
+    return { start, end: date, prevStart: shiftDay(start, -days), prevEnd: shiftDay(start, -1) };
+  }
+  // Tudo que ja foi para os arquivos mensais (mais de 45 dias) tambem entra nos relatorios.
+  function historyRecords(key) {
+    const rows = db[key] || [];
+    const extra = [];
+    for (const name of fs.readdirSync(dataDir)) {
+      if (!/^archive-\d{4}-\d{2}\.json$/.test(name)) continue;
+      try { extra.push(...(JSON.parse(fs.readFileSync(path.join(dataDir, name), "utf8"))[key] || [])); } catch { }
+    }
+    return extra.length ? rows.concat(extra) : rows;
+  }
+
   function report(inputDate) {
-    let date = typeof inputDate === "string" ? inputDate : (inputDate?.date || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }));
-    const period = (typeof inputDate === "object" && inputDate?.period) ? inputDate.period : "today";
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      date = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-    }
-    const onDate = value => {
-      if (!value) return false;
-      const d = new Date(value).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-      if (period === "today") return d === date;
-      if (period === "month") return d.slice(0, 7) === date.slice(0, 7);
-      if (period === "7d") {
-        const diff = (Date.parse(date) - Date.parse(d)) / 86400000;
-        return diff >= 0 && diff < 7;
-      }
-      if (period === "15d") {
-        const diff = (Date.parse(date) - Date.parse(d)) / 86400000;
-        return diff >= 0 && diff < 15;
-      }
-      if (period === "30d") {
-        const diff = (Date.parse(date) - Date.parse(d)) / 86400000;
-        return diff >= 0 && diff < 30;
-      }
-      if (period === "all") return true;
-      return d === date;
+    const today = localDay(Date.now());
+    let date = typeof inputDate === "string" ? inputDate : (inputDate?.date || today);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) date = today;
+    const period = ["today", "month", "7d", "15d", "30d", "60d", "90d", "all"].includes(inputDate?.period) ? inputDate.period : "today";
+    const range = periodRange(date, period);
+    const inRange = (value, start, end) => { if (!value || !start) return false; const d = localDay(value); return d >= start && d <= end; };
+    const onDate = value => inRange(value, range.start, range.end);
+    // Custo de papel e tinta por pagina (Metas e taxas).
+    const printCost = sale => {
+      const pages = sale.quantity || Number((String(sale.description).match(/(\d+) pag/) || [])[1]) || 1;
+      const perPage = (sale.color || /colorida/i.test(sale.description)) ? db.settings.printColorCostCents : db.settings.printBWCostCents;
+      return perPage ? pages * perPage : 0;
     };
-    const archiveFile = path.join(dataDir, `archive-${date.slice(0, 7)}.json`);
-    let archived = {};
-    if (fs.existsSync(archiveFile)) {
-      try { archived = JSON.parse(fs.readFileSync(archiveFile, "utf8")); } catch { archived = {}; }
-    }
-    const charges = db.charges.filter(item => onDate(item.at)).concat((archived.charges || []).filter(item => onDate(item.at)));
-    const payments = db.payments.filter(item => onDate(item.at)).concat((archived.payments || []).filter(item => onDate(item.at)));
-    const sessions = db.sessionHistory.filter(item => onDate(item.endedAt)).concat((archived.sessionHistory || []).filter(item => onDate(item.endedAt)));
+
+    const allCharges = historyRecords("charges");
+    const allPayments = historyRecords("payments");
+    const charges = allCharges.filter(item => onDate(item.at)).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const payments = allPayments.filter(item => onDate(item.at));
+    const sessions = historyRecords("sessionHistory").filter(item => onDate(item.endedAt));
+    const expenses = (db.expenses || []).filter(item => onDate(item.at)).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const productById = new Map(db.products.map(item => [item.id, item]));
+
     const byMethod = { cash: 0, pix: 0, card: 0, debit: 0, credit: 0 };
     for (const item of payments) {
       if (byMethod[item.method] !== undefined) byMethod[item.method] += item.amountCents;
       else byMethod.card += item.amountCents;
     }
     const byMachine = {};
-    for (const item of sessions) { byMachine[item.machineId] ||= { machineId: item.machineId, count: 0, minutes: 0 }; byMachine[item.machineId].count++; byMachine[item.machineId].minutes += item.usedMinutes; }
-    const byProduct = {};
-    for (const sale of charges) {
-      const rows = sale.kind === "sale" ? sale.items || [] : sale.kind === "product" ? [{ productId: sale.productId, name: db.products.find(row => row.id === sale.productId)?.name || sale.description, quantity: sale.quantity || 1, totalCents: sale.amountCents }] : [];
-      for (const row of rows) {
-        const id = row.productId || row.name;
-        byProduct[id] ||= { productId: id, name: row.name, quantity: 0, amountCents: 0 };
-        byProduct[id].quantity += row.quantity;
-        byProduct[id].amountCents += row.totalCents;
-      }
-    }
+    for (const item of sessions) { byMachine[item.machineId] ||= { machineId: item.machineId, name: db.machines[item.machineId]?.name || item.machineId, count: 0, minutes: 0 }; byMachine[item.machineId].count++; byMachine[item.machineId].minutes += item.usedMinutes; }
     const byOperator = {};
     for (const payment of payments) {
       const name = payment.operator || "Sistema";
@@ -468,7 +512,6 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       byOperator[name].payments++;
     }
 
-    // Categorias Oficiais
     const byCategory = {
       "Gráfica Rápida": { count: 0, revenueCents: 0, color: "#0284c7" },
       "Lan House & Serviços Digitais": { count: 0, revenueCents: 0, color: "#7c3aed" },
@@ -478,40 +521,269 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       "Informática & Celular": { count: 0, revenueCents: 0, color: "#2563eb" },
       "Eletrônicos & Acessórios": { count: 0, revenueCents: 0, color: "#ea580c" }
     };
+    const byProduct = {};
+    const byDay = {};
+    const byHour = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0, salesCents: 0 }));
+    const heat = Array.from({ length: 7 }, () => Array(24).fill(0));
+    const byWeekday = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map(name => ({ name, count: 0, salesCents: 0, days: new Set() }));
+    let cmvCents = 0, costedRevenueCents = 0, uncostedRevenueCents = 0, legacyCents = 0, discountCents = 0, todayCents = 0;
     for (const sale of charges) {
+      const local = new Date(new Date(sale.at).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const day = localDay(sale.at);
+      byDay[day] ||= { date: day, salesCents: 0, count: 0 };
+      byDay[day].salesCents += sale.amountCents; byDay[day].count++;
+      heat[local.getDay()][local.getHours()]++; byHour[local.getHours()].count++; byHour[local.getHours()].salesCents += sale.amountCents;
+      const weekday = byWeekday[local.getDay()]; weekday.count++; weekday.salesCents += sale.amountCents; weekday.days.add(day);
+      if (day === today) todayCents += sale.amountCents;
+      discountCents += sale.discountCents || 0;
+      if (sale.legacy) { legacyCents += sale.amountCents; }
+
       const fallbackCategory = sale.kind === "print" ? "Gráfica Rápida" : "Lan House & Serviços Digitais";
-      const rows = sale.kind === "sale" ? sale.items || [] : sale.kind === "product" ? [{ productId: sale.productId, name: sale.description, quantity: sale.quantity || 1, totalCents: sale.amountCents }] : [{ name: sale.description, quantity: 1, totalCents: sale.amountCents, category: fallbackCategory }];
+      const rows = sale.kind === "sale" ? sale.items || [] : sale.kind === "product" ? [{ productId: sale.productId, name: productById.get(sale.productId)?.name || sale.description, quantity: sale.quantity || 1, totalCents: sale.amountCents }] : [{ name: sale.kind === "time" ? "Tempo de máquina" : sale.kind === "print" ? (/colorida/i.test(sale.description) ? "Impressão colorida (estação)" : "Impressão P&B (estação)") : sale.description, quantity: 1, totalCents: sale.amountCents, category: fallbackCategory }];
+      // Cancelamento reduz o valor da cobranca: proporcao aplicada aos itens para o total bater.
+      const itemsTotal = rows.reduce((sum, r) => sum + (r.totalCents || 0), 0);
+      const ratio = itemsTotal > 0 ? sale.amountCents / itemsTotal : 0;
+      if (sale.kind === "print" && !sale.legacy && (db.settings.printBWCostCents || db.settings.printColorCostCents)) {
+        const cost = printCost(sale); cmvCents += cost; costedRevenueCents += sale.amountCents;
+        const key = rows[0].name; byProduct[key] ||= { productId: key, name: key, category: "Gráfica Rápida", quantity: 0, amountCents: 0, costCents: 0 };
+        byProduct[key].quantity += sale.quantity || 1; byProduct[key].amountCents += sale.amountCents; byProduct[key].costCents += cost;
+        const cat = byCategory["Gráfica Rápida"]; cat.count += sale.quantity || 1; cat.revenueCents += sale.amountCents;
+        continue;
+      }
       for (const r of rows) {
-        const cat = r.category || (r.productId && db.products.find(p => p.id === r.productId)?.category) || fallbackCategory;
+        const product = r.productId ? productById.get(r.productId) : null;
+        const revenue = Math.round((r.totalCents || 0) * ratio);
+        const cat = r.category || product?.category || fallbackCategory;
         const target = byCategory[cat] || (byCategory[cat] = { count: 0, revenueCents: 0, color: "#64748b" });
         target.count += (r.quantity || 1);
-        target.revenueCents += (r.totalCents || 0);
+        target.revenueCents += revenue;
+        if (sale.legacy) continue;
+        const key = r.productId || r.name;
+        byProduct[key] ||= { productId: key, name: r.name, category: cat, quantity: 0, amountCents: 0, costCents: null };
+        byProduct[key].quantity += r.quantity || 1;
+        byProduct[key].amountCents += revenue;
+        if (product && Number.isInteger(product.costCents)) {
+          const cost = product.costCents * (r.quantity || 1);
+          cmvCents += cost; costedRevenueCents += revenue;
+          byProduct[key].costCents = (byProduct[key].costCents || 0) + cost;
+        } else uncostedRevenueCents += revenue;
       }
     }
+    for (const row of Object.values(byProduct)) row.profitCents = row.costCents === null ? null : row.amountCents - row.costCents;
 
     const salesCents = charges.reduce((sum, item) => sum + item.amountCents, 0);
     const receivedCents = payments.reduce((sum, item) => sum + item.amountCents, 0);
-    const dueCents = db.charges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0);
+    const openCharges = db.charges.filter(item => item.amountCents > item.paidCents);
+    const dueCents = openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0);
+    const expensesCents = expenses.reduce((sum, item) => sum + item.amountCents, 0);
+    const byExpenseCategory = {};
+    for (const item of expenses) byExpenseCategory[item.category] = (byExpenseCategory[item.category] || 0) + item.amountCents;
+    // Periodo anterior do mesmo tamanho: base do comparativo.
+    const prevCharges = range.prevStart ? allCharges.filter(item => inRange(item.at, range.prevStart, range.prevEnd)) : [];
+    const prevPayments = range.prevStart ? allPayments.filter(item => inRange(item.at, range.prevStart, range.prevEnd)) : [];
+    const prevByDayMap = {};
+    for (const sale of prevCharges) { const d = localDay(sale.at); prevByDayMap[d] ||= { date: d, salesCents: 0, count: 0 }; prevByDayMap[d].salesCents += sale.amountCents; prevByDayMap[d].count++; }
+    const summaryOf = (list, pays, start, end) => {
+      const sales = list.reduce((sum, item) => sum + item.amountCents, 0);
+      const exp = (db.expenses || []).filter(item => start && inRange(item.at, start, end)).reduce((sum, item) => sum + item.amountCents, 0);
+      return { salesCents: sales, count: list.length, ticketCents: list.length ? Math.round(sales / list.length) : 0, receivedCents: pays.reduce((sum, item) => sum + item.amountCents, 0), expensesCents: exp,
+        timeCents: list.filter(item => item.kind === "time").reduce((sum, item) => sum + item.amountCents, 0), printCents: list.filter(item => item.kind === "print").reduce((sum, item) => sum + item.amountCents, 0) };
+    };
+    const compare = range.prevStart ? { current: summaryOf(charges, payments, range.start, range.end), previous: summaryOf(prevCharges, prevPayments, range.prevStart, range.prevEnd) } : null;
+    const previousSalesCents = range.prevStart ? allCharges.filter(item => inRange(item.at, range.prevStart, range.prevEnd)).reduce((sum, item) => sum + item.amountCents, 0) : null;
+    const grossProfitCents = salesCents - cmvCents;
+    const lowStock = db.products.filter(item => item.active && item.type === "stock" && item.stock <= (item.minStock || 0))
+      .map(item => ({ id: item.id, code: item.code, name: item.name, stock: item.stock, minStock: item.minStock || 0 }))
+      .sort((a, b) => a.stock - b.stock);
 
-    return { 
-      ok: true, 
-      date, 
-      period, 
-      salesCents, 
-      receivedCents, 
-      dueCents, 
-      sessions: sessions.length, 
-      minutes: sessions.reduce((sum, item) => sum + item.usedMinutes, 0), 
-      byMethod, 
+    // ---------- Indicadores gerenciais (todos calculados dos dados reais) ----------
+    const settings = db.settings || {};
+    // Receitas fora das vendas (comissoes da Speed Financeira etc.).
+    const incomes = (db.incomes || []).filter(item => onDate(item.at)).sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const incomesCents = incomes.reduce((sum, item) => sum + item.amountCents, 0);
+    const feePct = { debit: settings.feeDebitPct || 0, credit: settings.feeCreditPct || 0, card: settings.feeCardPct || 0, pix: settings.feePixPct || 0, cash: 0 };
+    const feeOf = rows => rows.reduce((sum, item) => sum + Math.round(item.amountCents * (feePct[item.method] || 0) / 100), 0);
+    const feesCents = feeOf(payments);
+    const byFee = Object.fromEntries(Object.keys(byMethod).map(method => [method, Math.round(byMethod[method] * (feePct[method] || 0) / 100)]));
+    const costOfCharge = sale => {
+      if (sale.kind === "print" && !sale.legacy) return printCost(sale);
+      if (sale.legacy || sale.kind !== "sale") return 0;
+      return (sale.items || []).reduce((sum, r) => { const product = r.productId ? productById.get(r.productId) : null; return sum + (product && Number.isInteger(product.costCents) ? product.costCents * (r.quantity || 1) : 0); }, 0);
+    };
+
+    // Meta do mes da data escolhida: ritmo por dia trabalhado e projecao de fechamento.
+    const workDays = settings.workDays || 6;
+    const isWorkDay = day => workDays >= 7 || new Date(`${day}T12:00:00Z`).getUTCDay() !== 0;
+    const monthStart = `${date.slice(0, 7)}-01`;
+    const monthEnd = shiftDay(`${shiftDay(monthStart, 32).slice(0, 7)}-01`, -1);
+    let workedDays = 0, remainingDays = 0;
+    for (let day = monthStart; day <= monthEnd; day = shiftDay(day, 1)) {
+      if (!isWorkDay(day)) continue;
+      if (day <= date) workedDays++; else remainingDays++;
+    }
+    const monthSalesCents = allCharges.filter(item => inRange(item.at, monthStart, date)).reduce((sum, item) => sum + item.amountCents, 0);
+    const monthGoalCents = settings.monthGoalCents || 0;
+    const paceCents = workedDays ? Math.round(monthSalesCents / workedDays) : 0;
+    const goal = {
+      monthGoalCents, dailyGoalCents: settings.dailyGoalCents || 0, monthSalesCents, workedDays, remainingDays, paceCents,
+      projectionCents: monthSalesCents + paceCents * remainingDays,
+      neededPerDayCents: remainingDays ? Math.max(0, Math.round((monthGoalCents - monthSalesCents) / remainingDays)) : Math.max(0, monthGoalCents - monthSalesCents),
+      percent: monthGoalCents ? Math.round(monthSalesCents / monthGoalCents * 1000) / 10 : 0
+    };
+
+    // Ultimos 12 meses: receita, custo, taxas, despesas e resultado.
+    const monthly = Array.from({ length: 12 }, () => ({}));
+    for (let i = 0, cursor = monthStart; i < 12; i++) { monthly[11 - i].month = cursor.slice(0, 7); cursor = `${shiftDay(cursor, -1).slice(0, 7)}-01`; }
+    const monthIndex = new Map(monthly.map((row, index) => [row.month, index]));
+    for (const row of monthly) Object.assign(row, { salesCents: 0, cmvCents: 0, feesCents: 0, expensesCents: 0, count: 0 });
+    for (const sale of allCharges) { const row = monthly[monthIndex.get(localDay(sale.at).slice(0, 7))]; if (row) { row.salesCents += sale.amountCents; row.cmvCents += costOfCharge(sale); row.count++; } }
+    for (const item of allPayments) { const row = monthly[monthIndex.get(localDay(item.at).slice(0, 7))]; if (row) row.feesCents += Math.round(item.amountCents * (feePct[item.method] || 0) / 100); }
+    for (const item of db.expenses || []) { const row = monthly[monthIndex.get(localDay(item.at).slice(0, 7))]; if (row) row.expensesCents += item.amountCents; }
+    for (const item of db.incomes || []) { const row = monthly[monthIndex.get(localDay(item.at).slice(0, 7))]; if (row) row.incomesCents = (row.incomesCents || 0) + item.amountCents; }
+    for (const row of monthly) row.resultCents = row.salesCents + (row.incomesCents || 0) - row.cmvCents - row.feesCents - row.expensesCents;
+
+    // Ano a ano: vendas, despesas e resultado de cada mes em todos os anos com movimento.
+    const yearly = {};
+    const yearRow = y => (yearly[y] ||= Array.from({ length: 12 }, () => ({ salesCents: 0, count: 0, cmvCents: 0, feesCents: 0, expensesCents: 0 })));
+    for (const sale of allCharges) { const d = localDay(sale.at); const row = yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1]; row.salesCents += sale.amountCents; row.count++; row.cmvCents += costOfCharge(sale); }
+    for (const item of allPayments) { const d = localDay(item.at); yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1].feesCents += Math.round(item.amountCents * (feePct[item.method] || 0) / 100); }
+    for (const item of db.expenses || []) { const d = localDay(item.at); yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1].expensesCents += item.amountCents; }
+    for (const item of db.incomes || []) { const d = localDay(item.at); const row = yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1]; row.incomesCents = (row.incomesCents || 0) + item.amountCents; }
+    for (const rows of Object.values(yearly)) for (const row of rows) row.resultCents = row.salesCents + (row.incomesCents || 0) - row.cmvCents - row.feesCents - row.expensesCents;
+
+    // Faixas de ticket.
+    const ticketBands = [[0, 1000], [1000, 2000], [2000, 5000], [5000, 10000], [10000, 20000], [20000, Infinity]].map(([min, max]) => ({ min, max: max === Infinity ? null : max, count: 0, salesCents: 0 }));
+    for (const sale of charges) { const band = ticketBands.find(b => sale.amountCents >= b.min && (b.max === null || sale.amountCents < b.max)); if (band) { band.count++; band.salesCents += sale.amountCents; } }
+
+    // Curva ABC do periodo (itens vendidos no sistema novo).
+    const abcRows = Object.values(byProduct).filter(row => row.amountCents > 0).sort((a, b) => b.amountCents - a.amountCents);
+    const abcTotal = abcRows.reduce((sum, row) => sum + row.amountCents, 0);
+    let running = 0;
+    const abc = abcRows.map(row => { const before = running; running += row.amountCents; const share = abcTotal ? before / abcTotal : 0; return { ...row, cumulative: abcTotal ? Math.round(running / abcTotal * 1000) / 10 : 0, abcClass: share < 0.8 ? "A" : share < 0.95 ? "B" : "C" }; });
+    // Historico do sistema anterior: nos servicos, estoque negativo = unidades vendidas desde o inicio.
+    const legacyUnits = db.products.filter(item => item.type === "service" && item.stock < 0)
+      .map(item => ({ code: item.code, name: item.name, category: item.category, units: -item.stock, priceCents: item.priceCents, estimatedCents: -item.stock * item.priceCents }))
+      .sort((a, b) => b.estimatedCents - a.estimatedCents);
+
+    // Clientes: quem mais compra no periodo e idade das pendencias.
+    const byClient = {};
+    for (const sale of charges) {
+      if (!sale.clientId) continue;
+      const client = db.clients.find(row => row.id === sale.clientId);
+      byClient[sale.clientId] ||= { clientId: sale.clientId, name: client?.name || "Cliente removido", count: 0, salesCents: 0, dueCents: 0, lastAt: sale.at };
+      const row = byClient[sale.clientId]; row.count++; row.salesCents += sale.amountCents; row.dueCents += sale.amountCents - sale.paidCents;
+      if (sale.at > row.lastAt) row.lastAt = sale.at;
+    }
+    const agingBuckets = [{ label: "Até 7 dias", max: 7 }, { label: "8 a 30 dias", max: 30 }, { label: "31 a 60 dias", max: 60 }, { label: "Mais de 60 dias", max: Infinity }].map(b => ({ ...b, count: 0, dueCents: 0 }));
+    for (const item of openCharges) {
+      const age = Math.floor((Date.now() - Date.parse(item.at)) / 86400000);
+      const bucket = agingBuckets.find(b => age <= b.max); bucket.count++; bucket.dueCents += item.amountCents - item.paidCents;
+    }
+
+    // Estoque: valor parado em mercadoria e itens sem venda ha 60 dias.
+    const soldSince = new Set();
+    const cutoff60 = shiftDay(today, -60);
+    for (const sale of allCharges) {
+      if (sale.legacy || localDay(sale.at) < cutoff60) continue;
+      for (const r of sale.items || []) if (r.productId) soldSince.add(r.productId);
+      if (sale.productId) soldSince.add(sale.productId);
+    }
+    const stockProducts = db.products.filter(item => item.active && item.type === "stock");
+    const stock = {
+      valueCents: stockProducts.reduce((sum, item) => sum + (item.stock > 0 && Number.isInteger(item.costCents) ? item.stock * item.costCents : 0), 0),
+      saleValueCents: stockProducts.reduce((sum, item) => sum + (item.stock > 0 ? item.stock * item.priceCents : 0), 0),
+      withoutCost: stockProducts.filter(item => item.stock > 0 && !Number.isInteger(item.costCents)).length,
+      negative: stockProducts.filter(item => item.stock < 0).length,
+      withoutCostProducts: db.products.filter(item => item.active && !Number.isInteger(item.costCents)).length,
+      stale: stockProducts.filter(item => item.stock > 0 && !soldSince.has(item.id)).map(item => ({ code: item.code, name: item.name, stock: item.stock, valueCents: Number.isInteger(item.costCents) ? item.stock * item.costCents : null })).sort((a, b) => b.stock - a.stock).slice(0, 100)
+    };
+
+    // Maquinas: faturamento de tempo por estacao.
+    for (const sale of charges) {
+      if (sale.kind !== "time" || !sale.machineId) continue;
+      byMachine[sale.machineId] ||= { machineId: sale.machineId, name: db.machines[sale.machineId]?.name || sale.machineId, count: 0, minutes: 0 };
+      byMachine[sale.machineId].revenueCents = (byMachine[sale.machineId].revenueCents || 0) + sale.amountCents;
+    }
+
+    // Caixa: diferencas de conferencia e sangrias no periodo.
+    const shiftsInPeriod = historyRecords("cashShifts").filter(item => item.closedAt && onDate(item.closedAt)).map(item => {
+      const expected = item.closingExpectedCents ?? item.expectedCashCents ?? null; const counted = item.closingCountedCents ?? item.countedCashCents ?? null;
+      return { id: item.id, openedAt: item.openedAt, closedAt: item.closedAt, operator: item.closedBy || item.openedBy, expectedCents: expected, countedCents: counted, diffCents: expected !== null && counted !== null ? counted - expected : null };
+    });
+    const adjustments = historyRecords("cashAdjustments").filter(item => onDate(item.at));
+    const cash = {
+      shifts: shiftsInPeriod,
+      shortCents: shiftsInPeriod.reduce((sum, s) => sum + (s.diffCents < 0 ? s.diffCents : 0), 0),
+      overCents: shiftsInPeriod.reduce((sum, s) => sum + (s.diffCents > 0 ? s.diffCents : 0), 0),
+      withdrawalsCents: adjustments.filter(a => a.direction === "out").reduce((sum, a) => sum + a.amountCents, 0),
+      suppliesCents: adjustments.filter(a => a.direction === "in").reduce((sum, a) => sum + a.amountCents, 0)
+    };
+
+    // Ponto de equilibrio: despesas medias dos meses com despesa / margem de contribuicao conhecida.
+    const monthsWithExpenses = monthly.filter(row => row.expensesCents > 0);
+    const avgExpensesCents = monthsWithExpenses.length ? Math.round(monthsWithExpenses.reduce((sum, row) => sum + row.expensesCents, 0) / monthsWithExpenses.length) : 0;
+    const contributionPct = costedRevenueCents > 0 ? (costedRevenueCents - cmvCents) / costedRevenueCents - (salesCents ? feesCents / salesCents : 0) : null;
+    const breakEven = { avgExpensesCents, contributionPct: contributionPct === null ? null : Math.round(contributionPct * 1000) / 10, reliable: costedRevenueCents >= salesCents * 0.5, breakEvenCents: contributionPct > 0 ? Math.round(avgExpensesCents / contributionPct) : null };
+
+    // Alertas automaticos para o gestor.
+    const alerts = [];
+    const money2 = value => `R$ ${(value / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (monthGoalCents && remainingDays && goal.projectionCents < monthGoalCents) alerts.push({ level: "warn", title: "Abaixo do ritmo da meta", text: `No ritmo atual o mês fecha em ${money2(goal.projectionCents)}. Para bater ${money2(monthGoalCents)} é preciso vender ${money2(goal.neededPerDayCents)} por dia nos ${remainingDays} dias restantes.` });
+    if (monthGoalCents && goal.monthSalesCents >= monthGoalCents) alerts.push({ level: "ok", title: "Meta do mês atingida", text: `Vendas do mês: ${money2(goal.monthSalesCents)}.` });
+    if (previousSalesCents && salesCents < previousSalesCents * 0.85) alerts.push({ level: "warn", title: "Queda nas vendas", text: `Vendas ${Math.round((1 - salesCents / previousSalesCents) * 100)}% menores que no período anterior (${money2(previousSalesCents)}).` });
+    const late = agingBuckets.slice(2).reduce((sum, b) => sum + b.dueCents, 0);
+    if (late > 0) alerts.push({ level: "danger", title: "Pendências com mais de 30 dias", text: `${money2(late)} a receber estão atrasados há mais de 30 dias. Cobre esses clientes.` });
+    if (stock.negative > 0) alerts.push({ level: "warn", title: "Estoque negativo", text: `${stock.negative} produto(s) com estoque negativo: faça a entrada das compras para o estoque e o custo ficarem certos.` });
+    if (uncostedRevenueCents + legacyCents > salesCents * 0.2) alerts.push({ level: "info", title: "Custo dos produtos incompleto", text: `${stock.withoutCostProducts} produto(s) ativos sem preço de custo. Sem o custo o lucro mostrado fica maior que o real.` });
+    if (cash.shortCents < 0) alerts.push({ level: "danger", title: "Quebra de caixa", text: `Faltou ${money2(-cash.shortCents)} nos fechamentos de caixa do período.` });
+    if (!feePct.debit && !feePct.credit && (byMethod.debit + byMethod.credit + byMethod.card) > 0) alerts.push({ level: "info", title: "Taxas das maquininhas não cadastradas", text: "Cadastre as taxas de débito e crédito em Metas e taxas para o DRE descontar o custo do cartão." });
+    if (!avgExpensesCents) alerts.push({ level: "info", title: "Despesas não lançadas", text: "Lance aluguel, energia, internet e salários (ou envie o PDF da conta) para o resultado ficar real." });
+    if (stock.stale.length) alerts.push({ level: "info", title: "Mercadoria parada", text: `${stock.stale.length} produto(s) com estoque e sem venda há 60 dias.` });
+
+    return {
+      ok: true,
+      date,
+      period,
+      range: { start: range.start, end: range.end, prevStart: range.prevStart, prevEnd: range.prevEnd },
+      salesCents,
+      receivedCents,
+      dueCents,
+      todayCents,
+      previousSalesCents,
+      salesCount: charges.length,
+      averageTicketCents: charges.length ? Math.round(salesCents / charges.length) : 0,
+      unitsPerSale: (() => { const withItems = charges.filter(c => c.kind === "sale" && !c.legacy && (c.items || []).length); return withItems.length ? Math.round(withItems.reduce((s, c) => s + c.items.reduce((u, i) => u + (i.quantity || 1), 0), 0) / withItems.length * 10) / 10 : null; })(),
+      sessions: sessions.length,
+      minutes: sessions.reduce((sum, item) => sum + item.usedMinutes, 0),
+      byMethod,
       byCategory,
-      byMachine: Object.values(byMachine), 
-      byProduct: Object.values(byProduct).sort((a, b) => b.amountCents - a.amountCents), 
-      byOperator: Object.values(byOperator).sort((a, b) => b.receivedCents - a.receivedCents), 
-      charges 
+      byMachine: Object.values(byMachine),
+      byProduct: Object.values(byProduct).sort((a, b) => b.amountCents - a.amountCents),
+      byOperator: Object.values(byOperator).sort((a, b) => b.receivedCents - a.receivedCents),
+      byDay: Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date)),
+      byHour,
+      byWeekday: byWeekday.map(({ days, ...row }) => ({ ...row, days: days.size })),
+      // DRE: CMV so com custo cadastrado; o que nao tem custo aparece separado para nao inventar margem.
+      dre: { grossCents: salesCents + discountCents, discountCents, feesCents, byFee, netCents: salesCents - feesCents, cmvCents, grossProfitCents: salesCents - feesCents - cmvCents, expensesCents, profitCents: salesCents + incomesCents - feesCents - cmvCents - expensesCents, incomesCents, costedRevenueCents, uncostedRevenueCents, legacyCents },
+      payables: (db.expenses || []).filter(item => item.paid === false).sort((x, y) => String(x.at).localeCompare(String(y.at))), goal, monthly, ticketBands, abc, legacyUnits: legacyUnits.slice(0, 150), clients: Object.values(byClient).sort((a, b) => b.salesCents - a.salesCents).slice(0, 50), agingBuckets: agingBuckets.map(({ max, ...row }) => row), stock, cash, breakEven, alerts, heat, yearly, incomes: incomes.slice(0, 200), compare, prevByDay: Object.values(prevByDayMap).sort((a, b) => a.date.localeCompare(b.date)),
+      expenses: expenses.slice(0, 300),
+      expensesCents,
+      byExpenseCategory,
+      lowStock: lowStock.slice(0, 1000),
+      lowStockCount: lowStock.length,
+      openCharges: openCharges.map(item => ({ id: item.id, at: item.at, description: item.description, dueCents: item.amountCents - item.paidCents, clientId: item.clientId || null, clientName: db.clients.find(row => row.id === item.clientId)?.name || null })),
+      charges: charges.slice(0, 500)
     };
   }
 
   const spoolDir = path.join(dataDir, "print-spool");
+  const billsDir = path.join(dataDir, "contas");
+  function backupAttachment(sub, file) {
+    if (!offsiteDir) return;
+    try { const to = path.join(offsiteDir, "anexos", sub); fs.mkdirSync(to, { recursive: true }); fs.copyFileSync(file, path.join(to, path.basename(file))); }
+    catch (cause) { console.error(`Backup do anexo falhou: ${cause.message}`); }
+  }
+  const proofsDir = path.join(dataDir, "provas");
   let printQueue = Promise.resolve();
   let localPrinters = { at: 0, list: [] };
   async function readRaw(req, limit) {
@@ -606,6 +878,19 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const cost = sessionCost(item);
       return send(res, 200, { ok: true, machineId: item.id, serverTime: now(), commandSeq: item.commandSeq, locked: item.locked || !item.session, lockMessage: item.lockMessage, session: item.session, openedSessionId: item.openedSessionId || null, valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, printBWCents: db.settings.printBWCents, printColorCents: db.settings.printColorCents, restoreSeq: item.restoreSeq, restartSeq: item.restartSeq, appliedRestoreSeq: item.appliedRestoreSeq || 0, appliedRestartSeq: item.appliedRestartSeq || 0, shutdownSeq: item.shutdownSeq || 0, appliedShutdownSeq: item.appliedShutdownSeq || 0, monitorUntil: item.monitorUntil || 0, scriptHash: agentScript().hash });
     }
+    // O cliente encerra o proprio acesso pelo relogio da estacao: vira pendencia para pagar no caixa.
+    const clientEnd = p.match(/^\/api\/client\/([^/]+)\/end$/);
+    if (clientEnd && req.method === "POST") {
+      const item = getMachine(decodeURIComponent(clientEnd[1])); agent(req, item);
+      const input = await readBody(req);
+      if (!item.session) return send(res, 200, { ok: true, alreadyEnded: true });
+      if (input.sessionId && input.sessionId !== item.session.id) throw err(409, "Sessao ja trocada");
+      const sessionId = finish(item, "client", "cliente", true);
+      const dueCents = db.charges.filter(row => row.sessionId === sessionId).reduce((sum, row) => sum + row.amountCents - row.paidCents, 0);
+      item.lockMessage = dueCents > 0 ? `Acesso encerrado. Pague R$ ${(dueCents / 100).toFixed(2).replace(".", ",")} no caixa. Obrigado!` : "Acesso encerrado. Obrigado pela visita!";
+      event(item.id, "Cliente encerrou o acesso", dueCents > 0 ? `A receber: R$ ${(dueCents / 100).toFixed(2)}` : "Sem valor a receber", "cliente"); save();
+      return send(res, 200, { ok: true, dueCents });
+    }
     const clientEvent = p.match(/^\/api\/client\/([^/]+)\/event$/);
     if (clientEvent && req.method === "POST") {
       const item = getMachine(decodeURIComponent(clientEvent[1])); agent(req, item);
@@ -695,10 +980,12 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const printer = color ? db.settings.printColorPrinter : db.settings.printBlackPrinter;
       if (!item.session || item.locked) throw err(409, "Estacao sem sessao ativa");
       if (!printer) throw err(409, `Impressora ${color ? "colorida" : "preto e branco"} nao configurada no Atendimento`);
+      const uploadSessionId = item.session.id;
       const body = await readRaw(req, 60 * 1024 * 1024);
+      if (!item.session || item.session.id !== uploadSessionId) throw err(409, "A sessao foi encerrada durante o envio: impressao cancelada");
       if (body.subarray(0, 4).toString("latin1") !== "%PDF") throw err(400, "Documento invalido");
       const rate = color ? db.settings.printColorCents : db.settings.printBWCents;
-      const printJob = { id: uuid(), at: now(), machineId: item.id, printer, pages, color, amountCents: pages * rate, state: "printing", sessionId: item.session.id };
+      const printJob = { id: uuid(), at: now(), machineId: item.id, printer, pages, color, amountCents: pages * rate, state: "printing", sessionId: uploadSessionId };
       db.printJobs.unshift(printJob);
       db.printJobs.length = Math.min(db.printJobs.length, 200);
       event(item.id, "Impressao enviada ao caixa", `${pages} pag ${color ? "colorida" : "P&B"} (${printer})`, "agente");
@@ -717,7 +1004,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const printed = Number.isInteger(result.pages) && result.pages > 0 ? result.pages : pages;
       printJob.pages = printed; printJob.amountCents = printed * rate;
       printJob.state = "confirmed"; printJob.printedAt = now();
-      charge("print", `Impressao ${color ? "colorida" : "P&B"}: ${printed} pag`, printJob.amountCents, { machineId: item.id, quantity: printed, color, printPrinter: printer, printJobId: printJob.id, sessionId: printJob.sessionId });
+      const stillOpen = item.session && item.session.id === printJob.sessionId;
+      charge("print", `Impressao ${color ? "colorida" : "P&B"}: ${printed} pag${stillOpen ? "" : " (apos encerrar a sessao)"}`, printJob.amountCents, { machineId: item.id, quantity: printed, color, printPrinter: printer, printJobId: printJob.id, sessionId: stillOpen ? printJob.sessionId : null });
       event(item.id, "Impressao enviada a impressora", `${printed} pag ${color ? "colorida" : "P&B"}`, "servidor"); save();
       return send(res, 200, { ok: true, printId: printJob.id, pages: printed, color, amountCents: printJob.amountCents, printer });
     }
@@ -743,7 +1031,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const item = getMachine(decodeURIComponent(clientFrame[1])); agent(req, item);
       const jpeg = await readRaw(req, 3 * 1024 * 1024);
       if (jpeg.length < 50 || jpeg[0] !== 0xff || jpeg[1] !== 0xd8) throw err(400, "Imagem invalida");
-      screens.set(item.id, { at: Date.now(), jpeg, width: number(url.searchParams.get("w"), 1, 100000, "Largura"), height: number(url.searchParams.get("h"), 1, 100000, "Altura") });
+      const previous = screens.get(item.id);
+      // Intervalo medio entre quadros: mostrado no monitor para medir a velocidade real da estacao.
+      const gap = previous ? Date.now() - previous.at : 0;
+      const intervalMs = previous && gap < 10000 ? Math.round((previous.intervalMs || gap) * 0.7 + gap * 0.3) : 0;
+      screens.set(item.id, { at: Date.now(), intervalMs, jpeg, width: number(url.searchParams.get("w"), 1, 100000, "Largura"), height: number(url.searchParams.get("h"), 1, 100000, "Altura") });
       const queue = inputs.get(item.id) || [];
       inputs.set(item.id, []);
       return send(res, 200, { ok: true, events: queue.slice(0, 50), monitorUntil: item.monitorUntil || 0 });
@@ -794,7 +1086,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const item = getMachine(decodeURIComponent(machineFrame[1]));
       const screen = screens.get(item.id);
       if (!screen || !screen.jpeg) { res.writeHead(204, { "cache-control": "no-store" }); return res.end(); }
-      res.writeHead(200, { "content-type": "image/jpeg", "content-length": screen.jpeg.length, "cache-control": "no-store", "x-screen-width": screen.width, "x-screen-height": screen.height, "x-screen-at": screen.at });
+      res.writeHead(200, { "content-type": "image/jpeg", "content-length": screen.jpeg.length, "cache-control": "no-store", "x-screen-width": screen.width, "x-screen-height": screen.height, "x-screen-at": screen.at, "x-screen-interval": screen.intervalMs || 0 });
       return res.end(screen.jpeg);
     }
     const machineScreen = p.match(/^\/api\/machines\/([^/]+)\/screen$/);
@@ -932,7 +1224,6 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         for (const [productId, quantity] of quantities) {
           const product = db.products.find(row => row.id === productId);
           if (!product || !product.active) throw err(409, "Produto indisponivel");
-          if (product.type === "stock" && product.stock < quantity) throw err(409, `Estoque insuficiente: ${product.name}`);
           if (product.priceCents < 1) throw err(409, `Configure o preco: ${product.name}`);
           items.push({ productId, name: product.name, quantity, unitPriceCents: product.priceCents, totalCents: quantity * product.priceCents });
         }
@@ -1017,6 +1308,43 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       event("clientes", "Recarga de tempo", `${client.name}: +${Math.round(seconds / 60)} min`, user.name);
       save(); return send(res, 201, { ok: true, client: publicClient(client), secondsAdded: seconds });
     }
+    // Divida do cliente (fiado): fica como pendencia no nome dele; pode ter prints da conversa como prova.
+    const clientDebt = p.match(/^\/api\/clients\/([^/]+)\/debt$/);
+    if (clientDebt && req.method === "POST") {
+      const client = db.clients.find(item => item.id === clientDebt[1]); if (!client) throw err(404, "Cliente nao encontrado");
+      const input = await readBody(req); const amountCents = money(input.amount, "Valor da divida");
+      if (amountCents < 1) throw err(400, "Informe o valor da divida");
+      const day = /^\d{4}-\d{2}-\d{2}$/.test(String(input.date || "")) ? input.date : null;
+      const description = label(input.description, 120) || "Fiado";
+      // Divida antiga (anterior ao sistema) entra na data dela e sem custo, para nao inflar as vendas de hoje.
+      const item = charge("debt", `Fiado ${client.name}: ${description}`, amountCents, { clientId: client.id, note: label(input.note, 300), proofs: [], operator: user.name, ...(day ? { at: new Date(`${day}T12:00:00-03:00`).toISOString() } : {}), ...(input.old === true || input.old === "true" ? { legacy: true } : {}) });
+      event("clientes", "Divida registrada", `${client.name}: R$ ${(amountCents / 100).toFixed(2)}`, user.name); save();
+      return send(res, 201, { ok: true, charge: item });
+    }
+    const chargeProof = p.match(/^\/api\/charges\/([^/]+)\/proof$/);
+    if (chargeProof && req.method === "POST") {
+      const item = db.charges.find(row => row.id === chargeProof[1]); if (!item) throw err(404, "Pendencia nao encontrada");
+      const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+      const ext = { "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif", "application/pdf": ".pdf" }[type];
+      if (!ext) throw err(415, "Envie imagem (print) ou PDF");
+      const buffer = await readRaw(req, 15 * 1024 * 1024);
+      const proofId = uuid();
+      fs.mkdirSync(proofsDir, { recursive: true });
+      fs.writeFileSync(path.join(proofsDir, `${proofId}${ext}`), buffer);
+      backupAttachment("provas", path.join(proofsDir, `${proofId}${ext}`));
+      item.proofs = [...(item.proofs || []), { id: proofId, ext, at: now(), by: user.name }];
+      save(); return send(res, 201, { ok: true, proof: item.proofs[item.proofs.length - 1] });
+    }
+    const chargeProofFile = p.match(/^\/api\/charges\/([^/]+)\/proof\/([0-9a-f-]{36})$/);
+    if (chargeProofFile && req.method === "GET") {
+      const item = db.charges.find(row => row.id === chargeProofFile[1]);
+      const proof = item && (item.proofs || []).find(row => row.id === chargeProofFile[2]);
+      if (!proof) throw err(404, "Prova nao encontrada");
+      const file = path.join(proofsDir, `${proof.id}${proof.ext}`);
+      if (!fs.existsSync(file)) throw err(404, "Arquivo nao encontrado");
+      res.writeHead(200, { "content-type": { ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".gif": "image/gif", ".pdf": "application/pdf" }[proof.ext], "cache-control": "no-store" });
+      return res.end(fs.readFileSync(file));
+    }
     const clientAction = p.match(/^\/api\/clients\/([^/]+)$/);
     if (clientAction && req.method === "POST") {
       const client = db.clients.find(item => item.id === clientAction[1]); if (!client) throw err(404, "Cliente nao encontrado");
@@ -1043,7 +1371,6 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
           const product = db.products.find(item => item.id === id);
           if (!product || !product.active) throw err(409, "Produto indisponivel");
           stockNeeded.set(id, (stockNeeded.get(id) || 0) + qty);
-          if (product.type === "stock" && product.stock < stockNeeded.get(id)) throw err(409, `Estoque insuficiente: ${product.name}`);
           if (product.priceCents < 1) throw err(409, `Configure o preco: ${product.name}`);
           const totalCents = qty * product.priceCents;
           amountCents += totalCents;
@@ -1102,9 +1429,65 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (!name) throw err(400, "Informe a descricao");
       const code = label(input.code, 50);
       if (code && db.products.some(item => item.code === code)) throw err(409, "Codigo ja cadastrado");
-      const product = { id: uuid(), name, code, category: label(input.category, 50), type: input.type === "service" ? "service" : "stock", priceCents: money(input.price, "Preco"), stock: number(input.stock ?? 0, 0, 1000000, "Estoque"), minStock: number(input.minStock ?? 0, 0, 1000000, "Estoque minimo"), active: true, createdAt: now() };
+      const product = { id: uuid(), name, code, category: label(input.category, 50), type: input.type === "service" ? "service" : "stock", priceCents: money(input.price, "Preco"), costCents: optionalCost(input.cost), stock: number(input.stock ?? 0, 0, 1000000, "Estoque"), minStock: number(input.minStock ?? 0, 0, 1000000, "Estoque minimo"), active: true, createdAt: now() };
       db.products.push(product); event("produtos", "Produto cadastrado", name, user.name); save();
       return send(res, 201, { ok: true, product });
+    }
+    // Produtos por nota fiscal (XML), Excel, CSV, PDF ou foto da DANFE: le e sugere o produto correspondente.
+    if (p === "/api/products/import-read" && req.method === "POST") {
+      admin(user);
+      const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+      const ext = { "text/xml": ".xml", "application/xml": ".xml", "text/csv": ".csv", "application/vnd.ms-excel": ".csv", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx", "application/pdf": ".pdf", "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp" }[type];
+      if (!ext) throw err(415, "Envie XML da nota, Excel (.xlsx), CSV, PDF ou foto");
+      const buffer = await readRaw(req, 20 * 1024 * 1024);
+      let text = "";
+      if (ext === ".pdf" || ext === ".jpg" || ext === ".png" || ext === ".webp") {
+        if (ext === ".pdf") { try { text = extractText(buffer); } catch { text = ""; } }
+        if (text.replace(/\s/g, "").length < 20) {
+          const tmp = path.join(os.tmpdir(), `lhm-nota-${uuid()}${ext}`);
+          fs.writeFileSync(tmp, buffer);
+          try { const result = await ocrRunner(tmp); if (!result.ok) throw err(422, result.error || "Nao foi possivel ler o arquivo"); text = result.text || ""; }
+          finally { fs.rmSync(tmp, { force: true }); }
+        }
+      }
+      let parsed;
+      try { parsed = readProducts(buffer, ext, text); } catch (cause) { throw err(400, cause.message || "Arquivo invalido"); }
+      const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+      const items = parsed.items.slice(0, 1000).map(item => {
+        const match = (item.ean && db.products.find(prod => prod.barcode === item.ean)) || (item.code && db.products.find(prod => prod.code === item.code && norm(prod.name) === norm(item.name)))
+          || (item.name && db.products.find(prod => norm(prod.name) === norm(item.name))) || (item.code && parsed.kind === "sheet" && db.products.find(prod => prod.code === item.code));
+        return { ...item, productId: match ? match.id : null, productName: match ? match.name : null };
+      });
+      return send(res, 200, { ok: true, kind: parsed.kind, supplier: parsed.supplier || "", number: parsed.number || "", date: parsed.date || "", totalCents: parsed.totalCents || null, items, empty: !items.length });
+    }
+    if (p === "/api/products/import-apply" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const rows = Array.isArray(input.items) ? input.items.slice(0, 1000) : [];
+      if (!rows.length) throw err(400, "Nenhum item selecionado");
+      const source = label(input.source, 80) || "importacao";
+      let updated = 0, created = 0, units = 0;
+      for (const row of rows) {
+        const qty = Math.round(Number(row.quantity) || 0);
+        const cost = Number.isInteger(row.unitCostCents) && row.unitCostCents > 0 ? row.unitCostCents : null;
+        const price = Number.isInteger(row.priceCents) && row.priceCents >= 0 ? row.priceCents : null;
+        let product = row.productId ? db.products.find(item => item.id === row.productId) : null;
+        if (!product) {
+          const name = label(row.name, 100); if (!name) continue;
+          let code = label(row.code, 50) || null;
+          if (code && db.products.some(item => item.code === code)) code = `${code}-${db.products.filter(item => String(item.code || "").startsWith(code)).length + 1}`;
+          product = { id: uuid(), name, code, barcode: /^\d{8,14}$/.test(String(row.ean || "")) ? row.ean : null, category: label(row.category, 50) || "Bomboniere & Bebidas", type: row.type === "service" ? "service" : "stock", priceCents: price ?? (cost ? cost * 2 : 0), costCents: cost, stock: 0, minStock: 0, active: true, createdAt: now() };
+          db.products.push(product); created++;
+        } else updated++;
+        if (cost) product.costCents = cost;
+        if (price !== null && row.productId) product.priceCents = price;
+        if (!product.barcode && /^\d{8,14}$/.test(String(row.ean || ""))) product.barcode = row.ean;
+        if (product.type === "stock" && qty > 0) {
+          product.stock = (product.stock || 0) + qty; units += qty;
+          db.stockMovements.unshift({ id: uuid(), at: now(), productId: product.id, delta: qty, reason: `Entrada: ${source}`, operator: user.name, unitCostCents: cost });
+        }
+      }
+      event("produtos", "Entrada de produtos", `${source}: ${updated} atualizado(s), ${created} novo(s), +${units} un.`, user.name); save();
+      return send(res, 200, { ok: true, updated, created, units });
     }
     const productAction = p.match(/^\/api\/products\/([^/]+)\/(update|stock|sell)$/);
     if (productAction && req.method === "POST") {
@@ -1114,19 +1497,19 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         admin(user); const code = label(input.code, 50);
         if (code && db.products.some(item => item.id !== product.id && item.code === code)) throw err(409, "Codigo ja cadastrado");
         product.name = label(input.name, 100) || product.name; product.code = code;
-        product.category = label(input.category, 50); product.priceCents = money(input.price, "Preco"); product.minStock = number(input.minStock ?? product.minStock ?? 0, 0, 1000000, "Estoque minimo"); product.active = input.active !== false;
+        product.category = label(input.category, 50); product.priceCents = money(input.price, "Preco"); if ("cost" in input) product.costCents = optionalCost(input.cost); product.minStock = number(input.minStock ?? product.minStock ?? 0, 0, 1000000, "Estoque minimo"); product.active = input.active !== false;
         event("produtos", "Produto atualizado", product.name, user.name);
       } else if (action === "stock") {
         admin(user); if (product.type !== "stock") throw err(409, "Servico nao possui estoque");
         const delta = number(input.delta, -100000, 100000, "Ajuste");
-        if (!delta || product.stock + delta < 0) throw err(400, "Ajuste deixaria estoque invalido");
+        // Estoque pode estar negativo (venda sem estoque liberada): entrada sempre aceita; saida nao passa de zero.
+        if (!delta || (delta < 0 && product.stock + delta < 0)) throw err(400, "Ajuste deixaria estoque invalido");
         product.stock += delta;
         db.stockMovements.unshift({ id: uuid(), at: now(), productId: product.id, delta, reason: label(input.reason, 100), operator: user.name });
         event("produtos", "Estoque ajustado", `${product.name}: ${delta}`, user.name);
       } else {
         const quantity = number(input.quantity, 1, 1000, "Quantidade");
         if (!product.active) throw err(409, "Produto inativo");
-        if (product.type === "stock" && product.stock < quantity) throw err(409, "Estoque insuficiente");
         if (!currentShift()) throw err(409, "Abra o caixa antes de vender");
         if (!METHODS.includes(input.paymentMethod)) throw err(400, "Escolha a forma de pagamento");
         if (product.priceCents < 1) throw err(400, "Configure um preco valido");
@@ -1177,6 +1560,136 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       event("caixa", "Caixa fechado", `Diferenca: ${counted - shift.closingExpectedCents} centavos`, user.name); save();
       return send(res, 200, { ok: true, shift });
     }
+    // Despesas (aluguel, energia, internet...): entram no DRE. Sangria nao e despesa.
+    if (p === "/api/expenses" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const category = label(input.category, 60); const description = label(input.description || category, 120);
+      if (!category) throw err(400, "Informe a categoria da despesa");
+      const amountCents = Number.isInteger(input.amountCents) ? input.amountCents : money(input.amount, "Valor");
+      if (amountCents < 1) throw err(400, "Informe o valor da despesa");
+      const day = /^\d{4}-\d{2}-\d{2}$/.test(String(input.date || "")) ? input.date : localDay(Date.now());
+      // Conta a pagar: fica pendente ate marcar como paga. PDF anexado fica em data/contas.
+      const fileId = /^[0-9a-f-]{36}$/.test(String(input.fileId || "")) && fs.existsSync(billsDir) && fs.readdirSync(billsDir).some(name => name.startsWith(input.fileId)) ? input.fileId : null;
+      const repeat = Number.isInteger(Number(input.repeatMonths)) ? Math.max(1, Math.min(24, Number(input.repeatMonths))) : 1;
+      const groupId = repeat > 1 ? uuid() : null;
+      const created = [];
+      for (let i = 0; i < repeat; i++) {
+        // Despesa fixa: mesmo dia nos meses seguintes (dia 31 vira o ultimo dia do mes).
+        const [y, m, d] = day.split("-").map(Number);
+        const last = new Date(Date.UTC(y, m - 1 + i + 1, 0)).getUTCDate();
+        const when = `${new Date(Date.UTC(y, m - 1 + i, 1)).toISOString().slice(0, 7)}-${String(Math.min(d, last)).padStart(2, "0")}`;
+        const paidNow = input.paid !== false && i === 0;
+        created.push({ id: uuid(), at: new Date(`${when}T12:00:00-03:00`).toISOString(), category, description, amountCents, operator: user.name, paid: paidNow, paidAt: paidNow ? now() : null, fileId: i === 0 ? fileId : null, groupId, source: label(input.source, 30) || "manual" });
+      }
+      const item = created[0];
+      db.expenses.unshift(...created); event("caixa", "Despesa lancada", `${description}: R$ ${(amountCents / 100).toFixed(2)}`, user.name); save();
+      return send(res, 200, { ok: true, expense: item });
+    }
+    if (p === "/api/expenses" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, expenses: db.expenses, categories: EXPENSE_CATEGORIES }); }
+    // Conta em PDF ou foto (ou fatura do cartao): le o texto (OCR se preciso) e devolve a sugestao para conferir.
+    if (p === "/api/expenses/read" && req.method === "POST") {
+      admin(user);
+      const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+      const ext = { "application/pdf": ".pdf", "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/bmp": ".bmp", "image/gif": ".gif", "image/tiff": ".tif", "image/heic": ".heic" }[type];
+      if (!ext) throw err(415, "Envie um PDF ou uma foto (JPG ou PNG)");
+      const buffer = await readRaw(req, 20 * 1024 * 1024);
+      const fileId = uuid();
+      fs.mkdirSync(billsDir, { recursive: true });
+      const file = path.join(billsDir, `${fileId}${ext}`);
+      fs.writeFileSync(file, buffer);
+      backupAttachment("contas", file);
+      let text = "", ocr = false;
+      if (ext === ".pdf") {
+        if (buffer.subarray(0, 5).toString("latin1") !== "%PDF-") throw err(400, "Arquivo nao e um PDF");
+        try { text = extractText(buffer); } catch { text = ""; }
+      }
+      if (text.replace(/\s/g, "").length < 20) {
+        const result = await ocrRunner(file);
+        if (!result.ok) throw err(422, result.error || "Nao foi possivel ler o arquivo");
+        text = result.text || ""; ocr = true;
+      }
+      const analysis = analyzeText(text);
+      return send(res, 200, { ok: true, fileId, ocr, empty: text.replace(/\s/g, "").length < 20, kind: analysis.kind, suggestion: analysis.suggestion, items: analysis.items });
+    }
+    // Varias despesas de uma vez (compras da fatura do cartao).
+    if (p === "/api/expenses/bulk" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const rows = Array.isArray(input.items) ? input.items.slice(0, 300) : [];
+      if (!rows.length) throw err(400, "Nenhuma despesa selecionada");
+      const fileId = /^[0-9a-f-]{36}$/.test(String(input.fileId || "")) ? input.fileId : null;
+      const groupId = uuid(), source = label(input.source, 60) || "fatura";
+      const created = rows.map(row => {
+        const amountCents = Number.isInteger(row.amountCents) ? row.amountCents : money(row.amount, "Valor");
+        if (amountCents < 1) throw err(400, "Valor invalido");
+        const day = /^\d{4}-\d{2}-\d{2}$/.test(String(row.date || "")) ? row.date : localDay(Date.now());
+        return { id: uuid(), at: new Date(`${day}T12:00:00-03:00`).toISOString(), category: label(row.category, 60) || "Outros", description: label(row.description, 120) || "Compra no cartão", amountCents, operator: user.name, paid: input.paid !== false, paidAt: input.paid !== false ? now() : null, fileId, groupId, source };
+      });
+      db.expenses.unshift(...created);
+      event("caixa", "Despesas importadas", `${created.length} lançamento(s) de ${source}: R$ ${(created.reduce((s, r) => s + r.amountCents, 0) / 100).toFixed(2)}`, user.name); save();
+      return send(res, 200, { ok: true, count: created.length });
+    }
+    const expenseUpdate = p.match(/^\/api\/expenses\/([^/]+)\/update$/);
+    if (expenseUpdate && req.method === "POST") {
+      admin(user); const item = db.expenses.find(row => row.id === expenseUpdate[1]); if (!item) throw err(404, "Despesa nao encontrada");
+      const input = await readBody(req);
+      if (input.category !== undefined) item.category = label(input.category, 60) || item.category;
+      if (input.description !== undefined) item.description = label(input.description, 120) || item.description;
+      if (input.amount !== undefined || input.amountCents !== undefined) item.amountCents = Number.isInteger(input.amountCents) ? input.amountCents : money(input.amount, "Valor");
+      if (/^\d{4}-\d{2}-\d{2}$/.test(String(input.date || ""))) item.at = new Date(`${input.date}T12:00:00-03:00`).toISOString();
+      if (input.paid !== undefined) { item.paid = input.paid === true || input.paid === "true"; item.paidAt = item.paid ? (item.paidAt || now()) : null; }
+      save(); return send(res, 200, { ok: true, expense: item });
+    }
+    if (p === "/api/incomes" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const amountCents = money(input.amount, "Valor"); if (amountCents < 1) throw err(400, "Informe o valor");
+      const day = /^\d{4}-\d{2}-\d{2}$/.test(String(input.date || "")) ? input.date : localDay(Date.now());
+      const item = { id: uuid(), at: new Date(`${day}T12:00:00-03:00`).toISOString(), category: label(input.category, 60) || "Comissão Speed Financeira", description: label(input.description, 120) || "Comissão", amountCents, operator: user.name };
+      db.incomes.unshift(item); event("caixa", "Receita lançada", `${item.description}: R$ ${(amountCents / 100).toFixed(2)}`, user.name); save();
+      return send(res, 200, { ok: true, income: item });
+    }
+    const incomeDelete = p.match(/^\/api\/incomes\/([^/]+)\/delete$/);
+    if (incomeDelete && req.method === "POST") { admin(user); db.incomes = db.incomes.filter(item => item.id !== incomeDelete[1]); save(); return send(res, 200, { ok: true }); }
+    // PDF da conta: le o texto e devolve a sugestao; o atendente confere antes de salvar.
+    if (p === "/api/expenses/read-pdf" && req.method === "POST") {
+      admin(user);
+      const pdf = await readRaw(req, 15 * 1024 * 1024);
+      let result;
+      try { result = readBill(pdf); } catch (cause) { throw err(400, cause.message || "PDF invalido"); }
+      const fileId = uuid();
+      fs.mkdirSync(billsDir, { recursive: true });
+      fs.writeFileSync(path.join(billsDir, `${fileId}.pdf`), pdf);
+      return send(res, 200, { ok: true, fileId, scanned: result.scanned, suggestion: result.suggestion });
+    }
+    const expenseFile = p.match(/^\/api\/expenses\/([^/]+)\/file$/);
+    if (expenseFile && req.method === "GET") {
+      admin(user); const item = db.expenses.find(row => row.id === expenseFile[1]);
+      if (!item || !item.fileId) throw err(404, "Conta sem PDF");
+      const found = [".pdf", ".jpg", ".png", ".webp", ".bmp", ".gif", ".tif", ".heic"].map(ext => path.join(billsDir, `${item.fileId}${ext}`)).find(name => fs.existsSync(name));
+      if (!found) throw err(404, "Arquivo nao encontrado");
+      const types = { ".pdf": "application/pdf", ".jpg": "image/jpeg", ".png": "image/png", ".webp": "image/webp", ".bmp": "image/bmp", ".gif": "image/gif", ".tif": "image/tiff", ".heic": "image/heic" };
+      res.writeHead(200, { "content-type": types[path.extname(found)], "cache-control": "no-store", "content-disposition": "inline" });
+      return res.end(fs.readFileSync(found));
+    }
+    const expensePay = p.match(/^\/api\/expenses\/([^/]+)\/pay$/);
+    if (expensePay && req.method === "POST") {
+      admin(user); const item = db.expenses.find(row => row.id === expensePay[1]); if (!item) throw err(404, "Despesa nao encontrada");
+      Object.assign(item, { paid: true, paidAt: now(), paidBy: user.name });
+      event("caixa", "Conta paga", `${item.description}: R$ ${(item.amountCents / 100).toFixed(2)}`, user.name); save();
+      return send(res, 200, { ok: true, expense: item });
+    }
+    const productStrategy = p.match(/^\/api\/products\/([^/]+)\/strategy$/);
+    if (productStrategy && req.method === "POST") {
+      admin(user); const product = db.products.find(row => row.id === productStrategy[1]); if (!product) throw err(404, "Produto nao encontrado");
+      const input = await readBody(req); product.strategy = label(input.strategy, 40) || null; save();
+      return send(res, 200, { ok: true, product });
+    }
+    const expenseDelete = p.match(/^\/api\/expenses\/([^/]+)\/delete$/);
+    if (expenseDelete && req.method === "POST") {
+      admin(user); const item = db.expenses.find(row => row.id === expenseDelete[1]); if (!item) throw err(404, "Despesa nao encontrada");
+      db.expenses = db.expenses.filter(row => row !== item);
+      event("caixa", "Despesa excluida", `${item.description}: R$ ${(item.amountCents / 100).toFixed(2)}`, user.name); save();
+      return send(res, 200, { ok: true });
+    }
     const chargeCancel = p.match(/^\/api\/charges\/([^/]+)\/cancel$/);
     if (chargeCancel && req.method === "POST") {
       // Cancela o que falta receber (ex.: sessao de teste esquecida). O que ja foi pago fica.
@@ -1199,10 +1712,26 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (p === "/api/settings" && req.method === "POST") {
       admin(user); const input = await readBody(req);
       const timeTable = parseTimeTable(input.timeTable) || db.settings.timeTable;
-      const settings = { defaultMinutes: number(input.defaultMinutes, 1, 1440, "Tempo padrao"), autoRestoreOnTimeEnd: input.autoRestoreOnTimeEnd !== false, rateCentsHour: money(input.hourPrice, "Tarifa por hora"), printBWCents: money(input.printBW, "Impressao P&B"), printColorCents: money(input.printColor, "Impressao colorida"), printBlackPrinter: db.settings.printBlackPrinter || "", printColorPrinter: db.settings.printColorPrinter || "", timeTable };
+      const settings = { ...db.settings, defaultMinutes: number(input.defaultMinutes, 1, 1440, "Tempo padrao"), autoRestoreOnTimeEnd: input.autoRestoreOnTimeEnd !== false, rateCentsHour: money(input.hourPrice, "Tarifa por hora"), printBWCents: money(input.printBW, "Impressao P&B"), printColorCents: money(input.printColor, "Impressao colorida"), printBlackPrinter: db.settings.printBlackPrinter || "", printColorPrinter: db.settings.printColorPrinter || "", timeTable };
       if (settings.rateCentsHour < 1 || settings.printBWCents < 1 || settings.printColorCents < 1) throw err(400, "Tarifas devem ser maiores que zero");
       db.settings = settings; event("sistema", "Tarifas atualizadas", "", user.name); save();
       return send(res, 200, { ok: true, settings });
+    }
+    // Metas e taxas das maquininhas: usadas no DRE (deducoes) e na projecao do mes.
+    if (p === "/api/settings/finance" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const pct = (value, field) => { const n = Number(String(value ?? 0).replace(",", ".")); if (!Number.isFinite(n) || n < 0 || n > 20) throw err(400, `${field} invalida`); return Math.round(n * 100) / 100; };
+      Object.assign(db.settings, {
+        monthGoalCents: money(input.monthGoal, "Meta mensal"), dailyGoalCents: money(input.dailyGoal, "Meta diaria"),
+        feeDebitPct: pct(input.feeDebit, "Taxa do debito"), feeCreditPct: pct(input.feeCredit, "Taxa do credito"),
+        feeCardPct: pct(input.feeCard, "Taxa do cartao"), feePixPct: pct(input.feePix, "Taxa do Pix"),
+        workDays: number(input.workDays ?? 6, 1, 7, "Dias de trabalho por semana"),
+        printBWCostCents: input.printBWCost !== undefined && input.printBWCost !== "" ? money(input.printBWCost, "Custo da pagina P&B") : (db.settings.printBWCostCents || 0),
+        printColorCostCents: input.printColorCost !== undefined && input.printColorCost !== "" ? money(input.printColorCost, "Custo da pagina colorida") : (db.settings.printColorCostCents || 0),
+        panelOnlyHere: input.panelOnlyHere === true || input.panelOnlyHere === "true"
+      });
+      event("sistema", "Metas e taxas atualizadas", "", user.name); save();
+      return send(res, 200, { ok: true, settings: db.settings });
     }
     if (p === "/api/printers/local" && req.method === "GET") {
       if (url.searchParams.get("refresh") === "1" || Date.now() - localPrinters.at > 30000) {
@@ -1297,13 +1826,173 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       db.loginSessions = db.loginSessions.filter(item => item.userId !== target.id);
       event("sistema", "Senha alterada", target.name, user.name); save(); return send(res, 200, { ok: true });
     }
+    // ---------- Cofre de logins (promotoras, bancos, sistemas da Speed) ----------
+    // Tudo criptografado (AES-256-GCM) com chave derivada da senha mestre, que nunca e gravada.
+    // A chave fica so na memoria, ligada a sessao de login, e expira apos 15 min sem uso.
+    if (p.startsWith("/api/vault")) {
+      admin(user);
+      const sessionKey = hash((req.headers.cookie || "").match(/(?:^|;\s*)lhm_session=([^;]+)/)?.[1] || "");
+      const masterMode = Boolean(db.vault.salt);
+      const unlocked = () => { if (!masterMode) return vaultAutoKey(); const entry = vaultKeys.get(sessionKey); if (!entry || entry.until < Date.now()) { vaultKeys.delete(sessionKey); return null; } entry.until = Date.now() + 15 * 60000; return entry.key; };
+      const encrypt = (key, value) => { const iv = crypto.randomBytes(12); const cipher = crypto.createCipheriv("aes-256-gcm", key, iv); const data = Buffer.concat([cipher.update(JSON.stringify(value), "utf8"), cipher.final()]); return { iv: iv.toString("base64"), tag: cipher.getAuthTag().toString("base64"), data: data.toString("base64") }; };
+      const decrypt = (key, box) => { const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(box.iv, "base64")); decipher.setAuthTag(Buffer.from(box.tag, "base64")); return JSON.parse(Buffer.concat([decipher.update(Buffer.from(box.data, "base64")), decipher.final()]).toString("utf8")); };
+      const list = key => (db.vault.items || []).map(box => ({ id: box.id, ...decrypt(key, box) }));
+      if (p === "/api/vault" && req.method === "GET") {
+        const key = unlocked();
+        // Formato antigo: banco sem login e sem senha era so um nome da lista de bancos.
+        if (key) {
+          const old = list(key).filter(item => item.kind === "banco" && !item.login && !item.password);
+          if (old.length) {
+            db.vault.banks ||= [];
+            for (const item of old) if (!db.vault.banks.some(b => b.name.toLowerCase() === item.name.toLowerCase())) db.vault.banks.push({ name: item.name, url: item.url || "", active: item.active !== false });
+            db.vault.banks.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+            const ids = new Set(old.map(item => item.id));
+            db.vault.items = db.vault.items.filter(box => !ids.has(box.id));
+            db.vault.updatedAt = now(); save();
+          }
+        }
+        return send(res, 200, { ok: true, masterMode, unlocked: Boolean(key), items: key ? list(key) : [], banks: key ? (db.vault.banks || []) : [] });
+      }
+      if (p === "/api/vault/setup" && req.method === "POST") {
+        if (db.vault.salt) throw err(409, "O cofre ja tem senha mestre");
+        const input = await readBody(req); const master = String(input.master || "");
+        if (master.length < 8) throw err(400, "A senha mestre precisa ter pelo menos 8 caracteres");
+        const salt = crypto.randomBytes(16).toString("hex"); const key = crypto.scryptSync(master, salt, 32);
+        const current = list(vaultAutoKey());
+        db.vault = { salt, check: encrypt(key, "cofre-ok"), items: current.map(({ id, ...value }) => ({ id, ...encrypt(key, value) })), updatedAt: now() };
+        vaultKeys.set(sessionKey, { key, until: Date.now() + 15 * 60000 });
+        event("sistema", "Senha mestre do cofre ativada", "", user.name); save();
+        return send(res, 200, { ok: true, items: list(key) });
+      }
+      if (p === "/api/vault/unlock" && req.method === "POST") {
+        if (!db.vault.salt) throw err(409, "Crie a senha mestre primeiro");
+        const ip = req.socket.remoteAddress || "";
+        const attempt = vaultAttempts.get(ip);
+        if (attempt && attempt.count >= 5 && attempt.until > Date.now()) throw err(429, "Muitas tentativas. Aguarde 15 minutos.");
+        const input = await readBody(req);
+        const key = crypto.scryptSync(String(input.master || ""), db.vault.salt, 32);
+        let ok = false; try { ok = decrypt(key, db.vault.check) === "cofre-ok"; } catch { ok = false; }
+        if (!ok) { vaultAttempts.set(ip, { count: (attempt && attempt.until > Date.now() ? attempt.count : 0) + 1, until: Date.now() + 15 * 60000 }); event("sistema", "Senha mestre errada no cofre", ip, user.name); save(); throw err(401, "Senha mestre incorreta"); }
+        vaultAttempts.delete(ip);
+        vaultKeys.set(sessionKey, { key, until: Date.now() + 15 * 60000 });
+        return send(res, 200, { ok: true, items: list(key) });
+      }
+      if (p === "/api/vault/lock" && req.method === "POST") { vaultKeys.delete(sessionKey); return send(res, 200, { ok: true }); }
+      const key = unlocked();
+      if (!key) throw err(423, "Cofre bloqueado: digite a senha mestre");
+      if (p === "/api/vault/banks" && req.method === "POST") {
+        const input = await readBody(req);
+        const seen = new Set();
+        db.vault.banks = [].concat(input.banks || []).map(b => ({ name: label(b.name, 60), url: label(b.url, 300), active: b.active !== false })).filter(b => b.name && !seen.has(b.name.toLowerCase()) && seen.add(b.name.toLowerCase())).slice(0, 300)
+          .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+        db.vault.updatedAt = now(); save();
+        return send(res, 200, { ok: true, banks: db.vault.banks });
+      }
+      if (p === "/api/vault/items" && req.method === "POST") {
+        const input = await readBody(req);
+        const kind = ["banco", "promotora", "sistema"].includes(input.kind) ? input.kind : "banco";
+        const value = { kind, name: label(input.name, 80), promoter: label(input.promoter, 80), products: [].concat(input.products || []).map(v => label(v, 20)).filter(Boolean).slice(0, 10), login: String(input.login || "").slice(0, 200), password: String(input.password || "").slice(0, 200), url: label(input.url, 300), notes: String(input.notes || "").slice(0, 1000), active: input.active !== false, updatedAt: now(), updatedBy: user.name };
+        if (!value.name) throw err(400, "Informe o nome do banco, promotora ou sistema");
+        const id = /^[0-9a-f-]{36}$/.test(String(input.id || "")) && db.vault.items.some(box => box.id === input.id) ? input.id : uuid();
+        const box = { id, ...encrypt(key, value) };
+        db.vault.items = db.vault.items.filter(item => item.id !== id).concat(box);
+        db.vault.updatedAt = now(); event("sistema", "Login do cofre salvo", value.name, user.name); save();
+        return send(res, 200, { ok: true, items: list(key) });
+      }
+      const vaultDelete = p.match(/^\/api\/vault\/items\/([^/]+)\/delete$/);
+      if (vaultDelete && req.method === "POST") {
+        db.vault.items = db.vault.items.filter(item => item.id !== vaultDelete[1]);
+        db.vault.updatedAt = now(); event("sistema", "Login do cofre excluido", "", user.name); save();
+        return send(res, 200, { ok: true, items: list(key) });
+      }
+      throw err(404, "API nao encontrada");
+    }
+    // Modulo Speed Marketing: chaves "speed_*" que o painel guardava no navegador.
+    if (p === "/api/marketing/store" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, store: db.marketing.store }); }
+    if (p === "/api/marketing/store" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const store = { ...db.marketing.store };
+      for (const [key, value] of Object.entries(input.set || {})) {
+        if (!/^speed_[\w .-]{1,90}$/.test(key)) throw err(400, "Chave invalida");
+        if (typeof value !== "string" || value.length > 8 * 1024 * 1024) throw err(400, "Valor invalido");
+        store[key] = value;
+      }
+      for (const key of [].concat(input.remove || [])) delete store[key];
+      const size = Object.values(store).reduce((sum, value) => sum + value.length, 0);
+      if (size > 40 * 1024 * 1024) throw err(413, "Dados do marketing passaram de 40 MB");
+      db.marketing = { store, updatedAt: now() }; save();
+      return send(res, 200, { ok: true });
+    }
     throw err(404, "API nao encontrada");
   }
 
+  const vaultKeys = new Map(), vaultAttempts = new Map();
+  const vaultKeyFile = path.join(dataDir, "cofre.chave");
+  function vaultAutoKey() {
+    if (!fs.existsSync(vaultKeyFile)) { fs.mkdirSync(dataDir, { recursive: true }); fs.writeFileSync(vaultKeyFile, crypto.randomBytes(32).toString("hex")); }
+    return Buffer.from(fs.readFileSync(vaultKeyFile, "utf8").trim(), "hex");
+  }
+  const marketingDir = path.join(__dirname, "public", "marketing");
+  const MARKETING_TYPES = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json", ".csv": "text/csv; charset=utf-8", ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".pdf": "application/pdf", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation" };
+  // Biblioteca de pesquisas do marketing: lista as pastas em /marketing/arquivos/.
+  function marketingLibrary(dir, relative) {
+    const esc = value => String(value).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    const kinds = { ".xlsx": "Planilha", ".csv": "Planilha", ".docx": "Documento", ".md": "Texto", ".txt": "Texto", ".pptx": "Apresentação", ".json": "Dados", ".html": "Página", ".pdf": "PDF" };
+    const entries = fs.readdirSync(dir, { withFileTypes: true }).filter(e => !e.name.startsWith(".")).sort((a, b) => (b.isDirectory() - a.isDirectory()) || a.name.localeCompare(b.name, "pt-BR"));
+    const rows = entries.map(e => {
+      const href = encodeURIComponent(e.name) + (e.isDirectory() ? "/" : "");
+      const size = e.isDirectory() ? "" : `${Math.max(1, Math.round(fs.statSync(path.join(dir, e.name)).size / 1024))} KB`;
+      return `<tr><td><a href="${href}"${e.isDirectory() ? "" : ' target="_blank" rel="noopener"'}>${e.isDirectory() ? "&#128193; " : ""}${esc(e.name)}</a></td><td>${e.isDirectory() ? "Pasta" : kinds[path.extname(e.name).toLowerCase()] || "Arquivo"}</td><td>${size}</td></tr>`;
+    }).join("");
+    const title = relative ? relative.replace(/\/$/, "") : "Arquivos de pesquisa";
+    return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(title)}</title><style>
+      body{font-family:"Segoe UI",Arial,sans-serif;margin:0;background:#f4f7f5;color:#0b2e1a}
+      header{background:linear-gradient(90deg,#0a7a3d,#0b8a45);color:#fff;padding:18px 28px;display:flex;align-items:center;gap:12px}
+      header b{background:#f5c518;color:#0b3a1e;border-radius:8px;padding:4px 10px;font-size:13px}
+      main{padding:24px 28px;max-width:1000px} table{width:100%;border-collapse:collapse;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+      td,th{padding:11px 14px;border-bottom:1px solid #e6efe9;text-align:left;font-size:14px} th{background:#eef7f1;font-size:12px;text-transform:uppercase;color:#4b6b58}
+      a{color:#0a7a3d;font-weight:600;text-decoration:none} a:hover{text-decoration:underline} p{color:#4b6b58}
+    </style></head><body><header><b>Speed Financeira</b><strong>${esc(title)}</strong></header><main>
+    ${relative ? '<p><a href="../">&larr; Voltar</a></p>' : "<p>Estudos de palavras-chave, pesquisa SEO, controle de diretórios e importação do Google Ads. Planilhas e documentos abrem no Excel/Word ao clicar.</p>"}
+    <table><thead><tr><th>Nome</th><th>Tipo</th><th>Tamanho</th></tr></thead><tbody>${rows || '<tr><td colspan="3">Pasta vazia</td></tr>'}</tbody></table></main></body></html>`;
+  }
+  function serveMarketing(req, res, url) {
+    let user = null;
+    try { user = operator(req); } catch { }
+    if (!user || user.role !== "admin") { res.writeHead(302, { location: "/" }); return res.end(); }
+    if (url.pathname === "/marketing") { res.writeHead(302, { location: "/marketing/" }); return res.end(); }
+    const relative = decodeURIComponent(url.pathname.slice("/marketing/".length)) || "index.html";
+    const file = path.resolve(marketingDir, relative);
+    const libraryDir = path.join(marketingDir, "arquivos");
+    if ((file === libraryDir || file.startsWith(libraryDir + path.sep)) && fs.existsSync(file) && fs.statSync(file).isDirectory()) {
+      if (!url.pathname.endsWith("/")) { res.writeHead(302, { location: url.pathname + "/" }); return res.end(); }
+      res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      return res.end(marketingLibrary(file, relative.replace(/^arquivos\/?/, "")));
+    }
+    if (!file.startsWith(marketingDir + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) throw err(404, "Arquivo nao encontrado");
+    const type = MARKETING_TYPES[path.extname(file).toLowerCase()];
+    if (!type) throw err(404, "Arquivo nao encontrado");
+    if (relative === "index.html") {
+      // Dados salvos no Nexcafe entram antes dos scripts do painel (que leem o localStorage ao abrir).
+      const data = JSON.stringify(db.marketing.store).replace(/</g, "\\u003c");
+      const page = fs.readFileSync(file, "utf8").replace(/<head>/i, () => `<head>\n  <script>window.__NEXCAFE_MARKETING__ = ${data};</script>\n  <script src="nexcafe-sync.js"></script>`);
+      res.writeHead(200, { "content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff" });
+      return res.end(page);
+    }
+    res.writeHead(200, { "content-type": type, "cache-control": "no-cache", "x-content-type-options": "nosniff" });
+    fs.createReadStream(file).pipe(res);
+  }
   const server = http.createServer(async (req, res) => {
     try {
       const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+      const stationRoute = /^\/api\/(client|agent|bootstrap)(\/|$)/.test(url.pathname);
+      if (db.settings.panelOnlyHere && !loopback(req) && !stationRoute) {
+        if (url.pathname.startsWith("/api/")) throw err(403, "Painel liberado apenas no computador do caixa");
+        res.writeHead(403, { "content-type": "text/html; charset=utf-8" });
+        return res.end("<!doctype html><meta charset=utf-8><body style=\"font-family:Segoe UI;padding:40px\"><h2>Painel disponível só no computador do caixa.</h2></body>");
+      }
       if (url.pathname.startsWith("/api/")) return await api(req, res, url);
+      if (url.pathname === "/marketing" || url.pathname.startsWith("/marketing/")) return serveMarketing(req, res, url);
       const files = { "/": "index.html", "/index.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css" };
       const file = files[url.pathname]; if (!file || req.method !== "GET") throw err(404, "Pagina nao encontrada");
       const type = file.endsWith(".html") ? "text/html" : file.endsWith(".css") ? "text/css" : "application/javascript";

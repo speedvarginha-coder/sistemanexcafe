@@ -1,0 +1,92 @@
+[
+  {
+    "nome": "Três Corações",
+    "slug": "tres-coracoes",
+    "regiao": "Sul de Minas",
+    "populacao": 75485,
+    "distancia_km": 33,
+    "tempo_carro": "38 minutos",
+    "rodovia": "BR-381",
+    "sobre": "Três Corações é conhecida como a cidade do Rei Pelé e fica às margens da BR-381, uma das rodovias mais movimentadas do país, com forte presença de aposentados e servidores públicos."
+  },
+  {
+    "nome": "Três Pontas",
+    "slug": "tres-pontas",
+    "regiao": "Sul de Minas",
+    "populacao": 55259,
+    "distancia_km": 30,
+    "tempo_carro": "35 minutos",
+    "rodovia": "MG-167",
+    "sobre": "Três Pontas é reconhecida como uma das maiores produtoras de café do mundo, o que atrai trabalhadores do campo e do comércio que buscam crédito acessível e sem burocracia."
+  },
+  {
+    "nome": "Elói Mendes",
+    "slug": "eloi-mendes",
+    "regiao": "Sul de Minas",
+    "populacao": 26336,
+    "distancia_km": 19,
+    "tempo_carro": "22 minutos",
+    "rodovia": "BR-491",
+    "sobre": "Elói Mendes é praticamente vizinha de Varginha: milhares de moradores trabalham e estudam na cidade polo diariamente, e muitos preferem resolver o crédito de forma 100% online."
+  },
+  {
+    "nome": "Boa Esperança",
+    "slug": "boa-esperanca",
+    "regiao": "Sul de Minas",
+    "populacao": 39848,
+    "distancia_km": 67,
+    "tempo_carro": "1 hora",
+    "rodovia": "BR-369",
+    "sobre": "Boa Esperança vive às margens do Lago de Furnas e recebe muitos aposentados e famílias em busca de crédito para reformas, quitar dívidas e organizar as finanças."
+  },
+  {
+    "nome": "Cambuquira",
+    "slug": "cambuquira",
+    "regiao": "Sul de Minas",
+    "populacao": 12313,
+    "distancia_km": 50,
+    "tempo_carro": "47 minutos",
+    "rodovia": "MG-167",
+    "sobre": "Cambuquira é uma estância hidromineral do Circuito das Águas, com grande presença de aposentados e visitantes que valorizam atendimento seguro e sem filas."
+  },
+  {
+    "nome": "São Lourenço",
+    "slug": "sao-lourenco",
+    "regiao": "Sul de Minas",
+    "populacao": 44798,
+    "distancia_km": 115,
+    "tempo_carro": "1h50",
+    "rodovia": "BR-354",
+    "sobre": "São Lourenço é estância hidromineral do Circuito das Águas e foi apontada em estudo da UNIFAL-MG como uma das melhores cidades do Brasil para se envelhecer, o que reforça a procura por empréstimo consignado."
+  },
+  {
+    "nome": "Pouso Alegre",
+    "slug": "pouso-alegre",
+    "regiao": "Sul de Minas",
+    "populacao": 152217,
+    "distancia_km": 124,
+    "tempo_carro": "2 horas",
+    "rodovia": "BR-381",
+    "sobre": "Pouso Alegre é a segunda maior cidade do Sul de Minas e um polo de empregos e serviços, com milhares de aposentados, pensionistas e servidores públicos na região."
+  },
+  {
+    "nome": "Carmo da Cachoeira",
+    "slug": "carmo-da-cachoeira",
+    "regiao": "Sul de Minas",
+    "populacao": 11547,
+    "distancia_km": 25,
+    "tempo_carro": "30 minutos",
+    "rodovia": "BR-491",
+    "sobre": "Carmo da Cachoeira é vizinha de Varginha, na BR-491, com população majoritariamente ligada ao campo e à agropecuária e muitos aposentados que preferem atendimento digital."
+  },
+  {
+    "nome": "Alfenas",
+    "slug": "alfenas",
+    "regiao": "Sul de Minas",
+    "populacao": 78970,
+    "distancia_km": 68,
+    "tempo_carro": "1 hora",
+    "rodovia": "BR-491",
+    "sobre": "Alfenas é uma cidade universitária e polo regional, com grande número de servidores públicos, professores e aposentados que buscam as melhores taxas de consignado."
+  }
+]

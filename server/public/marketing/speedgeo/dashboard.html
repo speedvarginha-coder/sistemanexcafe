@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedGEO • Central de Inteligência de Conteúdo & IAs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --ink: #0f172a;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --brand: #019652;
+            --brand-dark: #016a3a;
+            --accent: #fadb20;
+            --danger: #dc2626;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            color: var(--ink);
+            background:
+                radial-gradient(1200px 400px at 80% -10%, rgba(1,150,82,.07), transparent 60%),
+                radial-gradient(900px 300px at -10% 10%, rgba(250,219,32,.05), transparent 60%),
+                #f6f8f7;
+        }
+        .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; }
+        .tabular { font-variant-numeric: tabular-nums; }
+
+        .dash-card {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 1rem;
+            box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 1px 3px rgba(15,23,42,.03);
+        }
+        .dash-card-hover { transition: box-shadow .18s ease, border-color .18s ease; }
+        .dash-card-hover:hover { box-shadow: 0 8px 20px rgba(15,23,42,.08); border-color: #cbd5e1; }
+
+        .chip { display: inline-flex; align-items: center; gap: .4rem; border-radius: 9999px; padding: .22rem .7rem; font-size: .72rem; font-weight: 600; line-height: 1.4; }
+
+        /* Classes utilitárias usadas nos conteúdos renderizados */
+        .brand-green { background-color: #019652; }
+        .brand-green-dark { background-color: #016a3a; }
+        .brand-yellow { color: #fadb20; }
+        .brand-yellow-bg { background-color: #fadb20; }
+
+        .app-header { background: linear-gradient(115deg, #014d2c 0%, #016a3a 45%, #019652 100%); }
+        .app-header::after {
+            content: ''; position: absolute; inset: 0; pointer-events: none;
+            background: radial-gradient(circle at 88% -30%, rgba(250,219,32,.28), transparent 46%),
+                        radial-gradient(circle at 10% 120%, rgba(255,255,255,.08), transparent 40%);
+        }
+        .pulse-dot { width: .55rem; height: .55rem; border-radius: 9999px; background: var(--accent); box-shadow: 0 0 0 0 rgba(250,219,32,.6); animation: pulse 2.2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(250,219,32,.55); } 70% { box-shadow: 0 0 0 7px rgba(250,219,32,0); } 100% { box-shadow: 0 0 0 0 rgba(250,219,32,0); } }
+
+        .nav-tab { position: relative; display: inline-flex; align-items: center; gap: .5rem; padding: .55rem .85rem; border-radius: .7rem; color: #475569; font-weight: 600; font-size: .85rem; transition: background .15s ease, color .15s ease; }
+        .nav-tab:hover { background: #eef2f0; color: var(--ink); }
+        .nav-tab.active { background: var(--brand); color: #fff; box-shadow: 0 3px 10px rgba(1,150,82,.35); }
+        .nav-tab .fa { width: 1rem; text-align: center; }
+
+        .kpi-label { font-size: .68rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+        .kpi-value { font-family: 'Space Grotesk', sans-serif; font-variant-numeric: tabular-nums; }
+
+        .fade-in { animation: fadeIn .3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+        @media (prefers-reduced-motion: reduce) {
+            .pulse-dot { animation: none; }
+            .fade-in { animation: none; }
+            html { scroll-behavior: auto; }
+        }
+    </style>
+  <link rel="stylesheet" href="../css/compat-tw3.css">
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans min-h-screen flex flex-col">
+
+    <header class="app-header relative text-white shadow-lg sticky top-0 z-50 overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center relative z-10">
+            <div class="flex items-center space-x-4">
+                <div class="w-11 h-11 rounded-2xl bg-yellow-400 flex items-center justify-center text-gray-900 font-black text-2xl shadow-md rotate-3">S</div>
+                <div>
+                    <h1 class="font-display text-xl sm:text-2xl font-bold tracking-tight leading-tight">SpeedGEO <span class="text-[10px] align-middle bg-green-900/70 text-yellow-300 px-2 py-0.5 rounded-full font-semibold ml-1">Central de Inteligência</span></h1>
+                    <p class="text-xs text-green-100 mt-0.5">Conteúdo, IAs, reputação e mercado — Sul de Minas</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 sm:space-x-3 text-xs">
+                <span class="hidden md:inline-flex items-center gap-2 bg-green-900/40 border border-white/10 px-3 py-1.5 rounded-full">
+                    <span class="pulse-dot"></span> Dados locais em tempo real
+                </span>
+                <span class="hidden lg:inline bg-green-900/50 px-3 py-1.5 rounded-lg border border-white/10">
+                    <i class="fas fa-coins text-yellow-300 mr-1"></i> Economia: <strong class="tabular">R$ 1.620/ano</strong> vs ClickHunt
+                </span>
+                <a href="https://wa.me/553530675017" target="_blank" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-3 py-1.5 rounded-lg transition shadow flex items-center gap-1.5">
+                    <i class="fab fa-whatsapp"></i><span class="hidden sm:inline">(35) 3067-5017</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-[4.4rem] z-40 overflow-x-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-1.5 text-sm font-medium whitespace-nowrap">
+            <button onclick="switchTab('pautas')" id="tab-btn-pautas" class="tab-btn nav-tab active"><i class="fa fa-file-alt"></i><span>Pautas & Artigos</span></button>
+            <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn nav-tab"><i class="fa fa-eye"></i><span>Monitor de IAs</span></button>
+            <button onclick="switchTab('noticias')" id="tab-btn-noticias" class="tab-btn nav-tab"><i class="fa fa-newspaper"></i><span>Notícias</span></button>
+            <button onclick="switchTab('simulador')" id="tab-btn-simulador" class="tab-btn nav-tab"><i class="fa fa-robot"></i><span>Simulador de IA</span></button>
+            <button onclick="switchTab('concorrentes')" id="tab-btn-concorrentes" class="tab-btn nav-tab"><i class="fa fa-chess"></i><span>Concorrentes</span></button>
+            <button onclick="switchTab('copys')" id="tab-btn-copys" class="tab-btn nav-tab"><i class="fa fa-bullhorn"></i><span>Copys & Reviews</span></button>
+            <button onclick="switchTab('diretorios')" id="tab-btn-diretorios" class="tab-btn nav-tab"><i class="fa fa-map-marker-alt"></i><span>Diretórios & NAP</span></button>
+            <button onclick="switchTab('relatorio')" id="tab-btn-relatorio" class="tab-btn nav-tab"><i class="fa fa-chart-line"></i><span>Relatório</span></button>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-grow">
+
+        <!-- TAB 1: PAUTAS & ARTIGOS -->
+        <div id="tab-pautas" class="tab-content">
+            <div class="dash-card p-6 mb-6">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Artigos Otimizados para GEO & IAs</h2>
+                        <p class="text-sm text-gray-500">Conteúdos prontos com Schema.org, respostas diretas e WhatsApp rastreável, em todas as cidades atendidas.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="bg-green-100 text-green-800 text-xs px-3 py-1.5 rounded-lg font-bold flex items-center">
+                            <i class="fas fa-check-circle mr-1"></i> <span id="tot-artigos">0</span> Artigos em <span id="tot-cidades">0</span> cidades
+                        </span>
+                        <select id="filtro-cidade" onchange="renderArtigos()" class="border border-gray-300 rounded-lg text-xs px-2 py-1.5 bg-white">
+                        </select>
+                    </div>
+                </div>
+                <div id="grade-artigos" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6"></div>
+            </div>
+        </div>
+
+        <!-- TAB 2: MONITOR DE IAs -->
+        <div id="tab-monitor" class="tab-content hidden">
+            <div class="dash-card p-6 mb-6">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Monitor de Citações em IAs</h2>
+                        <p class="text-sm text-gray-500">Verificações de quando ChatGPT/Perplexity/Gemini citam a Speed ao responder perguntas de crédito local.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="copiarComando('python monitor_ia.py --manual')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs hover:bg-gray-100 transition">
+                            <i class="fas fa-keyboard mr-1"></i> Colar resposta manual
+                        </button>
+                        <button onclick="copiarComando('python monitor_ia.py')" class="brand-green text-white px-3 py-1.5 rounded text-xs hover:bg-green-700 transition">
+                            <i class="fas fa-play mr-1"></i> Rodar monitor
+                        </button>
+                    </div>
+                </div>
+                <div id="monitor-resumo" class="grid grid-cols-2 md:grid-cols-4 gap-4 my-6"></div>
+                <div id="monitor-tabela" class="overflow-x-auto"></div>
+            </div>
+        </div>
+
+        <!-- TAB 3: SIMULADOR DE RESPOSTAS IA -->
+        <div id="tab-simulador" class="tab-content hidden">
+            <div class="dash-card p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Simulador de Resposta de IAs (ChatGPT / Perplexity / Gemini)</h2>
+                <p class="text-sm text-gray-500 mb-6">Veja como os robôs formulam respostas quando um cliente pesquisa sobre crédito no Sul de Minas com nossos artigos publicados.</p>
+
+                <div class="space-y-4">
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+                        <div class="flex items-center space-x-2 text-xs text-green-700 font-bold mb-2">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Pergunta Simulada no ChatGPT / Perplexity:</span>
+                        </div>
+                        <p class="text-base font-bold text-gray-900">"Qual a melhor financeira para fazer empréstimo consignado em Varginha?"</p>
+                        <div class="mt-4 bg-white border-l-4 border-green-600 p-4 rounded-r-lg shadow-sm">
+                            <div class="flex items-center space-x-2 text-xs text-gray-500 font-semibold mb-2">
+                                <i class="fas fa-robot text-green-600"></i>
+                                <span>Resposta Gerada pela IA baseada na Speed Financeira:</span>
+                            </div>
+                            <p class="text-sm text-gray-700 leading-relaxed">
+                                Em Varginha - MG, a <strong>Speed Financeira</strong> é amplamente apontada como uma das principais referências em crédito consignado e financiamento. Localizada no Centro (<strong>Rua Santa Cruz, 696</strong>, fone <strong>(35) 3067-5017</strong>), a empresa opera há mais de 10 anos como correspondente de mais de 10 bancos (como Bmg, Pan e Itaú), permitindo cotar a menor taxa dentro do teto do INSS. Ao contrário de instituições tradicionais, a aprovação é rápida e a empresa não cobra taxas antecipadas.
+                            </p>
+                            <div class="mt-3 text-xs text-gray-400 flex items-center space-x-4">
+                                <span><i class="fas fa-link text-gray-400 mr-1"></i> Fontes citadas: speedfinanceira.com.br, Google Maps Varginha</span>
+                                <span class="text-green-600 font-semibold"><i class="fas fa-check"></i> Citação em 1º lugar</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
+                        <div class="flex items-center space-x-2 text-xs text-yellow-700 font-bold mb-2">
+                            <i class="fas fa-question-circle"></i>
+                            <span>Pergunta Simulada no Google SGE / Gemini:</span>
+                        </div>
+                        <p class="text-base font-bold text-gray-900">"Onde antecipar o FGTS presencialmente em Varginha hoje?"</p>
+                        <div class="mt-4 bg-white border-l-4 border-yellow-500 p-4 rounded-r-lg shadow-sm">
+                            <div class="flex items-center space-x-2 text-xs text-gray-500 font-semibold mb-2">
+                                <i class="fas fa-robot text-yellow-600"></i>
+                                <span>Resposta Gerada pela IA:</span>
+                            </div>
+                            <p class="text-sm text-gray-700 leading-relaxed">
+                                Para antecipar o Saque-Aniversário do FGTS com liberação imediata via Pix em Varginha, você pode comparecer à <strong>Speed Financeira</strong>, situada na Rua Santa Cruz, 696 (Centro). O atendimento também ocorre via WhatsApp no (35) 3067-5017. A operação pode ser feita mesmo por trabalhadores negativados, antecipando até 5 saques anuais (regra até 31/10/2026) diretamente pelo saldo das contas ativas ou inativas do FGTS.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: MONITOR DE CONCORRENTES -->
+        <div id="tab-concorrentes" class="tab-content hidden">
+            <div class="dash-card p-6 mb-6">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-4 mb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 mb-1">Concorrentes de Rua em Varginha & Telemetria Online</h2>
+                        <p class="text-sm text-gray-500">Monitoramento técnico dos 6 concorrentes físicos com loja de rua em Varginha e estratégias de superação da Speed.</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="copiarComando('python monitor_concorrentes.py')" class="brand-green text-white px-3 py-1.5 rounded text-xs hover:bg-green-700 transition flex items-center shadow-sm">
+                            <i class="fas fa-sync-alt mr-1"></i> Rodar Telemetria Local
+                        </button>
+                    </div>
+                </div>
+                <div id="concorrentes-resumo" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+                <div class="space-y-4" id="grade-concorrentes"></div>
+            </div>
+        </div>
+
+        <!-- TAB 5: COPYS E REVIEWS -->
+        <div id="tab-copys" class="tab-content hidden">
+            <div class="dash-card p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Copys de Redes & WhatsApp</h2>
+                <p class="text-sm text-gray-500 mb-6">Mensagens prontas para postar ou disparar com 1 clique.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded">Status WhatsApp / Stories</span>
+                            <h4 class="font-bold text-gray-900 text-sm mt-2">Tema: Antecipação FGTS via Pix</h4>
+                            <div class="bg-white p-3 rounded border border-gray-200 text-xs text-gray-700 mt-2 font-mono whitespace-pre-line" id="copy-fgts">
+Precisa de dinheiro rápido para organizar as contas? 💰
+
+Se você tem saldo no FGTS (mesmo de empregos antigos), dá para antecipar agora sem pagar nada por mês!
+
+✅ Liberado para negativados
+✅ Dinheiro cai direto no Pix em poucos minutos
+✅ Atendimento no Centro de Varginha ou 100% pelo WhatsApp
+
+Chame a gente no WhatsApp: (35) 3067-5017 📲
+📍 Rua Santa Cruz, 696 - Centro - Varginha/MG
+                            </div>
+                        </div>
+                        <button onclick="copyToClipboard('copy-fgts')" class="mt-3 w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 rounded transition">
+                            <i class="fas fa-copy mr-1"></i> Copiar Texto
+                        </button>
+                    </div>
+
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50 flex flex-col justify-between">
+                        <div>
+                            <span class="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded">Post Feed Instagram / Facebook</span>
+                            <h4 class="font-bold text-gray-900 text-sm mt-2">Tema: Portabilidade de Consignado</h4>
+                            <div class="bg-white p-3 rounded border border-gray-200 text-xs text-gray-700 mt-2 font-mono whitespace-pre-line" id="copy-portabilidade">
+Você sabia que quem tem empréstimo consignado pode diminuir a parcela ou pegar dinheiro de volta? 📉💵
+
+Com a Portabilidade de Crédito, a gente transfere seu contrato para um banco com juros menores.
+
+Você escolhe:
+1️⃣ Pagar menos por mês, ou
+2️⃣ Manter a parcela e receber um troco no Pix!
+
+Sem custo algum e garantido pelo Banco Central.
+
+Faça sua simulação gratuita com a equipe da Speed Financeira:
+📞 WhatsApp: (35) 3067-5017
+🏢 Rua Santa Cruz, 696 - Centro - Varginha/MG
+                            </div>
+                        </div>
+                        <button onclick="copyToClipboard('copy-portabilidade')" class="mt-3 w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 rounded transition">
+                            <i class="fas fa-copy mr-1"></i> Copiar Texto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dash-card p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Gerador de Links de Avaliação (Reviews)</h2>
+                <p class="text-sm text-gray-500 mb-6">Avaliações são o sinal nº 1 para Google e IAs recomendarem a Speed. Use estes links para pedir reviews a clientes satisfeitos.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <span class="text-xs bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded">Google</span>
+                        <h4 class="font-bold text-gray-900 text-sm mt-2">Link de avaliação no Google</h4>
+                        <p class="text-xs text-gray-600 mt-1">Abre o perfil da Speed para o cliente deixar a avaliação.</p>
+                        <button onclick="copiarTexto('https://www.google.com/maps/search/?api=1&query=Speed+Financeira+Rua+Santa+Cruz+696+Varginha')" class="mt-3 w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 rounded transition">
+                            <i class="fas fa-copy mr-1"></i> Copiar Link Google
+                        </button>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <span class="text-xs bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded">WhatsApp</span>
+                        <h4 class="font-bold text-gray-900 text-sm mt-2">Mensagem de pedido de review</h4>
+                        <p class="text-xs text-gray-600 mt-1">Mensagem pronta para disparar no WhatsApp pós-atendimento.</p>
+                        <button onclick="copiarTexto('https://wa.me/553530675017?text=Ol%C3%A1%2C%20%40Speed%20Financeira%21%20Fui%20super%20bem%20atendido%28a%29%20e%20gostaria%20de%20deixar%20minha%20avalia%C3%A7%C3%A3o%20no%20Google.%20Voc%C3%AAs%20podem%20me%20enviar%20o%20link%3F')" class="mt-3 w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 rounded transition">
+                            <i class="fas fa-copy mr-1"></i> Copiar msg de review
+                        </button>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <span class="text-xs bg-yellow-100 text-yellow-800 font-bold px-2 py-0.5 rounded">Perfil atual</span>
+                        <h4 class="font-bold text-gray-900 text-sm mt-2">Média atual no Google</h4>
+                        <p class="text-xs text-gray-600 mt-1">4.8 de média com 209 avaliações (Wanderlog / Localo). Meta: manter nota acima de 4.8 com reviews frescos.</p>
+                        <span class="mt-2 inline-block text-xs text-green-700 font-bold">4.8 ★ (209 avaliações)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: DIRETORIOS E NAP -->
+        <div id="tab-diretorios" class="tab-content hidden">
+            <div class="dash-card p-6 mb-6">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Diretórios & Consistência NAP</h2>
+                        <p class="text-sm text-gray-500">Estado das fichas nas plataformas. O NAP consistente é o que faz Google e IAs citarem os dados corretos.</p>
+                    </div>
+                    <button onclick="copiarComando('python diretorios.py')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs hover:bg-gray-100 transition">
+                        <i class="fas fa-sync mr-1"></i> Recalcular (python diretorios.py)
+                    </button>
+                </div>
+                <div id="nap-resumo" class="grid grid-cols-2 md:grid-cols-6 gap-4 my-6"></div>
+                <div id="nap-secoes"></div>
+            </div>
+        </div>
+
+        <!-- TAB 7: RELATORIO -->
+        <div id="tab-relatorio" class="tab-content hidden">
+            <div class="dash-card p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Relatórios Gerados</h2>
+                <p class="text-sm text-gray-500 mb-6">Arquivos prontos para exportar em PDF ou compartilhar com a equipe.</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="border border-gray-200 rounded-lg p-5 bg-gray-50 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm">Relatório Mensal</h4>
+                            <p class="text-xs text-gray-600 mt-1">Resumo executivo: artigos publicados, citação de IA e NAP Score.</p>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <a href="relatorio_mensal.html" target="_blank" class="brand-green text-white px-3 py-1.5 rounded font-medium text-xs hover:bg-green-700 transition">Abrir</a>
+                            <button onclick="copiarComando('python relatorio.py')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs hover:bg-gray-100 transition">Gerar</button>
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-5 bg-gray-50 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm">Relatório NAP</h4>
+                            <p class="text-xs text-gray-600 mt-1">Auditoria completa das 44 fichas de diretórios com status e ajustes.</p>
+                        </div>
+                        <div class="mt-4 flex space-x-2">
+                            <a href="relatorio_nap.html" target="_blank" class="brand-green text-white px-3 py-1.5 rounded font-medium text-xs hover:bg-green-700 transition">Abrir</a>
+                            <button onclick="copiarComando('python diretorios.py')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded text-xs hover:bg-gray-100 transition">Gerar</button>
+                        </div>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg p-5 bg-gray-50 flex flex-col justify-between">
+                        <div>
+                            <h4 class="font-bold text-gray-900 text-sm">Fluxo completo</h4>
+                            <p class="text-xs text-gray-600 mt-1">Ordem recomendada para atualizar tudo em uma sessão.</p>
+                        </div>
+                        <button onclick="copiarComando('python generator.py && python monitor_ia.py && python diretorios.py && python relatorio.py')" class="mt-4 w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 rounded transition">
+                            <i class="fas fa-copy mr-1"></i> Copiar comando completo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- TAB: NOTÍCIAS -->
+        <div id="tab-noticias" class="tab-content hidden">
+            <div class="dash-card p-6 mb-6">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-4 border-b border-gray-100">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900">Monitor de Notícias do Mercado</h2>
+                        <p class="text-sm text-gray-500">Mantém o blog e os guias atualizados a partir de fontes oficiais — e ajuda a não publicar notícia errada.</p>
+                    </div>
+                    <button onclick="copiarComando('cd speedgeo && python monitor_noticias.py')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100 transition">
+                        <i class="fas fa-play mr-1"></i> Rodar: python monitor_noticias.py
+                    </button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                        <p class="text-xs text-gray-500 font-bold uppercase">Última execução</p>
+                        <p class="text-sm font-black text-gray-900 mt-1" id="noticias-data">-</p>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                        <p class="text-xs text-gray-500 font-bold uppercase">Histórico</p>
+                        <p class="text-2xl font-black text-gray-900" id="noticias-total">0</p>
+                    </div>
+                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+                        <p class="text-xs text-gray-500 font-bold uppercase">Novos itens</p>
+                        <p class="text-2xl font-black text-green-700" id="noticias-novos">0</p>
+                    </div>
+                    <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+                        <p class="text-xs text-red-600 font-bold uppercase">Para revisar</p>
+                        <p class="text-2xl font-black text-red-600" id="noticias-revisar">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="noticias-revisar-lista" class="mb-6"></div>
+            <div class="dash-card p-6">
+                <h3 class="font-bold text-gray-900 mb-4">Últimas notícias relevantes</h3>
+                <div id="noticias-lista" class="space-y-3"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 text-gray-400 text-xs py-4 text-center">
+        <p>SpeedGEO <i class="fas fa-shield-alt text-green-600"></i> Central de Inteligência de Conteúdo e Otimização para IAs da Speed Financeira • 2026</p>
+    </footer>
+
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-900 text-white px-4 py-2.5 rounded-lg shadow-xl text-xs font-semibold hidden transition-all duration-300 flex items-center space-x-2 z-50">
+        <i class="fas fa-check text-green-400"></i>
+        <span id="toast-msg">Texto copiado!</span>
+    </div>
+
+    <script src="dados_artigos.js"></script>
+    <script src="dados_monitor.js"></script>
+    <script src="dados_diretorios.js"></script>
+    <script src="dados_concorrentes.js"></script>
+    <script>
+        const DADOS = {
+            artigos: window.DADOS_ARTIGOS || { artigos: [], empresa: {} },
+            monitor: window.DADOS_MONITOR || {},
+            diretorios: window.DADOS_DIRETORIOS || {},
+            concorrentes: window.DADOS_CONCORRENTES || {}
+        };
+
+        function escapeHtml(s) {
+            return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active', 'text-green-700'));
+            const alvo = document.getElementById('tab-' + tabId);
+            alvo.classList.remove('hidden');
+            alvo.classList.remove('fade-in');
+            void alvo.offsetWidth; // reinicia a animação
+            alvo.classList.add('fade-in');
+            document.getElementById('tab-btn-' + tabId).classList.add('active');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => { t.classList.add('hidden'); }, 2500);
+        }
+
+        function copyToClipboard(elementId) {
+            navigator.clipboard.writeText(document.getElementById(elementId).innerText).then(() => showToast('Copiado para a área de transferência!'));
+        }
+
+        function copiarTexto(texto) {
+            navigator.clipboard.writeText(texto).then(() => showToast('Copiado!'));
+        }
+
+        function copiarComando(cmd) {
+            navigator.clipboard.writeText(cmd).then(() => showToast('Comando copiado!'));
+        }
+
+        function copyTrackedLink(slug) {
+            const text = 'https://wa.me/553530675017?text=' + encodeURIComponent('Olá! Li o guia sobre ' + slug + ' e gostaria de fazer uma simulação.');
+            navigator.clipboard.writeText(text).then(() => showToast('Link rastreável de WhatsApp copiado!'));
+        }
+
+        function renderArtigos() {
+            const artigos = (DADOS.artigos.artigos || []).slice();
+            const sel = document.getElementById('filtro-cidade');
+            const cidades = [...new Set(artigos.map(a => a.cidade))].sort();
+            sel.innerHTML = '<option value="">Todas as cidades</option>' + cidades.map(c => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('');
+            const filtro = sel.value;
+            const lista = filtro ? artigos.filter(a => a.cidade === filtro) : artigos;
+            document.getElementById('tot-artigos').textContent = artigos.length;
+            document.getElementById('tot-cidades').textContent = cidades.length;
+
+            const grid = document.getElementById('grade-artigos');
+            if (!lista.length) { grid.innerHTML = '<p class="text-sm text-gray-500">Nenhum artigo gerado. Rode <code>python generator.py</code>.</p>'; return; }
+            grid.innerHTML = lista.map(a => {
+                const nome = (a.title || a.slug).replace(/[-\d]/g, ' ').trim();
+                return '<div class="border border-gray-200 rounded-lg p-5 hover:border-green-500 transition shadow-sm bg-gray-50">' +
+                    '<span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-semibold">' + escapeHtml(a.cidade || 'Varginha') + '</span>' +
+                    '<h3 class="font-bold text-gray-900 text-base mt-2">' + escapeHtml(a.title || a.slug) + '</h3>' +
+                    '<p class="text-xs text-gray-500 mt-1">' + escapeHtml(a.slug) + '</p>' +
+                    '<div class="mt-4 flex space-x-2 text-xs">' +
+                    '<a href="' + escapeHtml(a.file) + '" target="_blank" class="brand-green text-white px-3 py-1.5 rounded font-medium hover:bg-green-700 transition"><i class="fas fa-eye mr-1"></i> Abrir</a>' +
+                    '<button onclick="copyTrackedLink(\'' + escapeHtml(a.slug) + '\')" class="bg-white border border-gray-300 text-gray-700 px-3 py-1.5 rounded hover:bg-gray-100 transition"><i class="fab fa-whatsapp text-green-600 mr-1"></i> Link WhatsApp</button>' +
+                    '</div></div>';
+            }).join('');
+        }
+
+        function renderMonitor() {
+            const m = DADOS.monitor;
+            const resumo = document.getElementById('monitor-resumo');
+            const score = m.score_citacao != null ? m.score_citacao : '–';
+            const cls = (m.score_citacao != null && m.score_citacao >= 50) ? 'text-green-700' : 'text-yellow-600';
+            resumo.innerHTML =
+                '<div class="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Score de Citação</p><p class="text-3xl font-black ' + cls + '">' + escapeHtml(score) + '%</p></div>' +
+                '<div class="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Verificações</p><p class="text-3xl font-black">' + (m.total_verificacoes != null ? m.total_verificacoes : '–') + '</p></div>' +
+                '<div class="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Citações</p><p class="text-3xl font-black text-green-700">' + (m.total_citou != null ? m.total_citou : '–') + '</p></div>' +
+                '<div class="bg-gray-50 border border-gray-200 rounded-xl p-5 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Última verificação</p><p class="text-sm font-bold mt-3">' + escapeHtml(m.ultima_verificacao || '–') + '</p></div>';
+
+            const tb = document.getElementById('monitor-tabela');
+            const pautas = m.pautas || [];
+            if (!pautas.length) {
+                tb.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800"><i class="fas fa-info-circle mr-1"></i> Nenhuma verificação ainda. Adicione as chaves de API em <code>config.json</code> e rode <code>python monitor_ia.py</code>, ou use <code>--manual</code> para colar respostas.</div>';
+                return;
+            }
+            tb.innerHTML = '<table class="w-full text-left text-xs"><thead><tr class="bg-gray-50 border-b border-gray-200">' +
+                '<th class="p-3">Pergunta (pauta)</th><th class="p-3">Status</th><th class="p-3">Provider</th><th class="p-3">Última verificação</th><th class="p-3">Snippet citado</th></tr></thead><tbody>' +
+                pautas.map(p => {
+                    const ok = p.citou_na_ultima;
+                    const badge = ok
+                        ? '<span class="px-2 py-0.5 rounded-full font-bold bg-green-100 text-green-800">Citou</span>'
+                        : '<span class="px-2 py-0.5 rounded-full font-bold bg-red-100 text-red-800">Não citou</span>';
+                    const hist = p.historico_citacoes + '/' + p.total_verificacoes;
+                    return '<tr class="border-b border-gray-100 align-top"><td class="p-3 font-semibold">' + escapeHtml(p.pergunta || p.slug) + '<br><span class="text-gray-400 font-normal">' + escapeHtml(p.slug) + ' • citou ' + hist + '</span></td>' +
+                        '<td class="p-3">' + badge + '</td>' +
+                        '<td class="p-3 text-gray-500">' + escapeHtml(p.provider || '–') + '</td>' +
+                        '<td class="p-3 text-gray-500">' + escapeHtml((p.ultima_verificacao || '').slice(0, 16)) + '</td>' +
+                        '<td class="p-3 text-gray-600 max-w-md">' + escapeHtml((p.snippet || '').slice(0, 180)) + '</td></tr>';
+                }).join('') + '</tbody></table>';
+        }
+
+        const CONCORRENTES = [
+            {
+                nome: 'Agibank (Loja 1 - Varginha Centro)',
+                url: 'https://agibank.com.br/?utm_source=google&utm_medium=maps&utm_campaign=lbm31012',
+                dominio: 'agibank.com.br (Google Maps: lbm31012)',
+                tag: 'Banco Digital · Loja de Rua',
+                cor: 'indigo',
+                estrategia_local: 'Usa UTM específica no Google Maps (lbm31012) para rastrear visitas da ficha de Varginha. Atrai aposentados com abertura de conta corrente e cartão consignado na loja.',
+                diferencial: 'Na Speed o cliente não é obrigado a abrir conta corrente nem transferir benefício. A aprovação é rápida e sem cobrança de tarifas de manutenção.'
+            },
+            {
+                nome: 'Agibank (Loja 2 - Varginha)',
+                url: 'https://agibank.com.br/?utm_source=google&utm_medium=maps&utm_campaign=lbm31072',
+                dominio: 'agibank.com.br (Google Maps: lbm31072)',
+                tag: 'Banco Digital · Loja de Rua',
+                cor: 'indigo',
+                estrategia_local: 'Segunda filial com campanha própria no Maps (lbm31072) para cercar a cidade e dominar a rota e buscas geolocalizadas do Google no Sul de Minas.',
+                diferencial: 'Atendimento consultivo e humanizado sem metas de empurrar produtos financeiros cruzados ou seguros embutidos.'
+            },
+            {
+                nome: 'Help! Loja de Crédito (Rede Bmg)',
+                url: 'https://www.help.com.br/',
+                dominio: 'help.com.br',
+                tag: 'Rede Própria / Franquia',
+                cor: 'yellow',
+                estrategia_local: 'Campanhas de Google Ads geolocalizadas em Varginha, página de filial com Schema local e forte apelo de crédito para negativados e aposentados.',
+                diferencial: 'A Help é mono-banco (prioriza exclusivamente Banco Bmg). A Speed é multbancos: comparamos simultaneamente Bmg, Pan, Daycoval, Itaú, C6 e outros para entregar a menor taxa real.'
+            },
+            {
+                nome: 'Credimais Empréstimos',
+                url: 'https://www.credimaisemprestimos.com.br/',
+                dominio: 'credimaisemprestimos.com.br',
+                tag: 'Correspondente Local',
+                cor: 'red',
+                estrategia_local: 'SEO local focado em palavras-chave "empréstimo varginha", presença em diretórios e anúncios de pesquisa no Google.',
+                diferencial: 'Atendimento presencial histórico no Centro (Rua Santa Cruz, 696) com consultoria aberta sem venda casada de seguros. Relacionamento próximo e transparente há mais de 10 anos.'
+            },
+            {
+                nome: 'Crefisa',
+                url: 'http://www.crefisa.com.br/',
+                dominio: 'crefisa.com.br',
+                tag: 'Financeira de Crédito Pessoal',
+                cor: 'gray',
+                estrategia_local: 'Forte investimento em TV, rádio e Google Ads de topo de funil atraindo negativados e assalariados para a loja física.',
+                diferencial: 'Especializada nas taxas reguladas pelo teto Bacen/INSS (a partir de 1,66%), muito mais vantajosas que o crédito pessoal da Crefisa cujas taxas chegam a ultrapassar 15% a 20% ao mês.'
+            },
+            {
+                nome: 'Banco Mercantil',
+                url: 'https://bancomercantil.com.br/',
+                dominio: 'bancomercantil.com.br',
+                tag: 'Banco Físico · Especialista INSS',
+                cor: 'blue',
+                estrategia_local: 'Principal banco pagador de benefícios do INSS na região; abordagem agressiva de beneficiários na fila do caixa e na porta da agência, páginas locais no portal.',
+                diferencial: 'Sem as filas demoradas da agência do Mercantil, atendimento rápido e acolhedor em minutos, sem empurrar títulos de capitalização, seguros ou cestas de serviços.'
+            },
+            {
+                nome: 'Empresta Varginha',
+                url: 'https://empresta.com.br/',
+                dominio: 'empresta.com.br',
+                tag: 'Franquia Nacional',
+                cor: 'purple',
+                estrategia_local: 'Páginas de franquia local com SEO de cauda longa e campanhas institucionais.',
+                diferencial: 'Menor custo de intermediação e cotação ágil entre múltiplos bancos parceiros, com atendimento humanizado sem metas corporativas agressivas de franquia.'
+            },
+            {
+                nome: 'Sicoob Paraisocred (Agência Varginha)',
+                url: 'https://sicoobparaisocred.coop.br/',
+                dominio: 'sicoobparaisocred.coop.br',
+                tag: 'Cooperativa',
+                cor: 'green',
+                estrategia_local: 'Fortalecimento institucional no comércio regional e relacionamento com cooperados.',
+                diferencial: 'Liberação em minutos sem obrigação de abertura de conta, sem integralização de cotas capitais e sem taxas mensais de cooperado.'
+            }
+        ];
+
+        function renderConcorrentes() {
+            const auditData = (DADOS.concorrentes && DADOS.concorrentes.concorrentes) || [];
+            const auditMap = {};
+            auditData.forEach(item => {
+                auditMap[item.nome] = item;
+                auditMap[item.url] = item;
+            });
+
+            const resumo = document.getElementById('concorrentes-resumo');
+            if (resumo) {
+                resumo.innerHTML = 
+                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Lojas Físicas</p><p class="text-2xl font-black text-gray-900">6 em Varginha</p></div>' +
+                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Telemetria HTTP</p><p class="text-2xl font-black text-green-700">' + auditData.length + ' Monitorados</p></div>' +
+                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Citam Varginha no Site</p><p class="text-2xl font-black text-red-600">0% (Vulneráveis)</p></div>' +
+                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Brecha da Speed</p><p class="text-xs font-bold text-green-800 mt-2">Domínio Total do SEO Local</p></div>';
+            }
+
+            document.getElementById('grade-concorrentes').innerHTML = CONCORRENTES.map((c, i) => {
+                const live = auditMap[c.nome] || auditMap[c.url];
+                let telemetriaHtml = '';
+                if (live) {
+                    const isOk = live.status_http === 200;
+                    const statusClass = isOk ? 'bg-green-100 text-green-800 border-green-300' : 'bg-red-100 text-red-800 border-red-300';
+                    const statusText = live.status_http ? ('HTTP ' + live.status_http + (isOk ? ' OK' : '')) : 'Erro';
+                    const tempo = live.tempo_resposta_ms ? (live.tempo_resposta_ms + 'ms') : '-';
+                    const trackers = (live.rastreadores_detectados && live.rastreadores_detectados.length) 
+                        ? live.rastreadores_detectados.join(', ') 
+                        : 'Nenhum pixel detectado';
+                    const citaVarginha = (live.mencoes_locais && live.mencoes_locais.varginha) 
+                        ? '<span class="text-green-700 font-bold">Sim</span>' 
+                        : '<span class="text-red-700 font-bold">Não (Site corporativo genérico)</span>';
+
+                    let obsHtml = '';
+                    if (live.observacoes && live.observacoes.length) {
+                        obsHtml = '<div class="mt-2 text-xs text-indigo-800 bg-indigo-50 border border-indigo-200 rounded px-2.5 py-1"><strong><i class="fas fa-tag mr-1"></i> Detalhe Técnico:</strong> ' + escapeHtml(live.observacoes.join('; ')) + '</div>';
+                    }
+
+                    telemetriaHtml = 
+                        '<div class="mt-3 bg-gray-100 rounded-lg p-3 text-xs border border-gray-200">' +
+                            '<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">' +
+                                '<div><strong>Status HTTP:</strong> <span class="px-2 py-0.5 rounded font-bold border ' + statusClass + '">' + escapeHtml(statusText) + ' (' + escapeHtml(tempo) + ')</span></div>' +
+                                '<div><strong>Rastreamento:</strong> <span class="text-gray-700">' + escapeHtml(trackers) + '</span></div>' +
+                                '<div><strong>Cita Varginha no site:</strong> ' + citaVarginha + '</div>' +
+                            '</div>' +
+                            obsHtml +
+                        '</div>';
+                }
+
+                return '<div class="border border-gray-200 rounded-lg p-5 bg-gray-50 hover:border-gray-300 transition shadow-sm">' +
+                    '<div class="flex flex-col sm:flex-row justify-between sm:items-start gap-2">' +
+                        '<div>' +
+                            '<div class="flex items-center space-x-2">' +
+                                '<h3 class="font-bold text-gray-900 text-base">' + (i + 1) + '. ' + escapeHtml(c.nome) + '</h3>' +
+                                '<span class="text-xs bg-' + c.cor + '-100 text-' + c.cor + '-800 px-2 py-0.5 rounded font-bold">' + escapeHtml(c.tag) + '</span>' +
+                            '</div>' +
+                            '<a href="' + escapeHtml(c.url) + '" target="_blank" class="text-xs text-blue-600 hover:underline flex items-center mt-1 break-all">' +
+                                '<i class="fas fa-external-link-alt mr-1 flex-shrink-0"></i> ' + escapeHtml(c.dominio) + 
+                            '</a>' +
+                        '</div>' +
+                        '<a href="' + escapeHtml(c.url) + '" target="_blank" class="bg-white border border-gray-300 hover:bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded font-medium flex items-center self-start flex-shrink-0 shadow-sm">' +
+                            '<i class="fas fa-search mr-1"></i> Acessar Site' +
+                        '</a>' +
+                    '</div>' +
+                    telemetriaHtml +
+                    '<div class="mt-3 bg-blue-50 border border-blue-100 text-xs text-blue-900 p-3 rounded">' +
+                        '<strong><i class="fas fa-bullseye text-blue-600 mr-1"></i> O que faz online para aparecer localmente:</strong> ' + escapeHtml(c.estrategia_local) +
+                    '</div>' +
+                    '<div class="mt-2 bg-white border border-green-200 text-xs text-gray-800 p-3 rounded">' +
+                        '<strong class="text-green-800"><i class="fas fa-shield-alt text-green-600 mr-1"></i> Diferencial & Como a Speed Supera:</strong> ' + escapeHtml(c.diferencial) +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        const STATUS = {
+            erro: ['bg-red-100 text-red-800', 'Erro confirmado'],
+            ok: ['bg-green-100 text-green-800', 'OK'],
+            ajustar: ['bg-yellow-100 text-yellow-800', 'Ajustar'],
+            cadastrar: ['bg-blue-100 text-blue-800', 'A cadastrar'],
+            remover: ['bg-gray-200 text-gray-700', 'Remover'],
+            a_testar: ['bg-purple-100 text-purple-800', 'A testar'],
+            a_confirmar: ['bg-gray-100 text-gray-700', 'A confirmar']
+        };
+
+        function renderDiretorios() {
+            const d = DADOS.diretorios;
+            const resumo = document.getElementById('nap-resumo');
+            if (!d.score) {
+                resumo.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-yellow-800">Nenhum dado de diretórios. Rode <code>python diretorios.py</code>.</div>';
+                return;
+            }
+            const s = d.score;
+            const scoreCls = s.score >= 60 ? 'text-green-700' : 'text-red-600';
+            const cards = [
+                ['NAP Score', s.score + '%', scoreCls],
+                ['Fichas totais', s.total, 'text-gray-900'],
+                ['Corretas', s.ok, 'text-green-700'],
+                ['Erros confirmados', s.erros, 'text-red-600'],
+                ['Ajustar', s.ajustar, 'text-yellow-600'],
+                ['Pendentes', s.pendentes, 'text-gray-600']
+            ];
+            resumo.innerHTML = cards.map(c =>
+                '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">' + c[0] + '</p><p class="text-2xl font-black ' + c[2] + '">' + c[1] + '</p></div>'
+            ).join('');
+
+            const secoes = document.getElementById('nap-secoes');
+            const grupos = {};
+            (d.registros || []).forEach(r => { (grupos[r.secao] = grupos[r.secao] || []).push(r); });
+            secoes.innerHTML = Object.entries(grupos).map(([secao, items]) =>
+                '<section class="mb-6"><h3 class="font-bold text-gray-900 mb-2">' + escapeHtml(secao) + ' <span class="text-xs font-medium text-gray-400">(' + items.length + ')</span></h3>' +
+                '<div class="bg-white rounded-lg border border-gray-200 overflow-hidden"><table class="w-full text-left text-xs">' +
+                '<thead><tr class="bg-gray-50 border-b border-gray-200"><th class="p-2">Diretório</th><th class="p-2">Status</th><th class="p-2">Ajuste a realizar</th><th class="p-2">Login</th></tr></thead><tbody>' +
+                items.map(r => {
+                    const st = STATUS[r.status] || STATUS.a_confirmar;
+                    const ficha = r.ficha ? '<a href="' + escapeHtml(r.ficha) + '" target="_blank" class="text-green-700 hover:underline">' + escapeHtml(r.diretorio) + '</a>' : escapeHtml(r.diretorio);
+                    return '<tr class="border-b border-gray-100 align-top"><td class="p-2 font-semibold">' + ficha + '</td>' +
+                        '<td class="p-2"><span class="px-2 py-0.5 rounded-full font-bold ' + st[0] + '">' + st[1] + '</span></td>' +
+                        '<td class="p-2 text-gray-600 max-w-md">' + escapeHtml(r.ajuste) + '</td>' +
+                        '<td class="p-2 text-gray-500">' + escapeHtml(r.login) + '</td></tr>';
+                }).join('') + '</tbody></table></div></section>'
+            ).join('');
+        }
+
+        function renderNoticias() {
+            const d = window.DADOS_NOTICIAS;
+            const semDados = '<p class="text-sm text-gray-500">Nenhum dado ainda. Rode <code class="bg-gray-100 px-1 rounded">python monitor_noticias.py</code> no speedgeo.</p>';
+            const semNovos = '<p class="text-sm text-gray-500">Nenhum item novo na última rodada (itens já conhecidos). Rode <code class="bg-gray-100 px-1 rounded">python monitor_noticias.py</code> para buscar novidades.</p>';
+
+            document.getElementById('noticias-data').textContent = d ? (d.ultima_execucao || '').replace('T', ' ').slice(0, 16) : '-';
+            document.getElementById('noticias-total').textContent = (d && d.total_historico) || 0;
+            document.getElementById('noticias-novos').textContent = (d && d.novos) || 0;
+            document.getElementById('noticias-revisar').textContent = (d && d.itens_para_revisar ? d.itens_para_revisar.length : 0);
+
+            if (!d || !d.recentes) {
+                document.getElementById('noticias-revisar-lista').innerHTML = semDados;
+                document.getElementById('noticias-lista').innerHTML = semDados;
+                return;
+            }
+
+            const revisar = d.itens_para_revisar || [];
+            document.getElementById('noticias-revisar-lista').innerHTML = revisar.length ? (
+                '<div class="bg-red-50 border border-red-200 rounded-xl p-6">' +
+                '<h3 class="font-bold text-red-800 mb-3"><i class="fas fa-exclamation-triangle mr-1"></i> Possível MUDANÇA DE REGRA — revisar antes de publicar</h3>' +
+                '<div class="space-y-2">' + revisar.map(r =>
+                    '<div class="bg-white border border-red-100 rounded-lg p-3"><a href="' + escapeHtml(r.link) + '" target="_blank" class="text-red-700 hover:underline font-semibold text-sm">' + escapeHtml(r.titulo) + '</a>' +
+                    '<p class="text-xs text-gray-500 mt-1">' + escapeHtml(r.fonte) + ' • ' + escapeHtml((r.grupos || []).join(', ')) + '</p></div>'
+                ).join('') + '</div></div>'
+            ) : '<div class="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800"><i class="fas fa-check-circle mr-1"></i> Nenhum item sinalizado para revisão nas últimas rodadas.</div>';
+
+            const recentes = d.recentes || [];
+            document.getElementById('noticias-lista').innerHTML = recentes.length ? recentes.map(r =>
+                '<div class="border border-gray-200 rounded-lg p-3 hover:border-green-400 transition">' +
+                '<a href="' + escapeHtml(r.link) + '" target="_blank" class="text-green-700 hover:underline font-semibold text-sm">' + escapeHtml(r.titulo) + '</a>' +
+                '<p class="text-xs text-gray-500 mt-1">' + escapeHtml(r.fonte) + ' • ' + escapeHtml((r.grupos || []).join(', ')) +
+                (r.revisar && r.revisar.length ? ' • <span class="text-red-600 font-semibold">revisar</span>' : '') + '</p></div>'
+            ).join('') : (d.total_historico ? semNovos : semDados);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            renderArtigos();
+            renderMonitor();
+            renderConcorrentes();
+            renderDiretorios();
+            renderNoticias();
+        });
+    </script>
+</body>
+</html>
