@@ -1671,8 +1671,18 @@ function Invoke-AgentRun {
             }
         } catch {
             if ($printListener) { $printListener.Stop(); $printListener = $null }
-            Write-AgentLog "Falha ao iniciar impressão Nexcafé: $($_.Exception.Message)"
-            Send-AgentEvent -Config $config -Title "Impressão indisponível" -Detail $_.Exception.Message
+            $failure = $_.Exception.Message
+            # Diz no painel qual processo esta segurando a porta, para o diagnostico nao depender de palpite.
+            $holder = ""
+            try {
+                $owners = @(Get-NetTCPConnection -LocalPort 18955 -State Listen -ErrorAction Stop | Select-Object -ExpandProperty OwningProcess -Unique)
+                $holder = ($owners | ForEach-Object {
+                    $p = Get-CimInstance Win32_Process -Filter "ProcessId=$_" -ErrorAction SilentlyContinue
+                    if ($p) { "PID $_ $($p.Name): $([string]$p.CommandLine)" } else { "PID $_" }
+                }) -join " | "
+            } catch { }
+            Write-AgentLog "Falha ao iniciar impressão Nexcafé: $failure $holder"
+            Send-AgentEvent -Config $config -Title "Impressão indisponível" -Detail "$failure $(if ($holder) { "Porta usada por: $holder" })"
         }
     }
     $lockProcess = $null
