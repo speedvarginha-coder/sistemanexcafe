@@ -1070,6 +1070,19 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       event("caixa", "Caixa fechado", `Diferenca: ${counted - shift.closingExpectedCents} centavos`, user.name); save();
       return send(res, 200, { ok: true, shift });
     }
+    const chargeCancel = p.match(/^\/api\/charges\/([^/]+)\/cancel$/);
+    if (chargeCancel && req.method === "POST") {
+      // Cancela o que falta receber (ex.: sessao de teste esquecida). O que ja foi pago fica.
+      admin(user);
+      const item = db.charges.find(row => row.id === chargeCancel[1]); if (!item) throw err(404, "Cobranca nao encontrada");
+      const input = await readBody(req); const reason = label(input.reason, 120);
+      if (!reason) throw err(400, "Informe o motivo do cancelamento");
+      if (item.paidCents >= item.amountCents) throw err(409, "Cobranca ja quitada");
+      const cancelledCents = item.amountCents - item.paidCents;
+      Object.assign(item, { originalAmountCents: item.amountCents, amountCents: item.paidCents, cancelledAt: now(), cancelledBy: user.name, cancelReason: reason });
+      event(item.machineId || "caixa", "Pendencia cancelada", `${item.description}: R$ ${(cancelledCents / 100).toFixed(2)} (${reason})`, user.name); save();
+      return send(res, 200, { ok: true, charge: item });
+    }
     const payment = p.match(/^\/api\/charges\/([^/]+)\/pay$/);
     if (payment && req.method === "POST") {
       const item = db.charges.find(row => row.id === payment[1]); if (!item) throw err(404, "Cobranca nao encontrada");
@@ -1201,6 +1214,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     for (const [ip, attempt] of enrollAttempts) if (attempt.until < nowMs) enrollAttempts.delete(ip);
   }, 15_000);
   server.on("close", () => clearInterval(sweeper));
+  // O .NET das estacoes reaproveita conexao ociosa por ate 100 s; o padrao do Node fecha em 5 s.
+  // Se o servidor fecha primeiro, a estacao tenta usar a conexao morta e a requisicao estoura o tempo.
+  server.keepAliveTimeout = 120_000;
+  server.headersTimeout = 125_000;
   return server;
 }
 

@@ -603,15 +603,20 @@ function renderMachines() {
     gridEl.hidden = true;
     tableEl.hidden = false;
     tableEl.innerHTML = renderMachinesTable(sortedMachines);
+    $("#offlineSection").hidden = true;
   } else {
     gridEl.hidden = false;
     tableEl.hidden = true;
-    gridEl.innerHTML = !sortedMachines.length ? empty("Nenhuma estação encontrada com os filtros atuais.") : onlineMachines.length ? onlineMachines.map(machine => machineCard(machine)).join("") : empty("Nenhuma estação conectada no momento.");
+    if (stationFilter === "offline") {
+      gridEl.innerHTML = !sortedMachines.length ? empty("Nenhuma estação desligada.") : sortedMachines.map(machine => machineCard(machine, true)).join("");
+      $("#offlineSection").hidden = true;
+    } else {
+      gridEl.innerHTML = !sortedMachines.length ? empty("Nenhuma estação encontrada com os filtros atuais.") : onlineMachines.length ? onlineMachines.map(machine => machineCard(machine)).join("") : empty("Nenhuma estação conectada no momento.");
+      $("#offlineSection").hidden = !offlineMachines.length || stationFilter === "active" || stationFilter === "free";
+      $("#offlineCount").textContent = offlineMachines.length;
+      $("#offlineMachines").innerHTML = offlineMachines.map(machine => machineCard(machine, true)).join("");
+    }
   }
-
-  $("#offlineSection").hidden = !offlineMachines.length || stationFilter === "active" || stationFilter === "free";
-  $("#offlineCount").textContent = offlineMachines.length;
-  $("#offlineMachines").innerHTML = offlineMachines.map(machine => machineCard(machine, true)).join("");
 
   for (const id of expanded) {
     const card = [...document.querySelectorAll("#machines [data-machine]")].find(item => item.dataset.machine === id);
@@ -694,7 +699,7 @@ function renderCash() {
   $("#cashToggleButton").textContent = shift ? "Fechar caixa" : "Abrir caixa";
   $("#cashToggleButton").disabled = !!shift && state.user.role !== "admin";
   $("#cashAdjustButton").disabled = !shift; $("#printSaleButton").disabled = !shift;
-  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td>${html(item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button></td></tr>`), "Sem pendências.");
+  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td>${html(item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
   $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador"], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(state.charges.find(c => c.id === item.chargeId)?.description || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method]}</td><td>${html(item.operator)}</td></tr>`), "Nenhum recebimento registrado.");
   $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado"], state.cashShifts.filter(item => item.closedAt).map(item => `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td></tr>`), "Nenhum caixa fechado.");
 }
@@ -1434,6 +1439,10 @@ document.addEventListener("click", async event => {
       const charge = (state.openCharges || []).find(item => item.id === id);
       if (!charge) return;
       openModal(`Liquidar Título · ${charge.description}`, field("amount", "Valor a Receber (R$)", "number", ((charge.amountCents - charge.paidCents) / 100).toFixed(2), 'min="0.01" step="0.01" required') + paymentField(), values => api(`/api/charges/${id}/pay`, { amount: values.amount, method: values.paymentMethod }), "Confirmar Recebimento");
+    } else if (action === "cancelCharge") {
+      const charge = (state.openCharges || []).find(item => item.id === id);
+      if (!charge) return;
+      openModal(`Cancelar pendência · ${charge.description}`, `<p class="quoteBox">Valor que deixa de ser cobrado: <strong>${currency(charge.amountCents - charge.paidCents)}</strong>. O cancelamento fica registrado no histórico.</p>` + field("reason", "Motivo", "text", "", 'maxlength="120" required placeholder="Ex.: sessão de teste esquecida"'), values => api(`/api/charges/${id}/cancel`, { reason: values.reason }), "Cancelar pendência");
     } else if (action === "editClient") {
       const client = state.clients.find(item => item.id === id); if (!client) return;
       openModal("Editar Dados do Cliente", field("name", "Nome Completo", "text", client.name, "required") + field("phone", "Telefone de Contato", "tel", client.phone) + field("login", "Login de Acesso", "text", client.login || "", 'autocomplete="off"') + field("password", "Nova Senha (deixe vazio para preservar)", "password", "", 'autocomplete="new-password"') + select("active", "Status da Conta", [["true", "Ativo"], ["false", "Inativo"]], String(client.active)), values => api(`/api/clients/${id}`, { ...values, active: values.active === "true" }));
@@ -1470,6 +1479,14 @@ document.addEventListener("keydown", event => {
     event.preventDefault();
     $("#shiftBadge")?.click();
     return;
+  }
+  if (event.key === "F4") {
+    if (currentView === "machines") {
+      event.preventDefault();
+      const s = $("#stationSearch");
+      if (s) { s.focus(); s.select(); }
+      return;
+    }
   }
 });
 

@@ -351,6 +351,28 @@ function Get-BaselineTarget {
     return Join-Path (Join-Path $BaselineRoot $User) $Folder
 }
 
+# Garante Word, Excel e PowerPoint na area de trabalho do cliente antes de salvar o padrao
+# (muitos clientes nao sabem achar os programas). Nao duplica se ja houver atalho.
+function Add-OfficeShortcuts {
+    param([string]$User)
+    $desktop = Join-Path (Resolve-LocalAccount -User $User).ProfilePath "Desktop"
+    if (-not (Test-Path -LiteralPath $desktop)) { return }
+    $public = Join-Path $env:PUBLIC "Desktop"
+    $apps = @(@{ Name = "Word"; Exe = "WINWORD.EXE" }, @{ Name = "Excel"; Exe = "EXCEL.EXE" }, @{ Name = "PowerPoint"; Exe = "POWERPNT.EXE" })
+    $roots = @("$env:ProgramFiles\Microsoft Office", "${env:ProgramFiles(x86)}\Microsoft Office") | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+    $shell = New-Object -ComObject WScript.Shell
+    foreach ($app in $apps) {
+        $existing = @(Get-ChildItem -LiteralPath $desktop, $public -Filter "*.lnk" -ErrorAction SilentlyContinue | Where-Object { $_.BaseName -match $app.Name })
+        if ($existing.Count -gt 0) { continue }
+        $exe = Get-ChildItem -LiteralPath $roots -Recurse -Depth 3 -Filter $app.Exe -ErrorAction SilentlyContinue | Select-Object -First 1
+        if (-not $exe) { Write-AgentLog "$($app.Name) nao encontrado; atalho nao criado."; continue }
+        $link = $shell.CreateShortcut((Join-Path $desktop "$($app.Name).lnk"))
+        $link.TargetPath = $exe.FullName
+        $link.Save()
+        Write-AgentLog "Atalho criado na area de trabalho: $($app.Name)"
+    }
+}
+
 function Invoke-CaptureBaseline {
     Require-Admin
     Ensure-AgentRoot
@@ -773,6 +795,7 @@ powershell -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File "$instal
 
     # Captura enquanto o instalador ainda esta elevado; depois a conta do cliente
     # perde permissao para iniciar outro PowerShell como administrador.
+    try { Add-OfficeShortcuts -User ([string](@($resolvedUsers)[0])) } catch { Write-AgentLog "Atalhos do Office nao criados: $($_.Exception.Message)" }
     Invoke-CaptureBaseline
 
     # Protecao: pasta somente leitura, atualizacao pelo sistema, perfil restrito e cliente sem administrador.
@@ -1613,6 +1636,9 @@ function Invoke-AgentRun {
     }
     if (-not $config.AgentToken) { throw "Agente antigo sem vinculacao. Reinstale pelo painel." }
     $state = Load-State
+    # Fecha telas da versao anterior ANTES de abrir a porta da impressora virtual: processos filhos
+    # herdam o socket de escuta e seguram a porta enquanto estiverem abertos.
+    Stop-AgentUiProcesses
     $printListener = $null
     # Toda impressao passa pela "Impressao Nexcafe" e e impressa pelo caixa.
     Add-OrUpdateProperty -Object $config -Name "VirtualPrinting" -Value $true
@@ -1647,9 +1673,9 @@ function Invoke-AgentRun {
     $nextRestoreAt = [datetime]::MinValue
     $monitorProcess = $null
     $lastCommand = $null
+    $consecutiveFailures = 0
     $serverOffsetMs = 0
     $runningHash = Get-ScriptHash -Path $PSCommandPath
-    Stop-AgentUiProcesses
     # Informa no painel se o padrao das pastas foi salvo (sem isso a restauracao ignora as pastas).
     $captureInfo = if ($config.LastCapture) { "padrao salvo em $($config.LastCapture)" } else { "PADRAO NAO SALVO: reinstale pela conta Tecnico" }
     Send-AgentEvent -Config $config -Title "Agente iniciado" -Detail "$env:USERNAME; $captureInfo"
@@ -1657,6 +1683,7 @@ function Invoke-AgentRun {
     while ($true) {
         try {
             $command = Get-AgentCommand -Config $config
+            $consecutiveFailures = 0
             $lastCommand = $command
             try { $serverOffsetMs = ([datetime]::Parse($command.serverTime).ToUniversalTime() - (Get-Date).ToUniversalTime()).TotalMilliseconds } catch { }
 
@@ -1772,8 +1799,10 @@ function Invoke-AgentRun {
                     }
                 } catch { }
             }
-            if (((Get-Date) - $lastFailureEvent).TotalSeconds -ge 30) {
-                Send-AgentEvent -Config $config -Title "Falha no agente" -Detail $_.Exception.Message
+            # Falha isolada (rede) nao vai para o painel; so se repetir em seguida.
+            $consecutiveFailures++
+            if ($consecutiveFailures -ge 3 -and ((Get-Date) - $lastFailureEvent).TotalSeconds -ge 30) {
+                Send-AgentEvent -Config $config -Title "Falha no agente" -Detail "$consecutiveFailures falhas seguidas: $($_.Exception.Message)"
                 $lastFailureEvent = Get-Date
             }
         }
