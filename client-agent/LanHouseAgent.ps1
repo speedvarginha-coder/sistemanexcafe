@@ -1220,7 +1220,9 @@ function Stop-AgentUiProcesses {
     $pattern = '(?i)-Action\s+"?(' + ($Actions -join '|') + ')"?'
     foreach ($process in @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe' OR Name='cmd.exe'" -ErrorAction SilentlyContinue)) {
         if ($process.ProcessId -eq $PID -or $process.SessionId -ne $session) { continue }
-        if ($process.CommandLine -match $pattern -and $process.CommandLine -match 'LanHouseAgent\.ps1') {
+        # Inclui o cmd.exe de reinicio de uma versao anterior (herdou a porta da impressora virtual).
+        $restartHelper = $process.Name -eq "cmd.exe" -and $process.CommandLine -match '(?i)-Action\s+"?Run'
+        if (($process.CommandLine -match $pattern -or $restartHelper) -and $process.CommandLine -match 'LanHouseAgent\.ps1') {
             Stop-Process -Id $process.ProcessId -Force -ErrorAction SilentlyContinue
         }
     }
@@ -1654,6 +1656,14 @@ function Invoke-AgentRun {
                 try { $printListener.Start(); break }
                 catch { if ($attempt -ge 30) { throw }; Start-Sleep -Seconds 1 }
             }
+            # Porta nao herdavel: telas e o cmd de reinicio abertos por este agente herdavam o socket
+            # e seguravam a porta 18955, impedindo o proximo agente de abrir a impressora virtual.
+            try {
+                if (-not ("LhmNet.Handle" -as [type])) {
+                    Add-Type -Namespace LhmNet -Name Handle -MemberDefinition '[DllImport("kernel32.dll", SetLastError = true)] public static extern bool SetHandleInformation(IntPtr hObject, uint dwMask, uint dwFlags);'
+                }
+                [void][LhmNet.Handle]::SetHandleInformation($printListener.Server.Handle, 1, 0)
+            } catch { Write-AgentLog "Nao foi possivel marcar a porta da impressora como nao herdavel: $($_.Exception.Message)" }
             try {
                 if (-not (Set-VirtualPrinterDefault)) { throw "Impressora virtual nao encontrada." }
             } catch {
