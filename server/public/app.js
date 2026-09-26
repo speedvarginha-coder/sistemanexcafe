@@ -123,8 +123,8 @@ function updateSoundButton() {
   btn.classList.toggle("muted", !audioEnabled);
   btn.title = audioEnabled ? "Alertas Sonoros: Ativados (Clique para silenciar)" : "Alertas Sonoros: Silencioso (Clique para ativar)";
   btn.innerHTML = audioEnabled 
-    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`
-    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
+    ? `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="soundIcon"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="soundIcon"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>`;
 }
 
 $("#soundToggleBtn")?.addEventListener("click", () => {
@@ -262,7 +262,7 @@ function machineCard(machine, compact = false) {
   const rejectedRecently = machine.rejectedAt && Date.now() - Date.parse(machine.rejectedAt) < 60000;
   const idleDetail = machine.status === "offline" ? (rejectedRecently ? "PC ativo com credencial antiga: use Vincular." : machine.mac ? `WOL disponível (${machine.mac}).` : "Aguardando agente cliente.") : machine.maintenance ? "Sessões suspensas pelo operador." : restoring ? "Executando script de limpeza..." : "1 clique nos botões rápidos para liberar.";
 
-  const monitorIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
+  const monitorIcon = `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`;
 
   let progressPercent = 100;
   let warnProgress = "";
@@ -291,7 +291,7 @@ function machineCard(machine, compact = false) {
       </div>`;
   } else if (machine.status === "offline") {
     actionHtml = machine.mac
-      ? `<div class="machineActions"><button class="secondaryBtn" data-action="power" data-id="${html(machine.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg><span>Ligar Estação</span></button></div>`
+      ? `<div class="machineActions"><button class="secondaryBtn" data-action="power" data-id="${html(machine.id)}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg><span>Ligar Estação</span></button></div>`
       : `<span class="machineSetupNote">Aguardando instalação</span>`;
   } else {
     actionHtml = `
@@ -557,15 +557,16 @@ function renderMachines() {
 
   const totalOnline = counts.free + counts.in_use + counts.preparing;
   const occupancyPercent = totalOnline > 0 ? Math.round((counts.in_use / totalOnline) * 100) : 0;
-  const shiftText = state.cashShift ? `Aberto · ${currency(state.cashSummary?.expectedCashCents || 0)}` : "Fechado";
+  const shiftVal = state.cashShift ? currency(state.cashSummary?.expectedCashCents || 0) : "Fechado";
+  const shiftSub = state.cashShift ? "Caixa aberto no turno" : "Caixa fechado";
   const waitCount = (state.waitList || []).length;
   const printCount = (state.printJobs || []).filter(j => j.state === "pending" || j.state === "printing").length;
 
   $("#machineMetrics").innerHTML = 
     metric(counts.free, "Livres para Atender", "free") + 
-    metric(counts.in_use, `Em Atendimento (${occupancyPercent}% ocupado)`, "in_use") + 
-    metric(shiftText, "Caixa do Turno", state.cashShift ? "free" : "offline") + 
-    metric(`${waitCount} espera · ${printCount} impr.`, "Fila & Impressões", printCount > 0 ? "warn" : "offline");
+    metric(counts.in_use, `Em Atendimento (${occupancyPercent}% ocupação)`, "in_use") + 
+    metric(shiftVal, shiftSub, state.cashShift ? "free" : "offline") + 
+    metric(waitCount, `Fila de Espera · ${printCount} impr.`, (waitCount > 0 || printCount > 0) ? "warn" : "offline");
 
   const allOffline = state.machines.length > 0 && counts.offline === state.machines.length;
   $("#fleetNotice").hidden = !allOffline;

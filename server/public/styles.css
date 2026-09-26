@@ -183,9 +183,57 @@ button.danger:hover:not(:disabled) {
   place-items: center;
 }
 
+svg {
+  box-sizing: border-box;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+button svg,
+.btnIcon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
 .iconButton svg {
   width: 17px;
   height: 17px;
+  flex-shrink: 0;
+}
+
+.badgeIcon {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  min-height: 14px;
+  flex-shrink: 0;
+}
+
+.chevronIcon {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px;
+  min-height: 12px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.searchIcon {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  min-height: 14px;
+  flex-shrink: 0;
+}
+
+.soundIcon {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px;
+  min-height: 16px;
+  flex-shrink: 0;
 }
 
 .textButton {
@@ -662,7 +710,8 @@ label {
 }
 
 .shiftBadge {
-  min-height: 36px;
+  min-height: 34px;
+  height: 34px;
   padding: 0 12px;
   border-radius: var(--radius-pill);
   font-size: 12px;
@@ -671,12 +720,32 @@ label {
   border: 1px solid #fde68a;
   color: #92400e;
   box-shadow: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.shiftBadge:hover {
+  filter: brightness(0.97);
+  transform: translateY(-1px);
 }
 
 .shiftBadge.open {
   background: #ecfdf5;
   border-color: #a7f3d0;
   color: #065f46;
+}
+
+.shiftBadge .badgeIcon {
+  width: 14px !important;
+  height: 14px !important;
+  min-width: 14px;
+  min-height: 14px;
+  flex-shrink: 0;
 }
 
 .quickSaleBtn {
@@ -759,18 +828,24 @@ main {
 }
 
 .metric strong {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.03em;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
   color: var(--text-main);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .metric span {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .metric::before {
@@ -907,6 +982,145 @@ main {
 .viewModeSwitch button svg {
   width: 15px;
   height: 15px;
+}
+
+.headActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.secondaryBtn,
+button.secondaryBtn {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+}
+
+.secondaryBtn:hover:not(:disabled),
+button.secondaryBtn:hover:not(:disabled) {
+  background: var(--bg-card-subtle);
+  border-color: var(--border-hover);
+  color: var(--text-main);
+  transform: translateY(-1px);
+}
+
+.secondaryBtn svg,
+button.secondaryBtn svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.actionMenu {
+  position: relative;
+  display: inline-block;
+}
+
+.actionMenu summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--text-secondary);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  box-shadow: var(--shadow-xs);
+}
+
+.actionMenu summary::-webkit-details-marker {
+  display: none !important;
+}
+
+.actionMenu summary:hover {
+  background: var(--bg-card-subtle);
+  border-color: var(--border-hover);
+  color: var(--text-main);
+  transform: translateY(-1px);
+}
+
+.actionMenu .chevronIcon {
+  width: 12px !important;
+  height: 12px !important;
+  min-width: 12px;
+  min-height: 12px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.actionMenu[open] summary .chevronIcon {
+  transform: rotate(180deg);
+}
+
+.actionMenuPanel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 230px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.actionMenuPanel button {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 32px;
+  height: 32px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: var(--text-main);
+  box-shadow: none;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.actionMenuPanel button:hover {
+  background: var(--bg-card-subtle);
+  color: var(--primary);
+  transform: none;
+}
+
+.actionMenuPanel button svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  margin-right: 4px;
 }
 
 /* ==========================================================================
