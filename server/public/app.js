@@ -235,7 +235,7 @@ function tickClocks() {
         if (isExpired && !warnedSessions.has(machine.session.id)) {
           warnedSessions.add(machine.session.id);
           playChime("alert");
-          toast(`⚠️ Tempo esgotado: ${machine.name}!`);
+          toast(`Tempo esgotado: ${machine.name}!`);
         }
       }
     }
@@ -342,20 +342,20 @@ function machineCard(machine, compact = false) {
         <div class="machineMoreActions">
           ${active ? `
             <button data-action="${machine.locked ? "unlock" : "lock"}" data-id="${html(machine.id)}">${machine.locked ? "▶ Retomar" : "⏸ Pausar"}</button>
-            <button data-action="summary" data-id="${html(machine.id)}">📄 Resumo</button>
+            <button data-action="summary" data-id="${html(machine.id)}">Resumo</button>
             <button data-action="move" data-id="${html(machine.id)}">⇄ Mover</button>
-            <button data-action="restart" data-id="${html(machine.id)}">🔄 Reiniciar</button>
+            <button data-action="restart" data-id="${html(machine.id)}">Reiniciar</button>
           ` : ""}
-          <button data-action="monitor" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>👁 Monitorar</button>
+          <button data-action="monitor" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>Monitorar</button>
           ${active ? "" : `
-            <button data-action="reboot" data-id="${html(machine.id)}" ${machine.status === "offline" ? 'disabled title="Sem conexão: reinicie no próprio PC"' : ""}>🔄 Reiniciar</button>
+            <button data-action="reboot" data-id="${html(machine.id)}" ${machine.status === "offline" ? 'disabled title="Sem conexão: reinicie no próprio PC"' : ""}>Reiniciar</button>
           `}
           <button data-action="shutdown" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>⏻ Desligar</button>
-          <button data-action="maintenance" data-id="${html(machine.id)}" ${active ? "disabled" : ""}>🛠 ${machine.maintenance ? "Fim Manut." : "Manutenção"}</button>
+          <button data-action="maintenance" data-id="${html(machine.id)}" ${active ? "disabled" : ""}>${machine.maintenance ? "Fim Manut." : "Manutenção"}</button>
           ${state.user.role === "admin" ? `
-            <button data-action="rename" data-id="${html(machine.id)}">✏ Renomear</button>
-            <button data-action="pair" data-id="${html(machine.id)}">🔑 Vincular</button>
-            <button data-action="remove" data-id="${html(machine.id)}" class="danger">🗑 Remover</button>
+            <button data-action="rename" data-id="${html(machine.id)}">Renomear</button>
+            <button data-action="pair" data-id="${html(machine.id)}">Vincular</button>
+            <button data-action="remove" data-id="${html(machine.id)}" class="danger">Remover</button>
           ` : ""}
         </div>
       </details>
@@ -661,7 +661,7 @@ function renderMachinesTable(machines) {
       ? `<button class="primary" data-action="end" data-id="${html(m.id)}">Encerrar</button><button data-action="addTime" data-id="${html(m.id)}">+Tempo</button><button data-action="consume" data-id="${html(m.id)}">+Consumo</button>`
       : isOff
       ? (m.mac ? `<button data-action="power" data-id="${html(m.id)}">Ligar</button>` : `<span class="muted">Sem WOL</span>`)
-      : `<button class="primary" data-action="quickStart" data-minutes="30" data-id="${html(m.id)}">⚡ 30m</button><button class="primary" data-action="quickStart" data-minutes="60" data-id="${html(m.id)}">⚡ 1h</button><button class="secondaryBtn" data-action="start" data-id="${html(m.id)}">Opções...</button>`;
+      : `<button class="primary" data-action="quickStart" data-minutes="30" data-id="${html(m.id)}">30m</button><button class="primary" data-action="quickStart" data-minutes="60" data-id="${html(m.id)}">1h</button><button class="secondaryBtn" data-action="start" data-id="${html(m.id)}">Opções...</button>`;
 
     return `
       <tr>
@@ -826,10 +826,10 @@ function getCategoryItems(cat, term) {
     list = state.products.filter(p => p.active);
   } else if (cat === "machines") {
     list = [
-      { id: "time_15", type: "machine_time", name: "Tempo 15 Minutos", minutes: 15, priceCents: 300, icon: "⚡", tag: "15 min" },
-      { id: "time_30", type: "machine_time", name: "Tempo 30 Minutos", minutes: 30, priceCents: 370, icon: "⚡", tag: "30 min" },
-      { id: "time_60", type: "machine_time", name: "Tempo 1 Hora (60 min)", minutes: 60, priceCents: 500, icon: "⭐", tag: "60 min" },
-      { id: "time_120", type: "machine_time", name: "Tempo 2 Horas (120 min)", minutes: 120, priceCents: 1000, icon: "🚀", tag: "120 min" },
+      { id: "time_15", type: "machine_time", name: "Tempo 15 Minutos", minutes: 15, priceCents: 300, icon: "", tag: "15 min" },
+      { id: "time_30", type: "machine_time", name: "Tempo 30 Minutos", minutes: 30, priceCents: 370, icon: "", tag: "30 min" },
+      { id: "time_60", type: "machine_time", name: "Tempo 1 Hora (60 min)", minutes: 60, priceCents: 500, icon: "", tag: "60 min" },
+      { id: "time_120", type: "machine_time", name: "Tempo 2 Horas (120 min)", minutes: 120, priceCents: 1000, icon: "", tag: "120 min" },
       { id: "time_open", type: "machine_time", name: "Tempo Livre (Paga ao Sair)", open: true, priceCents: 300, icon: "⏱️", tag: "Livre" }
     ];
   } else {
@@ -902,7 +902,7 @@ function renderPOS() {
   const goalRem = $("#posGoalRemainingText");
   if (goalRem) {
     if (receivedCents >= goalCents) {
-      goalRem.innerHTML = `<strong style="color: #22c55e;">🎉 Meta diária superada! (+${currency(receivedCents - goalCents)})</strong>`;
+      goalRem.innerHTML = `<strong style="color: #22c55e;">Meta diária superada! (+${currency(receivedCents - goalCents)})</strong>`;
     } else {
       goalRem.textContent = `Faltam ${currency(goalCents - receivedCents)} para atingir a meta`;
     }
@@ -1155,7 +1155,7 @@ function updatePOSPaymentMethodUI() {
     fiadoBox.hidden = !isFiado || posSplitMode;
     if (isFiado && fiadoNotice) {
       if (!posCustomer.id) {
-        fiadoNotice.innerHTML = `<span style="color:#b91c1c; font-weight:800;">⚠️ Atenção:</span> Para vender a prazo / fiado, selecione um cliente cadastrado no cupom (não é permitido para Consumidor Final). Clique em "Alterar" no cupom para vincular o cliente.`;
+        fiadoNotice.innerHTML = `<span style="color:#b91c1c; font-weight:800;">Atenção:</span> Para vender a prazo / fiado, selecione um cliente cadastrado no cupom (não é permitido para Consumidor Final). Clique em "Alterar" no cupom para vincular o cliente.`;
       } else {
         fiadoNotice.innerHTML = `<strong>Venda a Prazo / Fiado:</strong> O valor será registrado como pendência na conta do cliente <strong>${html(posCustomer.name)}</strong> no Contas a Receber.`;
       }
@@ -1471,6 +1471,24 @@ async function launchItemsToMachine(machineId) {
   }
 }
 
+// Acesso a internet: o atendente digita o valor que apareceu na maquina do cliente.
+function openInternetValueDialog() {
+  openModal("Acesso à internet",
+    `<p class="quoteBox">Digite o valor que apareceu na máquina do cliente. Se a estação está aberta no sistema, prefira <strong>Encerrar e receber</strong> no cartão dela, para não cobrar duas vezes.</p>` +
+    field("amount", "Valor (R$)", "number", "", 'min="0.01" max="10000" step="0.01" required inputmode="decimal"') +
+    field("station", "Estação (opcional)", "text", "", 'maxlength="20" placeholder="Ex.: 12"'),
+    values => {
+      const cents = Math.round(Number(String(values.amount).replace(",", ".")) * 100);
+      if (!Number.isInteger(cents) || cents < 1) throw new Error("Informe o valor do acesso.");
+      const station = String(values.station || "").trim();
+      const key = `net_${Date.now()}`;
+      posCart.set(key, { id: key, type: "custom", name: station ? `Acesso à internet · Máquina ${station}` : "Acesso à internet", code: "3", category: "Lan House & Serviços Digitais", priceCents: cents, quantity: 1, maxStock: null });
+      renderPOSTicket();
+      return Promise.resolve();
+    }, "Adicionar à venda");
+  setTimeout(() => $("#modalForm")?.elements.amount?.focus(), 50);
+}
+
 function openPosCustomItemDialog() {
   const dialog = $("#posCustomItemDialog");
   if (!dialog) return;
@@ -1497,6 +1515,7 @@ function setupPOSListeners() {
   document.querySelectorAll("[data-quick-action]").forEach(btn => {
     btn.addEventListener("click", () => {
       const action = btn.dataset.quickAction;
+      if (action === "acesso_net") { openInternetValueDialog(); return; }
       const def = QUICK_SHORTCUTS[action];
       if (!def) return;
       const prod = state.products.find(p => p.active && (p.code === def.code || p.name.toLowerCase().includes(def.name.toLowerCase())));
@@ -2171,7 +2190,7 @@ function renderReport() {
   if (goalRestante) goalRestante.textContent = currency(remainingCents);
   const goalStatus = $("#execGoalStatus");
   if (goalStatus) {
-    goalStatus.textContent = goalPct >= 100 ? "Meta Atingida! 🎉" : "Em Progresso";
+    goalStatus.textContent = goalPct >= 100 ? "Meta Atingida! " : "Em Progresso";
     goalStatus.className = `execStatusBadge ${goalPct >= 100 ? "completed" : "inProgress"}`;
   }
   const goalNumbers = $("#execGoalNumbers");
@@ -2280,7 +2299,7 @@ function renderExecChart() {
 
     svgBars += `
       <g class="chartBarGroup">
-        ${isPeak ? `<text x="${x + colWidth/2}" y="${y - 8}" text-anchor="middle" fill="#d97706" font-size="11" font-weight="700">🏆 PICO</text>` : ""}
+        ${isPeak ? `<text x="${x + colWidth/2}" y="${y - 8}" text-anchor="middle" fill="#d97706" font-size="11" font-weight="700">PICO</text>` : ""}
         <rect x="${x}" y="${y}" width="${colWidth}" height="${barH}" rx="4" fill="${fillColor}" />
         <text x="${x + colWidth/2}" y="${height - 12}" text-anchor="middle" fill="var(--text-secondary)" font-size="10">${labelDate}</text>
       </g>
@@ -2341,9 +2360,9 @@ function renderPaymentMethods() {
   const total = (bm.cash + bm.pix + bm.card + (bm.debit || 0) + (bm.credit || 0)) || 1;
 
   const methods = [
-    { name: "Dinheiro", icon: "💵", color: "#16a34a", val: bm.cash },
-    { name: "Pix Instantâneo", icon: "⚡", color: "#0d9488", val: bm.pix },
-    { name: "Cartão / Outros", icon: "💳", color: "#2563eb", val: (bm.card || 0) + (bm.debit || 0) + (bm.credit || 0) }
+    { name: "Dinheiro", icon: "", color: "#16a34a", val: bm.cash },
+    { name: "Pix Instantâneo", icon: "", color: "#0d9488", val: bm.pix },
+    { name: "Cartão / Outros", icon: "", color: "#2563eb", val: (bm.card || 0) + (bm.debit || 0) + (bm.credit || 0) }
   ];
 
   wrap.innerHTML = `
@@ -3138,7 +3157,7 @@ document.addEventListener("click", async event => {
           minutes: open ? undefined : minutes
         });
         playChime("success");
-        toast(`⚡ ${machine.name} liberada por ${open ? "tempo livre" : minutes + " min"}!`);
+        toast(`${machine.name} liberada por ${open ? "tempo livre" : minutes + " min"}!`);
         await loadState();
       } catch (err) {
         toast(err.message);

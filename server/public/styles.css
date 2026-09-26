@@ -3940,3 +3940,6 @@ dialog form, .pairContent {
   font-weight: 800;
   margin-top: 4px;
 }
+
+/* Icones de emoji removidos: espacos vazios nao ocupam lugar. */
+.methodIcon:empty, .crossSellIcon:empty, .execIcon:empty, .posItemIcon:empty { display: none; }
