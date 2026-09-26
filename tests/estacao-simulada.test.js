@@ -91,3 +91,10 @@ test("lancador do pendrive: eleva pelo cmd.exe, repassa argumentos com acento e 
   assert.match(output, /acento correto: True/, output);
   assert.match(output, /capturar: retorno=1 \| arquivo de erro: ERRO: falha simulada na captura/, output);
 });
+
+test("tela de bloqueio: relogio registrado para atualizar a cada segundo", { skip: process.platform !== "win32" }, async () => {
+  const script = path.join(__dirname, "relogio-bloqueio.ps1");
+  const agent = path.join(__dirname, "..", "client-agent", "LanHouseAgent.ps1");
+  const output = await new Promise((resolve, reject) => execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, "-AgentFile", agent], { timeout: 60000 }, (error, stdout) => error ? reject(error) : resolve(stdout)));
+  assert.match(output, /relogios registrados: 1/, output);
+});

@@ -1650,7 +1650,9 @@ function Invoke-AgentRun {
     $serverOffsetMs = 0
     $runningHash = Get-ScriptHash -Path $PSCommandPath
     Stop-AgentUiProcesses
-    Send-AgentEvent -Config $config -Title "Agente iniciado" -Detail $env:USERNAME
+    # Informa no painel se o padrao das pastas foi salvo (sem isso a restauracao ignora as pastas).
+    $captureInfo = if ($config.LastCapture) { "padrao salvo em $($config.LastCapture)" } else { "PADRAO NAO SALVO: reinstale pela conta Tecnico" }
+    Send-AgentEvent -Config $config -Title "Agente iniciado" -Detail "$env:USERNAME; $captureInfo"
 
     while ($true) {
         try {
@@ -2091,7 +2093,8 @@ function New-ClientAccessCard {
         $date.Text = $dateText.Substring(0, 1).ToUpper() + $dateText.Substring(1)
     }.GetNewClosure()
     & $updateClock
-    if ($script:ClockUpdaters) { [void]$script:ClockUpdaters.Add($updateClock) }
+    # Lista vazia conta como falso no PowerShell: testar $null, senao o relogio nunca atualiza.
+    if ($null -ne $script:ClockUpdaters) { [void]$script:ClockUpdaters.Add($updateClock) }
 
     # Cartao central.
     $left = 44
