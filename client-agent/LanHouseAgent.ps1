@@ -1291,7 +1291,7 @@ function Restart-AgentRun {
 }
 
 function Get-ScreenJpeg {
-    param([int]$MaxWidth = 1024, [long]$Quality = 35)
+    param([int]$MaxWidth = 1366, [long]$Quality = 40)
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
     $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds

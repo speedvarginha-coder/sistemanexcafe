@@ -510,6 +510,8 @@ async function openMonitor(machine) {
   $("#monitorImage").removeAttribute("src");
   $("#monitorImage").hidden = true; // so aparece quando chegar o primeiro quadro
   $("#monitorDialog").showModal();
+  // Tela cheia (esconde abas e barras do navegador); precisa acontecer no mesmo clique que abriu o Monitorar.
+  try { $("#monitorDialog").requestFullscreen?.({ navigationUI: "hide" }).catch(() => {}); } catch { }
   const renew = () => api(`/api/machines/${encodeURIComponent(machine.id)}/monitor`, {}).catch(cause => { $("#monitorStatus").textContent = cause.message; });
   await renew();
   clearInterval(monitorTimer);
@@ -3844,7 +3846,12 @@ $("#waitName").addEventListener("keydown", event => {
   }
 });
 
-$("#monitorClose").addEventListener("click", () => { stopMonitor(); $("#monitorDialog").close(); });
+$("#monitorClose").addEventListener("click", () => { stopMonitor(); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); $("#monitorDialog").close(); });
+$("#monitorDialog").addEventListener("close", () => { stopMonitor(); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); });
+$("#monitorFullscreen")?.addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else $("#monitorDialog").requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
+});
 $("#monitorDialog").addEventListener("close", stopMonitor);
 // Teclado fisico do caixa vai direto para a estacao enquanto o Monitorar esta aberto.
 // Letras sao agrupadas (envia a cada 150 ms) para nao mandar um pedido por tecla.
