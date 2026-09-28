@@ -536,6 +536,14 @@ function Invoke-AgentRestore {
 
             Write-AgentLog "Restaurando: $target"
             Replace-FolderContent -Source $baseline -Destination $target -AllowedRoot $profile
+            # Pasta redirecionada (OneDrive ou outro local): limpa tambem o caminho real que o Windows usa.
+            if ($user -eq $env:USERNAME) {
+                $real = Get-RealUserFolder -Folder $folder
+                if ($real -and (Test-Path -LiteralPath $real) -and ($real.TrimEnd('\') -ne $target.TrimEnd('\')) -and $real.StartsWith($profile, [System.StringComparison]::OrdinalIgnoreCase)) {
+                    Write-AgentLog "Restaurando pasta redirecionada: $real"
+                    Replace-FolderContent -Source $baseline -Destination $real -AllowedRoot $profile
+                }
+            }
         }
 
         Clear-UserCaches -User $user -Config $config
@@ -543,6 +551,39 @@ function Invoke-AgentRestore {
     }
 
     Write-AgentLog "Restauracao concluida."
+    # Relatorio para o painel: o que ficou na area de trabalho e o que o padrao contem (so nomes).
+    try {
+        if ($config.ProtectedUsers -contains $env:USERNAME) {
+            $desktop = Get-RealUserFolder -Folder "Desktop"
+            if (-not $desktop) { $desktop = Get-ProtectedTarget -User $env:USERNAME -Folder "Desktop" }
+            $left = @(Get-ChildItem -LiteralPath $desktop -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "desktop.ini" -and $_.Extension -ne ".lnk" } | ForEach-Object { $_.Name })
+            $public = @(Get-ChildItem -LiteralPath "C:\Users\Public\Desktop" -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "desktop.ini" -and $_.Extension -ne ".lnk" } | ForEach-Object { $_.Name })
+            $inBaseline = @(Get-ChildItem -LiteralPath (Get-BaselineTarget -User $env:USERNAME -Folder "Desktop") -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "desktop.ini" -and $_.Extension -ne ".lnk" } | ForEach-Object { $_.Name })
+            if ($left.Count -or $public.Count) {
+                $detail = "Pasta: $desktop | Ficaram: $(($left | Select-Object -First 10) -join ', ') | No padrao: $(if ($inBaseline.Count) { ($inBaseline | Select-Object -First 10) -join ', ' } else { 'nenhum arquivo' }) | Area publica: $(if ($public.Count) { ($public | Select-Object -First 10) -join ', ' } else { 'vazia' })"
+                Send-AgentEvent -Config $config -Title "Limpeza: arquivos na area de trabalho" -Detail $detail
+            }
+        }
+    } catch { Write-AgentLog "Relatorio da area de trabalho: $($_.Exception.Message)" }
+}
+
+# Caminho real de uma pasta do usuario (considera redirecionamento para OneDrive ou outra unidade).
+function Get-RealUserFolder {
+    param([string]$Folder)
+    try {
+        switch ($Folder) {
+            "Desktop" { return [Environment]::GetFolderPath("Desktop") }
+            "Documents" { return [Environment]::GetFolderPath("MyDocuments") }
+            "Pictures" { return [Environment]::GetFolderPath("MyPictures") }
+            "Videos" { return [Environment]::GetFolderPath("MyVideos") }
+            "Music" { return [Environment]::GetFolderPath("MyMusic") }
+            "Downloads" {
+                $value = (Get-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders" -Name "{374DE290-123F-4565-9164-39C4925E467B}" -ErrorAction Stop)."{374DE290-123F-4565-9164-39C4925E467B}"
+                return [Environment]::ExpandEnvironmentVariables($value)
+            }
+        }
+    } catch { }
+    return $null
 }
 
 function ConvertTo-MachineId {
