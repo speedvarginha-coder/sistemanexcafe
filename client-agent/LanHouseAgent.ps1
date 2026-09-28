@@ -1130,6 +1130,37 @@ $script:LhmInputReady = $false
 function Add-LhmInputTypes {
     if ($script:LhmInputReady) { return }
     Add-Type -AssemblyName System.Windows.Forms
+    if (-not ("LhmKeys" -as [type])) {
+        # Digitacao por SendInput com caractere Unicode (acentos corretos, nao depende do layout do teclado).
+        Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class LhmKeys {
+    [StructLayout(LayoutKind.Sequential)] struct KEYBDINPUT { public ushort wVk; public ushort wScan; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+    [StructLayout(LayoutKind.Sequential)] struct MOUSEINPUT { public int dx; public int dy; public uint mouseData; public uint dwFlags; public uint time; public IntPtr dwExtraInfo; }
+    [StructLayout(LayoutKind.Explicit)] struct UNION { [FieldOffset(0)] public MOUSEINPUT mi; [FieldOffset(0)] public KEYBDINPUT ki; }
+    [StructLayout(LayoutKind.Sequential)] struct INPUT { public uint type; public UNION u; }
+    [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint n, INPUT[] inputs, int size);
+    static INPUT Key(ushort vk, ushort scan, uint flags) { var i = new INPUT(); i.type = 1; i.u.ki.wVk = vk; i.u.ki.wScan = scan; i.u.ki.dwFlags = flags; return i; }
+    public static void Type(string text) {
+        foreach (char c in text) {
+            if (c == '\r') continue;
+            INPUT[] pair = c == '\n' ? new[] { Key(0x0D, 0, 0), Key(0x0D, 0, 2) } : new[] { Key(0, c, 4), Key(0, c, 4 | 2) };
+            if (SendInput(2, pair, Marshal.SizeOf(typeof(INPUT))) != 2) throw new InvalidOperationException("O Windows recusou a digitacao (erro " + Marshal.GetLastWin32Error() + ").");
+        }
+    }
+    // Tecla virtual, com Ctrl opcional (Enter, setas, Ctrl+C...).
+    public static void Press(ushort vk, bool ctrl) {
+        var list = new System.Collections.Generic.List<INPUT>();
+        uint ext = (vk >= 0x21 && vk <= 0x2E) ? 1u : 0u;
+        if (ctrl) list.Add(Key(0x11, 0, 0));
+        list.Add(Key(vk, 0, ext)); list.Add(Key(vk, 0, ext | 2));
+        if (ctrl) list.Add(Key(0x11, 0, 2));
+        if (SendInput((uint)list.Count, list.ToArray(), Marshal.SizeOf(typeof(INPUT))) != list.Count) throw new InvalidOperationException("O Windows recusou a tecla (erro " + Marshal.GetLastWin32Error() + ").");
+    }
+}
+"@
+    }
     if (-not ("LhmInput" -as [type])) {
         Add-Type @"
 using System;
@@ -1208,11 +1239,12 @@ function Invoke-InputEvent {
         if ($amount -gt 0) { [LhmInput]::Mouse(0x0800, 120) } elseif ($amount -lt 0) { [LhmInput]::Mouse(0x0800, -120) }
         return
     }
-    if ($type -eq "text") { [System.Windows.Forms.SendKeys]::SendWait((ConvertTo-SendKeys ([string]$Event.value))); return }
+    if ($type -eq "text") { [LhmKeys]::Type([string]$Event.value); return }
     if ($type -eq "key") {
-        $map = @{ enter = "{ENTER}"; tab = "{TAB}"; esc = "{ESC}"; backspace = "{BACKSPACE}"; delete = "{DEL}"; up = "{UP}"; down = "{DOWN}"; left = "{LEFT}"; right = "{RIGHT}"; home = "{HOME}"; end = "{END}"; pageup = "{PGUP}"; pagedown = "{PGDN}"; f5 = "{F5}"; "ctrl+a" = "^a"; "ctrl+c" = "^c"; "ctrl+v" = "^v"; "ctrl+x" = "^x"; "ctrl+z" = "^z"; "ctrl+s" = "^s"; "ctrl+y" = "^y"; "ctrl+p" = "^p" }
+        $vk = @{ enter = 0x0D; tab = 0x09; esc = 0x1B; backspace = 0x08; delete = 0x2E; up = 0x26; down = 0x28; left = 0x25; right = 0x27; home = 0x24; end = 0x23; pageup = 0x21; pagedown = 0x22; f5 = 0x74 }
         $key = ([string]$Event.value).ToLower()
-        if ($map.ContainsKey($key)) { [System.Windows.Forms.SendKeys]::SendWait($map[$key]) }
+        if ($key -match '^ctrl\+([a-z])$') { [LhmKeys]::Press([uint16][char]$Matches[1].ToUpper(), $true); return }
+        if ($vk.ContainsKey($key)) { [LhmKeys]::Press([uint16]$vk[$key], $false) }
         return
     }
 }
@@ -1325,7 +1357,7 @@ public class LhmInputDiag {
                 $inputError = ""
                 try { Invoke-InputEvent -Event $evt } catch { $inputError = $_.Exception.Message }
                 # Diagnostico: os 3 primeiros cliques de cada monitoramento (e todo erro) vao para o painel.
-                if (($evt.type -ne "move" -and $script:MonitorReported -lt 3) -or $inputError) {
+                if (($evt.type -ne "move" -and $script:MonitorReported -lt 6) -or $inputError) {
                     $script:MonitorReported++
                     $pos = [System.Windows.Forms.Cursor]::Position
                     $fg = ""
