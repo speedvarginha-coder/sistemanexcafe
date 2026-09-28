@@ -401,6 +401,8 @@ function Invoke-CaptureBaseline {
             Copy-FolderContent -Source $source -Destination $destination
         }
     }
+    # Area de trabalho e Downloads do padrao ficam so com atalhos (documento esquecido nao vira parte do padrao).
+    Clear-BaselineDocuments -Config $config
 
     Add-OrUpdateProperty -Object $config -Name "LastCapture" -Value (Get-Date).ToString("s")
     Save-Config -Config $config
@@ -559,10 +561,8 @@ function Invoke-AgentRestore {
             $left = @(Get-ChildItem -LiteralPath $desktop -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "desktop.ini" -and $_.Extension -ne ".lnk" } | ForEach-Object { $_.Name })
             $public = @(Get-ChildItem -LiteralPath "C:\Users\Public\Desktop" -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "desktop.ini" -and $_.Extension -ne ".lnk" } | ForEach-Object { $_.Name })
             $inBaseline = @(Get-ChildItem -LiteralPath (Get-BaselineTarget -User $env:USERNAME -Folder "Desktop") -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne "desktop.ini" -and $_.Extension -ne ".lnk" } | ForEach-Object { $_.Name })
-            if ($left.Count -or $public.Count) {
-                $detail = "Pasta: $desktop | Ficaram: $(($left | Select-Object -First 10) -join ', ') | No padrao: $(if ($inBaseline.Count) { ($inBaseline | Select-Object -First 10) -join ', ' } else { 'nenhum arquivo' }) | Area publica: $(if ($public.Count) { ($public | Select-Object -First 10) -join ', ' } else { 'vazia' })"
-                Send-AgentEvent -Config $config -Title "Limpeza: arquivos na area de trabalho" -Detail $detail
-            }
+            $detail = "Ficaram: $(if ($left.Count) { ($left | Select-Object -First 8) -join ', ' } else { 'nada' }) | Padrao: $(if ($inBaseline.Count) { ($inBaseline | Select-Object -First 8) -join ', ' } else { 'so atalhos' }) | Publica: $(if ($public.Count) { ($public | Select-Object -First 5) -join ', ' } else { 'vazia' }) | $desktop"
+            Send-AgentEvent -Config $config -Title $(if ($left.Count -or $public.Count) { "Limpeza: arquivos na area de trabalho" } else { "Limpeza: area de trabalho limpa" }) -Detail $detail
         }
     } catch { Write-AgentLog "Relatorio da area de trabalho: $($_.Exception.Message)" }
 }
@@ -1528,6 +1528,32 @@ function Register-AgentSessionTask {
     Write-AgentLog "Tarefa de supervisao do agente registrada ($SessionTaskName)."
 }
 
+# Padrao (SYSTEM): area de trabalho e Downloads do padrao so podem ter atalhos. Documento capturado por engano
+# junto com o padrao voltaria a cada limpeza (cliente seguinte veria o arquivo do anterior).
+function Clear-BaselineDocuments {
+    param([object]$Config)
+    $removed = @()
+    foreach ($user in @($Config.ProtectedUsers)) {
+        foreach ($folder in @("Desktop", "Downloads")) {
+            $dir = Get-BaselineTarget -User $user -Folder $folder
+            if (-not (Test-Path -LiteralPath $dir)) { continue }
+            foreach ($item in @(Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue)) {
+                $keep = $folder -eq "Desktop" -and -not $item.PSIsContainer -and ($item.Extension -in @(".lnk", ".url") -or $item.Name -eq "desktop.ini")
+                if ($keep) { continue }
+                try { Remove-Item -LiteralPath $item.FullName -Recurse -Force -ErrorAction Stop; $removed += "$folder\$($item.Name)" } catch { Write-AgentLog "Padrao: nao removeu $($item.FullName): $($_.Exception.Message)" }
+            }
+        }
+    }
+    if ($removed.Count -gt 0) {
+        Write-AgentLog "Padrao: documentos removidos do padrao: $($removed -join ', ')"
+        try {
+            $base = "$($Config.ServerUrl)".TrimEnd("/"); $id = [Uri]::EscapeDataString($Config.MachineId)
+            $body = [System.Text.Encoding]::UTF8.GetBytes((@{ title = "Padrao corrigido: documentos removidos"; detail = (($removed | Select-Object -First 10) -join ", ") } | ConvertTo-Json))
+            Invoke-RestMethod -Method Post -Uri "$base/api/client/$id/event" -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 5 | Out-Null
+        } catch { }
+    }
+}
+
 # Supervisor (SYSTEM): cliente logado sem o agente rodando = sem bloqueio nem limpeza. Religa o agente na sessao dele.
 function Invoke-AgentSupervisor {
     param([object]$Config)
@@ -1588,6 +1614,7 @@ function Invoke-AgentUpdate {
         [void](Save-AgentScriptFromServer -Config $config -ServerHash ([string]$info.hash))
     } catch { Write-AgentLog "Atualizador: $($_.Exception.Message)" }
     try { Invoke-AgentSupervisor -Config $config } catch { Write-AgentLog "Supervisor: $($_.Exception.Message)" }
+    try { Clear-BaselineDocuments -Config $config } catch { Write-AgentLog "Padrao: $($_.Exception.Message)" }
 }
 
 #endregion
