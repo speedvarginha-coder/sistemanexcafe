@@ -520,7 +520,7 @@ function monitorCoords(event) {
   const imageAspect = img.naturalWidth / img.naturalHeight;
   let contentW, contentH, offsetX = 0, offsetY = 0;
   if (imageAspect > elementAspect) { contentW = rect.width; contentH = rect.width / imageAspect; offsetY = (rect.height - contentH) / 2; }
-  else { contentH = rect.height; contentW = rect.height * imageAspect; offsetX = (rect.width - contentH) / 2; }
+  else { contentH = rect.height; contentW = rect.height * imageAspect; offsetX = (rect.width - contentW) / 2; }
   const relX = (event.clientX - rect.left - offsetX) / contentW;
   const relY = (event.clientY - rect.top - offsetY) / contentH;
   if (relX < 0 || relX > 1 || relY < 0 || relY > 1) return null;
