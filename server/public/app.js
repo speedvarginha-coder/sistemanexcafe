@@ -3,7 +3,7 @@ const html = value => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<
 const currency = cents => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((cents || 0) / 100);
 const dateTime = iso => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-";
 const timeOnly = iso => iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "-";
-const options = ["cash", "pix", "card"];
+const options = ["cash", "pix", "debit", "credit"];
 const methodName = { cash: "Dinheiro", pix: "Pix", card: "Cartão", debit: "Cartão Débito", credit: "Cartão Crédito" };
 
 let state = null;
