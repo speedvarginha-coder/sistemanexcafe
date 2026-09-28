@@ -1266,13 +1266,38 @@ function Invoke-Monitor {
     $id = [Uri]::EscapeDataString($config.MachineId)
     $headers = @{ Authorization = "Bearer $($config.AgentToken)" }
     $failures = 0
+    $script:MonitorReported = 0
+    Add-LhmInputTypes
+    if (-not ("LhmInputDiag" -as [type])) {
+        Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class LhmInputDiag {
+    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+    public static int ForegroundPid() { uint pid; GetWindowThreadProcessId(GetForegroundWindow(), out pid); return (int)pid; }
+}
+"@
+    }
     while ($true) {
         $started = Get-Date
         try {
             $shot = Get-ScreenJpeg
             $response = Invoke-RestMethod -Method Post -Uri "$base/api/client/$id/screen-frame?w=$($shot.Width)&h=$($shot.Height)" -Headers $headers -ContentType "image/jpeg" -Body $shot.Bytes -TimeoutSec 5
             $failures = 0
-            foreach ($evt in @($response.events)) { if ($evt) { try { Invoke-InputEvent -Event $evt } catch { } } }
+            foreach ($evt in @($response.events)) {
+                if (-not $evt) { continue }
+                $inputError = ""
+                try { Invoke-InputEvent -Event $evt } catch { $inputError = $_.Exception.Message }
+                # Diagnostico: os 3 primeiros cliques de cada monitoramento (e todo erro) vao para o painel.
+                if (($evt.type -ne "move" -and $script:MonitorReported -lt 3) -or $inputError) {
+                    $script:MonitorReported++
+                    $pos = [System.Windows.Forms.Cursor]::Position
+                    $fg = ""
+                    try { $fg = (Get-Process -Id ([LhmInputDiag]::ForegroundPid()) -ErrorAction Stop).ProcessName } catch { }
+                    Send-AgentEvent -Config $config -Title $(if ($inputError) { "Monitor: comando falhou" } else { "Monitor: comando executado" }) -Detail "$($evt.type) em $($evt.x),$($evt.y); cursor ficou em $($pos.X),$($pos.Y); janela ativa: $fg; sessao $((Get-Process -Id $PID).SessionId) $inputError"
+                }
+            }
             if ([long]$response.monitorUntil -le (Get-EpochMs)) { break }
             if (@($response.events).Count -gt 0) { continue }
         } catch {
