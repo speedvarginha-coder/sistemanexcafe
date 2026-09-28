@@ -1826,7 +1826,13 @@ function Invoke-AgentRun {
                 }
             }
 
-            if ([int]$command.restoreSeq -gt [int]$state.LastRestoreSeq -and (Get-Date) -ge $nextRestoreAt) {
+            # O servidor e quem sabe se a limpeza ja foi feita: se ele ja registrou esta sequencia, so atualiza o estado local.
+            # Sem isso, um agente reiniciado repetia a limpeza e podia apagar arquivos de um cliente que acabou de entrar.
+            if ([int]$command.appliedRestoreSeq -ge [int]$command.restoreSeq -and [int]$state.LastRestoreSeq -lt [int]$command.restoreSeq) {
+                $state.LastRestoreSeq = [int]$command.restoreSeq
+                Save-State -State $state
+            }
+            if ([int]$command.restoreSeq -gt [int]$state.LastRestoreSeq -and [int]$command.restoreSeq -gt [int]$command.appliedRestoreSeq -and (Get-Date) -ge $nextRestoreAt) {
                 $restoreDone = $false
                 try {
                     Invoke-AgentRestore
