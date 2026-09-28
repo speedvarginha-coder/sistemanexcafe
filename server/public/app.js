@@ -3854,7 +3854,7 @@ $("#monitorImage").addEventListener("dblclick", event => {
   const c = monitorCoords(event); if (c) sendMonitorInput({ type: "dblclick", x: c.x, y: c.y });
 });
 $("#monitorImage").addEventListener("contextmenu", event => { event.preventDefault(); const c = monitorCoords(event); if (c) sendMonitorInput({ type: "rclick", x: c.x, y: c.y }); });
-$("#monitorImage").addEventListener("mousemove", event => { const now = Date.now(); if (now - monitorLastMove < 250) return; monitorLastMove = now; const c = monitorCoords(event); if (c) sendMonitorInput({ type: "move", x: c.x, y: c.y }); });
+$("#monitorImage").addEventListener("mousemove", event => { const now = Date.now(); if (now - monitorLastMove < 120) return; monitorLastMove = now; const c = monitorCoords(event); if (c) sendMonitorInput({ type: "move", x: c.x, y: c.y }); });
 
 document.querySelectorAll("#monitorBar button[data-mctrl]").forEach(button => button.addEventListener("click", async () => {
   const ctrl = button.dataset.mctrl;

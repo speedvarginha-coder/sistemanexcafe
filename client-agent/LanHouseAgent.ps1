@@ -1232,7 +1232,7 @@ function Restart-AgentRun {
 }
 
 function Get-ScreenJpeg {
-    param([int]$MaxWidth = 1152, [long]$Quality = 40)
+    param([int]$MaxWidth = 1024, [long]$Quality = 35)
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
     $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
@@ -1281,7 +1281,7 @@ function Invoke-Monitor {
             Start-Sleep -Milliseconds 700
         }
         $elapsed = ((Get-Date) - $started).TotalMilliseconds
-        if ($elapsed -lt 300) { Start-Sleep -Milliseconds ([int](300 - $elapsed)) }
+        if ($elapsed -lt 200) { Start-Sleep -Milliseconds ([int](200 - $elapsed)) }
     }
 }
 
