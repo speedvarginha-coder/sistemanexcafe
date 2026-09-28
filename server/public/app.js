@@ -135,6 +135,7 @@ $("#soundToggleBtn")?.addEventListener("click", () => {
   toast(audioEnabled ? "Alertas sonoros ativados." : "Alertas sonoros silenciados.");
 });
 
+let lastClientEndId = null;
 async function loadState() {
   if (loading) return;
   loading = true;
@@ -153,6 +154,15 @@ async function loadState() {
       }
     }
     
+    const lastClientEnd = (state.events || []).find(e => e.title === "Cliente encerrou o acesso");
+    if (lastClientEnd && lastClientEnd.id !== lastClientEndId) {
+      if (lastClientEndId !== null && Date.now() - Date.parse(lastClientEnd.at) < 5 * 60000) {
+        const machine = state.machines.find(m => m.id === lastClientEnd.machineId);
+        playChime("alert");
+        toast(`${machine ? machine.name : "Estação"}: cliente encerrou o acesso. ${lastClientEnd.detail}`);
+      }
+      lastClientEndId = lastClientEnd.id;
+    }
     $("#serverStatus").textContent = `Servidor online · Latência <1ms · ${dateTime(state.serverTime)}`;
     
     const shiftBadge = $("#shiftBadge");
@@ -281,6 +291,10 @@ function machineCard(machine, compact = false) {
   // Telemetria Técnica Enterprise
   const telemetryInfo = machine.ip ? `${machine.ip} · ${machine.windowsUser || "PC"}` : machine.id;
 
+  // Contas desta maquina ainda nao pagas (ultimas 12 h): aparecem no cartao para cobrar na hora.
+  const dueCharges = active ? [] : (state.openCharges || []).filter(c => c.machineId === machine.id && Date.now() - Date.parse(c.at) < 12 * 3600000);
+  const dueCents = dueCharges.reduce((sum, c) => sum + c.amountCents - c.paidCents, 0);
+  const dueHtml = dueCents ? `<div class="machineDue"><div><span>A receber</span><strong>${currency(dueCents)}</strong><small>${html(dueCharges.map(c => c.description.replace(/^Uso [^:]+: /, "tempo ")).join(" + "))}</small></div><button type="button" class="primary" data-action="receiveMachine" data-id="${html(machine.id)}">Receber</button></div>` : "";
   let actionHtml = "";
   if (active) {
     actionHtml = `
@@ -335,6 +349,7 @@ function machineCard(machine, compact = false) {
         </div>
       `}
 
+      ${dueHtml}
       ${actionHtml}
 
       <details class="machineMore">
@@ -703,7 +718,7 @@ function renderCash() {
   $("#cashToggleButton").textContent = shift ? "Fechar caixa" : "Abrir caixa";
   $("#cashToggleButton").disabled = !!shift && state.user.role !== "admin";
   $("#cashAdjustButton").disabled = !shift; $("#printSaleButton").disabled = !shift;
-  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td>${html(item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
+  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
   $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador"], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(state.charges.find(c => c.id === item.chargeId)?.description || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method]}</td><td>${html(item.operator)}</td></tr>`), "Nenhum recebimento registrado.");
   $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado"], state.cashShifts.filter(item => item.closedAt).map(item => `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td></tr>`), "Nenhum caixa fechado.");
 
@@ -851,7 +866,16 @@ function getCategoryItems(cat, term) {
   return list;
 }
 
+function renderPosMachineDue() {
+  const el = $("#posMachineDue"); if (!el) return;
+  const byMachine = {};
+  for (const c of state.openCharges || []) if (c.machineId && state.machines.some(m => m.id === c.machineId && !m.session) && Date.now() - Date.parse(c.at) < 12 * 3600000) (byMachine[c.machineId] ||= 0), byMachine[c.machineId] += c.amountCents - c.paidCents;
+  const rows = Object.entries(byMachine).filter(([, v]) => v > 0);
+  el.hidden = !rows.length;
+  el.innerHTML = rows.length ? `<span>Máquinas a receber:</span>${rows.map(([id, v]) => `<button type="button" data-action="receiveMachine" data-id="${html(id)}"><b>${html(state.machines.find(m => m.id === id)?.name || id)}</b> ${currency(v)} · Receber</button>`).join("")}` : "";
+}
 function renderPOS() {
+  renderPosMachineDue();
   const shift = state.cashShift;
   const summary = state.cashSummary || {};
   const settings = state.settings || {};
@@ -3243,6 +3267,7 @@ function renderBillsBanner() {
 function render() {
   if (!state) return;
   renderBillsBanner();
+  renderPosMachineDue();
   document.querySelectorAll("[data-admin-only]").forEach(el => { el.hidden = state.user.role !== "admin"; });
   renderMachines();
   renderCash();
@@ -3960,6 +3985,16 @@ document.addEventListener("click", async event => {
     } else if (action === "pair" && machine) {
       const result = await api(`/api/machines/${encodeURIComponent(id)}/pair`, {});
       showPair(result.pairingCode);
+    } else if (action === "receiveMachine") {
+      const machine = state.machines.find(m => m.id === id);
+      const due = (state.openCharges || []).filter(c => c.machineId === id && Date.now() - Date.parse(c.at) < 12 * 3600000);
+      const total = due.reduce((sum, c) => sum + c.amountCents - c.paidCents, 0);
+      if (!total) return;
+      if (!state.cashShift) { toast("Abra o caixa antes de receber."); return; }
+      openModal(`Receber · ${machine ? machine.name : id}`,
+        `<div class="dueList">${due.map(c => `<div><span>${html(c.description)}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong>${currency(total)}</strong></div></div>` + paymentField(),
+        async values => { for (const c of due) await api(`/api/charges/${c.id}/pay`, { amount: ((c.amountCents - c.paidCents) / 100).toFixed(2), method: values.paymentMethod }); playChime("success"); toast(`Recebido ${currency(total)}.`); },
+        `Receber ${currency(total)}`);
     } else if (action === "pay") {
       const charge = (state.openCharges || []).find(item => item.id === id);
       if (!charge) return;
