@@ -4360,3 +4360,6 @@ td.warn { color: var(--accent-text); }
 .monitorFsBtn { background: #24354a; border: 1px solid #334963; color: #fff; min-height: 30px; font-size: 12px; padding: 0 12px; box-shadow: none; }
 .monitorDialog:fullscreen { width: 100vw; height: 100vh; }
 .monitorDialog::backdrop { background: #0b131e; }
+/* Botao Tela cheia legivel (o estilo geral de botao deixava branco no branco) */
+#monitorDialog .monitorHeadActions #monitorFullscreen { background: #f5c518; border: 0; color: #0b3a1e; font-weight: 800; }
+#monitorDialog .monitorHeadActions #monitorFullscreen:hover { background: #ffd84a; }

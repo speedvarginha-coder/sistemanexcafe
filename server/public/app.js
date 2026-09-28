@@ -503,6 +503,16 @@ async function monitorLoop(id) {
   }
 }
 
+// Tela cheia: tenta no proprio Monitorar; se o navegador recusar, coloca a pagina inteira em tela cheia
+// (o Monitorar ja ocupa a pagina toda, entao o resultado na tela e o mesmo).
+function enterMonitorFullscreen() {
+  const dialog = $("#monitorDialog");
+  const fallback = () => document.documentElement.requestFullscreen?.({ navigationUI: "hide" }).catch(() => toast("O navegador bloqueou a tela cheia: aperte F11."));
+  try {
+    const request = dialog.requestFullscreen ? dialog.requestFullscreen({ navigationUI: "hide" }) : null;
+    if (request) request.catch(fallback); else fallback();
+  } catch { fallback(); }
+}
 async function openMonitor(machine) {
   monitorId = machine.id; monitorLastAt = 0;
   $("#monitorTitle").textContent = `Console Remoto · ${machine.name}`;
@@ -511,7 +521,7 @@ async function openMonitor(machine) {
   $("#monitorImage").hidden = true; // so aparece quando chegar o primeiro quadro
   $("#monitorDialog").showModal();
   // Tela cheia (esconde abas e barras do navegador); precisa acontecer no mesmo clique que abriu o Monitorar.
-  try { $("#monitorDialog").requestFullscreen?.({ navigationUI: "hide" }).catch(() => {}); } catch { }
+  enterMonitorFullscreen();
   const renew = () => api(`/api/machines/${encodeURIComponent(machine.id)}/monitor`, {}).catch(cause => { $("#monitorStatus").textContent = cause.message; });
   await renew();
   clearInterval(monitorTimer);
@@ -3850,7 +3860,7 @@ $("#monitorClose").addEventListener("click", () => { stopMonitor(); if (document
 $("#monitorDialog").addEventListener("close", () => { stopMonitor(); if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); });
 $("#monitorFullscreen")?.addEventListener("click", () => {
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-  else $("#monitorDialog").requestFullscreen?.({ navigationUI: "hide" }).catch(() => {});
+  else enterMonitorFullscreen();
 });
 $("#monitorDialog").addEventListener("close", stopMonitor);
 // Teclado fisico do caixa vai direto para a estacao enquanto o Monitorar esta aberto.
