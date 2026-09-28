@@ -1578,8 +1578,8 @@ function Set-StationAccounts {
     Write-Host "PROTECAO DA CONTA DO CLIENTE" -ForegroundColor Cyan
     Write-Host "O usuario '$ClientUser' deixa de ser administrador. A manutencao passa a usar a conta '$TechnicianUser'."
     if (-not $technician) { Write-Host "Sera criada a conta '$TechnicianUser' com a senha que voce digitar. GUARDE ESSA SENHA." -ForegroundColor Yellow }
-    $answer = Read-Host "Aplicar agora? Digite S para sim (recomendado) ou N para pular"
-    if ($answer -notmatch '^[sS]') {
+    $answer = Read-Host "Aperte Enter para aplicar (recomendado) ou digite N para pular"
+    if ($answer -match '^[nN]') {
         Write-Host "Protecao da conta pulada. O cliente continua administrador e pode desativar o agente." -ForegroundColor Yellow
         Write-AgentLog "Protecao da conta pulada pelo instalador."
         return

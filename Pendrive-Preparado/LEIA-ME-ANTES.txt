@@ -1,36 +1,26 @@
 LANHOUSEMANAGER - PENDRIVE DE INSTALACAO
 
-ANTES: no painel, encerre a sessao da maquina (se houver).
+1. No painel, deixe a maquina LIBERADA.
+2. Na maquina, entre no perfil do cliente ("Usuário"), deixe a area de trabalho
+   so com os atalhos e execute "INSTALAR.bat".
+3. Responda:
+   - Numero da maquina (ex.: 13) e Enter.
+   - Aviso do Windows: Sim.
+   - Protecao da conta do cliente: Enter.
+   - Na primeira vez, crie a senha da conta "Tecnico". ANOTE ESSA SENHA:
+     ela e a unica conta de administrador da estacao.
+4. No fim a maquina reinicia sozinha. Tire o pendrive.
+5. No painel, confira se a maquina aparece DISPONIVEL. Libere e encerre para testar.
 
-1. Entre no perfil do cliente ("Usuário") e deixe Area de trabalho, Downloads,
-   Documentos, Imagens, Videos e Musicas como devem ficar para todo cliente.
-   Deixe a maquina LIBERADA no painel durante toda a instalacao (sem tela de bloqueio).
-2. Execute "1 - INSTALAR.bat" e informe o numero da maquina (ex.: 12).
-   Confirme o aviso do Windows (Sim). Se o Windows pedir usuario e senha,
-   use a conta Tecnico e a senha dela.
-   A instalacao ja salva o padrao do perfil (nao existe mais captura separada).
-   No fim ele pergunta se deve proteger a conta do cliente: digite S.
-   Na primeira vez ele cria a conta "Tecnico" (administradora) e pede uma senha.
-   ANOTE ESSA SENHA: ela passa a ser a unica conta de administrador da estacao.
-   Se falhar, o motivo aparece na janela e fica salvo em
-   LanHouseManager-Estacoes\erro-instalacao.txt.
-3. Execute "2 - CONFERIR PADRAO.bat" para conferir o padrao salvo na instalacao.
-   Se avisar que falta o padrao, execute o passo 1 de novo.
-4. Reinicie e entre no perfil do cliente.
-5. Execute "3 - VERIFICAR APOS REINICIAR.bat".
-   Se algo der errado, execute "4 - DIAGNOSTICO.bat" e traga o pendrive ao caixa.
-6. No painel: libere, imprima 1 pagina P&B e 1 colorida, lance um consumo,
-   encerre e confira a restauracao.
+Se der erro: execute "DIAGNOSTICO (so se der erro).bat" e traga o pendrive ao caixa.
+O detalhe do erro fica em LanHouseManager-Estacoes\erro-instalacao.txt.
 
 O que a instalacao faz:
 - Tela de bloqueio, contador e monitoramento; atualizacao automatica pelo sistema.
 - Cliente sem administrador; Gerenciador de Tarefas, CMD, Executar e PowerShell bloqueados.
 - Ao encerrar: volta as pastas ao padrao e limpa navegadores, WhatsApp/Telegram/Discord,
   arquivos recentes, senhas salvas no Windows e a lixeira.
-- Impressao: o cliente so ve a "Impressão Nexcafé"; o caixa imprime. Impressoras e precos
-  ficam no painel: Atendimento > Impressões.
+- Impressao: o cliente so ve a "Impressão Nexcafé"; o caixa imprime.
 
 Manutencao na estacao: entre com a conta Tecnico (o agente nao roda nela).
-
 O servidor deve estar ligado em 192.168.1.14:4780.
-Use somente os arquivos deste pendrive.
