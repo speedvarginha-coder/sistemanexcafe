@@ -200,6 +200,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   } else db = defaults();
   let backupDay = "";
   let lastMaintenance = 0;
+  let lastOffsite = 0;
   function archiveOldData() {
     const cutoff = Date.now() - ARCHIVE_AFTER_DAYS * DAY_MS;
     const isOld = value => Date.parse(value) < cutoff;
@@ -291,6 +292,15 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     }
     fs.writeFileSync(`${dbPath}.tmp`, JSON.stringify(db), "utf8");
     fs.renameSync(`${dbPath}.tmp`, dbPath);
+    // Copia externa do banco JA gravado a cada 15 min: o arquivo do dia guarda o estado mais recente daquele dia.
+    if (offsiteDir && Date.now() - lastOffsite > 15 * 60000) {
+      lastOffsite = Date.now();
+      try {
+        fs.mkdirSync(offsiteDir, { recursive: true });
+        fs.copyFileSync(dbPath, path.join(offsiteDir, `db-${day}.json.tmp`));
+        fs.renameSync(path.join(offsiteDir, `db-${day}.json.tmp`), path.join(offsiteDir, `db-${day}.json`));
+      } catch (cause) { console.error(`Backup externo do banco falhou: ${cause.message}`); }
+    }
   }
   save();
   function event(machineId, title, detail = "", user = "sistema") {

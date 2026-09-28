@@ -44,3 +44,23 @@ Revisão do servidor Node, painel, agente Windows, instaladores, documentação,
 ## Critério para expansão
 
 Corrigir os achados críticos e altos; executar restauração completa de backup em diretório isolado; fazer na máquina 11 uma sessão de teste com arquivo em Downloads, navegador aberto, impressão real, encerramento, limpeza confirmada, reinício e retorno do agente; validar fechamento de caixa e relatórios. Só depois repetir o pacote versionado nas demais máquinas.
+
+---
+
+## Verificação das correções (28/09/2026)
+
+Conferido no código atual e com `npm run verify` (35 testes passando).
+
+| Achado | Situação | Onde |
+|---|---|---|
+| 1. Limpeza confirmada com arquivo do cliente | Corrigido. Sobra de arquivo que não existe no padrão faz a limpeza falhar e não ser confirmada; nova tentativa a cada 15 s; após 1 min travado, reinicia a estação uma vez por limpeza. | `client-agent/LanHouseAgent.ps1` (`Sync-FolderContent`, laço de restauração) |
+| 2. Agente sem recuperação | Corrigido. A tarefa SYSTEM (a cada 2 min) verifica se o cliente está logado sem o agente e o religa pela tarefa `LanHouseManager-AgenteSessao`; estações antigas criam a tarefa sozinhas. Avisa no painel. | `Invoke-AgentSupervisor`, `Register-AgentSessionTask` |
+| 3. Chave de API no marketing | Corrigido. `config.json` removido da pasta servida e bloqueado no `.gitignore`; nunca entrou em commit. Recomendado trocar a chave no provedor (a original segue na pasta do Google Drive). | `.gitignore` |
+| 4. Backup uma vez por dia | Corrigido. Banco copiado para `C:\LanHouseManager-Backup` a cada 15 min (já gravado); anexos copiados na hora do envio; chave do cofre e arquivos mensais junto; cópia para o Google Drive a cada hora e no login, agora também no instalador do servidor. Restauração completa testada em pasta isolada: histórico, produtos, clientes, despesas e cofre abriram. | `server/app.js` (`save`, `backupAttachment`), `server/Instalar-Servico.ps1` |
+| 5. Arquivamento com risco de perda | Corrigido. O arquivo mensal é gravado antes de os registros saírem do banco; arquivo ilegível é preservado e o arquivamento é adiado. | `archiveOldData` |
+| 6. Impressão x encerramento | Corrigido. Sessão capturada antes do envio; se acabar durante o envio, a impressão é recusada; se acabar durante a impressão, a cobrança vira pendência avulsa (não entra na conta fechada). | rota `print-upload` |
+| 7. Confirmação física da impressão | Mantido como limitação conhecida: a cobrança ocorre quando a fila do Windows aceita. Falha posterior (papel) exige cancelar a pendência no caixa. | — |
+| 8. Resultado anual sem receitas extras | Corrigido e coberto por teste. | `report()` |
+| 10. Máquina 11 com ID `tempname` | Conferido: o pendrive mapeia a estação 11 para `tempname`, então a reinstalação mantém o vínculo. | `install-config.json` |
+
+Pendente para liberar a expansão: teste de ponta a ponta na Máquina 11 (sessão com arquivo em Downloads e navegador aberto, impressão real, encerramento pelo relógio, limpeza confirmada, reinício e retorno do agente) e IP fixo no servidor (192.168.1.14).

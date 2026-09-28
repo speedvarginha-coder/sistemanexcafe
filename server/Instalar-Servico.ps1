@@ -34,6 +34,17 @@ if ($legacyWatcher) {
     Write-Host "Monitor antigo de impressao removido."
 }
 
+# Copia do backup para o Google Drive (L:), na conta de quem instalou (que enxerga o Drive): a cada hora e no login.
+$backupBat = Join-Path $serverDir "backup-drive.bat"
+if (Test-Path $backupBat) {
+    $who = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
+    $backupAction = New-ScheduledTaskAction -Execute $backupBat
+    $backupTriggers = @((New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Hours 1) -RepetitionDuration (New-TimeSpan -Days 3650)), (New-ScheduledTaskTrigger -AtLogOn -User $who))
+    $backupSettings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew
+    Register-ScheduledTask -TaskName "Nexcafe-Backup-GoogleDrive" -Action $backupAction -Trigger $backupTriggers -Settings $backupSettings -User $who -Force | Out-Null
+    Write-Host "Backup para o Google Drive agendado (a cada hora)."
+}
+
 Start-ScheduledTask -TaskName "LanHouseManager-Servidor"
 Start-Sleep -Seconds 3
 Write-Host ""
