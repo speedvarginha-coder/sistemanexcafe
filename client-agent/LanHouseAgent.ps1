@@ -1656,7 +1656,7 @@ function Clear-BaselineDocuments {
             $dir = Get-BaselineTarget -User $user -Folder $folder
             if (-not (Test-Path -LiteralPath $dir)) { continue }
             foreach ($item in @(Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue)) {
-                $keep = $folder -eq "Desktop" -and -not $item.PSIsContainer -and ($item.Extension -in @(".lnk", ".url") -or $item.Name -eq "desktop.ini")
+                $keep = -not $item.PSIsContainer -and ($item.Name -eq "desktop.ini" -or ($folder -eq "Desktop" -and $item.Extension -in @(".lnk", ".url")))
                 if ($keep) { continue }
                 try { Remove-Item -LiteralPath $item.FullName -Recurse -Force -ErrorAction Stop; $removed += "$folder\$($item.Name)" } catch { Write-AgentLog "Padrao: nao removeu $($item.FullName): $($_.Exception.Message)" }
             }
