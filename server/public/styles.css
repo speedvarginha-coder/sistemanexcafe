@@ -4363,3 +4363,5 @@ td.warn { color: var(--accent-text); }
 /* Botao Tela cheia legivel (o estilo geral de botao deixava branco no branco) */
 #monitorDialog .monitorHeadActions #monitorFullscreen { background: #f5c518; border: 0; color: #0b3a1e; font-weight: 800; }
 #monitorDialog .monitorHeadActions #monitorFullscreen:hover { background: #ffd84a; }
+/* Venda sem estoque liberada: o cartao avisa, mas nao parece bloqueado */
+.posItemCard.outOfStock { opacity: 1; cursor: pointer; background: #fffbeb; }

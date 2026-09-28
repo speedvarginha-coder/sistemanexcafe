@@ -1131,10 +1131,6 @@ function addPosProduct(id, quantity = 1) {
   const current = posCart.get(id);
   const qtyToAdd = Math.max(1, parseInt(quantity, 10) || 1);
   if (current) {
-    if (p.type === "stock" && current.quantity + qtyToAdd > p.stock && p.stock > 0) {
-      toast(`Estoque máximo atingido (${p.stock} un.).`);
-      return;
-    }
     current.quantity += qtyToAdd;
   } else {
     posCart.set(id, {
@@ -3567,10 +3563,10 @@ function renderSale() {
   const products = state.products.filter(item => item.active && (!term || `${item.name} ${item.code || ""}`.toLocaleLowerCase("pt-BR").includes(term))).slice(0, 8);
   
   $("#saleMatches").innerHTML = products.length ? products.map(item => `
-    <button type="button" data-sale-add="${html(item.id)}" ${item.type === "stock" && (saleCart.get(item.id) || 0) >= item.stock ? "disabled" : ""}>
+    <button type="button" data-sale-add="${html(item.id)}">
       <span>
         <strong>${html(item.name)}</strong>
-        <small>${html(item.code || item.category || "Item")}${item.type === "stock" ? ` · ${item.stock} em estoque` : ""}</small>
+        <small>${html(item.code || item.category || "Item")}${item.type === "stock" ? ` · ${item.stock <= 0 ? `<span class="bad">estoque ${item.stock}</span>` : `${item.stock} em estoque`}` : ""}</small>
       </span>
       <span class="money">${currency(item.priceCents)}</span>
     </button>`).join("") : '<p class="muted">Nenhum produto correspondente.</p>';
