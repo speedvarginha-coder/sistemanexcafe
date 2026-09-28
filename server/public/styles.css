@@ -1913,8 +1913,9 @@ dialog form, .pairContent {
 }
 
 .monitorCanvasWrapper img {
-  max-width: 100%;
-  max-height: 100%;
+  /* Ocupa todo o espaco disponivel (a imagem vem em 1280 px e antes ficava no tamanho original). */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   cursor: crosshair;
 }

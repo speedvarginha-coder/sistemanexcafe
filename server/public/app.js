@@ -466,7 +466,12 @@ function stopMonitor() {
   if (monitorId) api(`/api/machines/${encodeURIComponent(monitorId)}/monitor`, { stop: true }).catch(() => {});
   monitorId = null;
 }
-async function sendMonitorInput(event) { try { await api(`/api/machines/${encodeURIComponent(monitorId)}/input`, { event }); } catch (cause) { } }
+async function sendMonitorInput(event) {
+  const id = monitorId;
+  if (!id) return;
+  try { await api(`/api/machines/${encodeURIComponent(id)}/input`, { event }); }
+  catch (cause) { if (event.type !== "move") toast(`Comando remoto não enviado: ${cause.message}`); }
+}
 
 async function monitorLoop(id) {
   while (monitorId === id) {
@@ -3841,6 +3846,28 @@ $("#waitName").addEventListener("keydown", event => {
 
 $("#monitorClose").addEventListener("click", () => { stopMonitor(); $("#monitorDialog").close(); });
 $("#monitorDialog").addEventListener("close", stopMonitor);
+// Teclado fisico do caixa vai direto para a estacao enquanto o Monitorar esta aberto.
+// Letras sao agrupadas (envia a cada 150 ms) para nao mandar um pedido por tecla.
+let monitorTypeBuffer = "", monitorTypeTimer = null;
+const MONITOR_KEYS = { Enter: "enter", Tab: "tab", Escape: "esc", Backspace: "backspace", Delete: "delete", ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Home: "home", End: "end", PageUp: "pageup", PageDown: "pagedown", F5: "f5" };
+function flushMonitorText() { if (monitorTypeBuffer) { sendMonitorInput({ type: "text", value: monitorTypeBuffer }); monitorTypeBuffer = ""; } }
+document.addEventListener("keydown", event => {
+  if (!$("#monitorDialog")?.open || !monitorId) return;
+  if (event.target.closest("input, textarea, select")) return;
+  const combo = event.ctrlKey && !event.altKey && /^[acvxzsyp]$/i.test(event.key) ? `ctrl+${event.key.toLowerCase()}` : null;
+  if (combo) { event.preventDefault(); flushMonitorText(); sendMonitorInput({ type: "key", value: combo }); return; }
+  if (MONITOR_KEYS[event.key]) {
+    if (event.key === "Escape") return; // Esc fecha o Monitorar; use o botao Esc da barra para a estacao
+    event.preventDefault(); flushMonitorText(); sendMonitorInput({ type: "key", value: MONITOR_KEYS[event.key] }); return;
+  }
+  if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+    event.preventDefault();
+    monitorTypeBuffer += event.key;
+    clearTimeout(monitorTypeTimer);
+    monitorTypeTimer = setTimeout(flushMonitorText, 150);
+  }
+});
+
 // Clique simples espera 250 ms: se vier o segundo clique, envia um clique duplo real (abre icones e pastas).
 let monitorClickTimer = null;
 $("#monitorImage").addEventListener("click", event => {

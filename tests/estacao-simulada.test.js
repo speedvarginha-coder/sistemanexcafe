@@ -8,6 +8,13 @@ const path = require("node:path");
 const { execFile } = require("node:child_process");
 const { createApp } = require("../server/app");
 
+test("entrada remota: estrutura nativa de mouse compila com o tamanho correto", { skip: process.platform !== "win32" }, async () => {
+  const script = path.join(__dirname, "monitor-input.ps1");
+  const agent = path.join(__dirname, "..", "client-agent", "LanHouseAgent.ps1");
+  const output = await new Promise((resolve, reject) => execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, "-AgentFile", agent], { timeout: 30000 }, (error, stdout, stderr) => error ? reject(new Error(`${error.message}\n${stdout}\n${stderr}`)) : resolve(stdout)));
+  assert.match(output, /Entrada remota: estrutura SendInput valida/);
+});
+
 test("estacao simulada: reinstalar, proteger conta e capturar sem erros", { skip: process.platform !== "win32" }, async () => {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), "lhm-estacao-"));
   const dataDir = path.join(work, "server-data");

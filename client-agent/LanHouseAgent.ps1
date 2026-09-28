@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.0"
+$AgentVersion = "0.3.1"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -1137,7 +1137,33 @@ using System.Runtime.InteropServices;
 public class LhmInput {
     [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
-    [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, int dx, int dy, int dwData, IntPtr dwExtraInfo);
+    [StructLayout(LayoutKind.Sequential)] public struct MouseData {
+        public int dx, dy;
+        public uint mouseData, flags, time;
+        public IntPtr extraInfo;
+    }
+    [StructLayout(LayoutKind.Sequential)] public struct InputData {
+        public int type;
+        public MouseData mouse;
+    }
+    [DllImport("user32.dll", SetLastError = true)] private static extern uint SendInput(uint count, InputData[] inputs, int size);
+    public static int InputSize() { return Marshal.SizeOf(typeof(InputData)); }
+    public static void MoveTo(int x, int y) {
+        if (!SetCursorPos(x, y)) throw new InvalidOperationException("O Windows recusou mover o cursor.");
+    }
+    public static void Mouse(uint flags, int data) {
+        var input = new InputData { type = 0, mouse = new MouseData { flags = flags, mouseData = unchecked((uint)data) } };
+        if (SendInput(1, new[] { input }, InputSize()) != 1)
+            throw new InvalidOperationException("O Windows recusou o comando de mouse (erro " + Marshal.GetLastWin32Error() + "). Verifique a tela segura ou um aplicativo elevado.");
+    }
+    public static void Click(uint down, uint up) {
+        var inputs = new[] {
+            new InputData { type = 0, mouse = new MouseData { flags = down } },
+            new InputData { type = 0, mouse = new MouseData { flags = up } }
+        };
+        if (SendInput(2, inputs, InputSize()) != 2)
+            throw new InvalidOperationException("O Windows recusou o clique (erro " + Marshal.GetLastWin32Error() + "). Verifique a tela segura ou um aplicativo elevado.");
+    }
 }
 "@
     }
@@ -1159,34 +1185,34 @@ function Invoke-InputEvent {
     param([object]$Event)
     Add-LhmInputTypes
     $type = [string]$Event.type
-    if ($type -eq "move") { [LhmInput]::SetCursorPos([int]$Event.x, [int]$Event.y); return }
+    if ($type -eq "move") { [LhmInput]::MoveTo([int]$Event.x, [int]$Event.y); return }
     if ($type -eq "dblclick") {
-        [LhmInput]::SetCursorPos([int]$Event.x, [int]$Event.y)
+        [LhmInput]::MoveTo([int]$Event.x, [int]$Event.y)
         Start-Sleep -Milliseconds 40
         for ($k = 0; $k -lt 2; $k++) {
-            [LhmInput]::mouse_event(0x0002, 0, 0, 0, [IntPtr]::Zero); [LhmInput]::mouse_event(0x0004, 0, 0, 0, [IntPtr]::Zero)
+            [LhmInput]::Click(0x0002, 0x0004)
             if ($k -eq 0) { Start-Sleep -Milliseconds 60 }
         }
         return
     }
     if ($type -eq "click" -or $type -eq "rclick") {
-        [LhmInput]::SetCursorPos([int]$Event.x, [int]$Event.y)
+        [LhmInput]::MoveTo([int]$Event.x, [int]$Event.y)
         Start-Sleep -Milliseconds 50
-        if ($type -eq "click") { [LhmInput]::mouse_event(0x0002, 0, 0, 0, [IntPtr]::Zero); [LhmInput]::mouse_event(0x0004, 0, 0, 0, [IntPtr]::Zero) }
-        else { [LhmInput]::mouse_event(0x0008, 0, 0, 0, [IntPtr]::Zero); [LhmInput]::mouse_event(0x0010, 0, 0, 0, [IntPtr]::Zero) }
+        if ($type -eq "click") { [LhmInput]::Click(0x0002, 0x0004) }
+        else { [LhmInput]::Click(0x0008, 0x0010) }
         return
     }
     if ($type -eq "scroll") {
-        [LhmInput]::SetCursorPos([int]$Event.x, [int]$Event.y)
+        [LhmInput]::MoveTo([int]$Event.x, [int]$Event.y)
         $amount = [int]$Event.amount
-        if ($amount -gt 0) { [LhmInput]::mouse_event(0x0800, 0, 0, 120, [IntPtr]::Zero) } elseif ($amount -lt 0) { [LhmInput]::mouse_event(0x0800, 0, 0, -120, [IntPtr]::Zero) }
+        if ($amount -gt 0) { [LhmInput]::Mouse(0x0800, 120) } elseif ($amount -lt 0) { [LhmInput]::Mouse(0x0800, -120) }
         return
     }
-    if ($type -eq "text") { try { [System.Windows.Forms.SendKeys]::SendWait((ConvertTo-SendKeys ([string]$Event.value))) } catch { }; return }
+    if ($type -eq "text") { [System.Windows.Forms.SendKeys]::SendWait((ConvertTo-SendKeys ([string]$Event.value))); return }
     if ($type -eq "key") {
-        $map = @{ enter = "{ENTER}"; tab = "{TAB}"; esc = "{ESC}"; backspace = "{BACKSPACE}"; delete = "{DEL}"; up = "{UP}"; down = "{DOWN}"; left = "{LEFT}"; right = "{RIGHT}"; home = "{HOME}"; end = "{END}"; pageup = "{PGUP}"; pagedown = "{PGDN}"; f5 = "{F5}" }
+        $map = @{ enter = "{ENTER}"; tab = "{TAB}"; esc = "{ESC}"; backspace = "{BACKSPACE}"; delete = "{DEL}"; up = "{UP}"; down = "{DOWN}"; left = "{LEFT}"; right = "{RIGHT}"; home = "{HOME}"; end = "{END}"; pageup = "{PGUP}"; pagedown = "{PGDN}"; f5 = "{F5}"; "ctrl+a" = "^a"; "ctrl+c" = "^c"; "ctrl+v" = "^v"; "ctrl+x" = "^x"; "ctrl+z" = "^z"; "ctrl+s" = "^s"; "ctrl+y" = "^y"; "ctrl+p" = "^p" }
         $key = ([string]$Event.value).ToLower()
-        if ($map.ContainsKey($key)) { try { [System.Windows.Forms.SendKeys]::SendWait($map[$key]) } catch { } }
+        if ($map.ContainsKey($key)) { [System.Windows.Forms.SendKeys]::SendWait($map[$key]) }
         return
     }
 }
