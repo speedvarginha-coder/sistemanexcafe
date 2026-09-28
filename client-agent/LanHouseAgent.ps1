@@ -478,6 +478,16 @@ function Clear-UserCaches {
 
     if (-not $cleanCookies) { return }
 
+    # Navegadores voltam de fabrica: apagar arquivo por arquivo deixava perfis inteiros de clientes
+    # (conta Google conectada, perfis extras como "Comarca de ..."). Com os navegadores fechados,
+    # a pasta de dados inteira sai; o navegador cria outra limpa na proxima abertura.
+    $wholeRoots = $chromiumRoots + @("AppData\Roaming\Opera Software\Opera Stable", "AppData\Roaming\Opera Software\Opera GX Stable", "AppData\Roaming\Mozilla\Firefox", "AppData\Local\Mozilla\Firefox")
+    foreach ($root in $wholeRoots) {
+        $dir = Join-Path $profile $root
+        if (Test-Path -LiteralPath $dir) { Remove-PathSafe -Path $dir -AllowedRoot $profile }
+        if (Test-Path -LiteralPath $dir) { Write-AgentLog "Navegador: dados ainda presentes em $dir (arquivo em uso); removendo o que for possivel." }
+    }
+
     $chromiumFiles = @(
         "Cookies", "Cookies-journal", "Login Data", "Login Data-journal", "Web Data", "Web Data-journal",
         "History", "History-journal", "Current Session", "Current Tabs", "Last Session", "Last Tabs",
