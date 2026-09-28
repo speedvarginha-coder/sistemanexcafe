@@ -553,6 +553,9 @@ function Invoke-AgentRestore {
     }
 
     Write-AgentLog "Restauracao concluida."
+    # A limpeza troca as pastas inteiras; o Explorer continuava mostrando os icones antigos (arquivo apagado
+    # aparecendo, atalho restaurado sumido). Reinicia o Explorer da sessao para a area de trabalho refletir o real.
+    if ($config.ProtectedUsers -contains $env:USERNAME) { Restart-SessionExplorer }
     # Relatorio para o painel: o que ficou na area de trabalho e o que o padrao contem (so nomes).
     try {
         if ($config.ProtectedUsers -contains $env:USERNAME) {
@@ -565,6 +568,20 @@ function Invoke-AgentRestore {
             Send-AgentEvent -Config $config -Title $(if ($left.Count -or $public.Count) { "Limpeza: arquivos na area de trabalho" } else { "Limpeza: area de trabalho limpa" }) -Detail $detail
         }
     } catch { Write-AgentLog "Relatorio da area de trabalho: $($_.Exception.Message)" }
+}
+
+function Restart-SessionExplorer {
+    try {
+        $session = (Get-Process -Id $PID).SessionId
+        $explorers = @(Get-Process -Name explorer -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session })
+        foreach ($process in $explorers) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+        # O Windows reabre o shell sozinho; se nao reabrir em 4 s, abre manualmente.
+        for ($i = 0; $i -lt 8; $i++) {
+            Start-Sleep -Milliseconds 500
+            if (@(Get-Process -Name explorer -ErrorAction SilentlyContinue | Where-Object { $_.SessionId -eq $session }).Count) { return }
+        }
+        Start-Process -FilePath "$env:WINDIR\explorer.exe"
+    } catch { Write-AgentLog "Nao foi possivel reiniciar o Explorer: $($_.Exception.Message)" }
 }
 
 # Caminho real de uma pasta do usuario (considera redirecionamento para OneDrive ou outra unidade).
