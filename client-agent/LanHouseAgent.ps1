@@ -1135,6 +1135,7 @@ function Add-LhmInputTypes {
 using System;
 using System.Runtime.InteropServices;
 public class LhmInput {
+    [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int X, int Y);
     [DllImport("user32.dll")] public static extern void mouse_event(uint dwFlags, int dx, int dy, int dwData, IntPtr dwExtraInfo);
 }
@@ -1268,6 +1269,9 @@ function Invoke-Monitor {
     $failures = 0
     $script:MonitorReported = 0
     Add-LhmInputTypes
+    # Com a escala do Windows (125%, 150%) um processo sem DPI captura e clica em coordenadas virtuais:
+    # a imagem e o clique nao batiam. Com DPI ativado, captura, tamanho e cursor usam os pixels reais.
+    try { [void][LhmInput]::SetProcessDPIAware() } catch { }
     if (-not ("LhmInputDiag" -as [type])) {
         Add-Type @"
 using System;
@@ -1279,6 +1283,11 @@ public class LhmInputDiag {
 }
 "@
     }
+    try {
+        Add-Type -AssemblyName System.Windows.Forms
+        $bounds = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+        Send-AgentEvent -Config $config -Title "Monitor: iniciado" -Detail "Tela $($bounds.Width)x$($bounds.Height); sessao $((Get-Process -Id $PID).SessionId)"
+    } catch { }
     while ($true) {
         $started = Get-Date
         try {
