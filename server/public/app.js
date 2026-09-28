@@ -2203,6 +2203,7 @@ function renderSettings() {
   form.elements.printColor.value = (state.settings.printColorCents / 100).toFixed(2);
   form.elements.autoRestoreOnTimeEnd.checked = state.settings.autoRestoreOnTimeEnd;
   if (form.elements.timeTable) form.elements.timeTable.value = (state.settings.timeTable || []).map(row => `${row.minutes}=${(row.cents / 100).toFixed(2)}`).join("; ");
+  if (form.elements.timeRound) form.elements.timeRound.value = String(Number.isInteger(state.settings.timeRoundCents) ? state.settings.timeRoundCents : 50);
   const printersForm = $("#printersForm");
   if (!printersForm.contains(document.activeElement)) printersForm.elements.printerShare.value = (state.printers || []).join(", ");
 }

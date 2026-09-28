@@ -653,6 +653,7 @@
             <label><span>Tarifa por hora avulsa (R$)</span><input name="hourPrice" type="number" min="0.01" step="0.01" required></label>
             <label><span>Duração padrão sugerida (minutos)</span><input name="defaultMinutes" type="number" min="1" max="1440" required></label>
             <label class="fullWidth"><span>Tabela progressiva de tempo (minutos=valor):</span><input name="timeTable" type="text" placeholder="15=3.00; 30=3.70; 60=5.00" required></label>
+            <label><span>Arredondar o valor do tempo (para cima)</span><select name="timeRound"><option value="50">De R$ 0,50 em R$ 0,50</option><option value="25">De R$ 0,25 em R$ 0,25</option><option value="100">De R$ 1,00 em R$ 1,00</option><option value="0">Não arredondar</option></select></label>
             <label><span>Preço Impressão P&amp;B / pág (R$)</span><input name="printBW" type="number" min="0.01" step="0.01" required></label>
             <label><span>Preço Impressão Colorida / pág (R$)</span><input name="printColor" type="number" min="0.01" step="0.01" required></label>
             <label class="checkboxLabel fullWidth"><input name="autoRestoreOnTimeEnd" type="checkbox"><span>Limpar diretórios temporários e restaurar ambiente automaticamente no término</span></label>

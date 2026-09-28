@@ -24,7 +24,13 @@ const hash = value => crypto.createHash("sha256").update(value).digest("hex");
 const label = (value, max = 100) => String(value ?? "").trim().slice(0, max);
 const publicUser = user => ({ id: user.id, name: user.name, role: user.role, active: user.active });
 const price = (minutes, rate) => Math.round(minutes * rate / 60);
+// Valor do tempo arredondado para cima (padrao R$ 0,50) para facilitar o troco; 0 desliga.
 function timeAmountCents(minutes, settings) {
+  const exact = timeAmountExactCents(minutes, settings);
+  const step = Number.isInteger(settings.timeRoundCents) ? settings.timeRoundCents : 50;
+  return step > 0 ? Math.ceil(exact / step) * step : exact;
+}
+function timeAmountExactCents(minutes, settings) {
   const source = Array.isArray(settings.timeTable) && settings.timeTable.length ? settings.timeTable : [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }];
   const table = source.slice().sort((a, b) => a.minutes - b.minutes);
   const m = Math.max(1, Math.ceil(Number(minutes) || 1));
@@ -1722,7 +1728,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (p === "/api/settings" && req.method === "POST") {
       admin(user); const input = await readBody(req);
       const timeTable = parseTimeTable(input.timeTable) || db.settings.timeTable;
-      const settings = { ...db.settings, defaultMinutes: number(input.defaultMinutes, 1, 1440, "Tempo padrao"), autoRestoreOnTimeEnd: input.autoRestoreOnTimeEnd !== false, rateCentsHour: money(input.hourPrice, "Tarifa por hora"), printBWCents: money(input.printBW, "Impressao P&B"), printColorCents: money(input.printColor, "Impressao colorida"), printBlackPrinter: db.settings.printBlackPrinter || "", printColorPrinter: db.settings.printColorPrinter || "", timeTable };
+      const settings = { ...db.settings, defaultMinutes: number(input.defaultMinutes, 1, 1440, "Tempo padrao"), autoRestoreOnTimeEnd: input.autoRestoreOnTimeEnd !== false, rateCentsHour: money(input.hourPrice, "Tarifa por hora"), printBWCents: money(input.printBW, "Impressao P&B"), printColorCents: money(input.printColor, "Impressao colorida"), printBlackPrinter: db.settings.printBlackPrinter || "", printColorPrinter: db.settings.printColorPrinter || "", timeTable, timeRoundCents: [0, 25, 50, 100].includes(Number(input.timeRound)) ? Number(input.timeRound) : (Number.isInteger(db.settings.timeRoundCents) ? db.settings.timeRoundCents : 50) };
       if (settings.rateCentsHour < 1 || settings.printBWCents < 1 || settings.printColorCents < 1) throw err(400, "Tarifas devem ser maiores que zero");
       db.settings = settings; event("sistema", "Tarifas atualizadas", "", user.name); save();
       return send(res, 200, { ok: true, settings });

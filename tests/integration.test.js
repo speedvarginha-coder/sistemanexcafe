@@ -329,7 +329,7 @@ test("login do cliente por saldo: recarga, uso exclusivo e devolucao do tempo", 
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
-test("tabela de tempo: 15 min R$3,00, 30 min R$3,70 e 60 min R$5,00", async () => {
+test("tabela de tempo arredondada para cima de R$0,50: minimo R$3,00 ate 15 min, 1 hora R$5,00", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-price-"));
   const server = createApp({ dataDir });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -362,8 +362,10 @@ test("tabela de tempo: 15 min R$3,00, 30 min R$3,70 e 60 min R$5,00", async () =
       await request("/api/client/pc-01/event", { title: "Restauracao executada", restoreSeq: after.restoreSeq }, token);
     };
 
+    await startFor(10, 300);
     await startFor(15, 300);
-    await startFor(30, 370);
+    await startFor(19, 350);
+    await startFor(30, 400);
     await startFor(60, 500);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
