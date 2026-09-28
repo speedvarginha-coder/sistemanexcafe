@@ -1159,6 +1159,15 @@ function Invoke-InputEvent {
     Add-LhmInputTypes
     $type = [string]$Event.type
     if ($type -eq "move") { [LhmInput]::SetCursorPos([int]$Event.x, [int]$Event.y); return }
+    if ($type -eq "dblclick") {
+        [LhmInput]::SetCursorPos([int]$Event.x, [int]$Event.y)
+        Start-Sleep -Milliseconds 40
+        for ($k = 0; $k -lt 2; $k++) {
+            [LhmInput]::mouse_event(0x0002, 0, 0, 0, [IntPtr]::Zero); [LhmInput]::mouse_event(0x0004, 0, 0, 0, [IntPtr]::Zero)
+            if ($k -eq 0) { Start-Sleep -Milliseconds 60 }
+        }
+        return
+    }
     if ($type -eq "click" -or $type -eq "rclick") {
         [LhmInput]::SetCursorPos([int]$Event.x, [int]$Event.y)
         Start-Sleep -Milliseconds 50

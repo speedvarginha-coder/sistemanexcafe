@@ -3841,7 +3841,18 @@ $("#waitName").addEventListener("keydown", event => {
 
 $("#monitorClose").addEventListener("click", () => { stopMonitor(); $("#monitorDialog").close(); });
 $("#monitorDialog").addEventListener("close", stopMonitor);
-$("#monitorImage").addEventListener("click", event => { const c = monitorCoords(event); if (c) sendMonitorInput({ type: "click", x: c.x, y: c.y }); });
+// Clique simples espera 250 ms: se vier o segundo clique, envia um clique duplo real (abre icones e pastas).
+let monitorClickTimer = null;
+$("#monitorImage").addEventListener("click", event => {
+  const c = monitorCoords(event); if (!c) return;
+  clearTimeout(monitorClickTimer);
+  monitorClickTimer = setTimeout(() => sendMonitorInput({ type: "click", x: c.x, y: c.y }), 250);
+});
+$("#monitorImage").addEventListener("dblclick", event => {
+  event.preventDefault();
+  clearTimeout(monitorClickTimer);
+  const c = monitorCoords(event); if (c) sendMonitorInput({ type: "dblclick", x: c.x, y: c.y });
+});
 $("#monitorImage").addEventListener("contextmenu", event => { event.preventDefault(); const c = monitorCoords(event); if (c) sendMonitorInput({ type: "rclick", x: c.x, y: c.y }); });
 $("#monitorImage").addEventListener("mousemove", event => { const now = Date.now(); if (now - monitorLastMove < 250) return; monitorLastMove = now; const c = monitorCoords(event); if (c) sendMonitorInput({ type: "move", x: c.x, y: c.y }); });
 
@@ -3852,7 +3863,7 @@ document.querySelectorAll("#monitorBar button[data-mctrl]").forEach(button => bu
     if (value) sendMonitorInput({ type: "text", value });
     return;
   }
-  if (["enter", "esc", "tab", "backspace", "delete", "up", "down", "left", "right"].includes(ctrl)) {
+  if (["enter", "esc", "tab", "backspace", "delete", "up", "down", "left", "right", "f5"].includes(ctrl)) {
     sendMonitorInput({ type: "key", value: ctrl });
     return;
   }
