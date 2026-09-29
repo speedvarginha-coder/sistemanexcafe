@@ -537,6 +537,11 @@
                       <option value="counter">Balcão (cobrar agora)</option>
                     </select>
                   </div>
+                  <div class="posDestinationSelector posMarketingRow">
+                    <span class="destinationLabel">CAMPANHA:</span>
+                    <select id="posCampaign" aria-label="Campanha"><option value="">Nenhuma</option></select>
+                    <select id="posOrigin" aria-label="Como conheceu a loja"><option value="">Como conheceu?</option></select>
+                  </div>
                 </div>
 
                 <!-- Banner Inteligente de Oportunidades & Cross-Sell -->
@@ -1073,12 +1078,32 @@
         <!-- Visao: Speed Marketing (modulo com identidade propria da Speed Financeira) -->
         <section id="view-marketing" class="view" hidden>
           <div class="marketingTabs" id="marketingTabs">
-            <button type="button" class="active" data-mk="/marketing/">Painel de marketing</button>
+            <button type="button" class="active" data-mk="results">Resultados das vendas</button>
+            <button type="button" data-mk="/marketing/">Painel de marketing</button>
             <button type="button" data-mk="/marketing/speedgeo/dashboard.html">SpeedGeo (SEO local)</button>
             <button type="button" data-mk="/marketing/arquivos/">Arquivos de pesquisa</button>
             <a href="/marketing/" target="_blank" rel="noopener" id="marketingOpenTab">Abrir em nova aba</a>
           </div>
-          <iframe id="marketingFrame" title="Speed Marketing" class="marketingFrame"></iframe>
+          <div id="marketingResults" class="marketingResults">
+            <div class="sectionHead">
+              <div>
+                <h2>Resultado real das campanhas</h2>
+                <p>Calculado com as vendas do caixa: campanha escolhida no PDV e "como conheceu a loja" do cliente.</p>
+              </div>
+              <select id="mkPeriod" aria-label="Período">
+                <option value="7">Últimos 7 dias</option>
+                <option value="30" selected>Últimos 30 dias</option>
+                <option value="90">Últimos 90 dias</option>
+              </select>
+              <button type="button" id="mkNewCampaign" class="primary">Nova campanha</button>
+            </div>
+            <div id="mkKpis" class="metrics"></div>
+            <div class="mkGrid">
+              <div class="auxiliaryCard"><div class="sectionHead"><div><h2>Campanhas</h2><p>Vendas lançadas no caixa com o código da campanha.</p></div></div><div id="mkCampaigns"></div></div>
+              <div class="auxiliaryCard"><div class="sectionHead"><div><h2>Como os clientes conheceram a loja</h2><p>Vendas e clientes novos por origem.</p></div></div><div id="mkOrigins"></div></div>
+            </div>
+          </div>
+          <iframe id="marketingFrame" title="Speed Marketing" class="marketingFrame" hidden></iframe>
         </section>
 
         <!-- Visao: Cofre de logins (promotoras, bancos e sistemas da Speed Financeira) -->

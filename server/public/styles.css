@@ -4699,3 +4699,17 @@ td.money.bad { color: var(--danger-accent); }
 .planItemSide .linkDanger { justify-self: start; }
 .planSteps label.planStep { margin: 0; padding: 1px 0; min-height: 0; display: flex; }
 .planSteps label.planStep span { font-weight: 400; color: var(--text-main); font-size: 13px; }
+/* Marketing: resultado real e campos de campanha no caixa */
+.marketingResults { display: grid; gap: 14px; margin-top: 12px; }
+.marketingResults > .sectionHead select { min-height: 36px; }
+.mkGrid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 14px; }
+.mkGrid code { font-size: 12px; background: var(--bg-card-subtle); border: 1px solid var(--border); padding: 1px 6px; border-radius: 6px; }
+tr.mutedRow td { color: var(--text-muted); }
+.posMarketingRow { gap: 6px; }
+.posMarketingRow select { flex: 1; min-width: 0; }
+@media (max-width: 1100px) { .mkGrid { grid-template-columns: 1fr; } }
+.marketingResults > .sectionHead select { flex: 0 0 190px; }
+.marketingResults > .sectionHead > div:first-child { flex: 1 1 320px; }
+#mkCampaigns, #mkOrigins { overflow-x: auto; }
+#mkCampaigns td, #mkCampaigns th { white-space: nowrap; }
+.marketingResults p.muted { font-size: 13px; margin: 0; }

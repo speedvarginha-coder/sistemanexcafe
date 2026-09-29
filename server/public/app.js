@@ -991,6 +991,15 @@ function renderPOS() {
   }
 
   // 5. Destino de consumo (Balcão ou Estação Ativa)
+  // Campanha e origem da venda (marketing): lista atualizada a cada ciclo sem perder a escolha.
+  const campSelect = $("#posCampaign"), originSelect = $("#posOrigin");
+  if (campSelect) {
+    const cur = campSelect.value, list = state.campaigns || [];
+    const sig = list.map(c => c.code).join("|");
+    if (campSelect.dataset.sig !== sig) { campSelect.innerHTML = `<option value="">Nenhuma</option>${list.map(c => `<option value="${html(c.code)}">${html(c.code)} · ${html(c.name)}</option>`).join("")}`; campSelect.dataset.sig = sig; campSelect.value = list.some(c => c.code === cur) ? cur : ""; }
+    campSelect.closest(".posMarketingRow").hidden = false;
+  }
+  if (originSelect && originSelect.options.length <= 1) originSelect.innerHTML = `<option value="">Como conheceu?</option>${(state.origins || []).map(o => `<option>${html(o)}</option>`).join("")}`;
   const destSelect = $("#posDestinationSelect");
   if (destSelect) {
     const curDest = posDestination;
@@ -1430,7 +1439,9 @@ async function submitPOSSale() {
         items: regularItems,
         discountCents: totals.discountCents,
         ref,
-        clientId: posCustomer.id || null
+        clientId: posCustomer.id || null,
+        campaign: $("#posCampaign")?.value || undefined,
+        origin: $("#posOrigin")?.value || undefined
       };
 
       if (posSplitMode && posSplitPayments.length) {
@@ -1458,6 +1469,7 @@ async function submitPOSSale() {
       changeCents: (!posSplitMode && posActiveMethod === "cash") ? changeCents : 0
     });
 
+    if ($("#posOrigin")) $("#posOrigin").value = "";
     posCart.clear();
     posDiscountRaw = "";
     const discInput = $("#posDiscountInput");
@@ -3615,8 +3627,47 @@ document.addEventListener("click", event => { const id = event.target.closest("[
 $("#marketingTabs")?.addEventListener("click", event => {
   const btn = event.target.closest("[data-mk]"); if (!btn) return;
   document.querySelectorAll("#marketingTabs [data-mk]").forEach(b => b.classList.toggle("active", b === btn));
+  const results = btn.dataset.mk === "results";
+  $("#marketingResults").hidden = !results; $("#marketingFrame").hidden = results;
+  if (results) return loadMarketingResults();
   $("#marketingFrame").setAttribute("src", btn.dataset.mk);
   $("#marketingOpenTab").setAttribute("href", btn.dataset.mk);
+});
+
+// ---- Resultado real do marketing: vendas por campanha e por origem do cliente ----
+async function loadMarketingResults() {
+  const days = Number($("#mkPeriod")?.value || 30);
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const start = new Date(Date.now() - (days - 1) * 86400000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  let r;
+  try { r = await api(`/api/marketing/results?start=${start}&end=${today}`); }
+  catch (cause) { setHtml("#mkCampaigns", `<p class="muted">${html(cause.message)}</p>`); return; }
+  const active = r.campaigns.filter(c => c.active).length;
+  setHtml("#mkKpis",
+    metric(currency(r.totalCents), `Vendas no período (${days} dias)`) +
+    metric(currency(r.trackedCents), `Vieram de campanha (${r.totalCents ? Math.round(r.trackedCents / r.totalCents * 100) : 0}%)`, r.trackedCents ? "free" : "") +
+    metric(currency(r.originCents), `Com origem conhecida (${r.totalCents ? Math.round(r.originCents / r.totalCents * 100) : 0}%)`) +
+    metric(String(active), active === 1 ? "Campanha ativa" : "Campanhas ativas"));
+  setHtml("#mkCampaigns", r.campaigns.length ? table(["Campanha", "Código", "Vendas", "Valor", "Clientes novos", "Investimento", "Retorno", ""], r.campaigns.map(c => `<tr class="${c.active ? "" : "mutedRow"}"><td><strong>${html(c.name)}</strong>${c.channel ? `<br><small class="muted">${html(c.channel)}</small>` : ""}</td><td><code>${html(c.code)}</code></td><td>${c.count}</td><td class="money">${currency(c.salesCents)}</td><td>${c.newClients}</td><td class="money">${c.costCents ? currency(c.costCents) : "-"}</td><td>${c.roi === null ? "-" : `${String(c.roi).replace(".", ",")}x`}</td><td class="actionsCell"><button type="button" data-mk-toggle="${html(c.code)}">${c.active ? "Encerrar" : "Reativar"}</button></td></tr>`)) :
+    `<p class="muted">Nenhuma campanha ainda. Crie uma (ex.: código SABADO para a promoção de sábado) e escolha o código no caixa ao lançar a venda.</p>`);
+  setHtml("#mkOrigins", r.origins.length ? table(["Origem", "Vendas", "Valor", "Clientes novos"], r.origins.map(o => `<tr><td>${html(o.origin)}</td><td>${o.count}</td><td class="money">${currency(o.salesCents)}</td><td>${o.newClients}</td></tr>`)) :
+    `<p class="muted">Ainda sem origem registrada. Pergunte "como conheceu a loja?" ao cadastrar o cliente ou ao vender para quem vem pela primeira vez.</p>`);
+  mkCampaignCache = r.campaigns;
+}
+let mkCampaignCache = [];
+$("#mkPeriod")?.addEventListener("change", loadMarketingResults);
+$("#mkNewCampaign")?.addEventListener("click", () => {
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  openModal("Nova campanha", field("name", "Nome da campanha", "text", "", 'required placeholder="Ex.: Sábado da Lan"') +
+    field("code", "Código para o caixa (3 a 20 letras, sem espaço)", "text", "", 'required pattern="[A-Za-z0-9]{3,20}" placeholder="SABADO"') +
+    select("channel", "Onde será divulgada", ["WhatsApp", "Instagram", "Facebook", "Google Meu Negócio", "Placa na loja", "Panfleto", "Indicação", "Outro"].map(v => [v, v]), "WhatsApp") +
+    field("start", "Início", "date", today) + field("end", "Fim (opcional)", "date") + field("cost", "Investimento (R$, opcional)", "number", "", 'min="0" step="0.01"'),
+    async values => { await api("/api/campaigns", values); toast("Campanha criada. Ela já aparece no caixa."); await loadMarketingResults(); }, "Criar campanha");
+});
+document.addEventListener("click", async event => {
+  const code = event.target.closest("[data-mk-toggle]")?.dataset.mkToggle; if (!code) return;
+  const camp = (await api("/api/campaigns")).campaigns.find(c => c.code === code); if (!camp) return;
+  try { await api(`/api/campaigns/${camp.id}`, { active: !camp.active }); await loadMarketingResults(); await loadState(); } catch (cause) { toast(cause.message); }
 });
 
 function renderBillsBanner() {
@@ -3834,7 +3885,7 @@ function view(name) {
   if (name === "plan") loadPlan();
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
-  if (name === "marketing" && !$("#marketingFrame").getAttribute("src")) $("#marketingFrame").setAttribute("src", "/marketing/");
+  if (name === "marketing" && !$("#marketingResults").hidden) loadMarketingResults();
   if (name === "reports") loadReport();
   if (name === "cash") {
     renderPOS();
@@ -4402,7 +4453,8 @@ function showPair(code) {
 $("#pairClose").addEventListener("click", () => $("#pairDialog").close());
 
 $("#addMachineButton").addEventListener("click", () => openModal("Adicionar Terminal Manualmente", field("id", "ID da Estação", "text", "", 'placeholder="pc-01" required pattern="[A-Za-z0-9_-]{2,32}"') + field("name", "Nome exibido", "text", "", 'placeholder="PC 01"'), async values => { const result = await api("/api/machines/register", values); showPair(result.pairingCode); }, "Homologar"));
-$("#addClientButton").addEventListener("click", () => openModal("Novo Cliente", field("name", "Nome Completo", "text", "", "required") + field("phone", "Telefone / WhatsApp", "tel") + field("login", "Login de Acesso (Autoatendimento)", "text", "", 'autocomplete="off"') + field("password", "Senha de Acesso", "password", "", 'autocomplete="new-password"'), values => api("/api/clients", values)));
+const originField = (selected = "") => select("origin", "Como conheceu a loja", [["", "Não informado"], ...(state.origins || []).map(o => [o, o])], selected);
+$("#addClientButton").addEventListener("click", () => openModal("Novo cliente", field("name", "Nome completo", "text", "", "required") + field("phone", "Telefone / WhatsApp", "tel") + originField() + field("login", "Login de Acesso (Autoatendimento)", "text", "", 'autocomplete="off"') + field("password", "Senha de Acesso", "password", "", 'autocomplete="new-password"'), values => api("/api/clients", values)));
 $("#addProductButton").addEventListener("click", () => openModal("Novo Produto ou Serviço", field("name", "Descrição do Item", "text", "", "required") + field("code", "Código de Barras / EAN") + field("category", "Categoria") + select("type", "Tipo", [["stock", "Produto Físico com Estoque"], ["service", "Serviço Avulso"]], "stock") + field("price", "Preço de Venda (R$)", "number", "", 'min="0" step="0.01" required') + field("cost", "Preço de Custo (R$) — deixe vazio se não souber", "number", "", 'min="0" step="0.01"') + field("stock", "Estoque Inicial", "number", "0", 'min="0" required') + field("minStock", "Alerta de Estoque Mínimo", "number", "0", 'min="0" required'), values => api("/api/products", values)));
 $("#addUserButton").addEventListener("click", () => openModal("Novo Operador", field("name", "Usuário de Acesso", "text", "", "required") + field("password", "Senha Inicial", "password", "", 'minlength="10" required') + select("role", "Perfil Operacional", [["attendant", "Atendente de Balcão"], ["admin", "Administrador Geral"]], "attendant"), values => api("/api/users", values)));
 
@@ -4667,7 +4719,7 @@ document.addEventListener("click", async event => {
       openModal(`Cancelar pendência · ${charge.description}`, `<p class="quoteBox">Valor que deixa de ser cobrado: <strong>${currency(charge.amountCents - charge.paidCents)}</strong>. O cancelamento fica registrado no histórico.</p>` + field("reason", "Motivo", "text", "", 'maxlength="120" required placeholder="Ex.: sessão de teste esquecida"'), values => api(`/api/charges/${id}/cancel`, { reason: values.reason }), "Cancelar pendência");
     } else if (action === "editClient") {
       const client = state.clients.find(item => item.id === id); if (!client) return;
-      openModal("Editar Dados do Cliente", field("name", "Nome Completo", "text", client.name, "required") + field("phone", "Telefone de Contato", "tel", client.phone) + field("login", "Login de Acesso", "text", client.login || "", 'autocomplete="off"') + field("password", "Nova Senha (deixe vazio para preservar)", "password", "", 'autocomplete="new-password"') + select("active", "Status da Conta", [["true", "Ativo"], ["false", "Inativo"]], String(client.active)), values => api(`/api/clients/${id}`, { ...values, active: values.active === "true" }));
+      openModal("Editar cliente", field("name", "Nome completo", "text", client.name, "required") + field("phone", "Telefone / WhatsApp", "tel", client.phone) + originField(client.origin || "") + field("login", "Login de Acesso", "text", client.login || "", 'autocomplete="off"') + field("password", "Nova Senha (deixe vazio para preservar)", "password", "", 'autocomplete="new-password"') + select("active", "Status da Conta", [["true", "Ativo"], ["false", "Inativo"]], String(client.active)), values => api(`/api/clients/${id}`, { ...values, active: values.active === "true" }));
     } else if (action === "debtClient") {
       openDebtModal(id);
     } else if (action === "debtsView") {

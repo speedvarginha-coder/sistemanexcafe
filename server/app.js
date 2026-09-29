@@ -355,7 +355,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const cost = sessionCost(item);
     return { ...safe, status: status(item), valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, summary: sessionSummary(item), remainingMs: item.session ? Math.max(0, Date.parse(item.session.endsAt) - Date.now()) : 0 };
   }
-  const publicClient = client => ({ id: client.id, name: client.name, phone: client.phone, active: client.active, createdAt: client.createdAt, login: client.login || "", creditSeconds: client.creditSeconds || 0 });
+  const publicClient = client => ({ id: client.id, name: client.name, phone: client.phone, active: client.active, createdAt: client.createdAt, login: client.login || "", creditSeconds: client.creditSeconds || 0, origin: client.origin || "" });
+  // Marketing: de onde o cliente veio e qual campanha trouxe a venda.
+  const ORIGINS = ["Passou na frente", "Indicação", "Google", "Instagram", "Facebook", "WhatsApp", "Cliente antigo", "Outro"];
+  const pickOrigin = value => ORIGINS.includes(value) ? value : "";
+  const campaignCode = value => { const code = label(value, 20).toUpperCase(); return code && (db.campaigns || []).some(c => c.code === code) ? code : ""; };
   function setClientLogin(client, login, password) {
     const clean = label(login, 40).toLowerCase();
     if (clean && !/^[a-z0-9._-]{3,40}$/.test(clean)) throw err(400, "Login invalido: use 3 a 40 caracteres (letras, numeros, ponto, _ ou -)");
@@ -506,6 +510,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       printers: user.role === "admin" ? db.printerShares : [],
       printJobs: db.printJobs.slice(0, 20),
       waitList: db.waitList,
+      campaigns: (db.campaigns || []).filter(c => c.active).map(c => ({ code: c.code, name: c.name })),
+      origins: ORIGINS,
       billsDue: user.role === "admin" ? db.expenses.filter(item => item.paid === false && Date.parse(item.at) < Date.now() + 3 * 86400000).map(item => ({ id: item.id, at: item.at, description: item.description, amountCents: item.amountCents })) : [],
       serverTime: now()
     };
@@ -1592,7 +1598,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (p === "/api/clients" && req.method === "POST") {
       const input = await readBody(req); const name = label(input.name, 80);
       if (!name) throw err(400, "Informe o nome");
-      const client = { id: uuid(), name, phone: label(input.phone, 30), active: true, createdAt: now(), login: "", salt: "", passwordHash: "", creditSeconds: 0 };
+      const client = { id: uuid(), name, phone: label(input.phone, 30), active: true, createdAt: now(), login: "", salt: "", passwordHash: "", creditSeconds: 0, origin: pickOrigin(input.origin), campaign: campaignCode(input.campaign) };
       setClientLogin(client, input.login, input.password);
       db.clients.push(client); event("clientes", "Cliente cadastrado", name, user.name); save();
       return send(res, 201, { ok: true, client: publicClient(client) });
@@ -1655,6 +1661,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const client = db.clients.find(item => item.id === clientAction[1]); if (!client) throw err(404, "Cliente nao encontrado");
       const input = await readBody(req); client.name = label(input.name, 80) || client.name;
       client.phone = label(input.phone, 30); client.active = input.active !== false;
+      if ("origin" in input) client.origin = pickOrigin(input.origin);
       if ("login" in input) setClientLogin(client, input.login, input.password);
       event("clientes", "Cliente atualizado", client.name, user.name); save(); return send(res, 200, { ok: true, client: publicClient(client) });
     }
@@ -1714,7 +1721,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if (!clientId || !db.clients.some(row => row.id === clientId && row.active)) throw err(400, "Selecione um cliente cadastrado para vender fiado / a prazo");
       }
 
-      const sale = charge("sale", `Venda balcao: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId });
+      const sale = charge("sale", `Venda balcao: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId, campaign: campaignCode(input.campaign), origin: pickOrigin(input.origin) });
       for (const row of planned) pay(sale, row.amountCents, row.method, user.name);
 
       for (const row of items) {
@@ -1975,6 +1982,60 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (/^\d{4}-\d{2}-\d{2}$/.test(String(input.date || ""))) item.at = new Date(`${input.date}T12:00:00-03:00`).toISOString();
       if (input.paid !== undefined) { item.paid = input.paid === true || input.paid === "true"; item.paidAt = item.paid ? (item.paidAt || now()) : null; }
       save(); return send(res, 200, { ok: true, expense: item });
+    }
+    // Campanhas: código curto escolhido no caixa (ex.: SABADO). O resultado sai das vendas reais.
+    if (p === "/api/campaigns" && req.method === "GET") {
+      admin(user);
+      return send(res, 200, { ok: true, campaigns: db.campaigns || [], origins: ORIGINS });
+    }
+    if (p === "/api/campaigns" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const code = label(input.code, 20).toUpperCase().replace(/[^A-Z0-9]/g, "");
+      const name = label(input.name, 80);
+      if (!code || code.length < 3) throw err(400, "Código de 3 a 20 letras ou números, sem espaço");
+      if (!name) throw err(400, "Informe o nome da campanha");
+      db.campaigns ||= [];
+      if (db.campaigns.some(c => c.code === code)) throw err(409, "Já existe uma campanha com esse código");
+      const day = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? value : "";
+      const item = { id: uuid(), code, name, channel: label(input.channel, 40), start: day(input.start) || localDay(Date.now()), end: day(input.end), costCents: input.cost ? money(input.cost, "Investimento") : 0, active: true, createdAt: now() };
+      db.campaigns.unshift(item); event("sistema", "Campanha criada", `${code} · ${name}`, user.name); save();
+      return send(res, 201, { ok: true, campaign: item });
+    }
+    const campaignEdit = p.match(/^\/api\/campaigns\/([^/]+)$/);
+    if (campaignEdit && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const item = (db.campaigns || []).find(c => c.id === campaignEdit[1]); if (!item) throw err(404, "Campanha não encontrada");
+      if (input.active !== undefined) item.active = input.active === true || input.active === "true";
+      if (input.cost !== undefined) item.costCents = money(input.cost, "Investimento");
+      if (input.end !== undefined) item.end = /^\d{4}-\d{2}-\d{2}$/.test(String(input.end)) ? input.end : "";
+      save(); return send(res, 200, { ok: true, campaign: item });
+    }
+    if (p === "/api/marketing/results" && req.method === "GET") {
+      admin(user);
+      const today = localDay(Date.now());
+      const start = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("start") || "") ? url.searchParams.get("start") : shiftDay(today, -29);
+      const end = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("end") || "") ? url.searchParams.get("end") : today;
+      const inRange = at => { const d = localDay(at); return d >= start && d <= end; };
+      const clientsById = new Map(db.clients.map(c => [c.id, c]));
+      const byCampaign = new Map((db.campaigns || []).map(c => [c.code, { code: c.code, name: c.name, channel: c.channel, costCents: c.costCents || 0, active: c.active, start: c.start, end: c.end, salesCents: 0, count: 0, clients: new Set(), newClients: 0 }]));
+      const byOrigin = new Map(ORIGINS.map(o => [o, { origin: o, salesCents: 0, count: 0, newClients: 0 }]));
+      let totalCents = 0, trackedCents = 0, originCents = 0;
+      for (const c of db.charges) {
+        if (!inRange(c.at) || !(c.amountCents > 0) || c.kind === "debt") continue;
+        totalCents += c.amountCents;
+        const camp = c.campaign && byCampaign.get(c.campaign);
+        if (camp) { camp.salesCents += c.amountCents; camp.count++; if (c.clientId) camp.clients.add(c.clientId); trackedCents += c.amountCents; }
+        const o = byOrigin.get(c.origin || clientsById.get(c.clientId)?.origin || "");
+        if (o) { o.salesCents += c.amountCents; o.count++; originCents += c.amountCents; }
+      }
+      for (const client of db.clients) {
+        if (!inRange(client.createdAt)) continue;
+        if (client.origin && byOrigin.get(client.origin)) byOrigin.get(client.origin).newClients++;
+        if (client.campaign && byCampaign.get(client.campaign)) byCampaign.get(client.campaign).newClients++;
+      }
+      const campaigns = [...byCampaign.values()].map(c => ({ ...c, clients: c.clients.size, roi: c.costCents ? Math.round(c.salesCents / c.costCents * 10) / 10 : null })).sort((a, b) => b.salesCents - a.salesCents);
+      const origins = [...byOrigin.values()].filter(o => o.count || o.newClients).sort((a, b) => b.salesCents - a.salesCents);
+      return send(res, 200, { ok: true, start, end, totalCents, trackedCents, originCents, campaigns, origins });
     }
     // Passos de uma ação: lista curta de { text, done }.
     const planSteps = value => (Array.isArray(value) ? value : String(value || "").split(/\n|;/)).map(step => typeof step === "string" ? { text: label(step, 120), done: false } : { text: label(step?.text, 120), done: step?.done === true }).filter(step => step.text).slice(0, 12);
