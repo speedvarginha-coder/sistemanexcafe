@@ -3,8 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LanHouseManager Enterprise · Central de Operações</title>
+  <title>🖥️ LanHouse Enterprise · Central Matriz</title>
   <script>if (location.protocol === "file:") location.replace("http://localhost:4780/");</script>
+  <!-- Ícone de Identificação Visual da Aba (Alta Visibilidade & Contraste) -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico">
+  <meta name="theme-color" content="#FFDF00">
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -164,6 +171,42 @@
       <main>
         <!-- Visão: Atendimento (Estações) -->
         <section id="view-machines" class="view">
+          <div id="dashAlertsHud" class="dashAlertsHud" hidden></div>
+          <div id="dashSalesSpeedometer" class="dashSalesSpeedometer">
+            <div class="speedoHeader">
+              <div class="speedoTitle">
+                <span class="speedoBadge">🎯 Meta do Dia</span>
+                <strong id="dashGoalTarget">R$ 500,00</strong>
+              </div>
+              <div class="speedoStatus">
+                <span>Hoje: <strong id="dashGoalActual">R$ 0,00</strong></span>
+                <span id="dashGoalRemaining" class="speedoRemaining">(Faltam R$ 500,00)</span>
+              </div>
+            </div>
+            <div class="speedoBarTrack">
+              <div id="dashGoalBar" class="speedoBarFill" style="width: 0%"></div>
+            </div>
+            <div class="speedoMeta">
+              <span id="dashGoalPct">0% atingido</span>
+              <span id="dashDrawerCash" class="speedoDrawer">💵 Dinheiro na Gaveta: <strong>R$ 0,00</strong></span>
+            </div>
+          </div>
+          <!-- Meta Mensal -->
+          <div id="dashMonthGoalBlock" class="dashMonthGoalBlock">
+            <div class="speedoHeader">
+              <div class="speedoTitle">
+                <span class="speedoBadge">📅 Meta do Mês</span>
+                <strong id="dashMonthTarget">R$ 30.000,00</strong>
+              </div>
+              <div class="speedoStatus">
+                <span>Acumulado: <strong id="dashMonthActual">R$ 0,00</strong></span>
+                <span id="dashMonthPct" class="speedoRemaining">0% da meta mensal</span>
+              </div>
+            </div>
+            <div class="speedoBarTrack">
+              <div id="dashMonthGoalBar" class="speedoBarFill month" style="width: 0%"></div>
+            </div>
+          </div>
           <div id="billsDueBanner" class="billsDueBanner" hidden></div>
           <div class="metricsHeader">
             <div class="overviewLabel">Indicadores de Desempenho Operacional (KPIs)</div>
@@ -692,12 +735,20 @@
                 <button type="button" class="reportPeriodBtn" data-period="60d">60 dias</button>
                 <button type="button" class="reportPeriodBtn" data-period="90d">90 dias</button>
                 <button type="button" class="reportPeriodBtn active" data-period="month">Mês</button>
+                <button type="button" class="reportPeriodBtn" data-period="custom" id="rpPeriodCustomBtn">Personalizado</button>
                 <button type="button" class="reportPeriodBtn" data-period="all">Tudo</button>
+              </div>
+              <div id="rpCustomRangeGroup" class="rpCustomRangeGroup" hidden>
+                <input id="rpCustomStart" type="date" title="Data inicial">
+                <span>até</span>
+                <input id="rpCustomEnd" type="date" title="Data final">
+                <button type="button" id="rpCustomApplyBtn" class="secondaryBtn">Filtrar</button>
               </div>
               <input id="reportDate" type="date" title="Data de referência (o mês desta data)">
               <button type="button" id="financeSettingsButton" class="secondaryBtn">Metas e taxas</button>
+              <button type="button" id="reportCopyWaBtn" class="secondaryBtn" title="Copiar resumo formatado para o WhatsApp">📱 Copiar WhatsApp</button>
               <button type="button" id="reportExportBtn" class="secondaryBtn">Exportar Excel</button>
-              <button type="button" id="reportPrintBtn" class="primary">Imprimir</button>
+              <button type="button" id="reportPrintBtn" class="primary">📄 Imprimir A4</button>
             </div>
           </div>
 
@@ -719,6 +770,31 @@
               <div class="rpCard"><h3>Comparado ao período anterior</h3><div id="rpCompare"></div></div>
               <div class="rpCard"><h3>Alertas do gestor</h3><div id="rpAlerts" class="rpAlerts"></div></div>
             </div>
+
+            <!-- Auditoria Grafica & Contador de Paginas e Copias -->
+            <div class="rpCard spacedTop" id="rpPrintAuditCard">
+              <div class="rpCardHead">
+                <h3>🖨️ Auditoria Gráfica: Contador de Páginas, Cópias & Papel</h3>
+                <span class="muted">reconciliação direta com o contador físico da impressora</span>
+              </div>
+              <div id="rpPrintAuditGrid" class="rpGrid rpGrid4"></div>
+              <div class="rpPrinterReconWrap spacedTop" id="rpPrinterReconWrap">
+                <div class="rpPrinterReconHead">
+                  <strong>Conferência do Contador Físico da Máquina</strong>
+                  <span class="muted">Digite o contador inicial e final do visor da impressora para checar se houve folhas impressas sem cobrança</span>
+                </div>
+                <div class="rpPrinterReconInputs">
+                  <label>Contador Inicial: <input type="number" id="reconPrinterStart" placeholder="Ex: 12450" min="0"></label>
+                  <label>Contador Final / Atual: <input type="number" id="reconPrinterEnd" placeholder="Ex: 12580" min="0"></label>
+                  <div class="reconResultBox">
+                    <span>Diferença da Máquina: <strong id="reconDiffDisplay">-</strong></span>
+                    <span id="reconAuditBadge" class="rpBadge">Aguardando contadores</span>
+                  </div>
+                </div>
+                <p class="muted rpNote" id="reconNoteText">O sistema calcula automaticamente a divergência entre as folhas que saíram na impressora física e as folhas registradas no caixa.</p>
+              </div>
+            </div>
+
             <div class="rpCard spacedTop">
               <div class="rpCardHead"><h3>Vendas por dia</h3>
                 <div class="rpToggle"><button type="button" class="chartPill active" id="btnChartRev">Faturamento</button><button type="button" class="chartPill" id="btnChartVol">Quantidade</button></div>
@@ -738,6 +814,17 @@
               <div class="rpCardHead"><h3>Diagnóstico e plano de ação</h3><span class="muted">calculado com os números do período</span></div>
               <div id="rpPlan" class="rpPlan"></div>
             </div>
+
+            <!-- Horarios de Pico & Turnos de Maior Movimento -->
+            <div class="rpCard spacedTop" id="rpHourlyPeakCard">
+              <div class="rpCardHead">
+                <h3>⏰ Horários de Pico & Fluxo de Atendimento</h3>
+                <span id="rpHourlyPeakBadge" class="rpBadge good">🏆 Horário de Pico</span>
+              </div>
+              <div id="rpHourlyDayparts" class="rpGrid rpGrid4"></div>
+              <div id="rpHourlyPeakInfo" class="rpHourlyPeakInfo"></div>
+            </div>
+
             <div class="rpCard spacedTop">
               <div class="rpCardHead"><h3>Quando a loja vende</h3><span class="muted">quantidade de vendas por dia da semana e horário</span></div>
               <div id="rpHeat" class="rpHeatWrap"></div>
@@ -754,9 +841,25 @@
               <div class="rpCard">
                 <div class="rpCardHead"><h3>DRE do período</h3><span class="rpBadge" id="dreHealthBadge"></span></div>
                 <div id="rpDre"></div>
+                <div id="rpCmvCoverage" class="rpCmvCoverage"></div>
                 <p class="muted rpNote" id="dreNote"></p>
                 <div class="rpCardHead" style="margin-top:12px"><h4 style="margin:0">Comissões e outras receitas</h4><button type="button" class="secondaryBtn" id="addIncomeButton">Lançar comissão</button></div>
                 <div id="rpIncomes"></div>
+                <div class="rpCardHead spacedTop">
+                  <h4 style="margin:0">🏦 Desempenho por Banco Parceiro (Speed Financeira)</h4>
+                  <span class="muted">comissões, volume e ticket médio</span>
+                </div>
+                <div id="rpBankPerformance" class="tableWrap"></div>
+                <div id="rpMarketingSyncCard" class="rpMktSyncCard spacedTop">
+                  <div class="rpCardHead">
+                    <h4 style="margin:0">📢 Investimento em Anúncios (Speed Marketing)</h4>
+                    <span class="muted">sincronizado automaticamente</span>
+                  </div>
+                  <div class="rpGrid rpGrid2">
+                    <div class="rpMktMetricBox"><span>Gasto em Mídia / Ads:</span><strong id="rpMktSpendDisplay">R$ 0,00</strong></div>
+                    <div class="rpMktMetricBox"><span>Comissão Gerada pelo Mkt:</span><strong id="rpMktCommissionDisplay">R$ 0,00</strong></div>
+                  </div>
+                </div>
               </div>
               <div class="rpCard">
                 <h3>Ponto de equilíbrio</h3>
@@ -796,11 +899,19 @@
           <div id="tab-report-vendas" class="reportTabContent" hidden>
             <div id="rpAbcSummary" class="rpGrid rpGrid3"></div>
             <div class="rpCard spacedTop">
-              <div class="rpCardHead"><h3>Curva ABC dos produtos e serviços</h3>
-                <div class="rpToggle" id="rpAbcFilter">
-                  <button type="button" class="chartPill active" data-abc="">Todos</button><button type="button" class="chartPill" data-abc="A">Classe A</button><button type="button" class="chartPill" data-abc="B">Classe B</button><button type="button" class="chartPill" data-abc="C">Classe C</button>
+              <div class="rpCardHead">
+                <h3>Curva ABC dos produtos e serviços (Pareto 80/20)</h3>
+                <div class="rpActions">
+                  <input type="search" id="rpAbcSearch" placeholder="Buscar produto na curva..." class="rpSearch">
+                  <div class="rpToggle" id="rpAbcFilter">
+                    <button type="button" class="chartPill active" data-abc="">Todos</button>
+                    <button type="button" class="chartPill" data-abc="A">Classe A (80%)</button>
+                    <button type="button" class="chartPill" data-abc="B">Classe B (15%)</button>
+                    <button type="button" class="chartPill" data-abc="C">Classe C (5%)</button>
+                  </div>
                 </div>
               </div>
+              <div id="rpAbcAdvice" class="rpAbcAdvice"></div>
               <div id="rpAbc" class="tableWrap"></div>
             </div>
             <div class="rpGrid rpGrid2 spacedTop">
@@ -817,6 +928,30 @@
           <div id="tab-report-caixa" class="reportTabContent" hidden>
             <div id="reportMetrics" class="rpGrid rpGrid4"></div>
             <div id="rpCash" class="rpGrid rpGrid4 spacedTop"></div>
+
+            <!-- Painel de Seguranca & Auditoria do Caixa (Anti-Fraude) -->
+            <div class="rpCard spacedTop" id="rpSecurityAuditCard">
+              <div class="rpCardHead">
+                <h3>🛡️ Painel de Segurança & Auditoria do Caixa (Anti-Fraude)</h3>
+                <span class="muted">conferência de quebras, cancelamentos e descontos por atendente</span>
+              </div>
+              <div id="rpSecurityKpis" class="rpGrid rpGrid4"></div>
+              <div class="rpGrid rpGrid2 spacedTop">
+                <div>
+                  <h4 style="margin:8px 0">Fechamentos & Diferenças por Atendente</h4>
+                  <div id="rpOperatorSecurityTable" class="tableWrap"></div>
+                </div>
+                <div>
+                  <h4 style="margin:8px 0">Descontos Concedidos por Atendente</h4>
+                  <div id="rpOperatorDiscountsTable" class="tableWrap"></div>
+                </div>
+              </div>
+              <div class="spacedTop">
+                <h4 style="margin:8px 0">Cobranças Canceladas no Período</h4>
+                <div id="rpCancelledChargesTable" class="tableWrap"></div>
+              </div>
+            </div>
+
             <div class="rpCard spacedTop"><h3>Aberturas e fechamentos</h3><div id="reportCashShiftsWrap" class="tableWrap"></div></div>
             <div class="rpCard spacedTop"><h3>Sangrias e suprimentos</h3><div id="reportAdjustments" class="tableWrap"></div></div>
             <div class="rpCard spacedTop"><div class="rpCardHead"><h3>Lançamentos do período</h3><input id="rpChargeSearch" type="search" placeholder="Buscar lançamento" class="rpSearch"></div><div id="reportCharges" class="tableWrap"></div></div>

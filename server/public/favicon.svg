@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="badgeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFDF00"/>
+      <stop offset="100%" stop-color="#E59900"/>
+    </linearGradient>
+    <linearGradient id="screenGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#043321"/>
+      <stop offset="100%" stop-color="#011B10"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Golden yellow high-visibility badge -->
+  <rect width="64" height="64" rx="15" fill="url(#badgeGrad)"/>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="none" stroke="#C27A00" stroke-width="1.8" opacity="0.6"/>
+
+  <!-- Monitor Frame (Deep LanHouse Forest Green) -->
+  <rect x="9" y="10" width="46" height="32" rx="5" fill="#042013"/>
+
+  <!-- Monitor Screen Display -->
+  <rect x="13" y="14" width="38" height="24" rx="3" fill="url(#screenGrad)"/>
+
+  <!-- Terminal Prompt (>_) in High-Contrast Neon Mint -->
+  <path d="M18 22 L24 26 L18 30" fill="none" stroke="#34D399" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="28" y1="30" x2="35" y2="30" stroke="#34D399" stroke-width="2.6" stroke-linecap="round"/>
+
+  <!-- Glowing Connection LED -->
+  <circle cx="45" cy="18" r="2" fill="#10B981"/>
+
+  <!-- Monitor Neck -->
+  <rect x="28" y="42" width="8" height="6" fill="#042013"/>
+
+  <!-- Monitor Base -->
+  <rect x="18" y="48" width="28" height="5" rx="2.5" fill="#042013"/>
+</svg>

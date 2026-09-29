@@ -754,6 +754,65 @@
         setStatus('Selecionei o comando. Copie com Ctrl+C para usar no ChatGPT Imagem.');
       }
     });
+    const STORE_PRESETS = {
+      curriculo: {
+        title: 'Precisa Imprimir seu Currículo?',
+        body: 'Impressão a laser nítida e rápida em papel de qualidade. Se precisar, ajudamos na formatação e digitação para você não perder oportunidades!',
+        cta: 'Venha imprimir ou mande no WhatsApp',
+        composition: 'editorial',
+        template: 'brand'
+      },
+      foto3x4: {
+        title: 'Foto 3x4 Pronta em Minutos',
+        body: 'Fotos com padrão oficial para Carteira de Trabalho, Passaporte, CNH, RG e matrículas escolares. Fundo branco impecável e corte profissional.',
+        cta: 'Tire sua foto 3x4 hoje',
+        composition: 'editorial',
+        template: 'offer'
+      },
+      segundavia: {
+        title: 'Tiramos sua 2ª Via sem Fila',
+        body: 'Água (COPASA), luz (CEMIG), telefone, IPTU, certidões negativas, situação cadastral do CPF e antecedentes criminais impressos na hora.',
+        cta: 'Resolva seus documentos aqui',
+        composition: 'editorial',
+        template: 'brand'
+      },
+      plastificacao: {
+        title: 'Plastificação & Encadernação',
+        body: 'Proteja seus documentos importantes contra umidade, rasgos e desgaste. Também fazemos encadernação de apostilas, manuais e trabalhos.',
+        cta: 'Proteja seus documentos agora',
+        composition: 'editorial',
+        template: 'clean'
+      },
+      internet: {
+        title: 'Lan House com Internet Rápida',
+        body: 'Computadores modernos para estudo, concursos, emissão de guias do GOV.BR, agendamentos, digitação de contratos e pesquisas.',
+        cta: 'Estações climatizadas e prontas',
+        composition: 'editorial',
+        template: 'brand'
+      },
+      scan: {
+        title: 'Digitalização & Envio de Arquivos',
+        body: 'Transforme fotos e papéis físicos em PDF de alta qualidade. Enviamos direto para seu e-mail ou WhatsApp com agilidade e sigilo.',
+        cta: 'Digitalize seus arquivos aqui',
+        composition: 'editorial',
+        template: 'clean'
+      }
+    };
+    document.querySelectorAll('#artStorePresets [data-preset]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = STORE_PRESETS[btn.dataset.preset];
+        if (!p) return;
+        const target = currentSlide();
+        target.title = p.title;
+        target.body = p.body;
+        target.cta = p.cta;
+        target.composition = p.composition;
+        state.template = p.template;
+        saveDraft();
+        syncForm();
+        setStatus(`Modelo "${btn.textContent.trim()}" carregado com sucesso!`);
+      });
+    });
     document.addEventListener('speed:edit-art', event => {
       const post = typeof AppState !== 'undefined' ? AppState.posts.find(item => item.id === event.detail?.postId) : null;
       openForPost(post);

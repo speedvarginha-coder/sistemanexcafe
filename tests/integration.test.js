@@ -1205,6 +1205,14 @@ test("custo por pagina entra no CMV, comissao soma no resultado e contas a vence
     assert.equal(report.dre.cmvCents, 120, "10 paginas x R$ 0,12");
     assert.equal(report.dre.incomesCents, 8000);
     assert.equal(report.dre.profitCents, report.salesCents + 8000 - 120 - 3000);
+    assert.equal(typeof report.dre.coveragePct, "number", "cobertura do DRE calculada");
+    assert.equal(report.printAudit.totalPages >= 10, true, "printAudit contabiliza total de paginas");
+    assert.equal(report.printAudit.bwPages >= 10, true, "printAudit contabiliza P&B");
+    assert.equal(typeof report.printAudit.paperReamsEst, "number", "calcula estimativa de resmas");
+    assert.equal(Array.isArray(report.hourlyPeak.dayparts), true, "turnos do dia calculados");
+    assert.equal(report.hourlyPeak.dayparts.length, 4, "4 faixas do dia (manha, almoco, tarde, noite)");
+    assert.equal(typeof report.abcSummary.A, "object", "curva ABC classe A resumida");
+    assert.equal(Array.isArray(report.securityAudit.shiftsByOperator), true, "seguranca: fechamentos por operador");
     const month = Number(today.slice(5, 7)) - 1;
     assert.equal(report.yearly[today.slice(0, 4)][month].resultCents, report.monthly[11].resultCents, "resultado anual do mes bate com o mensal (inclui comissao)");
     const state = (await request("/api/state")).payload;

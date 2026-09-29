@@ -2173,12 +2173,15 @@ function openDebtModal(clientId = "") {
       toast("Dívida registrada.");
     }, "Registrar dívida");
 }
-// Link do WhatsApp com a mensagem de cobranca pronta.
-function whatsappLink(phone, name, cents) {
+// Link do WhatsApp com a mensagem de cobranca pronta e chave Pix.
+function whatsappLink(phone, name, cents, details = "") {
   let digits = String(phone || "").replace(/\D/g, "");
   if (!digits) return "";
   if (digits.length <= 11) digits = "55" + digits;
-  const text = `Olá, ${String(name || "").split(" ")[0]}! Aqui é da Speed Lan House. Consta em aberto o valor de ${currency(cents)}. Pode passar na loja ou pagar por Pix. Obrigado!`;
+  const pixKey = state?.settings?.pixKey || "3530675017";
+  const firstName = String(name || "").split(" ")[0] || "Cliente";
+  const desc = details ? ` referente a ${details}` : "";
+  const text = `Olá, ${firstName}! Tudo bem? Passando para lembrar da sua pendência de ${currency(cents)}${desc} na Speed Lan House. Se preferir pagar no Pix para facilitar, nossa chave é: ${pixKey}. Qualquer dúvida estamos à disposição!`;
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 function openDebtsView(clientId) {
@@ -2316,11 +2319,24 @@ function renderOverview() {
   const days = r.byDay || [];
   const uncostedShare = (dre.uncostedRevenueCents || 0) + (dre.legacyCents || 0);
   const cmp = r.compare;
-  const change = cmp && cmp.previous.salesCents ? Math.round((cmp.current.salesCents - cmp.previous.salesCents) / cmp.previous.salesCents * 100) : null;
+  const salesChange = cmp && cmp.previous.salesCents ? Math.round((cmp.current.salesCents - cmp.previous.salesCents) / cmp.previous.salesCents * 100) : null;
+  const countChange = cmp && cmp.previous.count ? Math.round((cmp.current.count - cmp.previous.count) / cmp.previous.count * 100) : null;
+  const ticketChange = cmp && cmp.previous.ticketCents ? Math.round((cmp.current.ticketCents - cmp.previous.ticketCents) / cmp.previous.ticketCents * 100) : null;
+  const profitChange = cmp && cmp.previous.profitCents ? Math.round((cmp.current.profitCents - cmp.previous.profitCents) / Math.abs(cmp.previous.profitCents) * 100) : null;
+
+  const trendBadge = (diff, inverse = false) => {
+    if (diff === null || diff === undefined) return "";
+    const isUp = diff >= 0;
+    const isGood = inverse ? !isUp : isUp;
+    const cls = isGood ? "up" : "down";
+    const arrow = isUp ? "▲" : "▼";
+    return `<span class="rpKpiDelta ${cls}">${arrow} ${isUp ? "+" : ""}${diff}%</span>`;
+  };
+
   setHtml("#rpKpis",
-    `<div class="rpKpi"><span>Vendas ${periodName}</span><strong>${currency(r.salesCents)}</strong><small>${r.salesCount} vendas · ticket ${currency(r.averageTicketCents)}${r.unitsPerSale ? ` · ${String(r.unitsPerSale).replace(".", ",")} itens/venda` : ""}</small>${sparkline(days.map(d => d.salesCents))}</div>` +
-    `<div class="rpKpi ${change === null ? "" : change >= 0 ? "good" : "bad"}"><span>Contra o período anterior</span><strong>${change === null ? "-" : `${change >= 0 ? "+" : ""}${change}%`}</strong><small>${cmp ? `antes: ${currency(cmp.previous.salesCents)}` : "sem período anterior"}</small>${sparkline((r.prevByDay || []).map(d => d.salesCents), "var(--text-subtle)")}</div>` +
-    `<div class="rpKpi ${dre.profitCents >= 0 ? "good" : "bad"}"><span>Resultado ${periodName}</span><strong>${currency(dre.profitCents)}</strong><small>${uncostedShare > r.salesCents * 0.2 ? `custo desconhecido em ${pctText(uncostedShare, r.salesCents)} das vendas` : "vendas - custo - taxas - despesas"}</small></div>` +
+    `<div class="rpKpi"><span>Vendas ${periodName}</span><strong>${currency(r.salesCents)}${trendBadge(salesChange)}</strong><small>${r.salesCount} vendas${trendBadge(countChange)} · ticket ${currency(r.averageTicketCents)}${trendBadge(ticketChange)}${r.unitsPerSale ? ` · ${String(r.unitsPerSale).replace(".", ",")} itens/venda` : ""}</small>${sparkline(days.map(d => d.salesCents))}</div>` +
+    `<div class="rpKpi ${salesChange === null ? "" : salesChange >= 0 ? "good" : "bad"}"><span>Contra o período anterior</span><strong>${salesChange === null ? "-" : `${salesChange >= 0 ? "+" : ""}${salesChange}%`}</strong><small>${cmp ? `antes: ${currency(cmp.previous.salesCents)}` : "sem período anterior"}</small>${sparkline((r.prevByDay || []).map(d => d.salesCents), "var(--text-subtle)")}</div>` +
+    `<div class="rpKpi ${dre.profitCents >= 0 ? "good" : "bad"}"><span>Resultado Real (DRE)</span><strong>${currency(dre.profitCents)}${trendBadge(profitChange)}</strong><small>${uncostedShare > r.salesCents * 0.2 ? `custo não cadastrado em ${pctText(uncostedShare, r.salesCents)}` : "100% auditado: vendas - CMV - taxas - despesas"}</small></div>` +
     `<div class="rpKpi ${r.dueCents ? "warn" : ""}"><span>A receber</span><strong>${currency(r.dueCents)}</strong><small>${(r.openCharges || []).length} pendência(s)${(r.agingBuckets || []).slice(2).some(b => b.dueCents) ? " · há atrasadas" : ""}</small></div>`);
 
   const g = r.goal || {};
@@ -2336,6 +2352,7 @@ function renderOverview() {
     ["Vendas", cmp.current.salesCents, cmp.previous.salesCents, currency],
     ["Nº de vendas", cmp.current.count, cmp.previous.count, v => String(v)],
     ["Ticket médio", cmp.current.ticketCents, cmp.previous.ticketCents, currency],
+    ["Resultado Líquido (DRE)", cmp.current.profitCents, cmp.previous.profitCents, currency],
     ["Recebido", cmp.current.receivedCents, cmp.previous.receivedCents, currency],
     ["Tempo de máquina", cmp.current.timeCents, cmp.previous.timeCents, currency],
     ["Impressões das estações", cmp.current.printCents, cmp.previous.printCents, currency],
@@ -2344,6 +2361,8 @@ function renderOverview() {
 
   setHtml("#rpAlerts", (r.alerts || []).length ? r.alerts.map(a => `<div class="rpAlert ${a.level}"><strong>${html(a.title)}</strong><span>${html(a.text)}</span></div>`).join("") : `<div class="rpAlert ok"><strong>Tudo em ordem</strong><span>Nenhum alerta no período.</span></div>`);
   renderPlan();
+  renderPrintAudit();
+  renderHourlyPeak();
   renderHeat();
   renderYearly();
 }
@@ -2534,6 +2553,9 @@ function renderReport() {
   renderCategoryBars();
   renderPaymentMethods();
   renderDRE();
+  renderPrintAudit();
+  renderHourlyPeak();
+  renderSecurityAudit();
 
   // ---- Vendas e Curva ABC ----
   const abc = r.abc || [];
@@ -2569,7 +2591,11 @@ function renderReport() {
 
   // ---- Clientes e fiado ----
   setHtml("#rpAging", (r.agingBuckets || []).map((b, i) => kpi(b.label, currency(b.dueCents), `${b.count} pendência(s)`, b.dueCents && i >= 2 ? "bad" : b.dueCents && i === 1 ? "warn" : "")).join(""));
-  setHtml("#reportOpenCharges", pagedTable("reportOpenCharges", ["Data", "Descrição", "Cliente", "Dias", "Falta receber"], (r.openCharges || []).map(row => `<tr><td>${dateTime(row.at)}</td><td>${html(row.description)}</td><td>${html(row.clientName || "-")}${(() => { const c = row.clientId && state?.clients?.find(x => x.id === row.clientId); const link = c && whatsappLink(c.phone, c.name, row.dueCents); return link ? ` <a class="waButton small" href="${link}" target="_blank" rel="noopener">WhatsApp</a>` : ""; })()}</td><td>${Math.floor((Date.now() - Date.parse(row.at)) / 86400000)}</td><td class="money">${currency(row.dueCents)}</td></tr>`), "Nenhuma pendência."));
+  setHtml("#reportOpenCharges", pagedTable("reportOpenCharges", ["Data", "Descrição", "Cliente", "Dias", "Falta receber", "Ação"], (r.openCharges || []).map(row => {
+    const c = row.clientId && state?.clients?.find(x => x.id === row.clientId);
+    const link = c?.phone ? whatsappLink(c.phone, c.name, row.dueCents, row.description) : "";
+    return `<tr><td>${dateTime(row.at)}</td><td>${html(row.description)}</td><td>${html(row.clientName || "-")}</td><td>${Math.floor((Date.now() - Date.parse(row.at)) / 86400000)}</td><td class="money">${currency(row.dueCents)}</td><td>${link ? `<a class="waButton small" href="${link}" target="_blank" rel="noopener">💬 Cobrar WhatsApp</a>` : '<span class="muted">Sem tel.</span>'}</td></tr>`;
+  }), "Nenhuma pendência."));
   setHtml("#rpClients", table(["Cliente", "Compras", "Total comprado", "Deve", "Última compra"], (r.clients || []).map(c => `<tr><td>${html(c.name)}</td><td>${c.count}</td><td class="money">${currency(c.salesCents)}</td><td class="money ${c.dueCents ? "bad" : ""}">${currency(c.dueCents)}</td><td>${dateTime(c.lastAt)}</td></tr>`), "Nenhuma venda com cliente identificado. Selecione o cliente no caixa para acompanhar quem mais compra."));
 
   // ---- Estoque ----
@@ -2586,17 +2612,191 @@ function renderReport() {
   setHtml("#reportOperators", table(["Atendente", "Recebimentos", "Valor"], (r.byOperator || []).map(item => `<tr><td>${html(item.name)}</td><td>${item.payments}</td><td class="money">${currency(item.receivedCents)}</td></tr>`), "Sem recebimentos no período."));
 }
 
+function renderPrintAudit() {
+  if (!report) return;
+  const p = report.printAudit || {};
+  const reamsText = p.paperReamsEst > 0 ? `~${String(p.paperReamsEst).replace(".", ",")} resma(s)` : "menos de 1 resma";
+
+  setHtml("#rpPrintAuditGrid",
+    kpi("Páginas P&B (Impressão + Cópia)", `${p.bwPages || 0} págs`, currency(p.bwRevenueCents || 0), "good") +
+    kpi("Páginas Coloridas", `${p.colorPages || 0} págs`, currency(p.colorRevenueCents || 0), p.colorPages ? "warn" : "") +
+    kpi("Total de Folhas Impressas", `${p.totalPages || 0} folhas`, reamsText, "good") +
+    kpi("Faturamento Gráfico", currency(p.totalGraphicRevenueCents || 0), `${p.xeroxCount || 0} cópias/xerox · ${p.scanCount || 0} scans · ${p.laminationCount || 0} plastif.`)
+  );
+
+  const startEl = $("#reconPrinterStart");
+  const endEl = $("#reconPrinterEnd");
+  if (startEl && !startEl.value && localStorage.getItem("reconPrinterStart")) startEl.value = localStorage.getItem("reconPrinterStart");
+  if (endEl && !endEl.value && localStorage.getItem("reconPrinterEnd")) endEl.value = localStorage.getItem("reconPrinterEnd");
+  updatePrinterRecon();
+}
+
+function updatePrinterRecon() {
+  const p = report?.printAudit || {};
+  const startVal = $("#reconPrinterStart")?.value;
+  const endVal = $("#reconPrinterEnd")?.value;
+  const start = Number(startVal);
+  const end = Number(endVal);
+  const diffEl = $("#reconDiffDisplay");
+  const badgeEl = $("#reconAuditBadge");
+  const noteEl = $("#reconNoteText");
+
+  if (!startVal || !endVal || isNaN(start) || isNaN(end) || end < start) {
+    if (diffEl) diffEl.textContent = "-";
+    if (badgeEl) {
+      badgeEl.textContent = "Aguardando contadores";
+      badgeEl.className = "rpBadge";
+    }
+    if (noteEl) noteEl.textContent = "Digite o número inicial e final do visor da impressora física (ex: ao abrir e fechar a loja).";
+    return;
+  }
+
+  const machineDiff = end - start;
+  const systemPages = p.totalPages || 0;
+  const divergence = machineDiff - systemPages;
+
+  if (diffEl) diffEl.textContent = `${machineDiff} folhas`;
+
+  if (divergence === 0) {
+    if (badgeEl) {
+      badgeEl.textContent = "✅ 100% Conciliado";
+      badgeEl.className = "rpBadge good";
+    }
+    if (noteEl) noteEl.innerHTML = `<strong>Perfeito:</strong> As ${machineDiff} folhas impressas na máquina física batem <strong>exatamente</strong> com as ${systemPages} folhas registradas no sistema!`;
+  } else if (divergence > 0) {
+    if (badgeEl) {
+      badgeEl.textContent = `⚠️ Divergência: +${divergence} folhas na máquina`;
+      badgeEl.className = "rpBadge bad";
+    }
+    if (noteEl) noteEl.innerHTML = `<strong class="bad">Atenção para conferir:</strong> Saíram <strong>${machineDiff}</strong> folhas na impressora, mas o caixa registrou <strong>${systemPages}</strong> folhas. Há <strong>${divergence} folha(s)</strong> impressas sem cobrança registrada!`;
+  } else {
+    if (badgeEl) {
+      badgeEl.textContent = `ℹ️ ${Math.abs(divergence)} folhas a menos no visor`;
+      badgeEl.className = "rpBadge warn";
+    }
+    if (noteEl) noteEl.innerHTML = `O visor marcou ${machineDiff} folhas contra ${systemPages} registradas no caixa (possível cancelamento ou teste de impressão).`;
+  }
+}
+
+function renderHourlyPeak() {
+  if (!report) return;
+  const hp = report.hourlyPeak || {};
+  const peak = hp.peakHour;
+  const slow = hp.slowHour;
+  const dayparts = hp.dayparts || [];
+  const maxPart = Math.max(1, ...dayparts.map(d => d.salesCents));
+
+  const peakBadge = $("#rpHourlyPeakBadge");
+  if (peakBadge) {
+    peakBadge.textContent = peak ? `🏆 Pico: ${peak.label}` : "Sem dados";
+    peakBadge.className = "rpBadge good";
+  }
+
+  setHtml("#rpHourlyDayparts", dayparts.map(dp => `
+    <div class="rpHourlyDaypartCard">
+      <div class="rpHourlyDaypartHead"><span>${dp.icon} ${html(dp.name)}</span><span>${dp.range}</span></div>
+      <strong>${currency(dp.salesCents)}</strong>
+      <small>${dp.count} venda(s) realizada(s)</small>
+      ${bar(dp.salesCents, maxPart, "var(--primary)")}
+    </div>
+  `).join(""));
+
+  const peakInfo = peak ? `
+    <div class="peakBadge">🏆 Horário de Pico: ${peak.label}</div>
+    <span>Maior concentração de faturamento do período: <strong>${currency(peak.salesCents)}</strong> em <strong>${peak.count} vendas</strong>. Reforce troco, papel na impressora e atendimento rápido neste horário.</span>
+    ${slow ? `<span class="muted" style="margin-left:auto">🌙 Horário mais calmo: <strong>${slow.label}</strong> (${slow.count} vendas). Ideal para serviços longos e manutenções.</span>` : ""}
+  ` : `<span class="muted">Sem movimentação no período para definir horários de pico.</span>`;
+  setHtml("#rpHourlyPeakInfo", peakInfo);
+}
+
+function renderSecurityAudit() {
+  if (!report) return;
+  const sec = report.securityAudit || {};
+
+  setHtml("#rpSecurityKpis",
+    kpi("Descontos Concedidos", currency(sec.totalDiscountCents || 0), `${sec.discountCount || 0} venda(s) com desconto`, sec.totalDiscountCents ? "warn" : "") +
+    kpi("Quebra de Caixa (Faltas)", currency(Math.abs(sec.totalShortCents || 0)), "diferença negativa em fechamentos", sec.totalShortCents ? "bad" : "good") +
+    kpi("Sobra de Caixa", currency(sec.totalOverCents || 0), "diferença positiva em fechamentos", sec.totalOverCents ? "warn" : "") +
+    kpi("Cancelamentos", currency(sec.totalCancelledCents || 0), `${(sec.cancelledCharges || []).length} cobrança(s) canceladas`, sec.totalCancelledCents ? "bad" : "")
+  );
+
+  // Tabela de operadores: diferencas e quebras
+  const opShifts = sec.shiftsByOperator || [];
+  setHtml("#rpOperatorSecurityTable", table(
+    ["Atendente", "Turnos", "Exatos", "Faltas", "Sobras", "Saldo Líquido"],
+    opShifts.map(op => {
+      const netCls = op.netDiffCents < 0 ? "bad" : op.netDiffCents > 0 ? "warn" : "good";
+      return `<tr>
+        <td><strong>${html(op.operator)}</strong></td>
+        <td>${op.shiftsCount}</td>
+        <td>${op.exactCount}</td>
+        <td class="money ${op.shortCents < 0 ? "bad" : ""}">${currency(Math.abs(op.shortCents))}</td>
+        <td class="money ${op.overCents > 0 ? "warn" : ""}">${currency(op.overCents)}</td>
+        <td class="money ${netCls}"><strong>${op.netDiffCents === 0 ? "Exato" : currency(op.netDiffCents)}</strong></td>
+      </tr>`;
+    }),
+    "Nenhum fechamento registrado por atendente no período."
+  ));
+
+  // Tabela de descontos por operador
+  const opDiscounts = sec.discountsByOperator || [];
+  setHtml("#rpOperatorDiscountsTable", table(
+    ["Atendente", "Vendas c/ Desconto", "Total Descontado", "Volume Vendas"],
+    opDiscounts.map(op => `<tr>
+      <td><strong>${html(op.operator)}</strong></td>
+      <td>${op.count}</td>
+      <td class="money bad"><strong>${currency(op.totalDiscountCents)}</strong></td>
+      <td class="money">${currency(op.totalSalesCents)}</td>
+    </tr>`),
+    "Nenhum desconto concedido no período."
+  ));
+
+  // Cobrancas canceladas
+  const cancellations = sec.cancelledCharges || [];
+  setHtml("#rpCancelledChargesTable", table(
+    ["Data Cancelamento", "Atendente", "Descrição", "Motivo", "Valor Cancelado"],
+    cancellations.map(c => `<tr>
+      <td>${dateTime(c.at)}</td>
+      <td><strong>${html(c.cancelledBy)}</strong></td>
+      <td>${html(c.description)}</td>
+      <td><span class="muted">${html(c.cancelReason)}</span></td>
+      <td class="money bad"><strong>${currency(c.cancelledCents)}</strong></td>
+    </tr>`),
+    "Nenhum cancelamento de pendência ou venda no período."
+  ));
+}
+
+let abcSearchTerm = "";
 function renderAbc() {
   if (!report) return;
-  const rows = (report.abc || []).filter(row => !abcFilter || row.abcClass === abcFilter);
+  const s = report.abcSummary || {};
+  const abc = report.abc || [];
+
+  setHtml("#rpAbcAdvice", `
+    <div class="rpAbcAdviceBox A">
+      <strong>👑 Classe A (80% da receita) · ${s.A?.count || 0} itens</strong>
+      ${s.A?.tip || "Itens vitais. Nunca podem faltar estoque ou manutenção."}
+    </div>
+    <div class="rpAbcAdviceBox B">
+      <strong>⚖️ Classe B (15% da receita) · ${s.B?.count || 0} itens</strong>
+      ${s.B?.tip || "Itens de giro intermediário. Mantenha compras regulares equilibradas."}
+    </div>
+    <div class="rpAbcAdviceBox C">
+      <strong>📦 Classe C (5% da receita) · ${s.C?.count || 0} itens</strong>
+      ${s.C?.tip || "Itens da cauda longa. Evite manter capital parado."}
+    </div>
+  `);
+
+  const term = abcSearchTerm.trim().toLowerCase();
+  const rows = abc.filter(row => (!abcFilter || row.abcClass === abcFilter) && (!term || String(row.name).toLowerCase().includes(term) || String(row.productId || "").toLowerCase().includes(term)));
   const productById = new Map((state?.products || []).map(p => [p.id, p]));
   const admin = state?.user?.role === "admin";
   setHtml("#rpAbc", pagedTable("rpAbc", ["Classe", "Produto / serviço", "Qtd", "Faturamento", "% acumulado", "Custo", "Lucro", "Margem", "Estratégia"], rows.map(row => {
     const product = productById.get(row.productId);
     const margin = row.profitCents !== null && row.amountCents ? Math.round(row.profitCents / row.amountCents * 100) : null;
     const strategy = !product ? '<span class="muted">-</span>' : `<select data-strategy="${html(product.id)}" ${admin ? "" : "disabled"}>${STRATEGIES.map(s => `<option value="${html(s)}" ${s === (product.strategy || "") ? "selected" : ""}>${s || "Definir..."}</option>`).join("")}</select>`;
-    return `<tr><td><span class="rpClass ${row.abcClass}">${row.abcClass}</span></td><td>${html(row.name)}${product?.code ? ` <span class="muted">#${html(product.code)}</span>` : ""}</td><td>${row.quantity}</td><td class="money">${currency(row.amountCents)}</td><td>${String(row.cumulative).replace(".", ",")}%</td><td class="money">${row.costCents === null ? '<span class="muted">sem custo</span>' : currency(row.costCents)}</td><td class="money">${row.profitCents === null ? "-" : currency(row.profitCents)}</td><td class="${margin !== null && margin < 20 ? "bad" : ""}">${margin === null ? "-" : `${margin}%`}</td><td>${strategy}</td></tr>`;
-  }), "Sem itens vendidos no período. As vendas do sistema anterior não têm itens: veja o histórico abaixo."));
+    return `<tr><td><span class="rpClass ${row.abcClass}">Classe ${row.abcClass}</span></td><td><strong>${html(row.name)}</strong>${product?.code ? ` <span class="muted">#${html(product.code)}</span>` : ""}</td><td>${row.quantity}</td><td class="money">${currency(row.amountCents)}</td><td>${String(row.cumulative).replace(".", ",")}%</td><td class="money">${row.costCents === null ? '<span class="muted">sem custo</span>' : currency(row.costCents)}</td><td class="money">${row.profitCents === null ? "-" : currency(row.profitCents)}</td><td class="${margin !== null && margin < 20 ? "bad" : ""}">${margin === null ? "-" : `${margin}%`}</td><td>${strategy}</td></tr>`;
+  }), "Nenhum produto encontrado nesta classe ou busca."));
 }
 
 function renderDRE() {
@@ -2605,19 +2805,35 @@ function renderDRE() {
   const net = dre.netCents || 0, sales = r.salesCents || 0;
   const line = (label, value, cls = "", note = "") => `<tr class="${cls}"><td>${label}${note ? `<small>${note}</small>` : ""}</td><td class="money">${currency(value)}</td><td class="pct">${pctText(Math.abs(value), dre.grossCents || sales)}</td></tr>`;
   const uncosted = (dre.uncostedRevenueCents || 0) + (dre.legacyCents || 0);
+  const cmvNote = dre.printCmvCents ? `R$ ${(dre.printCmvCents / 100).toFixed(2)} papel/tinta + R$ ${(dre.productCmvCents / 100).toFixed(2)} mercadorias` : `custo cadastrado cobre ${pctText(dre.costedRevenueCents || 0, sales)} das vendas`;
+
   setHtml("#rpDre", `<table class="rpDre"><tbody>
     ${line("(+) Receita bruta", dre.grossCents, "strong", "vendas pelo preço de tabela")}
     ${line("(-) Descontos concedidos", -(dre.discountCents || 0), "neg")}
     ${line("(-) Taxas de cartão e Pix", -(dre.feesCents || 0), "neg", (state?.settings?.feeDebitPct || state?.settings?.feeCreditPct) ? "pelas taxas cadastradas" : "cadastre as taxas em Metas e taxas")}
-    ${line("(=) Receita líquida", net, "sub")}
-    ${line("(-) Custo das mercadorias (CMV)", -(dre.cmvCents || 0), "neg", `custo cadastrado cobre ${pctText(dre.costedRevenueCents || 0, sales)} das vendas`)}
-    ${line("(=) Lucro bruto", dre.grossProfitCents, "sub")}
+    ${line("(=) Receita líquida operacional", net, "sub")}
+    ${line("(-) Custo das mercadorias e papel (CMV)", -(dre.cmvCents || 0), "neg", cmvNote)}
+    ${line("(=) Lucro bruto operacional", dre.grossProfitCents, "sub", `Margem bruta: ${dre.grossMarginPct || 0}%`)}
     ${dre.incomesCents ? line("(+) Comissões e outras receitas", dre.incomesCents, "", "Speed Financeira e receitas fora do caixa") : ""}
-    ${line("(-) Despesas do período", -(dre.expensesCents || 0), "neg", "aluguel, energia, internet, salários...")}
-    ${line("(=) Resultado do período", dre.profitCents, `total ${dre.profitCents >= 0 ? "good" : "bad"}`)}
+    ${line("(-) Despesas operacionais do período", -(dre.expensesCents || 0), "neg", "aluguel, energia, internet, salários...")}
+    ${line("(=) Resultado líquido do período", dre.profitCents, `total ${dre.profitCents >= 0 ? "good" : "bad"}`, `Margem líquida real: ${dre.netMarginPct || 0}%`)}
   </tbody></table>`);
+
+  const covPct = dre.coveragePct || 0;
+  setHtml("#rpCmvCoverage", `
+    <div class="rpCmvCoverageHead">
+      <span>Auditabilidade dos Custos</span>
+      <strong class="${covPct >= 80 ? "good" : covPct >= 50 ? "warn" : "bad"}">${covPct}% do faturamento com custo real auditado</strong>
+    </div>
+    ${bar(dre.costedRevenueCents || 0, sales || 1, covPct >= 80 ? "var(--primary)" : "var(--accent)")}
+  `);
+
   setHtml("#rpIncomes", (r.incomes || []).length ? table(["Data", "Descrição", "Valor", ""], r.incomes.map(i => `<tr><td>${new Date(i.at).toLocaleDateString("pt-BR")}</td><td>${html(i.description)} <span class="muted">${html(i.category)}</span></td><td class="money">${currency(i.amountCents)}</td><td>${state?.user?.role === "admin" ? `<button data-income-del="${i.id}">Excluir</button>` : ""}</td></tr>`)) : "");
-  setTextSafe("#dreNote", uncosted ? `${currency(uncosted)} das vendas não têm custo conhecido (${currency(dre.legacyCents || 0)} do sistema anterior, sem itens, e ${currency(dre.uncostedRevenueCents || 0)} de produtos sem preço de custo). Nelas o custo entra como zero, então o resultado real é menor.` : "");
+  const banks = r.bankPerformance || [];
+  setHtml("#rpBankPerformance", banks.length ? table(["Banco Parceiro / Operação", "Contratos / Lançamentos", "Comissão Total", "Ticket Médio"], banks.map(b => `<tr><td><strong>${html(b.name)}</strong></td><td>${b.count}</td><td class="money good"><strong>${currency(b.totalCents)}</strong></td><td class="money">${currency(b.avgTicketCents)}</td></tr>`)) : '<p class="muted">Nenhuma comissão de banco parceiro registrada no período.</p>');
+  setTextSafe("#rpMktSpendDisplay", currency(dre.marketingSpendCents || 0));
+  setTextSafe("#rpMktCommissionDisplay", currency(dre.marketingCommissionCents || 0));
+  setTextSafe("#dreNote", uncosted ? `${currency(uncosted)} das vendas não têm custo conhecido (${currency(dre.legacyCents || 0)} do sistema anterior, sem itens, e ${currency(dre.uncostedRevenueCents || 0)} de produtos sem preço de custo). Nelas o custo entra como zero, então o resultado real é menor.` : "Custos 100% integrados aos produtos e configurações.");
   const badge = $("#dreHealthBadge");
   if (badge) {
     const incomplete = sales > 0 && uncosted > sales * 0.2;
@@ -2689,9 +2905,11 @@ function openFinanceSettings() {
     field("feePix", "Taxa do Pix (%)", "number", pct(s.feePixPct), 'min="0" max="20" step="0.01"') +
     field("printBWCost", "Custo de papel e tinta por página P&B (R$)", "number", ((s.printBWCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
     field("printColorCost", "Custo de papel e tinta por página colorida (R$)", "number", ((s.printColorCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
+    field("pixKey", "Chave Pix (para cobranças por WhatsApp)", "text", s.pixKey || "", 'maxlength="100" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"') +
     select("panelOnlyHere", "Onde o painel pode ser aberto", [["false", "Em qualquer computador da loja (com senha)"], ["true", "Só neste computador (caixa)"]], String(Boolean(s.panelOnlyHere))),
     values => api("/api/settings/finance", values).then(() => loadReport()));
 }
+
 
 function exportReportCsv() {
   if (!report) { toast("Nenhum dado para exportar."); return; }
@@ -2713,11 +2931,77 @@ function exportReportCsv() {
   setTimeout(() => URL.revokeObjectURL(link.href), 5000);
 }
 
+function copyReportToWhatsapp() {
+  if (!report) return;
+  const r = report, dre = r.dre || {};
+  const rangeText = r.period === "all" ? "Todo o histórico" : (r.range?.start === r.range?.end ? dayLabel(r.range.start) : `${dayLabel(r.range.start)} a ${dayLabel(r.range.end)}`);
+  const lines = [
+    `📊 *FECHAMENTO • SPEED LAN HOUSE & GRÁFICA*`,
+    `📅 *Período:* ${rangeText}`,
+    `───────────────────────`,
+    `💰 *Vendas Totais:* ${currency(r.salesCents || 0)} (${r.salesCount || 0} atendimentos)`,
+    `🎯 *Ticket Médio:* ${currency(r.averageTicketCents || 0)}`,
+    ``,
+    `💵 *Recebimentos por Forma:*`,
+    `  • Dinheiro: ${currency(r.byMethod?.cash || 0)}`,
+    `  • Pix: ${currency(r.byMethod?.pix || 0)}`,
+    `  • Cartão Débito: ${currency(r.byMethod?.debit || 0)}`,
+    `  • Cartão Crédito: ${currency(r.byMethod?.credit || 0)}`,
+    `  • Fiado / A receber: ${currency(r.dueCents || 0)}`,
+    ``,
+    `🖨️ *Volume Gráfico:* ${r.printAudit?.totalPages || 0} páginas (${r.printAudit?.bwPages || 0} P&B, ${r.printAudit?.colorPages || 0} Color, ${r.printAudit?.xeroxCount || 0} Cópias)`,
+    ``,
+    `📈 *Demonstrativo de Resultado (DRE):*`,
+    `  • (-) CMV (Insumos/Produtos): ${currency(dre.cmvCents || 0)}`,
+    `  • (-) Taxas de Cartão/Pix: ${currency(dre.feesCents || 0)}`,
+    `  • (-) Despesas Operacionais: ${currency(dre.expensesCents || 0)}`,
+    `  • (+) Comissões Speed Financeira: ${currency(dre.incomesCents || 0)}`,
+    `  ⭐ *LUCRO LÍQUIDO:* ${currency(dre.profitCents || 0)} (Margem: ${dre.netMarginPct || 0}%)`,
+    `───────────────────────`,
+    `_Central Matriz • Gerado às ${new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}_`
+  ];
+  if (navigator?.clipboard?.writeText) {
+    navigator.clipboard.writeText(lines.join("\n")).then(() => {
+      toast("📱 Resumo executivo copiado para o WhatsApp!");
+    }).catch(() => toast("Não foi possível copiar para a área de transferência."));
+  } else {
+    toast("Área de transferência não disponível neste navegador.");
+  }
+}
+
 function setupReportListeners() {
   document.querySelectorAll(".reportPeriodBtn").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll(".reportPeriodBtn").forEach(b => b.classList.toggle("active", b === btn));
-    loadReport(btn.dataset.period || "month");
+    const p = btn.dataset.period || "month";
+    const customGroup = $("#rpCustomRangeGroup");
+    const dateInput = $("#reportDate");
+    if (p === "custom") {
+      if (customGroup) customGroup.hidden = false;
+      if (dateInput) dateInput.hidden = true;
+      const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+      if ($("#rpCustomStart") && !$("#rpCustomStart").value) $("#rpCustomStart").value = today;
+      if ($("#rpCustomEnd") && !$("#rpCustomEnd").value) $("#rpCustomEnd").value = today;
+    } else {
+      if (customGroup) customGroup.hidden = true;
+      if (dateInput) dateInput.hidden = false;
+      loadReport(p);
+    }
   }));
+  $("#rpCustomApplyBtn")?.addEventListener("click", () => {
+    const start = $("#rpCustomStart")?.value;
+    const end = $("#rpCustomEnd")?.value;
+    if (!start || !end) { toast("Selecione a data inicial e final."); return; }
+    loadReport("custom", start, end);
+  });
+  const applyCustomOnEnter = event => {
+    if (event.key !== "Enter") return;
+    const start = $("#rpCustomStart")?.value;
+    const end = $("#rpCustomEnd")?.value;
+    if (start && end) loadReport("custom", start, end);
+  };
+  $("#rpCustomStart")?.addEventListener("keydown", applyCustomOnEnter);
+  $("#rpCustomEnd")?.addEventListener("keydown", applyCustomOnEnter);
+  $("#reportCopyWaBtn")?.addEventListener("click", copyReportToWhatsapp);
   document.querySelectorAll(".reportTabBtn").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll(".reportTabBtn").forEach(b => b.classList.toggle("active", b === btn));
     document.querySelectorAll(".reportTabContent").forEach(content => { content.hidden = content.id !== `tab-report-${btn.dataset.reportTab}`; });
@@ -2726,6 +3010,18 @@ function setupReportListeners() {
   $("#rpChargeSearch")?.addEventListener("input", () => renderReport());
   $("#btnChartRev")?.addEventListener("click", () => { chartMode = "rev"; $("#btnChartRev").classList.add("active"); $("#btnChartVol").classList.remove("active"); renderExecChart(); });
   $("#btnChartVol")?.addEventListener("click", () => { chartMode = "vol"; $("#btnChartVol").classList.add("active"); $("#btnChartRev").classList.remove("active"); renderExecChart(); });
+  $("#reconPrinterStart")?.addEventListener("input", () => {
+    localStorage.setItem("reconPrinterStart", $("#reconPrinterStart")?.value || "");
+    updatePrinterRecon();
+  });
+  $("#reconPrinterEnd")?.addEventListener("input", () => {
+    localStorage.setItem("reconPrinterEnd", $("#reconPrinterEnd")?.value || "");
+    updatePrinterRecon();
+  });
+  $("#rpAbcSearch")?.addEventListener("input", event => {
+    abcSearchTerm = event.target.value;
+    renderAbc();
+  });
   for (const id of ["#simExpensesRange", "#simMarginRange"]) $(id)?.addEventListener("input", event => { event.target.dataset.touched = "1"; updateBreakEven(); });
   $("#rpAbcFilter")?.addEventListener("click", event => {
     const btn = event.target.closest("[data-abc]"); if (!btn) return;
@@ -3278,9 +3574,71 @@ function renderBillsBanner() {
   el.hidden = !bills.length;
   if (bills.length) el.innerHTML = `<strong>${late.length ? `${late.length} conta(s) vencida(s)` : "Contas vencendo"}:</strong> ${bills.slice(0, 4).map(b => `${html(b.description)} ${currency(b.amountCents)} (${new Date(b.at).toLocaleDateString("pt-BR")})`).join(" · ")}${bills.length > 4 ? ` e mais ${bills.length - 4}` : ""} <button type="button" data-view-go="expenses">Ver despesas</button>`;
 }
+function renderDashboardCockpit() {
+  if (!state) return;
+  const cs = state.cashSummary || {};
+  const dailyGoalCents = cs.dailyGoalCents || 50000;
+  const todaySalesCents = cs.todaySalesCents || 0;
+  const expectedCashCents = cs.expectedCashCents || 0;
+  const pct = dailyGoalCents > 0 ? Math.min(100, Math.round((todaySalesCents / dailyGoalCents) * 100)) : 100;
+
+  setTextSafe("#dashGoalTarget", currency(dailyGoalCents));
+  setTextSafe("#dashGoalActual", currency(todaySalesCents));
+  const remainingCents = Math.max(0, dailyGoalCents - todaySalesCents);
+  const remainingEl = $("#dashGoalRemaining");
+  if (remainingEl) {
+    if (remainingCents === 0 && todaySalesCents >= dailyGoalCents) {
+      remainingEl.textContent = "🏆 Meta do Dia Atingida!";
+      remainingEl.style.color = "#15803d";
+    } else {
+      remainingEl.textContent = `(Faltam ${currency(remainingCents)})`;
+      remainingEl.style.color = "";
+    }
+  }
+  const barEl = $("#dashGoalBar");
+  if (barEl) {
+    barEl.style.width = `${pct}%`;
+    barEl.classList.toggle("completed", pct >= 100);
+  }
+  setTextSafe("#dashGoalPct", `${pct}% da meta atingida`);
+  setTextSafe("#dashDrawerCash", `💵 Dinheiro na Gaveta: ${currency(expectedCashCents)}`);
+
+  // Meta mensal
+  const monthGoalCents = cs.monthGoalCents || 0;
+  const monthSalesCents = cs.monthSalesCents || 0;
+  const monthPct = monthGoalCents > 0 ? Math.min(100, Math.round((monthSalesCents / monthGoalCents) * 100)) : 0;
+  const monthBarEl = $("#dashMonthGoalBar");
+  if (monthBarEl) {
+    monthBarEl.style.width = `${monthPct}%`;
+    monthBarEl.classList.toggle("completed", monthPct >= 100);
+  }
+  setTextSafe("#dashMonthActual", currency(monthSalesCents));
+  setTextSafe("#dashMonthTarget", currency(monthGoalCents));
+  setTextSafe("#dashMonthPct", monthGoalCents > 0 ? `${monthPct}% da meta mensal` : "Meta mensal não configurada");
+
+  // Central de Alertas Rápidos (HUD)
+  const hudEl = $("#dashAlertsHud");
+  if (hudEl) {
+    const alerts = [];
+    const ha = state.hudAlerts || {};
+    if (ha.overdueBillsCount > 0) {
+      alerts.push(`<div class="dashHudAlert danger"><span>⚠️ <strong>${ha.overdueBillsCount} conta(s) a pagar atrasada(s)</strong> (${currency(ha.overdueBillsCents || 0)})</span><button type="button" data-view-go="expenses">Ver despesas</button></div>`);
+    }
+    if (ha.zeroStockCount > 0) {
+      alerts.push(`<div class="dashHudAlert warn"><span>📦 <strong>${ha.zeroStockCount} produto(s) com estoque zerado ou negativo</strong></span><button type="button" data-view-go="products">Repor estoque</button></div>`);
+    }
+    if (ha.lateDebtsCount > 0) {
+      alerts.push(`<div class="dashHudAlert warn"><span>⏳ <strong>${ha.lateDebtsCount} fiado(s) em aberto há mais de 30 dias</strong> (${currency(ha.lateDebtsCents || 0)})</span><button type="button" data-view-go="clients">Cobrar fiados</button></div>`);
+    }
+    hudEl.hidden = !alerts.length;
+    hudEl.innerHTML = alerts.join("");
+  }
+}
+
 function render() {
   if (!state) return;
   renderBillsBanner();
+  renderDashboardCockpit();
   renderPosMachineDue();
   document.querySelectorAll("[data-admin-only]").forEach(el => { el.hidden = state.user.role !== "admin"; });
   renderMachines();
@@ -3296,7 +3654,11 @@ function view(name) {
   currentView = name;
   for (const section of document.querySelectorAll(".view")) section.hidden = section.id !== `view-${name}`;
   for (const button of document.querySelectorAll("[data-view]")) button.classList.toggle("active", button.dataset.view === name);
-  $("#pageTitle").textContent = { machines: "Atendimento", cash: "Caixa & PDV", clients: "Clientes & Saldo", products: "Catálogo & Estoque", settings: "Tarifas & Rede", reports: "Auditoria & Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários" }[name];
+  const titles = { machines: "Atendimento", cash: "PDV & Vendas", clients: "Clientes & Saldo", products: "Catálogo & Estoque", settings: "Tarifas & Rede", reports: "Auditoria & Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários" };
+  const label = titles[name] || "Operações";
+  $("#pageTitle").textContent = label;
+  const emojis = { machines: "🖥️", cash: "💰", clients: "👥", products: "📦", settings: "⚙️", reports: "📊", users: "👤", expenses: "💸", marketing: "📣", vault: "🔐" };
+  document.title = `${emojis[name] || "🖥️"} [${label}] LanHouse Enterprise`;
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
   if (name === "marketing" && !$("#marketingFrame").getAttribute("src")) $("#marketingFrame").setAttribute("src", "/marketing/");
@@ -3310,11 +3672,19 @@ function view(name) {
   }
 }
 
-async function loadReport(period = null) {
+async function loadReport(period = null, customStart = null, customEnd = null) {
   if (period) reportPeriod = period;
   try {
     const dateInput = $("#reportDate")?.value || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-    report = await api(`/api/reports?date=${encodeURIComponent(dateInput)}&period=${encodeURIComponent(reportPeriod)}`);
+    let url = `/api/reports?date=${encodeURIComponent(dateInput)}&period=${encodeURIComponent(reportPeriod)}`;
+    if (reportPeriod === "custom") {
+      const cStart = customStart || $("#rpCustomStart")?.value;
+      const cEnd = customEnd || $("#rpCustomEnd")?.value;
+      if (cStart && cEnd) {
+        url += `&start=${encodeURIComponent(cStart)}&end=${encodeURIComponent(cEnd)}`;
+      }
+    }
+    report = await api(url);
     renderReport();
   } catch (cause) { toast(cause.message); }
 }
@@ -3640,8 +4010,9 @@ function openSale(productId = null, machine = null) {
   if (quickContainer) {
     const priorityCodes = ["104", "1.1", "2", "3", "20", "152", "286"];
     const foundPriority = priorityCodes.map(code => state.products.find(p => p.active && p.code === code)).filter(Boolean);
-    const stockItems = state.products.filter(p => p.active && p.type === "stock" && p.stock > 0 && !foundPriority.includes(p)).slice(0, 4);
-    const allQuick = [...foundPriority, ...stockItems].slice(0, 8);
+    const stockItems = state.products.filter(p => p.active && p.type === "stock" && p.stock > 0 && !foundPriority.includes(p)).slice(0, 3);
+    const serviceItems = state.products.filter(p => p.active && p.type === "service" && !foundPriority.includes(p) && !stockItems.includes(p)).slice(0, 2);
+    const allQuick = [...foundPriority, ...stockItems, ...serviceItems].slice(0, 8);
     if (allQuick.length) {
       quickContainer.innerHTML = allQuick.map(p => 
         `<button type="button" class="saleQuickChip" data-sale-add="${html(p.id)}">+ ${html(p.name)} (${currency(p.priceCents)})</button>`

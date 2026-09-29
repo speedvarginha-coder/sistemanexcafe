@@ -183,6 +183,7 @@ function defaultOcrRunner(file) {
 function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner } = {}) {
   const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
   const dbPath = path.join(dataDir, "db.json");
+  const vaultKeyFile = path.join(dataDir, "cofre.chave");
   fs.mkdirSync(dataDir, { recursive: true });
   const screens = new Map();
   const inputs = new Map();
@@ -462,12 +463,61 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const openCharges = db.charges.filter(item => item.amountCents > item.paidCents);
     const cashReceivedCents = shiftPayments.filter(item => item.method === "cash").reduce((sum, item) => sum + item.amountCents, 0);
     const adjustmentCents = shiftAdjustments.reduce((sum, item) => sum + (item.direction === "in" ? item.amountCents : -item.amountCents), 0);
-    return { ok: true, user: publicUser(user), settings: db.settings, machines: Object.values(db.machines).map(publicMachine), events: db.events.slice(0, 60), clients: db.clients.map(publicClient), products: db.products, charges: db.charges.slice(0, 200), openCharges, payments: db.payments.slice(0, 150), cashShift: shift, cashSummary: { expectedCashCents: shift ? shift.openingCents + cashReceivedCents + adjustmentCents : 0, receivedCents: shiftPayments.reduce((sum, item) => sum + item.amountCents, 0), pendingCents: openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0) }, cashShifts: db.cashShifts.slice(0, 30), cashAdjustments: db.cashAdjustments.slice(0, 150), users: user.role === "admin" ? db.users.map(publicUser) : [], printers: user.role === "admin" ? db.printerShares : [], printJobs: db.printJobs.slice(0, 20), waitList: db.waitList, billsDue: user.role === "admin" ? db.expenses.filter(item => item.paid === false && Date.parse(item.at) < Date.now() + 3 * 86400000).map(item => ({ id: item.id, at: item.at, description: item.description, amountCents: item.amountCents })) : [], serverTime: now() };
+    const today = localDay(Date.now());
+    const thisMonth = today.slice(0, 7);
+    const todayPayments = (db.payments || []).filter(item => localDay(item.at) === today);
+    const todaySalesCents = todayPayments.reduce((sum, item) => sum + item.amountCents, 0);
+    const monthSalesCents = (db.payments || []).filter(item => localDay(item.at).startsWith(thisMonth)).reduce((sum, item) => sum + item.amountCents, 0);
+    const zeroStockProducts = (db.products || []).filter(p => p.active !== false && (p.stock || 0) <= 0);
+    const lateDebts = openCharges.filter(c => (Date.now() - Date.parse(c.at)) > 30 * 86400000);
+    const lateBills = (db.expenses || []).filter(item => item.paid === false && Date.parse(item.at) < Date.now());
+    return {
+      ok: true,
+      user: publicUser(user),
+      settings: db.settings,
+      machines: Object.values(db.machines).map(publicMachine),
+      events: db.events.slice(0, 60),
+      clients: db.clients.map(publicClient),
+      products: db.products,
+      charges: db.charges.slice(0, 200),
+      openCharges,
+      payments: db.payments.slice(0, 150),
+      cashShift: shift,
+      cashSummary: {
+        expectedCashCents: shift ? shift.openingCents + cashReceivedCents + adjustmentCents : 0,
+        receivedCents: shiftPayments.reduce((sum, item) => sum + item.amountCents, 0),
+        pendingCents: openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0),
+        todaySalesCents,
+        monthSalesCents,
+        dailyGoalCents: db.settings?.dailyGoalCents || 50000,
+        monthGoalCents: db.settings?.monthGoalCents || 3000000
+      },
+      hudAlerts: {
+        overdueBillsCount: lateBills.length,
+        overdueBillsCents: lateBills.reduce((s, b) => s + b.amountCents, 0),
+        zeroStockCount: zeroStockProducts.length,
+        lateDebtsCount: lateDebts.length,
+        lateDebtsCents: lateDebts.reduce((s, c) => s + c.amountCents - c.paidCents, 0)
+      },
+      cashShifts: db.cashShifts.slice(0, 30),
+      cashAdjustments: db.cashAdjustments.slice(0, 150),
+      users: user.role === "admin" ? db.users.map(publicUser) : [],
+      printers: user.role === "admin" ? db.printerShares : [],
+      printJobs: db.printJobs.slice(0, 20),
+      waitList: db.waitList,
+      billsDue: user.role === "admin" ? db.expenses.filter(item => item.paid === false && Date.parse(item.at) < Date.now() + 3 * 86400000).map(item => ({ id: item.id, at: item.at, description: item.description, amountCents: item.amountCents })) : [],
+      serverTime: now()
+    };
   }
   // Datas locais (America/Sao_Paulo) no formato AAAA-MM-DD; comparacao por texto.
   function localDay(value) { return new Date(value).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }); }
   function shiftDay(day, days) { const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
-  function periodRange(date, period) {
+  function periodRange(date, period, customStart, customEnd) {
+    if (period === "custom" && customStart && customEnd) {
+      const start = customStart <= customEnd ? customStart : customEnd;
+      const end = customStart <= customEnd ? customEnd : customStart;
+      return { start, end, prevStart: null, prevEnd: null };
+    }
     if (period === "month") {
       const start = `${date.slice(0, 7)}-01`;
       const end = shiftDay(`${shiftDay(start, 32).slice(0, 7)}-01`, -1);
@@ -494,8 +544,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const today = localDay(Date.now());
     let date = typeof inputDate === "string" ? inputDate : (inputDate?.date || today);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) date = today;
-    const period = ["today", "month", "7d", "15d", "30d", "60d", "90d", "all"].includes(inputDate?.period) ? inputDate.period : "today";
-    const range = periodRange(date, period);
+    const period = ["today", "month", "7d", "15d", "30d", "60d", "90d", "all", "custom"].includes(inputDate?.period) ? inputDate.period : "today";
+    const customStart = inputDate?.start && /^\d{4}-\d{2}-\d{2}$/.test(inputDate.start) ? inputDate.start : null;
+    const customEnd = inputDate?.end && /^\d{4}-\d{2}-\d{2}$/.test(inputDate.end) ? inputDate.end : null;
+    const range = periodRange(date, period, customStart, customEnd);
     const inRange = (value, start, end) => { if (!value || !start) return false; const d = localDay(value); return d >= start && d <= end; };
     const onDate = value => inRange(value, range.start, range.end);
     // Custo de papel e tinta por pagina (Metas e taxas).
@@ -542,7 +594,25 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const byHour = Array.from({ length: 24 }, (_, hour) => ({ hour, count: 0, salesCents: 0 }));
     const heat = Array.from({ length: 7 }, () => Array(24).fill(0));
     const byWeekday = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"].map(name => ({ name, count: 0, salesCents: 0, days: new Set() }));
-    let cmvCents = 0, costedRevenueCents = 0, uncostedRevenueCents = 0, legacyCents = 0, discountCents = 0, todayCents = 0;
+    const printAudit = {
+      bwPages: 0,
+      bwRevenueCents: 0,
+      colorPages: 0,
+      colorRevenueCents: 0,
+      xeroxCount: 0,
+      xeroxRevenueCents: 0,
+      scanCount: 0,
+      scanRevenueCents: 0,
+      laminationCount: 0,
+      laminationRevenueCents: 0,
+      otherGraphicCount: 0,
+      otherGraphicRevenueCents: 0,
+      totalPages: 0,
+      paperReamsEst: 0,
+      totalGraphicRevenueCents: 0,
+      printers: {}
+    };
+    let cmvCents = 0, printCmvCents = 0, productCmvCents = 0, costedRevenueCents = 0, uncostedRevenueCents = 0, legacyCents = 0, discountCents = 0, todayCents = 0;
     for (const sale of charges) {
       const local = new Date(new Date(sale.at).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
       const day = localDay(sale.at);
@@ -554,13 +624,30 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       discountCents += sale.discountCents || 0;
       if (sale.legacy) { legacyCents += sale.amountCents; }
 
+      // Auditoria grafica (paginas e copias)
+      if (sale.kind === "print") {
+        const isColor = Boolean(sale.color || /colorida/i.test(sale.description));
+        const pages = sale.quantity || Number((String(sale.description).match(/(\d+)\s*p[aá]g/i) || [])[1]) || 1;
+        const prName = sale.printPrinter || "Impressora de rede";
+        printAudit.printers[prName] ||= { name: prName, pages: 0, jobs: 0 };
+        printAudit.printers[prName].pages += pages;
+        printAudit.printers[prName].jobs++;
+        if (isColor) {
+          printAudit.colorPages += pages;
+          printAudit.colorRevenueCents += sale.amountCents;
+        } else {
+          printAudit.bwPages += pages;
+          printAudit.bwRevenueCents += sale.amountCents;
+        }
+      }
+
       const fallbackCategory = sale.kind === "print" ? "Gráfica Rápida" : "Lan House & Serviços Digitais";
       const rows = sale.kind === "sale" ? sale.items || [] : sale.kind === "product" ? [{ productId: sale.productId, name: productById.get(sale.productId)?.name || sale.description, quantity: sale.quantity || 1, totalCents: sale.amountCents }] : [{ name: sale.kind === "time" ? "Tempo de máquina" : sale.kind === "print" ? (/colorida/i.test(sale.description) ? "Impressão colorida (estação)" : "Impressão P&B (estação)") : sale.description, quantity: 1, totalCents: sale.amountCents, category: fallbackCategory }];
       // Cancelamento reduz o valor da cobranca: proporcao aplicada aos itens para o total bater.
       const itemsTotal = rows.reduce((sum, r) => sum + (r.totalCents || 0), 0);
       const ratio = itemsTotal > 0 ? sale.amountCents / itemsTotal : 0;
       if (sale.kind === "print" && !sale.legacy && (db.settings.printBWCostCents || db.settings.printColorCostCents)) {
-        const cost = printCost(sale); cmvCents += cost; costedRevenueCents += sale.amountCents;
+        const cost = printCost(sale); cmvCents += cost; printCmvCents += cost; costedRevenueCents += sale.amountCents;
         const key = rows[0].name; byProduct[key] ||= { productId: key, name: key, category: "Gráfica Rápida", quantity: 0, amountCents: 0, costCents: 0 };
         byProduct[key].quantity += sale.quantity || 1; byProduct[key].amountCents += sale.amountCents; byProduct[key].costCents += cost;
         const cat = byCategory["Gráfica Rápida"]; cat.count += sale.quantity || 1; cat.revenueCents += sale.amountCents;
@@ -573,6 +660,32 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         const target = byCategory[cat] || (byCategory[cat] = { count: 0, revenueCents: 0, color: "#64748b" });
         target.count += (r.quantity || 1);
         target.revenueCents += revenue;
+
+        // Auditoria grafica em itens de balcao (Xerox, Impressoes, Scanner, Plastificacao)
+        if (sale.kind !== "print") {
+          const nameLower = (r.name || "").toLowerCase();
+          const qty = r.quantity || 1;
+          const isColor = /color/i.test(nameLower);
+          if (/xerox|c[oó]pia/i.test(nameLower) && !/cd|dvd/i.test(nameLower)) {
+            printAudit.xeroxCount += qty;
+            printAudit.xeroxRevenueCents += revenue;
+            if (isColor) { printAudit.colorPages += qty; printAudit.colorRevenueCents += revenue; }
+            else { printAudit.bwPages += qty; printAudit.bwRevenueCents += revenue; }
+          } else if (/impress[aã]o/i.test(nameLower)) {
+            if (isColor) { printAudit.colorPages += qty; printAudit.colorRevenueCents += revenue; }
+            else { printAudit.bwPages += qty; printAudit.bwRevenueCents += revenue; }
+          } else if (/scan|digitaliz/i.test(nameLower)) {
+            printAudit.scanCount += qty;
+            printAudit.scanRevenueCents += revenue;
+          } else if (/plastif|encadern/i.test(nameLower)) {
+            printAudit.laminationCount += qty;
+            printAudit.laminationRevenueCents += revenue;
+          } else if (cat === "Gráfica Rápida") {
+            printAudit.otherGraphicCount += qty;
+            printAudit.otherGraphicRevenueCents += revenue;
+          }
+        }
+
         if (sale.legacy) continue;
         const key = r.productId || r.name;
         byProduct[key] ||= { productId: key, name: r.name, category: cat, quantity: 0, amountCents: 0, costCents: null };
@@ -580,12 +693,40 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         byProduct[key].amountCents += revenue;
         if (product && Number.isInteger(product.costCents)) {
           const cost = product.costCents * (r.quantity || 1);
-          cmvCents += cost; costedRevenueCents += revenue;
+          cmvCents += cost; productCmvCents += cost; costedRevenueCents += revenue;
           byProduct[key].costCents = (byProduct[key].costCents || 0) + cost;
         } else uncostedRevenueCents += revenue;
       }
     }
     for (const row of Object.values(byProduct)) row.profitCents = row.costCents === null ? null : row.amountCents - row.costCents;
+
+    printAudit.totalPages = printAudit.bwPages + printAudit.colorPages;
+    printAudit.paperReamsEst = Math.round((printAudit.totalPages / 500) * 10) / 10;
+    printAudit.totalGraphicRevenueCents = printAudit.bwRevenueCents + printAudit.colorRevenueCents + printAudit.scanRevenueCents + printAudit.laminationRevenueCents + printAudit.otherGraphicRevenueCents;
+    printAudit.printersList = Object.values(printAudit.printers).sort((a, b) => b.pages - a.pages);
+
+    // Horarios de pico e analise por turno
+    const activeHours = byHour.filter(h => h.hour >= 8 && h.hour <= 22);
+    const peakHour = activeHours.length ? activeHours.reduce((best, h) => (h.salesCents > best.salesCents || (h.salesCents === best.salesCents && h.count > best.count)) ? h : best, activeHours[0]) : null;
+    const slowCandidates = activeHours.filter(h => h.count > 0);
+    const slowHour = slowCandidates.length ? slowCandidates.reduce((slowest, h) => h.count < slowest.count ? h : slowest, slowCandidates[0]) : null;
+    const dayparts = [
+      { id: "morning", name: "Manhã", range: "08h às 12h", icon: "🌅", count: 0, salesCents: 0 },
+      { id: "lunch", name: "Almoço", range: "12h às 14h", icon: "☀️", count: 0, salesCents: 0 },
+      { id: "afternoon", name: "Tarde", range: "14h às 18h", icon: "⚡", count: 0, salesCents: 0 },
+      { id: "night", name: "Noite", range: "18h às 22h", icon: "🌙", count: 0, salesCents: 0 }
+    ];
+    for (const h of byHour) {
+      if (h.hour >= 8 && h.hour < 12) { dayparts[0].count += h.count; dayparts[0].salesCents += h.salesCents; }
+      else if (h.hour >= 12 && h.hour < 14) { dayparts[1].count += h.count; dayparts[1].salesCents += h.salesCents; }
+      else if (h.hour >= 14 && h.hour < 18) { dayparts[2].count += h.count; dayparts[2].salesCents += h.salesCents; }
+      else if (h.hour >= 18 && h.hour < 22) { dayparts[3].count += h.count; dayparts[3].salesCents += h.salesCents; }
+    }
+    const hourlyPeak = {
+      peakHour: peakHour ? { hour: peakHour.hour, count: peakHour.count, salesCents: peakHour.salesCents, label: `${String(peakHour.hour).padStart(2, "0")}h às ${String(peakHour.hour + 1).padStart(2, "0")}h` } : null,
+      slowHour: slowHour ? { hour: slowHour.hour, count: slowHour.count, salesCents: slowHour.salesCents, label: `${String(slowHour.hour).padStart(2, "0")}h às ${String(slowHour.hour + 1).padStart(2, "0")}h` } : null,
+      dayparts
+    };
 
     const salesCents = charges.reduce((sum, item) => sum + item.amountCents, 0);
     const receivedCents = payments.reduce((sum, item) => sum + item.amountCents, 0);
@@ -594,27 +735,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const expensesCents = expenses.reduce((sum, item) => sum + item.amountCents, 0);
     const byExpenseCategory = {};
     for (const item of expenses) byExpenseCategory[item.category] = (byExpenseCategory[item.category] || 0) + item.amountCents;
-    // Periodo anterior do mesmo tamanho: base do comparativo.
-    const prevCharges = range.prevStart ? allCharges.filter(item => inRange(item.at, range.prevStart, range.prevEnd)) : [];
-    const prevPayments = range.prevStart ? allPayments.filter(item => inRange(item.at, range.prevStart, range.prevEnd)) : [];
-    const prevByDayMap = {};
-    for (const sale of prevCharges) { const d = localDay(sale.at); prevByDayMap[d] ||= { date: d, salesCents: 0, count: 0 }; prevByDayMap[d].salesCents += sale.amountCents; prevByDayMap[d].count++; }
-    const summaryOf = (list, pays, start, end) => {
-      const sales = list.reduce((sum, item) => sum + item.amountCents, 0);
-      const exp = (db.expenses || []).filter(item => start && inRange(item.at, start, end)).reduce((sum, item) => sum + item.amountCents, 0);
-      return { salesCents: sales, count: list.length, ticketCents: list.length ? Math.round(sales / list.length) : 0, receivedCents: pays.reduce((sum, item) => sum + item.amountCents, 0), expensesCents: exp,
-        timeCents: list.filter(item => item.kind === "time").reduce((sum, item) => sum + item.amountCents, 0), printCents: list.filter(item => item.kind === "print").reduce((sum, item) => sum + item.amountCents, 0) };
-    };
-    const compare = range.prevStart ? { current: summaryOf(charges, payments, range.start, range.end), previous: summaryOf(prevCharges, prevPayments, range.prevStart, range.prevEnd) } : null;
-    const previousSalesCents = range.prevStart ? allCharges.filter(item => inRange(item.at, range.prevStart, range.prevEnd)).reduce((sum, item) => sum + item.amountCents, 0) : null;
-    const grossProfitCents = salesCents - cmvCents;
-    const lowStock = db.products.filter(item => item.active && item.type === "stock" && item.stock <= (item.minStock || 0))
-      .map(item => ({ id: item.id, code: item.code, name: item.name, stock: item.stock, minStock: item.minStock || 0 }))
-      .sort((a, b) => a.stock - b.stock);
 
-    // ---------- Indicadores gerenciais (todos calculados dos dados reais) ----------
+    // Configuracoes de taxas e calculo de custos
     const settings = db.settings || {};
-    // Receitas fora das vendas (comissoes da Speed Financeira etc.).
     const incomes = (db.incomes || []).filter(item => onDate(item.at)).sort((a, b) => String(b.at).localeCompare(String(a.at)));
     const incomesCents = incomes.reduce((sum, item) => sum + item.amountCents, 0);
     const feePct = { debit: settings.feeDebitPct || 0, credit: settings.feeCreditPct || 0, card: settings.feeCardPct || 0, pix: settings.feePixPct || 0, cash: 0 };
@@ -626,6 +749,37 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (sale.legacy || sale.kind !== "sale") return 0;
       return (sale.items || []).reduce((sum, r) => { const product = r.productId ? productById.get(r.productId) : null; return sum + (product && Number.isInteger(product.costCents) ? product.costCents * (r.quantity || 1) : 0); }, 0);
     };
+
+    // Periodo anterior do mesmo tamanho: base do comparativo.
+    const prevCharges = range.prevStart ? allCharges.filter(item => inRange(item.at, range.prevStart, range.prevEnd)) : [];
+    const prevPayments = range.prevStart ? allPayments.filter(item => inRange(item.at, range.prevStart, range.prevEnd)) : [];
+    const prevByDayMap = {};
+    for (const sale of prevCharges) { const d = localDay(sale.at); prevByDayMap[d] ||= { date: d, salesCents: 0, count: 0 }; prevByDayMap[d].salesCents += sale.amountCents; prevByDayMap[d].count++; }
+    const summaryOf = (list, pays, start, end) => {
+      const sales = list.reduce((sum, item) => sum + item.amountCents, 0);
+      const exp = (db.expenses || []).filter(item => start && inRange(item.at, start, end)).reduce((sum, item) => sum + item.amountCents, 0);
+      const fees = feeOf(pays);
+      const cmv = list.reduce((sum, sale) => sum + costOfCharge(sale), 0);
+      const profit = sales - fees - cmv - exp;
+      return {
+        salesCents: sales,
+        count: list.length,
+        ticketCents: list.length ? Math.round(sales / list.length) : 0,
+        receivedCents: pays.reduce((sum, item) => sum + item.amountCents, 0),
+        expensesCents: exp,
+        feesCents: fees,
+        cmvCents: cmv,
+        profitCents: profit,
+        timeCents: list.filter(item => item.kind === "time").reduce((sum, item) => sum + item.amountCents, 0),
+        printCents: list.filter(item => item.kind === "print").reduce((sum, item) => sum + item.amountCents, 0)
+      };
+    };
+    const compare = range.prevStart ? { current: summaryOf(charges, payments, range.start, range.end), previous: summaryOf(prevCharges, prevPayments, range.prevStart, range.prevEnd) } : null;
+    const previousSalesCents = range.prevStart ? allCharges.filter(item => inRange(item.at, range.prevStart, range.prevEnd)).reduce((sum, item) => sum + item.amountCents, 0) : null;
+    const grossProfitCents = salesCents - cmvCents;
+    const lowStock = db.products.filter(item => item.active && item.type === "stock" && item.stock <= (item.minStock || 0))
+      .map(item => ({ id: item.id, code: item.code, name: item.name, stock: item.stock, minStock: item.minStock || 0 }))
+      .sort((a, b) => a.stock - b.stock);
 
     // Meta do mes da data escolhida: ritmo por dia trabalhado e projecao de fechamento.
     const workDays = settings.workDays || 6;
@@ -676,6 +830,21 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const abcTotal = abcRows.reduce((sum, row) => sum + row.amountCents, 0);
     let running = 0;
     const abc = abcRows.map(row => { const before = running; running += row.amountCents; const share = abcTotal ? before / abcTotal : 0; return { ...row, cumulative: abcTotal ? Math.round(running / abcTotal * 1000) / 10 : 0, abcClass: share < 0.8 ? "A" : share < 0.95 ? "B" : "C" }; });
+    const abcCount = { A: 0, B: 0, C: 0 };
+    const abcRevenue = { A: 0, B: 0, C: 0 };
+    for (const item of abc) {
+      if (abcCount[item.abcClass] !== undefined) {
+        abcCount[item.abcClass]++;
+        abcRevenue[item.abcClass] += item.amountCents;
+      }
+    }
+    const abcSummary = {
+      totalItems: abc.length,
+      totalRevenueCents: abcTotal,
+      A: { class: "A", count: abcCount.A, revenueCents: abcRevenue.A, pct: abcTotal ? Math.round(abcRevenue.A / abcTotal * 1000) / 10 : 0, role: "80% da Receita (Produtos Essenciais)", tip: "Itens vitais. Nunca podem faltar estoque ou manutenção." },
+      B: { class: "B", count: abcCount.B, revenueCents: abcRevenue.B, pct: abcTotal ? Math.round(abcRevenue.B / abcTotal * 1000) / 10 : 0, role: "15% da Receita (Intermediários)", tip: "Itens de giro moderado. Mantenha compras regulares equilibradas." },
+      C: { class: "C", count: abcCount.C, revenueCents: abcRevenue.C, pct: abcTotal ? Math.round(abcRevenue.C / abcTotal * 1000) / 10 : 0, role: "5% da Receita (Cauda Longa)", tip: "Itens de baixo giro. Evite manter capital parado." }
+    };
     // Historico do sistema anterior: nos servicos, estoque negativo = unidades vendidas desde o inicio.
     const legacyUnits = db.products.filter(item => item.type === "service" && item.stock < 0)
       .map(item => ({ code: item.code, name: item.name, category: item.category, units: -item.stock, priceCents: item.priceCents, estimatedCents: -item.stock * item.priceCents }))
@@ -735,6 +904,51 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       suppliesCents: adjustments.filter(a => a.direction === "in").reduce((sum, a) => sum + a.amountCents, 0)
     };
 
+    // Auditoria de Seguranca do Caixa (Anti-fraude, diferencas de turno e descontos)
+    const operatorShifts = {};
+    for (const s of shiftsInPeriod) {
+      const op = s.operator || "Sistema";
+      operatorShifts[op] ||= { operator: op, shiftsCount: 0, exactCount: 0, shortCents: 0, overCents: 0, netDiffCents: 0 };
+      operatorShifts[op].shiftsCount++;
+      if (s.diffCents === 0) operatorShifts[op].exactCount++;
+      else if (s.diffCents < 0) operatorShifts[op].shortCents += s.diffCents;
+      else if (s.diffCents > 0) operatorShifts[op].overCents += s.diffCents;
+      if (s.diffCents !== null) operatorShifts[op].netDiffCents += s.diffCents;
+    }
+    const paymentByCharge = new Map(payments.map(p => [p.chargeId, p]));
+    const discountsByOperator = {};
+    for (const sale of charges) {
+      if (sale.discountCents > 0) {
+        const payment = paymentByCharge.get(sale.id);
+        const op = payment?.operator || sale.operator || "Sistema";
+        discountsByOperator[op] ||= { operator: op, count: 0, totalDiscountCents: 0, totalSalesCents: 0 };
+        discountsByOperator[op].count++;
+        discountsByOperator[op].totalDiscountCents += sale.discountCents;
+        discountsByOperator[op].totalSalesCents += sale.amountCents;
+      }
+    }
+    const cancelledCharges = allCharges.filter(sale => onDate(sale.cancelledAt || sale.at) && (sale.cancelledAt || sale.cancelReason)).map(s => ({
+      id: s.id,
+      at: s.cancelledAt || s.at,
+      description: s.description,
+      originalAmountCents: s.originalAmountCents || s.amountCents,
+      amountCents: s.amountCents,
+      cancelledCents: (s.originalAmountCents || s.amountCents) - s.amountCents,
+      cancelledBy: s.cancelledBy || "Sistema",
+      cancelReason: s.cancelReason || "Cancelamento de pendência"
+    }));
+    const totalCancelledCents = cancelledCharges.reduce((sum, c) => sum + c.cancelledCents, 0);
+    const securityAudit = {
+      shiftsByOperator: Object.values(operatorShifts).sort((a, b) => a.netDiffCents - b.netDiffCents),
+      discountsByOperator: Object.values(discountsByOperator).sort((a, b) => b.totalDiscountCents - a.totalDiscountCents),
+      cancelledCharges: cancelledCharges.slice(0, 50),
+      totalDiscountCents: discountCents,
+      discountCount: charges.filter(s => (s.discountCents || 0) > 0).length,
+      totalShortCents: cash.shortCents,
+      totalOverCents: cash.overCents,
+      totalCancelledCents
+    };
+
     // Ponto de equilibrio: despesas medias dos meses com despesa / margem de contribuicao conhecida.
     const monthsWithExpenses = monthly.filter(row => row.expensesCents > 0);
     const avgExpensesCents = monthsWithExpenses.length ? Math.round(monthsWithExpenses.reduce((sum, row) => sum + row.expensesCents, 0) / monthsWithExpenses.length) : 0;
@@ -755,6 +969,52 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (!feePct.debit && !feePct.credit && (byMethod.debit + byMethod.credit + byMethod.card) > 0) alerts.push({ level: "info", title: "Taxas das maquininhas não cadastradas", text: "Cadastre as taxas de débito e crédito em Metas e taxas para o DRE descontar o custo do cartão." });
     if (!avgExpensesCents) alerts.push({ level: "info", title: "Despesas não lançadas", text: "Lance aluguel, energia, internet e salários (ou envie o PDF da conta) para o resultado ficar real." });
     if (stock.stale.length) alerts.push({ level: "info", title: "Mercadoria parada", text: `${stock.stale.length} produto(s) com estoque e sem venda há 60 dias.` });
+
+    // Desempenho por banco parceiro (Correspondente Bancario / Speed Financeira)
+    const knownBanks = (db.vault?.banks || []).map(b => b.name).filter(Boolean);
+    const bankMap = {};
+    for (const b of knownBanks) {
+      bankMap[b.toLowerCase()] = { name: b, count: 0, totalCents: 0 };
+    }
+    for (const inc of incomes) {
+      const text = `${inc.category || ""} ${inc.description || ""}`.toLowerCase();
+      let matchedBank = null;
+      for (const b of knownBanks) {
+        if (text.includes(b.toLowerCase())) {
+          matchedBank = b.toLowerCase();
+          break;
+        }
+      }
+      const key = matchedBank || (inc.category || "Outros").trim().toLowerCase();
+      if (!bankMap[key]) {
+        bankMap[key] = { name: inc.category || "Outros", count: 0, totalCents: 0 };
+      }
+      bankMap[key].count += 1;
+      bankMap[key].totalCents += inc.amountCents;
+    }
+    const bankPerformance = Object.values(bankMap)
+      .filter(item => item.totalCents > 0 || item.count > 0)
+      .map(item => ({
+        ...item,
+        avgTicketCents: item.count ? Math.round(item.totalCents / item.count) : 0
+      }))
+      .sort((a, b) => b.totalCents - a.totalCents);
+
+    // Gasto e comissao registrados no Speed Marketing
+    let marketingSpendCents = 0;
+    let marketingCommissionCents = 0;
+    try {
+      const rawMkt = db.marketing?.store?.speed_resultados_reais_v1;
+      const mktList = rawMkt ? JSON.parse(rawMkt) : [];
+      if (Array.isArray(mktList)) {
+        for (const row of mktList) {
+          if (row?.date && onDate(row.date)) {
+            if (typeof row.spend === "number" && row.spend > 0) marketingSpendCents += Math.round(row.spend * 100);
+            if (typeof row.commission === "number" && row.commission > 0) marketingCommissionCents += Math.round(row.commission * 100);
+          }
+        }
+      }
+    } catch { }
 
     return {
       ok: true,
@@ -780,7 +1040,33 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       byHour,
       byWeekday: byWeekday.map(({ days, ...row }) => ({ ...row, days: days.size })),
       // DRE: CMV so com custo cadastrado; o que nao tem custo aparece separado para nao inventar margem.
-      dre: { grossCents: salesCents + discountCents, discountCents, feesCents, byFee, netCents: salesCents - feesCents, cmvCents, grossProfitCents: salesCents - feesCents - cmvCents, expensesCents, profitCents: salesCents + incomesCents - feesCents - cmvCents - expensesCents, incomesCents, costedRevenueCents, uncostedRevenueCents, legacyCents },
+      dre: {
+        grossCents: salesCents + discountCents,
+        discountCents,
+        feesCents,
+        byFee,
+        netCents: salesCents - feesCents,
+        cmvCents,
+        printCmvCents,
+        productCmvCents,
+        coveragePct: salesCents ? Math.round(costedRevenueCents / salesCents * 1000) / 10 : 0,
+        grossMarginPct: salesCents ? Math.round((salesCents - feesCents - cmvCents) / salesCents * 1000) / 10 : 0,
+        netMarginPct: salesCents ? Math.round((salesCents + incomesCents - feesCents - cmvCents - expensesCents) / salesCents * 1000) / 10 : 0,
+        grossProfitCents: salesCents - feesCents - cmvCents,
+        expensesCents,
+        profitCents: salesCents + incomesCents - feesCents - cmvCents - expensesCents,
+        incomesCents,
+        marketingSpendCents,
+        marketingCommissionCents,
+        costedRevenueCents,
+        uncostedRevenueCents,
+        legacyCents
+      },
+      printAudit,
+      hourlyPeak,
+      abcSummary,
+      securityAudit,
+      bankPerformance,
       payables: (db.expenses || []).filter(item => item.paid === false).sort((x, y) => String(x.at).localeCompare(String(y.at))), goal, monthly, ticketBands, abc, legacyUnits: legacyUnits.slice(0, 150), clients: Object.values(byClient).sort((a, b) => b.salesCents - a.salesCents).slice(0, 50), agingBuckets: agingBuckets.map(({ max, ...row }) => row), stock, cash, breakEven, alerts, heat, yearly, incomes: incomes.slice(0, 200), compare, prevByDay: Object.values(prevByDayMap).sort((a, b) => a.date.localeCompare(b.date)),
       expenses: expenses.slice(0, 300),
       expensesCents,
@@ -1087,7 +1373,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (p === "/api/reports" && req.method === "GET") {
       return send(res, 200, report({
         date: url.searchParams.get("date") || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }),
-        period: url.searchParams.get("period") || "today"
+        period: url.searchParams.get("period") || "today",
+        start: url.searchParams.get("start") || null,
+        end: url.searchParams.get("end") || null
       }));
     }
     if (p === "/api/machines/register" && req.method === "POST") {
@@ -1744,6 +2032,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         workDays: number(input.workDays ?? 6, 1, 7, "Dias de trabalho por semana"),
         printBWCostCents: input.printBWCost !== undefined && input.printBWCost !== "" ? money(input.printBWCost, "Custo da pagina P&B") : (db.settings.printBWCostCents || 0),
         printColorCostCents: input.printColorCost !== undefined && input.printColorCost !== "" ? money(input.printColorCost, "Custo da pagina colorida") : (db.settings.printColorCostCents || 0),
+        pixKey: input.pixKey !== undefined ? label(input.pixKey, 100) : (db.settings.pixKey || ""),
         panelOnlyHere: input.panelOnlyHere === true || input.panelOnlyHere === "true"
       });
       event("sistema", "Metas e taxas atualizadas", "", user.name); save();
@@ -1943,7 +2232,6 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   }
 
   const vaultKeys = new Map(), vaultAttempts = new Map();
-  const vaultKeyFile = path.join(dataDir, "cofre.chave");
   function vaultAutoKey() {
     if (!fs.existsSync(vaultKeyFile)) { fs.mkdirSync(dataDir, { recursive: true }); fs.writeFileSync(vaultKeyFile, crypto.randomBytes(32).toString("hex")); }
     return Buffer.from(fs.readFileSync(vaultKeyFile, "utf8").trim(), "hex");
@@ -2009,10 +2297,29 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       }
       if (url.pathname.startsWith("/api/")) return await api(req, res, url);
       if (url.pathname === "/marketing" || url.pathname.startsWith("/marketing/")) return serveMarketing(req, res, url);
-      const files = { "/": "index.html", "/index.html": "index.html", "/app.js": "app.js", "/styles.css": "styles.css" };
+      const files = {
+        "/": "index.html",
+        "/index.html": "index.html",
+        "/app.js": "app.js",
+        "/styles.css": "styles.css",
+        "/favicon.ico": "favicon.ico",
+        "/favicon.svg": "favicon.svg",
+        "/favicon-32x32.png": "favicon-32x32.png",
+        "/favicon-16x16.png": "favicon-16x16.png",
+        "/apple-touch-icon.png": "apple-touch-icon.png"
+      };
       const file = files[url.pathname]; if (!file || req.method !== "GET") throw err(404, "Pagina nao encontrada");
-      const type = file.endsWith(".html") ? "text/html" : file.endsWith(".css") ? "text/css" : "application/javascript";
-      res.writeHead(200, { "content-type": `${type}; charset=utf-8`, "cache-control": "no-store", "x-content-type-options": "nosniff" });
+      const mimeTypes = {
+        ".html": "text/html; charset=utf-8",
+        ".css": "text/css; charset=utf-8",
+        ".js": "application/javascript; charset=utf-8",
+        ".svg": "image/svg+xml",
+        ".png": "image/png",
+        ".ico": "image/x-icon"
+      };
+      const ext = path.extname(file).toLowerCase();
+      const type = mimeTypes[ext] || "application/octet-stream";
+      res.writeHead(200, { "content-type": type, "cache-control": ext === ".html" || ext === ".js" || ext === ".css" ? "no-store" : "public, max-age=86400", "x-content-type-options": "nosniff" });
       fs.createReadStream(path.join(__dirname, "public", file)).pipe(res);
     } catch (cause) {
       if ((cause.status || 500) >= 500) console.error(cause);
