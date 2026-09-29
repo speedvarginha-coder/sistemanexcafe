@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.5"
+$AgentVersion = "0.3.6"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -1989,6 +1989,8 @@ function Invoke-AgentRun {
     Send-AgentEvent -Config $config -Title "Agente iniciado" -Detail "$env:USERNAME; $captureInfo"
 
     $heartbeat = Join-Path $UserDataRoot "heartbeat"
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    $tokenTag = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes([string]$config.AgentToken))).Replace("-", "").Substring(0, 16)
     while ($true) {
         # Sinal de vida para o supervisor (SYSTEM): se parar de ser gravado, o agente travou e e reiniciado.
         try { [IO.File]::WriteAllText($heartbeat, (Get-Date).ToString("o")) } catch { }
@@ -1996,6 +1998,14 @@ function Invoke-AgentRun {
             $command = Get-AgentCommand -Config $config
             $consecutiveFailures = 0
             $lastCommand = $command
+            # Primeira conexao depois de instalar (token novo): pedidos de desligar/reiniciar que ja
+            # existiam no servidor sao antigos (ex.: "Desligar todas" antes da instalacao) e nao sao executados.
+            if ($state.SeqToken -ne $tokenTag) {
+                Add-OrUpdateProperty -Object $state -Name "LastShutdownSeq" -Value ([int]$command.shutdownSeq)
+                Add-OrUpdateProperty -Object $state -Name "LastRestartSeq" -Value ([int]$command.restartSeq)
+                Add-OrUpdateProperty -Object $state -Name "SeqToken" -Value $tokenTag
+                Save-State -State $state
+            }
             try { $serverOffsetMs = ([datetime]::Parse($command.serverTime).ToUniversalTime() - (Get-Date).ToUniversalTime()).TotalMilliseconds } catch { }
 
             if ([int]$state.LastRestoreSeq -gt [int]$command.appliedRestoreSeq) {
