@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.6"
+$AgentVersion = "0.3.7"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -280,7 +280,8 @@ function Clear-FolderContent {
 }
 
 function Copy-FolderContent {
-    param([string]$Source, [string]$Destination)
+    # $Keep: lista de extensoes (".lnk") ou nomes ("desktop.ini") a copiar; vazio copia tudo.
+    param([string]$Source, [string]$Destination, [string[]]$Keep = $null)
 
     if (-not (Test-Path $Source)) {
         return
@@ -288,14 +289,15 @@ function Copy-FolderContent {
 
     New-Item -ItemType Directory -Path $Destination -Force | Out-Null
     Get-ChildItem -LiteralPath $Source -Force -ErrorAction Stop | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) } | ForEach-Object {
+        if ($Keep -and -not ($_.PSIsContainer -eq $false -and ($Keep -contains $_.Extension.ToLower() -or $Keep -contains $_.Name.ToLower()))) { return }
         $item = $_.FullName
         try {
             Copy-Item -LiteralPath $item -Destination $Destination -Recurse -Force -ErrorAction Stop
         } catch {
-            # Arquivo que sumiu durante a copia (antivirus apagou, download terminou): ignora e segue.
-            # Se o arquivo ainda existe, o erro e real e interrompe, para nao salvar um padrao incompleto.
-            if (Test-Path -LiteralPath $item) { throw }
-            Write-AgentLog "Arquivo sumiu durante a copia e foi ignorado: $item"
+            # Arquivo que sumiu (download terminou) ou que o antivirus trava (aparece na pasta mas "nao existe"): ignora e segue.
+            # Outros erros interrompem, para nao salvar um padrao incompleto.
+            if ((Test-Path -LiteralPath $item) -and $_.Exception.Message -notmatch 'localizar o arquivo|could not find|v[ií]rus|indesejado|unwanted') { throw }
+            Write-AgentLog "Arquivo ignorado na copia do padrao (sumiu ou bloqueado pelo antivirus): $item"
         }
     }
 }
@@ -406,7 +408,10 @@ function Invoke-CaptureBaseline {
             } else {
                 New-Item -ItemType Directory -Path $destination -Force | Out-Null
             }
-            Copy-FolderContent -Source $source -Destination $destination
+            # Area de trabalho e Downloads: so o que fica no padrao (atalhos e desktop.ini). Nao copia arquivo
+            # de cliente nem arquivo travado pelo antivirus (na maquina 15 um virus em Downloads parava a instalacao).
+            $keep = switch ($folder) { "Desktop" { @(".lnk", ".url", "desktop.ini") } "Downloads" { @("desktop.ini") } default { $null } }
+            Copy-FolderContent -Source $source -Destination $destination -Keep $keep
         }
     }
     # Area de trabalho e Downloads do padrao ficam so com atalhos (documento esquecido nao vira parte do padrao).
