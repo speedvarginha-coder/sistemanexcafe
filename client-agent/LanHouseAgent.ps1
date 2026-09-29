@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.2"
+$AgentVersion = "0.3.3"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -1693,14 +1693,28 @@ function Invoke-AgentSupervisor {
         $owner = (Invoke-CimMethod -InputObject $explorer -MethodName GetOwner -ErrorAction SilentlyContinue).User
         if (-not $owner -or $protected -notcontains $owner) { continue }
         $running = @($processes | Where-Object { $_.Name -eq "powershell.exe" -and $_.SessionId -eq $explorer.SessionId -and $_.CommandLine -match '(?i)-Action\s+"?Run' -and $_.CommandLine -match 'LanHouseAgent\.ps1' })
-        if ($running.Count -gt 0) { continue }
-        # Logo apos o login o atalho de inicializacao ainda esta abrindo o agente: da uma folga de 90 s.
-        if (((Get-Date) - $explorer.CreationDate).TotalSeconds -lt 90) { continue }
+        if ($running.Count -gt 0) {
+            # Agente vivo mas travado (ex.: janela modal esperando clique): sem sinal de vida ha 5 min, reinicia.
+            $sid = (Invoke-CimMethod -InputObject $explorer -MethodName GetOwnerSid -ErrorAction SilentlyContinue).Sid
+            $profileDir = (Get-CimInstance Win32_UserProfile -Filter "SID='$sid'" -ErrorAction SilentlyContinue).LocalPath
+            if (-not $profileDir) { continue }
+            $beat = Get-Item -LiteralPath (Join-Path $profileDir "AppData\Local\LanHouseManagerAgent\heartbeat") -ErrorAction SilentlyContinue
+            $oldest = ($running | Sort-Object CreationDate | Select-Object -First 1).CreationDate
+            $last = if ($beat -and $beat.LastWriteTime -gt $oldest) { $beat.LastWriteTime } else { $oldest }
+            if (((Get-Date) - $last).TotalMinutes -lt 5) { continue }
+            foreach ($proc in $running) { Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue }
+            Start-Sleep -Seconds 2
+            $reason = "O agente estava travado na sessao de $owner (sem sinal de vida desde $($last.ToString('HH:mm')))"
+        } else {
+            # Logo apos o login o atalho de inicializacao ainda esta abrindo o agente: da uma folga de 90 s.
+            if (((Get-Date) - $explorer.CreationDate).TotalSeconds -lt 90) { continue }
+            $reason = "O agente estava parado na sessao de $owner"
+        }
         Start-ScheduledTask -TaskName $SessionTaskName
-        Write-AgentLog "Supervisor: agente parado na sessao de $owner; reiniciado."
+        Write-AgentLog "Supervisor: $reason; reiniciado."
         try {
             $base = "$($Config.ServerUrl)".TrimEnd("/"); $id = [Uri]::EscapeDataString($Config.MachineId)
-            $body = [System.Text.Encoding]::UTF8.GetBytes((@{ title = "Agente religado pelo supervisor"; detail = "O agente estava parado na sessao de $owner" } | ConvertTo-Json))
+            $body = [System.Text.Encoding]::UTF8.GetBytes((@{ title = "Agente religado pelo supervisor"; detail = $reason } | ConvertTo-Json))
             Invoke-RestMethod -Method Post -Uri "$base/api/client/$id/event" -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -ContentType "application/json; charset=utf-8" -Body $body -TimeoutSec 5 | Out-Null
         } catch { }
         break
@@ -1951,7 +1965,10 @@ function Invoke-AgentRun {
     $captureInfo = if ($config.LastCapture) { "padrao salvo em $($config.LastCapture)" } else { "PADRAO NAO SALVO: reinstale pela conta Tecnico" }
     Send-AgentEvent -Config $config -Title "Agente iniciado" -Detail "$env:USERNAME; $captureInfo"
 
+    $heartbeat = Join-Path $UserDataRoot "heartbeat"
     while ($true) {
+        # Sinal de vida para o supervisor (SYSTEM): se parar de ser gravado, o agente travou e e reiniciado.
+        try { [IO.File]::WriteAllText($heartbeat, (Get-Date).ToString("o")) } catch { }
         try {
             $command = Get-AgentCommand -Config $config
             $consecutiveFailures = 0
