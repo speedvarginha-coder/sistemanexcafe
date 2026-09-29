@@ -70,6 +70,12 @@ test("operacao completa: login, agente, tempo, caixa, produto e relatorio", asyn
     const close = await request("/api/cash/close", { counted: 20 });
     assert.equal(close.status, 200);
     assert.equal(close.payload.shift.closingExpectedCents, 2000);
+    const summary = (await request(`/api/cash/shifts/${close.payload.shift.id}/summary`)).payload;
+    assert.equal(summary.receivedCents, 1300);
+    assert.equal(summary.byMethod.pix, 300);
+    assert.equal(summary.byMethod.cash, 1000);
+    assert.equal(summary.byKind["Impressões"], 200);
+    assert.equal(summary.differenceCents, 0);
     assert.equal(fs.existsSync(path.join(dataDir, "db.json")), true);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

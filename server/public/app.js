@@ -270,6 +270,8 @@ function formatCredit(seconds) {
   return h ? `${h}h ${String(m).padStart(2,"0")}min` : `${m}min`;
 }
 
+// Guarda o ultimo estado de cada maquina para destacar o cartao quando ele muda (cliente encerrou, tempo acabou).
+const machineToneSeen = {}, machineToneChanged = {};
 function machineCard(machine, compact = false) {
   const session = machine.session;
   const restoring = machine.restoreSeq > (machine.appliedRestoreSeq || 0);
@@ -328,12 +330,16 @@ function machineCard(machine, compact = false) {
           <button type="button" data-action="quickStart" data-minutes="60" data-id="${html(machine.id)}" title="Liberar 1 hora agora (1 clique)">1h</button>
           <button type="button" data-action="quickStart" data-mode="open" data-id="${html(machine.id)}" title="Liberar tempo livre agora (1 clique)">Livre</button>
         </div>
-        <button type="button" class="detailedReleaseBtn secondaryBtn" data-action="start" data-id="${html(machine.id)}" ${available ? "" : "disabled"}>Opções avançadas...</button>
+        <button type="button" class="detailedReleaseBtn secondaryBtn" data-action="start" data-id="${html(machine.id)}" ${available ? "" : "disabled"}>Mais opções</button>
       </div>`;
   }
 
+  const lastTone = machineToneSeen[machine.id];
+  if (lastTone && lastTone !== tone) machineToneChanged[machine.id] = Date.now();
+  machineToneSeen[machine.id] = tone;
+  const justChanged = Date.now() - (machineToneChanged[machine.id] || 0) < 1500;
   return `
-    <article class="machine ${tone}${compact ? " compact" : ""}" data-machine="${html(machine.id)}">
+    <article class="machine ${tone}${compact ? " compact" : ""}${justChanged ? " stateChanged" : ""}" data-machine="${html(machine.id)}">
       <div class="machineTop">
         <div class="machineHeaderInfo">
           <h3>${html(machine.name)}</h3>
@@ -365,19 +371,19 @@ function machineCard(machine, compact = false) {
       ${actionHtml}
 
       <details class="machineMore">
-        <summary>Mais comandos</summary>
+        <summary>Comandos</summary>
         <div class="machineMoreActions">
           ${active ? `
-            <button data-action="${machine.locked ? "unlock" : "lock"}" data-id="${html(machine.id)}">${machine.locked ? "▶ Retomar" : "⏸ Pausar"}</button>
+            <button data-action="${machine.locked ? "unlock" : "lock"}" data-id="${html(machine.id)}">${machine.locked ? "Retomar" : "Pausar"}</button>
             <button data-action="summary" data-id="${html(machine.id)}">Resumo</button>
-            <button data-action="move" data-id="${html(machine.id)}">⇄ Mover</button>
+            <button data-action="move" data-id="${html(machine.id)}">Mover</button>
             <button data-action="restart" data-id="${html(machine.id)}">Reiniciar</button>
           ` : ""}
           <button data-action="monitor" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>Monitorar</button>
           ${active ? "" : `
             <button data-action="reboot" data-id="${html(machine.id)}" ${machine.status === "offline" ? 'disabled title="Sem conexão: reinicie no próprio PC"' : ""}>Reiniciar</button>
           `}
-          <button data-action="shutdown" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>⏻ Desligar</button>
+          <button data-action="shutdown" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>Desligar</button>
           <button data-action="maintenance" data-id="${html(machine.id)}" ${active ? "disabled" : ""}>${machine.maintenance ? "Fim Manut." : "Manutenção"}</button>
           ${state.user.role === "admin" ? `
             <button data-action="rename" data-id="${html(machine.id)}">Renomear</button>
@@ -748,7 +754,7 @@ function renderCash() {
   $("#cashAdjustButton").disabled = !shift; $("#printSaleButton").disabled = !shift;
   $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${txt(item.description)}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
   $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador"], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(state.charges.find(c => c.id === item.chargeId)?.description || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method]}</td><td>${html(item.operator)}</td></tr>`), "Nenhum recebimento registrado.");
-  $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado"], state.cashShifts.filter(item => item.closedAt).map(item => `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td></tr>`), "Nenhum caixa fechado.");
+  $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado", "Diferença", ""], state.cashShifts.filter(item => item.closedAt).map(item => { const diff = item.closingCountedCents - item.closingExpectedCents; return `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td><td class="money ${diff < 0 ? "bad" : ""}">${diff ? currency(diff) : "-"}</td><td class="actionsCell"><button type="button" data-shift-summary="${html(item.id)}">Resumo</button></td></tr>`; }), "Nenhum caixa fechado.");
 
   renderPOS();
 }
@@ -2490,6 +2496,8 @@ function renderYearly() {
   const refDate = report.date || new Date().toISOString().slice(0, 10);
   const refYear = refDate.slice(0, 4), refMonth = Number(refDate.slice(5, 7)) - 1;
   const [cur, prev] = [years.find(y => y === refYear) || years[0], years.find(y => y < (years.find(z => z === refYear) || years[0]))];
+  if (!prev) return renderLast12(yearly, refYear, refMonth, fmt);
+  setTextSafe("#rpYearTitle", "Ano a ano: como a loja está indo mês a mês");
   // Acumulado do ano ate o mes de referencia, comparado com o mesmo periodo do ano anterior.
   const ytd = y => y ? yearly[y].slice(0, refMonth + 1).reduce((s, r) => s + r[yearMode], 0) : null;
   const yearTotal = y => yearly[y].reduce((s, r) => s + r[yearMode], 0);
@@ -2530,6 +2538,34 @@ function renderYearly() {
   });
   rows.push(`<tr class="rpTotalRow"><td><strong>Total</strong></td>${years.map(y => `<td class="money"><strong>${fmt(yearTotal(y))}</strong></td>`).join("")}${years.length > 1 ? `<td>${delta(yearTotal(years[0]), yearTotal(years[1]), yearMode === "expensesCents")}</td>` : ""}</tr>`);
   setHtml("#rpYearTable", table(head, rows));
+}
+// Enquanto só existe um ano de dados, o comparativo anual não informa nada: mostra os últimos 12 meses.
+function renderLast12(yearly, refYear, refMonth, fmt) {
+  setTextSafe("#rpYearTitle", "Últimos 12 meses");
+  const months = Array.from({ length: 12 }, (_, i) => {
+    const back = 11 - i, m = (refMonth - back + 120) % 12, y = String(Number(refYear) - (refMonth - back < 0 ? 1 : 0));
+    return { label: `${MONTH_NAMES[m]}/${y.slice(2)}`, v: yearly[y]?.[m]?.[yearMode] || 0, current: back === 0 };
+  });
+  const withData = months.filter(r => r.v);
+  const total = months.reduce((s, r) => s + r.v, 0);
+  const best = months.reduce((a, b) => b.v > a.v ? b : a);
+  const last = months[11], before = months[10];
+  setHtml("#rpYearSummary",
+    kpi("Total em 12 meses", fmt(total), `${withData.length} ${withData.length === 1 ? "mês" : "meses"} com movimento`) +
+    kpi("Média por mês", fmt(Math.round(total / (withData.length || 1))), "considerando só os meses com movimento") +
+    kpi("Mês atual", fmt(last.v), before.v ? `mês anterior: ${fmt(before.v)}` : "sem dados do mês anterior", before.v ? (last.v >= before.v ? "good" : "bad") : "") +
+    kpi("Melhor mês", best.v ? best.label : "-", best.v ? fmt(best.v) : ""));
+  const width = 900, height = 240, top = 18, bottom = 30, left = 10, chartH = height - top - bottom, step = (width - left * 2) / 12;
+  const max = Math.max(1, ...months.map(r => r.v)), min = Math.min(0, ...months.map(r => r.v));
+  const y0 = top + chartH - (0 - min) / (max - min) * chartH, bw = Math.min(44, step - 14);
+  const bars = months.map((r, i) => {
+    const h = Math.abs(r.v) / (max - min) * chartH, x = left + i * step + (step - bw) / 2;
+    return `<rect x="${x.toFixed(1)}" y="${(r.v >= 0 ? y0 - h : y0).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(r.v ? 1.5 : 0, h).toFixed(1)}" rx="3" fill="${r.current ? "#f2b705" : "var(--primary)"}"><title>${r.label}: ${fmt(r.v)}</title></rect>` +
+      `<text x="${(left + i * step + step / 2).toFixed(1)}" y="${height - 10}" text-anchor="middle" font-size="12" fill="${r.current ? "var(--text-main)" : "var(--text-muted)"}" font-weight="${r.current ? 700 : 400}">${r.label}</text>`;
+  }).join("");
+  setHtml("#rpYearChart", `<svg viewBox="0 0 ${width} ${height}" class="rpSvg" role="img" aria-label="Últimos 12 meses"><line x1="${left}" x2="${width - left}" y1="${y0}" y2="${y0}" stroke="var(--border)"/>${bars}</svg><p class="muted rpNote">O comparativo ano a ano aparece quando houver dados de dois anos.</p>`);
+  const rows = months.slice().reverse().map((r, i, arr) => `<tr class="${r.current ? "rpCurrentRow" : ""}"><td><strong>${r.label}</strong></td><td class="money">${r.v ? fmt(r.v) : '<span class="muted">-</span>'}</td><td>${r.v && arr[i + 1]?.v ? delta(r.v, arr[i + 1].v, yearMode === "expensesCents") : '<span class="muted">-</span>'}</td></tr>`);
+  setHtml("#rpYearTable", table(["Mês", "Valor", "Contra o mês anterior"], rows));
 }
 document.addEventListener("click", event => {
   const btn = event.target.closest("#rpYearMode [data-ym]"); if (!btn) return;
@@ -3745,6 +3781,62 @@ function paymentField() {
   return select("paymentMethod", "Meio de Pagamento", options.map(value => [value, methodName[value]]), "cash");
 }
 
+document.addEventListener("click", event => {
+  const btn = event.target.closest("[data-shift-summary]"); if (!btn) return;
+  const id = btn.dataset.shiftSummary || state?.cashShift?.id;
+  if (!id) return toast("Nenhum caixa aberto.");
+  openShiftSummary(id).catch(cause => toast(cause.message));
+});
+// Resumo do turno: aparece ao fechar o caixa e no botão "Resumo" de cada caixa fechado.
+const METHOD_LABELS = { cash: "Dinheiro", pix: "Pix", debit: "Débito", credit: "Crédito", card: "Cartão" };
+async function openShiftSummary(shiftId) {
+  const r = await api(`/api/cash/shifts/${encodeURIComponent(shiftId)}/summary`);
+  const when = `${dateTime(r.shift.openedAt)} até ${r.shift.closedAt ? dateTime(r.shift.closedAt) : "agora (caixa aberto)"}`;
+  const methods = Object.entries(r.byMethod).sort((a, b) => b[1] - a[1]).map(([k, v]) => [METHOD_LABELS[k] || k, v]);
+  const kinds = Object.entries(r.byKind).sort((a, b) => b[1] - a[1]);
+  const adjIn = r.adjustments.filter(a => a.direction === "in"), adjOut = r.adjustments.filter(a => a.direction === "out");
+  const sum = list => list.reduce((s, a) => s + a.amountCents, 0);
+  const diff = r.differenceCents;
+  const diffText = diff === null ? "caixa ainda aberto" : diff === 0 ? "sem diferença" : diff > 0 ? `sobra de ${currency(diff)}` : `falta de ${currency(-diff)}`;
+  const rows = (list) => list.map(([k, v]) => `<tr><td>${html(k)}</td><td class="money">${currency(v)}</td></tr>`).join("") || `<tr><td colspan="2" class="muted">Nada no turno.</td></tr>`;
+  const text = [
+    `*Fechamento de caixa · Nexcafé*`, when, ``,
+    `*Recebido no turno:* ${currency(r.receivedCents)} (${r.paymentsCount} ${r.paymentsCount === 1 ? "recebimento" : "recebimentos"})`,
+    ...methods.map(([k, v]) => `  ${k}: ${currency(v)}`), ``,
+    `*Por tipo de venda*`, ...kinds.map(([k, v]) => `  ${k}: ${currency(v)}`), ``,
+    `*Gaveta*`, `  Troco inicial: ${currency(r.shift.openingCents)}`,
+    ...(adjIn.length ? [`  Suprimentos: ${currency(sum(adjIn))}`] : []), ...(adjOut.length ? [`  Sangrias: ${currency(sum(adjOut))}`] : []),
+    `  Esperado: ${currency(r.expectedCents)}`, ...(r.countedCents !== null ? [`  Contado: ${currency(r.countedCents)} (${diffText})`] : []), ``,
+    `*A receber*`, `  Deixado em aberto neste turno: ${currency(r.newDueCents)} (${r.newDueCount})`, `  Total em aberto na loja: ${currency(r.pendingCents)} (${r.pendingCount})`,
+    ...(r.cancelledCount ? [`  Cancelado no turno: ${currency(r.cancelledCents)} (${r.cancelledCount})`] : [])
+  ].join("\n");
+  const body = `<div class="shiftSummary">
+    <p class="muted">${html(when)} · aberto por ${html(r.shift.openedBy || "-")}${r.shift.closedBy ? ` · fechado por ${html(r.shift.closedBy)}` : ""}</p>
+    <div class="shiftKpis">
+      <div><span>Recebido</span><strong>${currency(r.receivedCents)}</strong><small>${r.paymentsCount} ${r.paymentsCount === 1 ? "recebimento" : "recebimentos"}</small></div>
+      <div><span>Gaveta esperada</span><strong>${currency(r.expectedCents)}</strong><small>troco inicial ${currency(r.shift.openingCents)}</small></div>
+      <div class="${diff ? (diff > 0 ? "good" : "bad") : ""}"><span>Contado</span><strong>${r.countedCents === null ? "-" : currency(r.countedCents)}</strong><small>${html(diffText)}</small></div>
+      <div class="${r.newDueCents ? "bad" : ""}"><span>Ficou a receber</span><strong>${currency(r.newDueCents)}</strong><small>total na loja ${currency(r.pendingCents)}</small></div>
+    </div>
+    <div class="shiftCols">
+      <table class="dataTable"><thead><tr><th>Forma de pagamento</th><th>Valor</th></tr></thead><tbody>${rows(methods)}</tbody></table>
+      <table class="dataTable"><thead><tr><th>Tipo de venda</th><th>Valor</th></tr></thead><tbody>${rows(kinds)}</tbody></table>
+    </div>
+    ${r.adjustments.length ? `<table class="dataTable"><thead><tr><th>Sangria / suprimento</th><th>Motivo</th><th>Valor</th></tr></thead><tbody>${r.adjustments.map(a => `<tr><td>${a.direction === "in" ? "Suprimento" : "Sangria"} · ${dateTime(a.at)}</td><td>${html(a.reason || "-")}</td><td class="money">${a.direction === "in" ? "" : "-"}${currency(a.amountCents)}</td></tr>`).join("")}</tbody></table>` : ""}
+    <div class="shiftActions">
+      <button type="button" class="secondaryBtn" id="shiftPrint">Imprimir</button>
+      <a class="waButton" href="https://wa.me/?text=${encodeURIComponent(text)}" target="_blank" rel="noopener">Enviar no WhatsApp</a>
+    </div>
+  </div>`;
+  $("#formDialog").classList.add("wide");
+  openModal(r.shift.closedAt ? "Resumo do caixa fechado" : "Resumo do caixa (parcial)", body, () => Promise.resolve(), "Fechar");
+  $("#shiftPrint").addEventListener("click", () => {
+    const w = window.open("", "_blank", "width=420,height=700"); if (!w) return toast("Libere as janelas pop-up para imprimir.");
+    w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Fechamento de caixa</title><style>body{font-family:Segoe UI,Arial;font-size:13px;margin:16px;color:#111}pre{white-space:pre-wrap;font-family:inherit}</style></head><body><pre>${html(text.replaceAll("*", ""))}</pre></body></html>`);
+    w.document.close(); w.focus(); w.print();
+  });
+}
+
 function openModal(title, fields, onSubmit, submitText = "Salvar") {
   $("#modalTitle").textContent = title;
   $("#modalFields").innerHTML = fields;
@@ -4324,7 +4416,7 @@ $("#cashToggleButton").addEventListener("click", () => {
   if (!state.cashShift) {
     openModal("Abertura de Caixa do Turno", field("opening", "Fundo Inicial de Troco em Dinheiro (R$)", "number", "0.00", 'min="0" step="0.01" required'), values => api("/api/cash/open", values), "Abrir Caixa");
   } else {
-    openModal("Fechamento & Conciliação de Caixa", `<p class="quoteBox">Dinheiro Esperado em Gaveta: <strong>${currency(state.cashSummary?.expectedCashCents)}</strong></p>` + field("counted", "Dinheiro Efetivamente Contado (R$)", "number", "", 'min="0" step="0.01" required') + '<p id="cashDifference" class="muted">Informe o valor apurado fisicamente para auditoria de quebra.</p>', values => api("/api/cash/close", values), "Fechar Caixa e Conciliar");
+    openModal("Fechamento & Conciliação de Caixa", `<p class="quoteBox">Dinheiro Esperado em Gaveta: <strong>${currency(state.cashSummary?.expectedCashCents)}</strong></p>` + field("counted", "Dinheiro Efetivamente Contado (R$)", "number", "", 'min="0" step="0.01" required') + '<p id="cashDifference" class="muted">Informe o valor apurado fisicamente para auditoria de quebra.</p>', async values => { const result = await api("/api/cash/close", values); setTimeout(() => openShiftSummary(result.shift.id).catch(cause => toast(cause.message)), 350); }, "Fechar caixa");
     $("#modalForm").elements.counted.addEventListener("input", event => {
       const value = Number(event.currentTarget.value);
       const diff = Math.round(value * 100) - (state.cashSummary?.expectedCashCents || 0);

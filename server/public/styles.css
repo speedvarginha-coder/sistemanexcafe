@@ -4548,3 +4548,98 @@ td.actionsCell button { min-height: 30px; padding: 0 10px; font-size: 12.5px; }
 .fleetNotice { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 12px; font-size: 13px; }
 .dashHudAlert span strong { font-weight: 700; }
 .sectionHead button, .sectionHead .secondaryBtn { min-height: 36px; }
+
+/* Resumo do fechamento de caixa */
+.shiftSummary { display: grid; gap: 14px; }
+.shiftSummary > p { margin: 0; font-size: 13px; }
+.shiftKpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.shiftKpis > div { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 10px 12px; display: grid; gap: 2px; }
+.shiftKpis span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.shiftKpis strong { font-size: 18px; }
+.shiftKpis small { font-size: 12px; color: var(--text-muted); }
+.shiftKpis .good strong { color: var(--primary); }
+.shiftKpis .bad strong { color: var(--danger-accent); }
+.shiftCols { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.shiftActions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+td.money.bad { color: var(--danger-accent); }
+
+/* Cartões de máquina compactos e padronizados: 10 máquinas cabem em duas linhas numa tela de 1440 px. */
+.machineGrid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.machine { padding: 12px 14px; gap: 8px; min-height: 178px; box-shadow: none; }
+.machine:hover { transform: none; box-shadow: var(--shadow-sm); }
+.machine.free, .machine.in_use, .machine.maintenance, .machine.offline { border-top-width: 3px; }
+.machine h3 { font-size: 15px; }
+.machine .telemetryBadge { font-size: 11px; }
+.machine.free .machineIdle { display: none; }
+.machineIdle { padding: 0; gap: 8px; }
+.machineIdleIcon { width: 30px; height: 30px; }
+.machineIdleDetails strong { font-size: 13px; }
+.machineIdleDetails span { font-size: 12px; }
+.machineClock { font-size: 26px; }
+.quickReleaseBlock { gap: 6px; margin-top: auto; }
+.quickReleaseChips button { min-height: 32px; padding: 0 4px; font-size: 12.5px; }
+.detailedReleaseBtn { min-height: 30px; font-size: 12.5px; }
+.machineActions { margin-top: auto; gap: 6px; }
+.machineActions button { min-height: 34px; font-size: 12.5px; padding: 0 10px; }
+.machineMore { margin-top: 0; }
+.machineMore summary { font-size: 12px; padding-top: 6px; }
+.machineSetupNote { margin-top: auto; }
+.machineDue { padding: 8px 10px; }
+.compactGrid .machine { min-height: 0; }
+
+/* Movimento com função: destaque quando a máquina muda de estado e avisos que deslizam. */
+@keyframes machineChanged { 0% { box-shadow: 0 0 0 0 rgba(242, 183, 5, 0.75); } 100% { box-shadow: 0 0 0 10px rgba(242, 183, 5, 0); } }
+.machine.stateChanged { animation: machineChanged 1.2s ease-out 1; border-color: #f2b705; }
+@keyframes slideUpIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes slideDownIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+.toast:not([hidden]) { animation: slideUpIn 0.22s ease-out; }
+.printAlertPill:not([hidden]) { animation: slideDownIn 0.25s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+
+/* Celular e tablet */
+.content { min-width: 0; }
+@media (max-width: 1024px) {
+  .quickSaleBtn .shortcutKey { display: none; }
+  .topbarRight { gap: 6px; }
+}
+@media (max-width: 768px) {
+  html, body { overflow-x: hidden; }
+  .navLabel { display: none; }
+  .sidebar nav button.active::before { display: none; }
+  .sidebar nav button.active { background: rgba(255, 255, 255, 0.18); }
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .topbarRight { flex-wrap: wrap; justify-content: flex-start; width: 100%; }
+  .soundBtn { display: none; }
+  .goalRow { grid-template-columns: 1fr; }
+  .speedoHeader, .speedoMeta { flex-wrap: wrap; gap: 4px 8px; }
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .metric { padding: 12px; }
+  .metric strong { font-size: 18px; }
+  .metric span { white-space: normal; }
+  .metricsHeader .overviewHint { display: none; }
+  .fleetFilters { overflow-x: auto; flex-wrap: nowrap; }
+  .machineGrid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
+  .auxiliaryCard { padding: 14px; }
+  .sectionHead > div:first-child { flex-basis: 100%; }
+  .modernFormCard { padding: 14px; grid-template-columns: 1fr; }
+  .filterRow select, .filterRow input[type=search] { flex: 1 1 100%; }
+  .filterRow #productCount { margin-left: 0; }
+  dialog { max-width: calc(100vw - 16px); }
+}
+@media (max-width: 768px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  main, .view, .content > * { min-width: 0; max-width: 100vw; }
+}
+@media (max-width: 900px) {
+  .posWorkspace { grid-template-columns: minmax(0, 1fr); }
+  .posTicketCol { position: static; }
+}
+@media (max-width: 768px) {
+  .posMetricsBar { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .posMetricsBar .posMetricLabel { white-space: normal; }
+  .posAuditTabs { overflow-x: auto; flex-wrap: nowrap; }
+  .posAuditTab { white-space: nowrap; }
+}
+.shiftCols { align-items: start; }

@@ -582,7 +582,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     const byCategory = {
       "Gráfica Rápida": { count: 0, revenueCents: 0, color: "#0284c7" },
-      "Lan House & Serviços Digitais": { count: 0, revenueCents: 0, color: "#7c3aed" },
+      "Lan House & Serviços Digitais": { count: 0, revenueCents: 0, color: "#d4a000" },
       "Serviços Públicos": { count: 0, revenueCents: 0, color: "#059669" },
       "Bomboniere & Bebidas": { count: 0, revenueCents: 0, color: "#e11d48" },
       "Serviços Financeiros": { count: 0, revenueCents: 0, color: "#0d9488" },
@@ -1863,6 +1863,38 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       shift.closingCountedCents = counted; shift.closedAt = now(); shift.closedBy = user.name;
       event("caixa", "Caixa fechado", `Diferenca: ${counted - shift.closingExpectedCents} centavos`, user.name); save();
       return send(res, 200, { ok: true, shift });
+    }
+    // Resumo do turno para imprimir ou mandar no WhatsApp no fechamento.
+    const shiftSummary = p.match(/^\/api\/cash\/shifts\/([^/]+)\/summary$/);
+    if (shiftSummary && req.method === "GET") {
+      const shift = db.cashShifts.find(item => item.id === shiftSummary[1]); if (!shift) throw err(404, "Caixa nao encontrado");
+      const from = Date.parse(shift.openedAt), to = shift.closedAt ? Date.parse(shift.closedAt) : Date.now();
+      const inShift = at => { const t = Date.parse(at); return t >= from && t <= to; };
+      const payments = db.payments.filter(item => item.shiftId === shift.id);
+      const byMethod = {}, byKind = {};
+      const KIND = { time: "Tempo de máquina", print: "Impressões", sale: "Produtos e consumo", product: "Produtos e consumo", credit: "Recargas de crédito", debt: "Fiado recebido" };
+      for (const pay of payments) {
+        byMethod[pay.method] = (byMethod[pay.method] || 0) + pay.amountCents;
+        const kind = KIND[db.charges.find(row => row.id === pay.chargeId)?.kind] || "Outros";
+        byKind[kind] = (byKind[kind] || 0) + pay.amountCents;
+      }
+      const adjustments = db.cashAdjustments.filter(item => item.shiftId === shift.id).map(item => ({ at: item.at, direction: item.direction, amountCents: item.amountCents, reason: item.reason }));
+      const adjustCents = adjustments.reduce((sum, item) => sum + (item.direction === "in" ? item.amountCents : -item.amountCents), 0);
+      const expectedCents = shift.closedAt ? shift.closingExpectedCents : shift.openingCents + (byMethod.cash || 0) + adjustCents;
+      const openCharges = db.charges.filter(item => item.amountCents > item.paidCents);
+      const newDue = openCharges.filter(item => inShift(item.at));
+      const cancelled = db.charges.filter(item => item.cancelledAt && inShift(item.cancelledAt));
+      return send(res, 200, {
+        ok: true,
+        shift: { id: shift.id, openedAt: shift.openedAt, openedBy: shift.openedBy, closedAt: shift.closedAt, closedBy: shift.closedBy, openingCents: shift.openingCents },
+        receivedCents: payments.reduce((sum, item) => sum + item.amountCents, 0), paymentsCount: payments.length,
+        byMethod, byKind, adjustments, expectedCents,
+        countedCents: shift.closedAt ? shift.closingCountedCents : null,
+        differenceCents: shift.closedAt ? shift.closingCountedCents - shift.closingExpectedCents : null,
+        newDueCents: newDue.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0), newDueCount: newDue.length,
+        pendingCents: openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0), pendingCount: openCharges.length,
+        cancelledCents: cancelled.reduce((sum, item) => sum + (item.originalAmountCents || 0) - item.amountCents, 0), cancelledCount: cancelled.length
+      });
     }
     // Despesas (aluguel, energia, internet...): entram no DRE. Sangria nao e despesa.
     if (p === "/api/expenses" && req.method === "POST") {
