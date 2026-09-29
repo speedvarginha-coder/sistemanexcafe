@@ -1,5 +1,17 @@
 const $ = selector => document.querySelector(selector);
 const html = value => String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+// Textos antigos gravados sem acento (servidor e agente) e IDs internos de maquina: exibe corrigido.
+const PT_FIX = [["Impressao", "Impressão"], ["impressao", "impressão"], ["Maquina", "Máquina"], ["maquina", "máquina"], ["pag", "pág"], ["Sessao", "Sessão"], ["sessao", "sessão"], ["Restauracao", "Restauração"], ["restauracao", "restauração"], ["Padrao", "Padrão"], ["padrao", "padrão"], ["Liberacao", "Liberação"], ["vinculacao", "vinculação"], ["Vinculacao", "Vinculação"], ["confirmacao", "confirmação"], ["apos", "após"], ["Nao", "Não"], ["nao", "não"], ["Estacao", "Estação"], ["estacao", "estação"], ["Reinicio", "Reinício"], ["manutencao", "manutenção"], ["Manutencao", "Manutenção"], ["atencao", "atenção"], ["Conexao", "Conexão"], ["conexao", "conexão"], ["Protecao", "Proteção"], ["protecao", "proteção"], ["servico", "serviço"], ["Servico", "Serviço"], ["historico", "histórico"], ["usuario", "usuário"], ["Usuario", "Usuário"]].map(([from, to]) => [new RegExp(String.raw`(?<!\p{L})${from}(?!\p{L})`, "gu"), to]);
+function pt(value) {
+  let text = String(value ?? "");
+  for (const m of (typeof state !== "undefined" && state.machines) || []) {
+    if (m.id && m.name && m.id !== m.name && text.includes(m.id)) text = text.replace(new RegExp(String.raw`(?<![\w-])${m.id.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&")}(?![\w-])`, "g"), m.name);
+  }
+  for (const [re, to] of PT_FIX) text = text.replace(re, to);
+  return text;
+}
+const txt = value => html(pt(value));
+const machineLabel = id => (state.machines || []).find(m => m.id === id)?.name || id;
 const currency = cents => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((cents || 0) / 100);
 const dateTime = iso => iso ? new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "-";
 const timeOnly = iso => iso ? new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "-";
@@ -163,7 +175,7 @@ async function loadState() {
       }
       lastClientEndId = lastClientEnd.id;
     }
-    $("#serverStatus").textContent = `Servidor online · Latência <1ms · ${dateTime(state.serverTime)}`;
+    $("#serverStatus").textContent = `Conectado · ${dateTime(state.serverTime)}`;
     
     const shiftBadge = $("#shiftBadge");
     if (shiftBadge) {
@@ -185,7 +197,7 @@ async function loadState() {
     if (!printRouteLoaded) loadPrintRoute();
   } catch (cause) {
     pollDelay = Math.min(30000, pollDelay * 2);
-    $("#serverStatus").textContent = cause.message;
+    $("#serverStatus").textContent = /fetch|network|Failed/i.test(cause.message) ? "Sem conexão com o servidor. Tentando de novo..." : cause.message;
     if (/Entre com|expirada/.test(cause.message)) showAuth(false);
   } finally { loading = false; schedulePoll(); }
 }
@@ -264,11 +276,11 @@ function machineCard(machine, compact = false) {
   const active = !!session;
   const available = !active && !restoring && machine.status !== "offline" && machine.status !== "maintenance";
   const mode = session?.open ? "Tempo livre" : { prepaid: "Pago antes", postpaid: "Pagar ao sair", credit: "Saldo do cliente" }[session?.billingMode] || "";
-  const phase = machine.status === "offline" ? (active ? "Uso sem conexão" : machine.rejectedAt && Date.now() - Date.parse(machine.rejectedAt) < 60000 ? "Vínculo antigo" : "Offline") : machine.maintenance ? "Manutenção" : restoring ? "Preparando" : active && machine.locked ? "Pausada" : active && machine.openedSessionId !== session.id ? "Liberando" : active ? "Em uso" : "Disponível";
+  const phase = machine.status === "offline" ? (active ? "Uso sem conexão" : machine.rejectedAt && Date.now() - Date.parse(machine.rejectedAt) < 60000 ? "Vínculo antigo" : "Desligada") : machine.maintenance ? "Manutenção" : restoring ? "Preparando" : active && machine.locked ? "Pausada" : active && machine.openedSessionId !== session.id ? "Liberando" : active ? "Em uso" : "Disponível";
   const tone = machine.status === "offline" ? "offline" : machine.maintenance || restoring ? "maintenance" : active ? "in_use" : "free";
   const customerName = html(session?.customer || state.clients.find(c => c.id === session?.clientId)?.name || "Cliente Avulso");
   const info = active ? `${customerName} · ${mode}` : "";
-  const idleTitle = machine.status === "offline" ? "Standby / Desligada" : machine.maintenance ? "Em manutenção" : restoring ? "Restaurando ambiente" : "Pronta para atendimento";
+  const idleTitle = machine.status === "offline" ? "Desligada" : machine.maintenance ? "Em manutenção" : restoring ? "Restaurando ambiente" : "Pronta para atendimento";
   const rejectedRecently = machine.rejectedAt && Date.now() - Date.parse(machine.rejectedAt) < 60000;
   const idleDetail = machine.status === "offline" ? (rejectedRecently ? "PC ativo com credencial antiga: use Vincular." : machine.mac ? `WOL disponível (${machine.mac}).` : "Aguardando agente cliente.") : machine.maintenance ? "Sessões suspensas pelo operador." : restoring ? "Executando script de limpeza..." : "1 clique nos botões rápidos para liberar.";
 
@@ -420,8 +432,7 @@ function showReceipt(data) {
 
   paper.innerHTML = `
     <div class="receiptHeader">
-      <h3>LANHOUSE MANAGER ENTERPRISE</h3>
-      <p>CENTRAL DE TERMINAIS · MATRIZ</p>
+      <h3>NEXCAFÉ</h3>
       <p>Data: ${nowStr} · Operador: ${html(state.user?.name || "admin")}</p>
     </div>
     <div class="receiptSection">
@@ -515,7 +526,7 @@ function enterMonitorFullscreen() {
 }
 async function openMonitor(machine) {
   monitorId = machine.id; monitorLastAt = 0;
-  $("#monitorTitle").textContent = `Console Remoto · ${machine.name}`;
+  $("#monitorTitle").textContent = `Monitor · ${machine.name}`;
   $("#monitorStatus").textContent = "iniciando...";
   $("#monitorImage").removeAttribute("src");
   $("#monitorImage").hidden = true; // so aparece quando chegar o primeiro quadro
@@ -594,15 +605,15 @@ function renderMachines() {
   const totalOnline = counts.free + counts.in_use + counts.preparing;
   const occupancyPercent = totalOnline > 0 ? Math.round((counts.in_use / totalOnline) * 100) : 0;
   const shiftVal = state.cashShift ? currency(state.cashSummary?.expectedCashCents || 0) : "Fechado";
-  const shiftSub = state.cashShift ? "Caixa aberto no turno" : "Caixa fechado";
+  const shiftSub = state.cashShift ? "Dinheiro esperado no caixa" : "Caixa fechado";
   const waitCount = (state.waitList || []).length;
   const printCount = (state.printJobs || []).filter(j => j.state === "pending" || j.state === "printing").length;
 
   $("#machineMetrics").innerHTML = 
-    metric(counts.free, "Livres para Atender", "free") + 
-    metric(counts.in_use, `Em Atendimento (${occupancyPercent}% ocupação)`, "in_use") + 
+    metric(counts.free, "Máquinas livres", "free") + 
+    metric(counts.in_use, `Em uso (${occupancyPercent}% da loja)`, "in_use") + 
     metric(shiftVal, shiftSub, state.cashShift ? "free" : "offline") + 
-    metric(waitCount, `Fila de Espera · ${printCount} impr.`, (waitCount > 0 || printCount > 0) ? "warn" : "offline");
+    metric(waitCount, `Na espera · ${printCount} impressão(ões) no caixa`, (waitCount > 0 || printCount > 0) ? "warn" : "offline");
 
   const allOffline = state.machines.length > 0 && counts.offline === state.machines.length;
   $("#fleetNotice").hidden = !allOffline;
@@ -664,18 +675,18 @@ function renderMachines() {
 
   const inUse = state.machines.filter(item => item.session).slice().sort((a, b) => a.remainingMs - b.remainingMs);
   $("#etaSection").hidden = inUse.length === 0;
-  $("#etaList").innerHTML = table(["Estação", "Cliente", "Termina em", "Total"], inUse.map(m => `<tr><td>${html(m.name)}</td><td>${html(m.summary ? m.summary.customer : "-")}</td><td>${m.session.open ? `livre · ${sessionClock(m)} usado` : clock(m.remainingMs)}</td><td class="money">${currency(m.valueCents || 0)}</td></tr>`), "Nenhuma estação em uso.");
+  $("#etaList").innerHTML = table(["Máquina", "Cliente", "Termina em", "Total"], inUse.map(m => `<tr><td>${html(m.name)}</td><td>${html(m.summary ? m.summary.customer : "-")}</td><td>${m.session.open ? `livre · ${sessionClock(m)} usado` : clock(m.remainingMs)}</td><td class="money">${currency(m.valueCents || 0)}</td></tr>`), "Nenhuma máquina em uso.");
 
   const wait = state.waitList || [];
   $("#waitList").innerHTML = table(["Cliente", "Aguardando desde", "Ação"], wait.map(w => `<tr><td>${html(w.name)}</td><td>${dateTime(w.at)}</td><td class="actionsCell"><button class="primary" data-action="waitServe" data-id="${html(w.id)}" ${counts.free ? "" : "disabled"}>Atender</button><button data-action="waitRemove" data-id="${html(w.id)}">Remover</button></td></tr>`), "Ninguém na lista de espera.");
 
-  $("#printQueue").innerHTML = table(["Estação", "Impressão", "Estado", "Valor", "Ação"], (state.printJobs || []).slice(0, 12).map(job => {
+  $("#printQueue").innerHTML = table(["Máquina", "Impressão", "Situação", "Valor", ""], (state.printJobs || []).slice().sort((a, b) => ((state.openCharges || []).some(c => c.printJobId === b.id) - (state.openCharges || []).some(c => c.printJobId === a.id))).slice(0, 8).map(job => {
     const charge = (state.openCharges || []).find(row => row.printJobId === job.id);
     const label = { pending: "Aguardando cliente", printing: "Imprimindo no caixa", failed: "Falhou", confirmed: "Enviada à impressora", cancelled: "Cancelada" }[job.state] || job.state;
-    return `<tr><td>${html(job.machineId)}</td><td>${job.pages} pág · ${job.color ? "Colorida" : "P&B"}</td><td>${label}</td><td class="money">${currency(job.amountCents)}</td><td>${charge ? `<button class="primary" data-action="pay" data-id="${html(charge.id)}" ${state.cashShift ? "" : "disabled"}>Receber</button>` : "-"}</td></tr>`;
+    return `<tr><td>${html(machineLabel(job.machineId))}</td><td>${job.pages} pág · ${job.color ? "Colorida" : "P&B"}</td><td>${label}</td><td class="money">${currency(job.amountCents)}</td><td>${charge ? `<button class="primary" data-action="pay" data-id="${html(charge.id)}" ${state.cashShift ? "" : "disabled"}>Receber</button>` : "-"}</td></tr>`;
   }), "Nenhuma impressão recente.");
 
-  $("#events").innerHTML = state.events.length ? state.events.slice(0, 20).map(item => `<div class="activity"><time>${dateTime(item.at)}</time><span class="source">${html(item.machineId)}</span><span><strong>${html(item.title)}</strong>${item.detail ? ` · ${html(item.detail)}` : ""}</span></div>`).join("") : empty("Nenhuma atividade recente.");
+  $("#events").innerHTML = state.events.length ? state.events.slice(0, 20).map(item => `<div class="activity"><time>${dateTime(item.at)}</time><span class="source">${html(machineLabel(item.machineId))}</span><span><strong>${txt(item.title)}</strong>${item.detail ? ` · ${txt(item.detail)}` : ""}</span></div>`).join("") : empty("Nenhuma atividade recente.");
 }
 
 // Renderizador da Matriz de Frota em Tabela Executiva
@@ -730,12 +741,12 @@ function renderCash() {
   const due = state.openCharges || [];
   const shift = state.cashShift;
   const summary = state.cashSummary || {};
-  $("#cashMetrics").innerHTML = metric(shift ? "Aberto" : "Fechado", "Situação do Turno") + metric(currency(summary.expectedCashCents), "Dinheiro em Gaveta") + metric(currency(summary.receivedCents), "Total Recebido") + metric(currency(summary.pendingCents), "Saldo a Receber");
+  $("#cashMetrics").innerHTML = metric(shift ? "Aberto" : "Fechado", "Situação do caixa") + metric(currency(summary.expectedCashCents), "Dinheiro na gaveta") + metric(currency(summary.receivedCents), "Recebido no turno") + metric(currency(summary.pendingCents), "A receber");
   $("#shiftDetail").textContent = shift ? `Turno iniciado por ${shift.openedBy} em ${dateTime(shift.openedAt)}` : "Abra o caixa para habilitar vendas e recebimentos";
   $("#cashToggleButton").textContent = shift ? "Fechar caixa" : "Abrir caixa";
   $("#cashToggleButton").disabled = !!shift && state.user.role !== "admin";
   $("#cashAdjustButton").disabled = !shift; $("#printSaleButton").disabled = !shift;
-  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
+  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${txt(item.description)}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
   $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador"], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(state.charges.find(c => c.id === item.chargeId)?.description || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method]}</td><td>${html(item.operator)}</td></tr>`), "Nenhum recebimento registrado.");
   $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado"], state.cashShifts.filter(item => item.closedAt).map(item => `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td></tr>`), "Nenhum caixa fechado.");
 
@@ -789,7 +800,7 @@ const CROSS_SELL_RULES = [
 const OFFICIAL_CATEGORIES = {
   "Gráfica Rápida": { name: "Gráfica Rápida", color: "#0284c7", badgeClass: "badgeCatGrafica", short: "Gráfica" },
   "Serviços Públicos": { name: "Serviços Públicos", color: "#059669", badgeClass: "badgeCatPublicos", short: "Públicos" },
-  "Lan House & Serviços Digitais": { name: "Lan House & Serviços Digitais", color: "#7c3aed", badgeClass: "badgeCatLan", short: "Lan/Digital" },
+  "Lan House & Serviços Digitais": { name: "Lan House & Serviços Digitais", color: "#d4a000", badgeClass: "badgeCatLan", short: "Lan/Digital" },
   "Informática & Celular": { name: "Informática & Celular", color: "#2563eb", badgeClass: "badgeCatInfo", short: "Info/Cel" },
   "Eletrônicos & Acessórios": { name: "Eletrônicos & Acessórios", color: "#ea580c", badgeClass: "badgeCatEletro", short: "Eletrônicos" },
   "Bomboniere & Bebidas": { name: "Bomboniere & Bebidas", color: "#e11d48", badgeClass: "badgeCatFood", short: "Bomboniere" },
@@ -916,7 +927,7 @@ function renderPOS() {
   const cashFundSub = $("#posCashFundSub");
   if (cashFundSub) {
     const openingCents = shift?.openingCents || 10000;
-    cashFundSub.textContent = `Fundo Fixo: ${currency(openingCents)}`;
+    cashFundSub.textContent = `Troco inicial: ${currency(openingCents)}`;
   }
 
   const sessionRevenueVal = $("#posSessionRevenueVal");
@@ -925,7 +936,7 @@ function renderPOS() {
   const sessionSalesCount = $("#posSessionSalesCount");
   if (sessionSalesCount) {
     const payCount = (state.payments || []).length;
-    sessionSalesCount.textContent = `${payCount} recebimento(s) no turno`;
+    sessionSalesCount.textContent = `${payCount} ${payCount === 1 ? "recebimento" : "recebimentos"}`;
   }
 
   // Meta diária (R$ 500,00)
@@ -978,7 +989,7 @@ function renderPOS() {
   if (destSelect) {
     const curDest = posDestination;
     const activeSessions = state.machines.filter(m => m.session);
-    destSelect.innerHTML = `<option value="counter">Balcão (Cobrar Agora)</option>${activeSessions.map(m => `<option value="${html(m.id)}">Lançar na ${html(m.name)} · ${html(m.session.customer || "Em uso")}</option>`).join("")}`;
+    destSelect.innerHTML = `<option value="counter">Balcão (cobrar agora)</option>${activeSessions.map(m => `<option value="${html(m.id)}">Lançar na ${html(m.name)} · ${html(m.session.customer || "Em uso")}</option>`).join("")}`;
     if (activeSessions.some(m => m.id === curDest)) destSelect.value = curDest;
     else destSelect.value = "counter";
     posDestination = destSelect.value;
@@ -2188,9 +2199,9 @@ function openDebtsView(clientId) {
   const client = state.clients.find(c => c.id === clientId); if (!client) return;
   const debts = (state.openCharges || []).filter(c => c.clientId === clientId);
   const total = debts.reduce((s, c) => s + c.amountCents - c.paidCents, 0);
-  const rows = debts.map(c => `<tr><td>${new Date(c.at).toLocaleDateString("pt-BR")}</td><td>${html(c.description)}${c.note ? `<br><small class="muted">${html(c.note)}</small>` : ""}</td><td class="money">${currency(c.amountCents - c.paidCents)}</td><td>${(c.proofs || []).map((p, i) => `<a href="/api/charges/${encodeURIComponent(c.id)}/proof/${p.id}" target="_blank" rel="noopener">${p.ext === ".pdf" ? "PDF" : `<img src="/api/charges/${encodeURIComponent(c.id)}/proof/${p.id}" alt="Prova ${i + 1}" class="proofThumb">`}</a>`).join(" ") || '<span class="muted">sem prova</span>'}<br><label class="proofAdd">+ anexar<input type="file" accept="image/*,application/pdf" multiple data-proof-for="${c.id}" hidden></label></td></tr>`).join("");
+  const rows = debts.map(c => `<tr><td>${new Date(c.at).toLocaleDateString("pt-BR")}</td><td>${txt(c.description)}${c.note ? `<br><small class="muted">${html(c.note)}</small>` : ""}</td><td class="money">${currency(c.amountCents)}</td><td class="money">${c.paidCents ? currency(c.paidCents) : "-"}</td><td class="money"><strong>${currency(c.amountCents - c.paidCents)}</strong></td><td><button type="button" class="primary" data-action="pay" data-id="${html(c.id)}" ${state.cashShift ? "" : 'disabled title="Abra o caixa para receber"'}>Receber</button></td><td>${(c.proofs || []).map((p, i) => `<a href="/api/charges/${encodeURIComponent(c.id)}/proof/${p.id}" target="_blank" rel="noopener">${p.ext === ".pdf" ? "PDF" : `<img src="/api/charges/${encodeURIComponent(c.id)}/proof/${p.id}" alt="Prova ${i + 1}" class="proofThumb">`}</a>`).join(" ") || '<span class="muted">sem prova</span>'}<br><label class="proofAdd">+ anexar<input type="file" accept="image/*,application/pdf" multiple data-proof-for="${c.id}" hidden></label></td></tr>`).join("");
   $("#formDialog").classList.add("wide");
-  openModal(`Dívidas de ${client.name}`, `<p class="quoteBox">Total em aberto: <strong>${currency(total)}</strong>${client.phone ? ` · telefone ${html(client.phone)}` : ""}. Para receber, use <strong>Receber</strong> na lista de pendências do Caixa.${whatsappLink(client.phone, client.name, total) ? ` <a class="waButton" href="${whatsappLink(client.phone, client.name, total)}" target="_blank" rel="noopener">Cobrar no WhatsApp</a>` : " Cadastre o telefone para cobrar pelo WhatsApp."}</p><div class="tableWrap"><table class="dataTable"><thead><tr><th>Data</th><th>Descrição</th><th>Em aberto</th><th>Provas</th></tr></thead><tbody>${rows}</tbody></table></div>`, () => Promise.resolve(), "Fechar");
+  openModal(`Dívidas de ${client.name}`, `<p class="quoteBox">Total em aberto: <strong>${currency(total)}</strong>${client.phone ? ` · telefone ${html(client.phone)}` : ""}. Se o cliente pagar só uma parte, clique em <strong>Receber</strong> e digite o valor pago: o restante continua em aberto.${whatsappLink(client.phone, client.name, total) ? ` <a class="waButton" href="${whatsappLink(client.phone, client.name, total)}" target="_blank" rel="noopener">Cobrar no WhatsApp</a>` : " Cadastre o telefone para cobrar pelo WhatsApp."}</p><div class="tableWrap"><table class="dataTable"><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Já pago</th><th>Falta</th><th></th><th>Provas</th></tr></thead><tbody>${rows}</tbody></table></div>`, () => Promise.resolve(), "Fechar");
 }
 document.addEventListener("change", async event => {
   const input = event.target.closest("[data-proof-for]"); if (!input) return;
@@ -2203,11 +2214,17 @@ document.addEventListener("change", async event => {
 
 function renderProducts() {
   const term = $("#productSearch").value.trim().toLowerCase();
-  const items = state.products.filter(item => !term || `${item.name} ${item.code}`.toLowerCase().includes(term));
-  $("#productList").innerHTML = table(["Descrição", "Código", "Categoria", "Preço", "Custo", "Margem", "Estoque", "Ações"], items.map(item => `<tr><td>${html(item.name)}${!item.active ? ' <span class="muted">(inativo)</span>' : ""}</td><td>${html(item.code || "-")}</td><td>${html(item.category || "-")}</td><td class="money">${currency(item.priceCents)}</td><td class="money">${Number.isInteger(item.costCents) ? currency(item.costCents) : '<span class="muted">sem custo</span>'}</td><td>${Number.isInteger(item.costCents) && item.priceCents > 0 ? Math.round((item.priceCents - item.costCents) / item.priceCents * 100) + "%" : "-"}</td><td>${item.type === "service" ? "Serviço" : item.stock}</td><td class="actionsCell"><button class="primary" data-action="sellProduct" data-id="${item.id}" ${!item.active ? "disabled" : ""}>Vender</button>${state.user.role === "admin" ? `<button data-action="editProduct" data-id="${item.id}">Editar</button>${item.type === "stock" ? `<button data-action="stockProduct" data-id="${item.id}">Estoque</button>` : ""}` : ""}</td></tr>`), "Nenhum produto cadastrado.");
+  const category = $("#productCategory").value, status = $("#productStatus").value;
+  const categories = [...new Set(state.products.map(item => item.category).filter(Boolean))].sort((x, y) => x.localeCompare(y, "pt-BR"));
+  const catSelect = $("#productCategory");
+  if (catSelect.options.length - 1 !== categories.length) catSelect.innerHTML = `<option value="">Todas as categorias</option>${categories.map(c => `<option${c === category ? " selected" : ""}>${html(c)}</option>`).join("")}`;
+  const byStatus = { active: item => item.active, all: () => true, inactive: item => !item.active, nocost: item => item.active && !Number.isInteger(item.costCents), low: item => item.active && item.type === "stock" && item.stock <= 0 }[status] || (() => true);
+  const items = state.products.filter(item => byStatus(item) && (!category || item.category === category) && (!term || `${item.name} ${item.code} ${item.barcode || ""}`.toLowerCase().includes(term)));
+  $("#productCount").textContent = `${items.length} de ${state.products.length} itens`;
+  $("#productList").innerHTML = pagedTable("productList", ["Descrição", "Código", "Categoria", "Preço", "Custo", "Margem", "Estoque", "Ações"], items.map(item => `<tr><td>${html(item.name)}${!item.active ? ' <span class="muted">(inativo)</span>' : ""}</td><td>${html(item.code || "-")}</td><td>${html(item.category || "-")}</td><td class="money">${currency(item.priceCents)}</td><td class="money">${Number.isInteger(item.costCents) ? currency(item.costCents) : '<span class="muted">sem custo</span>'}</td><td>${Number.isInteger(item.costCents) && item.priceCents > 0 ? Math.round((item.priceCents - item.costCents) / item.priceCents * 100) + "%" : "-"}</td><td>${item.type === "service" ? "Serviço" : item.stock}</td><td class="actionsCell"><button class="primary" data-action="sellProduct" data-id="${item.id}" ${!item.active ? "disabled" : ""}>Vender</button>${state.user.role === "admin" ? `<button data-action="editProduct" data-id="${item.id}">Editar</button>${item.type === "stock" ? `<button data-action="stockProduct" data-id="${item.id}">Estoque</button>` : ""}` : ""}</td></tr>`), "Nenhum item encontrado com esses filtros.", 50);
   const alerts = state.products.filter(item => item.active && item.type === "stock" && item.stock <= (item.minStock || 0));
   $("#stockAlerts").hidden = !alerts.length;
-  $("#stockAlerts").textContent = alerts.length ? `${alerts.length} item(ns) precisam de reposição: ${alerts.slice(0, 5).map(item => item.name).join(", ")}` : "";
+  $("#stockAlerts").textContent = alerts.length ? `${alerts.length} ${alerts.length === 1 ? "item precisa" : "itens precisam"} de reposição, como ${alerts.slice(0, 3).map(item => item.name).join(", ")}. Para ver todos, escolha "Estoque zerado ou negativo" no filtro.` : "";
 }
 
 function renderSettings() {
@@ -2587,14 +2604,14 @@ function renderReport() {
   setHtml("#reportAdjustments", pagedTable("reportAdjustments", ["Data", "Tipo", "Motivo", "Valor", "Operador"], (state?.cashAdjustments || []).map(a => `<tr><td>${dateTime(a.at)}</td><td>${a.direction === "in" ? "Suprimento" : "Sangria"}</td><td>${html(a.reason || "-")}</td><td class="money">${currency(a.amountCents)}</td><td>${html(a.operator || "-")}</td></tr>`), "Nenhuma sangria ou suprimento."));
   const chargeTerm = ($("#rpChargeSearch")?.value || "").trim().toLowerCase();
   const chargeRows = (r.charges || []).filter(item => !chargeTerm || String(item.description).toLowerCase().includes(chargeTerm));
-  setHtml("#reportCharges", pagedTable("reportCharges", ["Data", "Descrição", "Valor", "Pago"], chargeRows.map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(item.description)}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td></tr>`), "Nenhum lançamento encontrado.", 25, r.salesCount > (r.charges || []).length ? `Mostrando as ${(r.charges || []).length} vendas mais recentes de ${r.salesCount}; os totais consideram todas.` : ""));
+  setHtml("#reportCharges", pagedTable("reportCharges", ["Data", "Descrição", "Valor", "Pago"], chargeRows.map(item => `<tr><td>${dateTime(item.at)}</td><td>${txt(item.description)}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td></tr>`), "Nenhum lançamento encontrado.", 25, r.salesCount > (r.charges || []).length ? `Mostrando as ${(r.charges || []).length} vendas mais recentes de ${r.salesCount}; os totais consideram todas.` : ""));
 
   // ---- Clientes e fiado ----
   setHtml("#rpAging", (r.agingBuckets || []).map((b, i) => kpi(b.label, currency(b.dueCents), `${b.count} pendência(s)`, b.dueCents && i >= 2 ? "bad" : b.dueCents && i === 1 ? "warn" : "")).join(""));
   setHtml("#reportOpenCharges", pagedTable("reportOpenCharges", ["Data", "Descrição", "Cliente", "Dias", "Falta receber", "Ação"], (r.openCharges || []).map(row => {
     const c = row.clientId && state?.clients?.find(x => x.id === row.clientId);
     const link = c?.phone ? whatsappLink(c.phone, c.name, row.dueCents, row.description) : "";
-    return `<tr><td>${dateTime(row.at)}</td><td>${html(row.description)}</td><td>${html(row.clientName || "-")}</td><td>${Math.floor((Date.now() - Date.parse(row.at)) / 86400000)}</td><td class="money">${currency(row.dueCents)}</td><td>${link ? `<a class="waButton small" href="${link}" target="_blank" rel="noopener">💬 Cobrar WhatsApp</a>` : '<span class="muted">Sem tel.</span>'}</td></tr>`;
+    return `<tr><td>${dateTime(row.at)}</td><td>${txt(row.description)}</td><td>${html(row.clientName || "-")}</td><td>${Math.floor((Date.now() - Date.parse(row.at)) / 86400000)}</td><td class="money">${currency(row.dueCents)}</td><td>${link ? `<a class="waButton small" href="${link}" target="_blank" rel="noopener">💬 Cobrar WhatsApp</a>` : '<span class="muted">Sem tel.</span>'}</td></tr>`;
   }), "Nenhuma pendência."));
   setHtml("#rpClients", table(["Cliente", "Compras", "Total comprado", "Deve", "Última compra"], (r.clients || []).map(c => `<tr><td>${html(c.name)}</td><td>${c.count}</td><td class="money">${currency(c.salesCents)}</td><td class="money ${c.dueCents ? "bad" : ""}">${currency(c.dueCents)}</td><td>${dateTime(c.lastAt)}</td></tr>`), "Nenhuma venda com cliente identificado. Selecione o cliente no caixa para acompanhar quem mais compra."));
 
@@ -2758,7 +2775,7 @@ function renderSecurityAudit() {
     cancellations.map(c => `<tr>
       <td>${dateTime(c.at)}</td>
       <td><strong>${html(c.cancelledBy)}</strong></td>
-      <td>${html(c.description)}</td>
+      <td>${txt(c.description)}</td>
       <td><span class="muted">${html(c.cancelReason)}</span></td>
       <td class="money bad"><strong>${currency(c.cancelledCents)}</strong></td>
     </tr>`),
@@ -3712,6 +3729,8 @@ $("#shutdownAllButton").addEventListener("click", async () => {
 
 $("#clientSearch").addEventListener("input", renderClients);
 $("#productSearch").addEventListener("input", renderProducts);
+$("#productCategory").addEventListener("change", renderProducts);
+$("#productStatus").addEventListener("change", renderProducts);
 $("#reportDate").value = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
 $("#reportDate").addEventListener("change", loadReport);
 
@@ -4000,7 +4019,7 @@ function openSale(productId = null, machine = null) {
   const givenInput = $("#saleGivenInput");
   if (givenInput) givenInput.value = "";
 
-  $("#saleTitle").textContent = machine ? `Consumo · ${machine.name}` : "Terminal PDV · Nova Venda";
+  $("#saleTitle").textContent = machine ? `Consumo · ${machine.name}` : "Nova venda";
   $("#saleSubtitle").textContent = machine ? "Os itens entram na conta da estação e são cobrados no encerramento." : "Registro ágil de mercadorias e emissão de cobrança direta.";
   $("#salePrintRow").hidden = !machine;
   $("#salePaymentLabel").hidden = !!machine;
@@ -4415,13 +4434,21 @@ document.addEventListener("click", async event => {
       if (!total) return;
       if (!state.cashShift) { toast("Abra o caixa antes de receber."); return; }
       openModal(`Receber · ${machine ? machine.name : id}`,
-        `<div class="dueList">${due.map(c => `<div><span>${html(c.description)}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong>${currency(total)}</strong></div></div>` + paymentField(),
+        `<div class="dueList">${due.map(c => `<div><span>${txt(c.description)}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong>${currency(total)}</strong></div></div>` + paymentField(),
         async values => { for (const c of due) await api(`/api/charges/${c.id}/pay`, { amount: ((c.amountCents - c.paidCents) / 100).toFixed(2), method: values.paymentMethod }); playChime("success"); toast(`Recebido ${currency(total)}.`); },
         `Receber ${currency(total)}`);
     } else if (action === "pay") {
       const charge = (state.openCharges || []).find(item => item.id === id);
       if (!charge) return;
-      openModal(`Liquidar Título · ${charge.description}`, field("amount", "Valor a Receber (R$)", "number", ((charge.amountCents - charge.paidCents) / 100).toFixed(2), 'min="0.01" step="0.01" required') + paymentField(), values => api(`/api/charges/${id}/pay`, { amount: values.amount, method: values.paymentMethod }), "Confirmar Recebimento");
+      const openCents = charge.amountCents - charge.paidCents;
+      openModal(`Receber · ${pt(charge.description)}`,
+        `<p class="quoteBox">Em aberto: <strong>${currency(openCents)}</strong>${charge.paidCents ? ` (já pago ${currency(charge.paidCents)} de ${currency(charge.amountCents)})` : ""}. Se o cliente pagar só uma parte, digite o valor pago agora: o restante continua em aberto.</p>` +
+        field("amount", "Valor recebido agora (R$)", "number", (openCents / 100).toFixed(2), `min="0.01" max="${(openCents / 100).toFixed(2)}" step="0.01" required`) + paymentField(),
+        async values => {
+          await api(`/api/charges/${id}/pay`, { amount: values.amount, method: values.paymentMethod });
+          const rest = openCents - Math.round(Number(String(values.amount).replace(",", ".")) * 100);
+          toast(rest > 0 ? `Recebido. Ainda faltam ${currency(rest)}.` : "Recebido. Pendência quitada.");
+        }, "Confirmar recebimento");
     } else if (action === "cancelCharge") {
       const charge = (state.openCharges || []).find(item => item.id === id);
       if (!charge) return;

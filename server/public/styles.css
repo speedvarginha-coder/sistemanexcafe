@@ -2976,7 +2976,7 @@ dialog form, .pairContent {
 /* As 7 Categorias Oficiais */
 .badgeCatGrafica { background: #e0f2fe !important; color: #0284c7 !important; border: 1px solid #bae6fd !important; }
 .badgeCatPublicos { background: #d1fae5 !important; color: #059669 !important; border: 1px solid #a7f3d0 !important; }
-.badgeCatLan { background: #ede9fe !important; color: #7c3aed !important; border: 1px solid #ddd6fe !important; }
+.badgeCatLan { background: #fdf3c4 !important; color: #7a5a00 !important; border: 1px solid #f3dc7a !important; }
 .badgeCatInfo { background: #dbeafe !important; color: #2563eb !important; border: 1px solid #bfdbfe !important; }
 .badgeCatEletro { background: #ffedd5 !important; color: #ea580c !important; border: 1px solid #fed7aa !important; }
 .badgeCatFood { background: #ffe4e6 !important; color: #e11d48 !important; border: 1px solid #fecdd3 !important; }
@@ -4456,3 +4456,51 @@ td.warn { color: var(--accent-text); }
   table { width: 100% !important; border-collapse: collapse !important; }
   th, td { border: 1px solid #ddd !important; padding: 4px 6px !important; font-size: 9pt !important; }
 }
+
+/* ==========================================================================
+   Revisão visual (29/09/2026): uma fonte só, números alinhados, títulos
+   proporcionais, metas lado a lado nas cores da loja e seções recolhíveis.
+   ========================================================================== */
+:root { --font-mono: var(--font-sans); }
+html, body { font-variant-numeric: tabular-nums; }
+
+.goalRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.goalRow .dashSalesSpeedometer, .goalRow .dashMonthGoalBlock { margin: 0; padding: 12px 16px; box-shadow: none; }
+.dashSalesSpeedometer, .dashMonthGoalBlock { background: var(--bg-card); border: 1px solid var(--border); }
+.speedoBadge { background: #fdf3c4; color: #7a5a00; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 700; }
+.speedoBarTrack { height: 8px; }
+.speedoBarFill, .speedoBarFill.month { background: var(--primary); }
+.speedoBarFill.completed, .speedoBarFill.month.completed { background: linear-gradient(90deg, var(--primary) 0%, #f2b705 100%); }
+
+.sectionHead { margin-bottom: 12px; }
+.sectionHead h2 { margin: 0 0 2px; font-size: 16px; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+.sectionHead p { margin: 0; font-size: 13px; color: var(--text-muted); }
+.offlineSection, #etaSection { margin-top: 20px; }
+
+details.foldCard > summary { list-style: none; cursor: pointer; margin-bottom: 0; display: flex; justify-content: space-between; align-items: center; }
+details.foldCard > summary::-webkit-details-marker, details.foldBlock > summary::-webkit-details-marker { display: none; }
+details.foldCard > summary::after, details.foldBlock > summary::after { content: ""; width: 8px; height: 8px; border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted); transform: rotate(45deg); transition: transform .15s; margin-left: 12px; flex: none; }
+details.foldCard[open] > summary::after, details.foldBlock[open] > summary::after { transform: rotate(225deg); }
+details.foldCard[open] > summary { margin-bottom: 12px; }
+details.foldBlock { border: 1px solid var(--border); border-radius: var(--radius-md, 8px); padding: 8px 12px; margin-bottom: 12px; background: var(--bg-card-subtle); }
+details.foldBlock > summary { list-style: none; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; }
+details.foldBlock[open] > summary { margin-bottom: 10px; }
+summary:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 2px; border-radius: 6px; }
+.filterRow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.filterRow input[type=search] { flex: 1 1 280px; }
+.filterRow select { flex: 0 1 220px; }
+.filterRow #productCount { font-size: 13px; margin-left: auto; }
+td.actionsCell { white-space: nowrap; }
+td.actionsCell > button + button { margin-left: 4px; }
+/* Listas longas de cobrança: "Receber" discreto, o destaque fica no valor. */
+#dueList td.actionsCell button.primary, #printQueue td button.primary { background: var(--primary-light); color: var(--primary-active); border: 1px solid var(--primary-border); box-shadow: none; }
+#dueList td.actionsCell button.primary:hover:not(:disabled), #printQueue td button.primary:hover:not(:disabled) { background: var(--primary); color: #fff; }
+.secondaryPanelsGrid { align-items: start; }
+.waitAddRow { display: flex; gap: 8px; margin-bottom: 10px; }
+.waitAddRow input { flex: 1; min-width: 0; }
+.sectionHead { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 12px; }
+.sectionHead > div:first-child { flex: 1 1 260px; }
+.stockAlerts { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: var(--radius-md, 8px); padding: 8px 12px; margin-bottom: 12px; font-size: 13px; }
+#productList td.actionsCell button.primary { background: var(--primary-light); color: var(--primary-active); border: 1px solid var(--primary-border); box-shadow: none; }
+#productList td.actionsCell button.primary:hover:not(:disabled) { background: var(--primary); color: #fff; }
+#productList .muted { font-weight: 400; }
