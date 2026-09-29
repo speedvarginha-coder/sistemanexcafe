@@ -89,6 +89,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           <span>Relatórios</span>
         </button>
+        <button data-view="plan" data-admin-only>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>
+          <span>Plano de ação</span>
+        </button>
         <button data-view="expenses" data-admin-only>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-2-2-2 2-3-2-3 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg>
           <span>Despesas</span>
@@ -994,6 +998,40 @@
         </section>
 
         <!-- Visao: Despesas -->
+        <section id="view-plan" class="view" hidden>
+          <div class="sectionHead">
+            <div>
+              <h2>Plano de ação</h2>
+              <p>O que fazer para vender mais e lucrar mais, calculado com os números reais da loja.</p>
+            </div>
+            <button type="button" id="planAddButton" class="primary">Nova ação</button>
+          </div>
+          <div id="planKpis" class="metrics"></div>
+          <div class="auxiliaryCard spacedTop">
+            <div class="sectionHead">
+              <div>
+                <h2>Meu plano <span id="planProgress" class="countBadge"></span></h2>
+                <p>Ações escolhidas, com responsável, prazo e situação.</p>
+              </div>
+              <div class="planFilters" role="tablist">
+                <button type="button" class="fleetFilterBtn active" data-plan-filter="open">Em aberto</button>
+                <button type="button" class="fleetFilterBtn" data-plan-filter="done">Concluídas</button>
+                <button type="button" class="fleetFilterBtn" data-plan-filter="all">Todas</button>
+              </div>
+            </div>
+            <div id="planList" class="planList"></div>
+          </div>
+          <div class="auxiliaryCard spacedTop">
+            <div class="sectionHead">
+              <div>
+                <h2>Sugestões com base nos números</h2>
+                <p>Recalculadas sempre que você abre esta tela. Adicione ao plano as que for fazer.</p>
+              </div>
+            </div>
+            <div id="planSuggestions" class="planSuggestions"></div>
+          </div>
+        </section>
+
         <section id="view-expenses" class="view" hidden>
           <div class="sectionHead reportHeader">
             <div>

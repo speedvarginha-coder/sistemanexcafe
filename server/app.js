@@ -8,6 +8,7 @@ const { execFile } = require("node:child_process");
 const { buildZip } = require("./installer-package");
 const { readBill, analyzeText, extractText } = require("./pdf-conta");
 const { readProducts } = require("./importar-produtos");
+const { suggestActions } = require("./plano-acao");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -1974,6 +1975,45 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (/^\d{4}-\d{2}-\d{2}$/.test(String(input.date || ""))) item.at = new Date(`${input.date}T12:00:00-03:00`).toISOString();
       if (input.paid !== undefined) { item.paid = input.paid === true || input.paid === "true"; item.paidAt = item.paid ? (item.paidAt || now()) : null; }
       save(); return send(res, 200, { ok: true, expense: item });
+    }
+    // Plano de ação: sugestões recalculadas com os números do mês + ações acompanhadas pelo dono.
+    if (p === "/api/actions" && req.method === "GET") {
+      admin(user);
+      const today = localDay(Date.now());
+      const rep = report({ date: today, period: "month" });
+      const suggestions = suggestActions(rep, db);
+      if (!db.actionPlan) { // primeira vez: o plano já nasce com as prioridades altas
+        db.actionPlan = suggestions.filter(s => s.priority === "alta").map((s, i) => ({ id: uuid(), key: s.key, title: s.title, area: s.area, priority: s.priority, why: s.why, how: s.how, impact: s.impact, owner: "", due: localDay(Date.now() + (7 + i * 3) * 86400000), status: "todo", createdAt: now(), doneAt: null }));
+        save();
+      }
+      const kpis = { salesCents: rep.salesCents, salesCount: rep.salesCount, averageTicketCents: rep.averageTicketCents, projectionCents: rep.goal?.projectionCents || 0, monthGoalCents: rep.goal?.monthGoalCents || 0, workedDays: rep.goal?.workedDays || 0, dueCents: rep.dueCents || 0 };
+      return send(res, 200, { ok: true, kpis, suggestions, actions: db.actionPlan });
+    }
+    if (p === "/api/actions" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const title = label(input.title, 140); if (!title) throw err(400, "Informe a ação");
+      db.actionPlan ||= [];
+      const key = label(input.key, 60) || null;
+      if (key && db.actionPlan.some(item => item.key === key)) throw err(409, "Essa sugestão já está no plano");
+      const item = { id: uuid(), key, title, area: label(input.area, 40) || "Geral", priority: ["alta", "media", "baixa"].includes(input.priority) ? input.priority : "media", why: label(input.why, 600), how: label(input.how, 800), impact: label(input.impact, 300), owner: label(input.owner, 60), due: /^\d{4}-\d{2}-\d{2}$/.test(String(input.due || "")) ? input.due : localDay(Date.now() + 7 * 86400000), status: "todo", createdAt: now(), doneAt: null };
+      db.actionPlan.push(item); event("sistema", "Ação adicionada ao plano", title, user.name); save();
+      return send(res, 201, { ok: true, action: item });
+    }
+    const actionUpdate = p.match(/^\/api\/actions\/([^/]+)(\/delete)?$/);
+    if (actionUpdate && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const index = (db.actionPlan || []).findIndex(row => row.id === actionUpdate[1]); if (index < 0) throw err(404, "Ação não encontrada");
+      const item = db.actionPlan[index];
+      if (actionUpdate[2]) { db.actionPlan.splice(index, 1); save(); return send(res, 200, { ok: true }); }
+      if (input.status !== undefined) {
+        if (!["todo", "doing", "done"].includes(input.status)) throw err(400, "Situação inválida");
+        item.status = input.status; item.doneAt = input.status === "done" ? now() : null;
+        if (input.status === "done") event("sistema", "Ação concluída", item.title, user.name);
+      }
+      if (input.owner !== undefined) item.owner = label(input.owner, 60);
+      if (input.due !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(String(input.due))) item.due = input.due;
+      if (input.note !== undefined) item.note = label(input.note, 400);
+      save(); return send(res, 200, { ok: true, action: item });
     }
     if (p === "/api/incomes" && req.method === "POST") {
       admin(user); const input = await readBody(req);

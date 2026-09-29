@@ -3703,14 +3703,95 @@ function render() {
   renderReport();
 }
 
+// ---- Plano de ação: sugestões calculadas pelo servidor + ações acompanhadas ----
+let planData = null, planFilter = "open";
+const PLAN_STATUS = { todo: "A fazer", doing: "Fazendo", done: "Concluída" };
+const PLAN_PRIORITY = { alta: "Prioridade alta", media: "Prioridade média", baixa: "Prioridade baixa" };
+async function loadPlan() {
+  try { planData = await api("/api/actions"); renderPlan(); }
+  catch (cause) { setHtml("#planList", `<p class="muted">${html(cause.message)}</p>`); }
+}
+function renderPlan() {
+  if (!planData) return;
+  const k = planData.kpis, actions = planData.actions || [];
+  const perDay = k.workedDays ? Math.round(k.salesCount / k.workedDays) : 0;
+  const goalPct = k.monthGoalCents ? Math.round(k.projectionCents / k.monthGoalCents * 100) : 0;
+  setHtml("#planKpis",
+    metric(currency(k.salesCents), "Vendas no mês") +
+    metric(currency(k.projectionCents), `Projeção do mês (${goalPct}% da meta de ${currency(k.monthGoalCents)})`, goalPct >= 100 ? "free" : "warn") +
+    metric(currency(k.averageTicketCents), "Ticket médio por venda") +
+    metric(String(perDay), "Vendas por dia"));
+  const done = actions.filter(a => a.status === "done").length;
+  setTextSafe("#planProgress", actions.length ? `${done} de ${actions.length} concluídas` : "");
+  const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  const order = { doing: 0, todo: 1, done: 2 };
+  const shown = actions.filter(a => planFilter === "all" || (planFilter === "done" ? a.status === "done" : a.status !== "done"))
+    .sort((a, b) => order[a.status] - order[b.status] || String(a.due).localeCompare(String(b.due)));
+  setHtml("#planList", shown.length ? shown.map(a => {
+    const late = a.status !== "done" && a.due && a.due < today;
+    return `<article class="planItem ${a.status}${late ? " late" : ""}">
+      <div class="planItemMain">
+        <div class="planTags"><span class="planTag ${a.priority}">${PLAN_PRIORITY[a.priority] || ""}</span><span class="planTag">${html(a.area || "Geral")}</span>${late ? '<span class="planTag lateTag">Atrasada</span>' : ""}</div>
+        <h3>${html(a.title)}</h3>
+        ${a.why || a.how ? `<details><summary>Por que e como fazer</summary>${a.why ? `<p><strong>Por quê:</strong> ${html(a.why)}</p>` : ""}${a.how ? `<p><strong>Como:</strong> ${html(a.how)}</p>` : ""}${a.impact ? `<p><strong>Resultado esperado:</strong> ${html(a.impact)}</p>` : ""}</details>` : ""}
+      </div>
+      <div class="planItemSide">
+        <label><span>Situação</span><select data-plan-field="status" data-id="${html(a.id)}">${Object.entries(PLAN_STATUS).map(([v, t]) => `<option value="${v}" ${v === a.status ? "selected" : ""}>${t}</option>`).join("")}</select></label>
+        <label><span>Prazo</span><input type="date" data-plan-field="due" data-id="${html(a.id)}" value="${html(a.due || "")}"></label>
+        <label><span>Responsável</span><input data-plan-field="owner" data-id="${html(a.id)}" value="${html(a.owner || "")}" placeholder="Quem faz"></label>
+        <button type="button" class="linkDanger" data-plan-delete="${html(a.id)}">Remover</button>
+      </div>
+    </article>`;
+  }).join("") : `<p class="muted">${planFilter === "done" ? "Nenhuma ação concluída ainda." : "Nenhuma ação em aberto. Adicione uma sugestão abaixo ou crie uma nova ação."}</p>`);
+  const inPlan = new Set(actions.map(a => a.key).filter(Boolean));
+  const pending = (planData.suggestions || []).filter(s => !inPlan.has(s.key));
+  const already = (planData.suggestions || []).length - pending.length;
+  setHtml("#planSuggestions", (already ? `<p class="muted planAlready">${already} ${already === 1 ? "sugestão já está" : "sugestões já estão"} no seu plano.</p>` : "") + pending.map(s => `<article class="planSuggestion">
+    <div class="planTags"><span class="planTag ${s.priority}">${PLAN_PRIORITY[s.priority] || ""}</span><span class="planTag">${html(s.area)}</span></div>
+    <h3>${html(s.title)}</h3>
+    <p>${html(s.why)}</p>
+    <p class="muted"><strong>Como:</strong> ${html(s.how)}</p>
+    ${s.impact ? `<p class="planImpact">${html(s.impact)}</p>` : ""}
+    <div>${inPlan.has(s.key) ? '<span class="planInPlan">No plano</span>' : `<button type="button" class="secondaryBtn" data-plan-add="${html(s.key)}">Adicionar ao plano</button>`}</div>
+  </article>`).join("") + (pending.length ? "" : `<p class="muted">Nenhuma sugestão nova agora.</p>`));
+}
+document.addEventListener("change", async event => {
+  const el = event.target.closest("[data-plan-field]"); if (!el) return;
+  try { await api(`/api/actions/${encodeURIComponent(el.dataset.id)}`, { [el.dataset.planField]: el.value }); await loadPlan(); if (el.value === "done") toast("Ação concluída."); }
+  catch (cause) { toast(cause.message); }
+});
+document.addEventListener("click", async event => {
+  const filter = event.target.closest("[data-plan-filter]");
+  if (filter) { planFilter = filter.dataset.planFilter; document.querySelectorAll("[data-plan-filter]").forEach(b => b.classList.toggle("active", b === filter)); return renderPlan(); }
+  const addKey = event.target.closest("[data-plan-add]")?.dataset.planAdd;
+  if (addKey) {
+    const s = (planData?.suggestions || []).find(row => row.key === addKey); if (!s) return;
+    try { await api("/api/actions", s); toast("Ação adicionada ao plano."); await loadPlan(); } catch (cause) { toast(cause.message); }
+    return;
+  }
+  const del = event.target.closest("[data-plan-delete]")?.dataset.planDelete;
+  if (del && confirm("Remover esta ação do plano?")) {
+    try { await api(`/api/actions/${encodeURIComponent(del)}/delete`, {}); await loadPlan(); } catch (cause) { toast(cause.message); }
+  }
+});
+$("#planAddButton")?.addEventListener("click", () => {
+  const due = new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
+  openModal("Nova ação", field("title", "O que fazer", "text", "", 'required maxlength="140"') +
+    select("area", "Área", ["Vendas", "Preços", "Marketing", "Lan house", "Custos", "Estoque", "Caixa", "Equipe", "Geral"].map(v => [v, v]), "Vendas") +
+    select("priority", "Prioridade", [["alta", "Alta"], ["media", "Média"], ["baixa", "Baixa"]], "media") +
+    field("due", "Prazo", "date", due) + field("owner", "Responsável") + field("how", "Como fazer (opcional)"),
+    async values => { await api("/api/actions", values); await loadPlan(); }, "Adicionar");
+});
+
 function view(name) {
   currentView = name;
   for (const section of document.querySelectorAll(".view")) section.hidden = section.id !== `view-${name}`;
   for (const button of document.querySelectorAll("[data-view]")) button.classList.toggle("active", button.dataset.view === name);
-  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários" };
+  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação" };
   const label = titles[name] || "Painel";
   $("#pageTitle").textContent = label;
   document.title = `${label} · Nexcafé`;
+  if (name === "plan") loadPlan();
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
   if (name === "marketing" && !$("#marketingFrame").getAttribute("src")) $("#marketingFrame").setAttribute("src", "/marketing/");

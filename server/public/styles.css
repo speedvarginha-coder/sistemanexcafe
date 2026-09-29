@@ -4643,3 +4643,30 @@ td.money.bad { color: var(--danger-accent); }
   .posAuditTab { white-space: nowrap; }
 }
 .shiftCols { align-items: start; }
+
+/* Plano de ação */
+.planFilters { display: flex; gap: 4px; background: var(--bg-card-subtle); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 3px; }
+.planList { display: grid; gap: 10px; }
+.planItem { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; border: 1px solid var(--border); border-left: 4px solid var(--inuse-accent); border-radius: var(--radius-md); padding: 12px 14px; background: var(--bg-card); }
+.planItem.doing { border-left-color: #f2b705; }
+.planItem.done { border-left-color: var(--primary); opacity: 0.75; }
+.planItem.done h3 { text-decoration: line-through; }
+.planItem.late { border-left-color: var(--danger-accent); }
+.planItem h3, .planSuggestion h3 { margin: 6px 0 4px; font-size: 15px; }
+.planItem details summary { cursor: pointer; font-size: 12.5px; color: var(--primary-active); font-weight: 600; }
+.planItem details p, .planSuggestion p { margin: 6px 0 0; font-size: 13px; line-height: 1.45; color: var(--text-secondary); }
+.planItemSide { display: grid; grid-template-columns: repeat(3, minmax(120px, 1fr)) auto; gap: 8px; align-items: end; }
+.planItemSide label { display: grid; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--text-muted); }
+.planItemSide input, .planItemSide select { min-height: 34px; font-size: 13px; }
+.linkDanger { background: none; border: none; color: var(--danger-accent); font-size: 12.5px; cursor: pointer; min-height: 34px; box-shadow: none; }
+.planTags { display: flex; gap: 6px; flex-wrap: wrap; }
+.planTag { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--bg-card-subtle); border: 1px solid var(--border); color: var(--text-secondary); }
+.planTag.alta { background: #fdf3c4; border-color: #f3dc7a; color: #7a5a00; }
+.planTag.lateTag { background: var(--danger-bg); border-color: var(--danger-border); color: var(--danger-text); }
+.planSuggestions { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.planSuggestion { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px; display: grid; gap: 4px; align-content: start; background: var(--bg-card); }
+.planImpact { color: var(--primary-active) !important; font-weight: 600; }
+.planInPlan { font-size: 12.5px; font-weight: 600; color: var(--primary); }
+@media (max-width: 1100px) { .planItem { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .planItemSide { grid-template-columns: 1fr 1fr; } }
+.planAlready { grid-column: 1 / -1; margin: 0; font-size: 13px; }

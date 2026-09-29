@@ -76,6 +76,16 @@ test("operacao completa: login, agente, tempo, caixa, produto e relatorio", asyn
     assert.equal(summary.byMethod.cash, 1000);
     assert.equal(summary.byKind["Impressões"], 200);
     assert.equal(summary.differenceCents, 0);
+    const plan = (await request("/api/actions")).payload;
+    assert.ok(Array.isArray(plan.suggestions) && plan.suggestions.length > 0, "plano traz sugestoes");
+    assert.ok(plan.suggestions.every(s => s.key && s.title && s.why && s.how), "sugestao completa");
+    const planItem = await request("/api/actions", { title: "Placa de precos no balcao", area: "Precos", due: "2026-10-05" });
+    assert.equal(planItem.status, 201);
+    assert.equal((await request(`/api/actions/${planItem.payload.action.id}`, { status: "done" })).payload.action.status, "done");
+    const again = plan.suggestions[0];
+    const first = await request("/api/actions", again);
+    assert.ok(first.status === 201 || first.status === 409);
+    assert.equal((await request("/api/actions", again)).status, 409, "mesma sugestao nao entra duas vezes");
     assert.equal(fs.existsSync(path.join(dataDir, "db.json")), true);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
