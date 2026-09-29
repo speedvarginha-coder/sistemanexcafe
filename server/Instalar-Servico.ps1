@@ -14,7 +14,8 @@ Write-Host "Projeto: $projectRoot"
 
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
-$trigger = New-ScheduledTaskTrigger -AtStartup
+# AtStartup liga com o Windows; a repeticao a cada minuto religa o servidor se ele cair (IgnoreNew evita duas instancias).
+$trigger = @((New-ScheduledTaskTrigger -AtStartup), (New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)))
 
 $serverAction = New-ScheduledTaskAction -Execute $node -Argument "`"$serverJs`"" -WorkingDirectory $projectRoot
 Register-ScheduledTask -TaskName "LanHouseManager-Servidor" -Action $serverAction -Trigger $trigger -Settings $settings -Principal $principal -Force | Out-Null
