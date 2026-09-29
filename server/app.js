@@ -8,7 +8,7 @@ const { execFile } = require("node:child_process");
 const { buildZip } = require("./installer-package");
 const { readBill, analyzeText, extractText } = require("./pdf-conta");
 const { readProducts } = require("./importar-produtos");
-const { suggestActions } = require("./plano-acao");
+const { suggestActions, METRICS, actionEffect, goalProgress, TEMPLATES } = require("./plano-acao");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -1976,6 +1976,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (input.paid !== undefined) { item.paid = input.paid === true || input.paid === "true"; item.paidAt = item.paid ? (item.paidAt || now()) : null; }
       save(); return send(res, 200, { ok: true, expense: item });
     }
+    // Passos de uma ação: lista curta de { text, done }.
+    const planSteps = value => (Array.isArray(value) ? value : String(value || "").split(/\n|;/)).map(step => typeof step === "string" ? { text: label(step, 120), done: false } : { text: label(step?.text, 120), done: step?.done === true }).filter(step => step.text).slice(0, 12);
     // Plano de ação: sugestões recalculadas com os números do mês + ações acompanhadas pelo dono.
     if (p === "/api/actions" && req.method === "GET") {
       admin(user);
@@ -1987,7 +1989,29 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         save();
       }
       const kpis = { salesCents: rep.salesCents, salesCount: rep.salesCount, averageTicketCents: rep.averageTicketCents, projectionCents: rep.goal?.projectionCents || 0, monthGoalCents: rep.goal?.monthGoalCents || 0, workedDays: rep.goal?.workedDays || 0, dueCents: rep.dueCents || 0 };
-      return send(res, 200, { ok: true, kpis, suggestions, actions: db.actionPlan });
+      const cache = new Map();
+      const reportFor = (start, end) => { const k = `${start}|${end}`; if (!cache.has(k)) cache.set(k, report({ date: today, period: "custom", start, end })); return cache.get(k); };
+      const goals = (db.planGoals || []).map(goal => goalProgress(goal, reportFor, today));
+      const actions = db.actionPlan.map(item => ({ ...item, effect: actionEffect(item, reportFor, today, db, shiftDay) }));
+      const templates = Object.values(TEMPLATES).map(t => ({ key: t.key, actions: t.actions.length, imported: (db.planTemplates || []).includes(t.key) }));
+      return send(res, 200, { ok: true, kpis, goals, suggestions, actions, metrics: METRICS, templates });
+    }
+    if (p === "/api/actions/template" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const template = TEMPLATES[input.key]; if (!template) throw err(404, "Plano não encontrado");
+      db.actionPlan ||= []; db.planGoals ||= []; db.planTemplates ||= [];
+      let added = 0;
+      for (const goal of template.goals) if (!db.planGoals.some(g => g.start === goal.start && g.end === goal.end)) db.planGoals.push({ id: uuid(), ...goal });
+      for (const a of template.actions) {
+        const existing = db.actionPlan.find(item => item.key === a.key);
+        const steps = a.steps.map(text => ({ text, done: false }));
+        if (existing) { Object.assign(existing, { title: a.title, due: a.due, metric: a.metric || existing.metric || "", owner: existing.owner || a.owner, steps: existing.steps?.length ? existing.steps : steps }); continue; }
+        db.actionPlan.push({ id: uuid(), key: a.key, title: a.title, area: a.area, priority: a.priority, why: "", how: "", impact: "", owner: a.owner || "", due: a.due, metric: a.metric || "", steps, status: "todo", createdAt: now(), doneAt: null });
+        added++;
+      }
+      if (!db.planTemplates.includes(template.key)) db.planTemplates.push(template.key);
+      event("sistema", "Plano de 30 dias importado", `${added} ações novas, ${template.goals.length} metas semanais`, user.name); save();
+      return send(res, 200, { ok: true, added });
     }
     if (p === "/api/actions" && req.method === "POST") {
       admin(user); const input = await readBody(req);
@@ -1995,7 +2019,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       db.actionPlan ||= [];
       const key = label(input.key, 60) || null;
       if (key && db.actionPlan.some(item => item.key === key)) throw err(409, "Essa sugestão já está no plano");
-      const item = { id: uuid(), key, title, area: label(input.area, 40) || "Geral", priority: ["alta", "media", "baixa"].includes(input.priority) ? input.priority : "media", why: label(input.why, 600), how: label(input.how, 800), impact: label(input.impact, 300), owner: label(input.owner, 60), due: /^\d{4}-\d{2}-\d{2}$/.test(String(input.due || "")) ? input.due : localDay(Date.now() + 7 * 86400000), status: "todo", createdAt: now(), doneAt: null };
+      const item = { id: uuid(), key, title, area: label(input.area, 40) || "Geral", priority: ["alta", "media", "baixa"].includes(input.priority) ? input.priority : "media", why: label(input.why, 600), how: label(input.how, 800), impact: label(input.impact, 300), owner: label(input.owner, 60), due: /^\d{4}-\d{2}-\d{2}$/.test(String(input.due || "")) ? input.due : localDay(Date.now() + 7 * 86400000), metric: METRICS[input.metric] ? input.metric : "", steps: planSteps(input.steps), status: "todo", createdAt: now(), doneAt: null };
       db.actionPlan.push(item); event("sistema", "Ação adicionada ao plano", title, user.name); save();
       return send(res, 201, { ok: true, action: item });
     }
@@ -2013,6 +2037,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (input.owner !== undefined) item.owner = label(input.owner, 60);
       if (input.due !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(String(input.due))) item.due = input.due;
       if (input.note !== undefined) item.note = label(input.note, 400);
+      if (input.metric !== undefined) item.metric = METRICS[input.metric] ? input.metric : "";
+      if (input.steps !== undefined) item.steps = planSteps(input.steps);
       save(); return send(res, 200, { ok: true, action: item });
     }
     if (p === "/api/incomes" && req.method === "POST") {

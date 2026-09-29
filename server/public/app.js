@@ -3711,6 +3711,30 @@ async function loadPlan() {
   try { planData = await api("/api/actions"); renderPlan(); }
   catch (cause) { setHtml("#planList", `<p class="muted">${html(cause.message)}</p>`); }
 }
+function planStepsHtml(a) {
+  const steps = a.steps || []; if (!steps.length) return "";
+  const done = steps.filter(s => s.done).length;
+  return `<div class="planSteps"><div class="planStepsHead"><span>${done} de ${steps.length} passos</span><div class="planStepsBar"><i style="width:${Math.round(done / steps.length * 100)}%"></i></div></div>
+    ${steps.map((s, i) => `<label class="planStep ${s.done ? "done" : ""}"><input type="checkbox" data-plan-step="${html(a.id)}" data-index="${i}" ${s.done ? "checked" : ""}><span>${html(s.text)}</span></label>`).join("")}</div>`;
+}
+function planEffectHtml(a) {
+  const e = a.effect;
+  if (!a.metric) return "";
+  const m = (planData.metrics || {})[a.metric] || {};
+  if (!e) return `<p class="planEffect muted" title="Ao concluir, o sistema compara os 14 dias antes com os 14 dias depois.">Resultado medido por: ${html(m.label || "")}</p>`;
+  const fmt = v => v === null || v === undefined ? "-" : e.money ? currency(v) : `${String(v).replace(".", ",")}${e.unit ? " " + e.unit : ""}`;
+  const change = e.changePct === null ? "" : `${e.changePct > 0 ? "+" : ""}${String(e.changePct).replace(".", ",")}%`;
+  return `<p class="planEffect ${e.better === null ? "" : e.better ? "good" : "bad"}"><strong>${html(e.label)}:</strong> antes ${fmt(e.before)} · depois ${fmt(e.after)}${change ? ` (${change})` : ""}${e.complete ? "" : ` · medindo, ${e.daysMeasured} de 14 dias`}</p>`;
+}
+document.addEventListener("change", async event => {
+  const box = event.target.closest("[data-plan-step]"); if (!box) return;
+  const action = (planData?.actions || []).find(a => a.id === box.dataset.planStep); if (!action) return;
+  const steps = (action.steps || []).map((s, i) => ({ text: s.text, done: i === Number(box.dataset.index) ? box.checked : s.done }));
+  try { await api(`/api/actions/${encodeURIComponent(action.id)}`, { steps }); await loadPlan(); } catch (cause) { toast(cause.message); }
+});
+$("#planTemplateButton")?.addEventListener("click", async () => {
+  try { const r = await api("/api/actions/template", { key: "outubro-2026" }); toast(`Plano de outubro importado: ${r.added} ações novas e 4 metas semanais.`); await loadPlan(); } catch (cause) { toast(cause.message); }
+});
 function renderPlan() {
   if (!planData) return;
   const k = planData.kpis, actions = planData.actions || [];
@@ -3723,6 +3747,19 @@ function renderPlan() {
     metric(String(perDay), "Vendas por dia"));
   const done = actions.filter(a => a.status === "done").length;
   setTextSafe("#planProgress", actions.length ? `${done} de ${actions.length} concluídas` : "");
+  const tpl = (planData.templates || []).find(t => t.key === "outubro-2026");
+  const tplBtn = $("#planTemplateButton"); if (tplBtn) tplBtn.hidden = !tpl || tpl.imported;
+  const GOAL_STATUS = { ahead: ["No ritmo", "good"], behind: ["Abaixo do ritmo", "bad"], hit: ["Meta batida", "good"], missed: ["Não bateu", "bad"], future: ["Ainda não começou", ""] };
+  setHtml("#planGoals", (planData.goals || []).map(g => {
+    const [statusText, tone] = GOAL_STATUS[g.status] || ["", ""];
+    const fmtDay = d => d.slice(8, 10) + "/" + d.slice(5, 7);
+    return `<div class="planGoal ${tone}">
+      <div class="planGoalHead"><strong>${html(g.label)}</strong><span>${fmtDay(g.start)} a ${fmtDay(g.end)}</span></div>
+      <div class="planGoalValue"><strong>${currency(g.soldCents)}</strong><span>de ${currency(g.targetCents)}</span></div>
+      <div class="planGoalBar"><i style="width:${Math.min(100, g.percent)}%"></i>${g.status === "ahead" || g.status === "behind" ? `<b style="left:${Math.min(100, Math.round(g.expectedCents / g.targetCents * 100))}%" title="Esperado até hoje: ${currency(g.expectedCents)}"></b>` : ""}</div>
+      <small>${statusText}${g.status === "behind" ? ` · faltam ${currency(g.expectedCents - g.soldCents)} para o ritmo` : g.status === "ahead" ? ` · ${g.percent}% da meta` : ""}</small>
+    </div>`;
+  }).join(""));
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const order = { doing: 0, todo: 1, done: 2 };
   const shown = actions.filter(a => planFilter === "all" || (planFilter === "done" ? a.status === "done" : a.status !== "done"))
@@ -3733,12 +3770,15 @@ function renderPlan() {
       <div class="planItemMain">
         <div class="planTags"><span class="planTag ${a.priority}">${PLAN_PRIORITY[a.priority] || ""}</span><span class="planTag">${html(a.area || "Geral")}</span>${late ? '<span class="planTag lateTag">Atrasada</span>' : ""}</div>
         <h3>${html(a.title)}</h3>
+        ${planStepsHtml(a)}
+        ${planEffectHtml(a)}
         ${a.why || a.how ? `<details><summary>Por que e como fazer</summary>${a.why ? `<p><strong>Por quê:</strong> ${html(a.why)}</p>` : ""}${a.how ? `<p><strong>Como:</strong> ${html(a.how)}</p>` : ""}${a.impact ? `<p><strong>Resultado esperado:</strong> ${html(a.impact)}</p>` : ""}</details>` : ""}
       </div>
       <div class="planItemSide">
         <label><span>Situação</span><select data-plan-field="status" data-id="${html(a.id)}">${Object.entries(PLAN_STATUS).map(([v, t]) => `<option value="${v}" ${v === a.status ? "selected" : ""}>${t}</option>`).join("")}</select></label>
         <label><span>Prazo</span><input type="date" data-plan-field="due" data-id="${html(a.id)}" value="${html(a.due || "")}"></label>
         <label><span>Responsável</span><input data-plan-field="owner" data-id="${html(a.id)}" value="${html(a.owner || "")}" placeholder="Quem faz"></label>
+        <label><span>Medir pelo indicador</span><select data-plan-field="metric" data-id="${html(a.id)}"><option value="">Não medir</option>${Object.entries(planData.metrics || {}).map(([k, m]) => `<option value="${k}" ${k === a.metric ? "selected" : ""}>${html(m.label)}</option>`).join("")}</select></label>
         <button type="button" class="linkDanger" data-plan-delete="${html(a.id)}">Remover</button>
       </div>
     </article>`;

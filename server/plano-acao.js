@@ -141,7 +141,84 @@ function suggestActions(r, db) {
     "Controle diário do dinheiro e do resultado.");
 
   const order = { alta: 0, media: 1, baixa: 2 };
+  for (const item of out) item.metric = SUGGESTION_METRIC[item.key] || "";
   return out.sort((a, b) => order[a.priority] - order[b.priority]);
 }
 
-module.exports = { suggestActions };
+// ---- Indicadores para medir o efeito de cada ação (14 dias antes x 14 dias depois) ----
+const SUGGESTION_METRIC = { "ticket-combos": "ticket", "preco-pb": "ticket", "divulgar-servicos": "sales", "maquinas-ociosas": "machineHours", "dia-fraco": "saturday", "horario-fim-tarde": "sales", "meta-realista": "sales" };
+const METRICS = {
+  sales: { label: "Vendas por dia", money: true },
+  ticket: { label: "Ticket médio", money: true },
+  smallShare: { label: "Vendas abaixo de R$ 10,00", unit: "%", lowerIsBetter: true },
+  saturday: { label: "Vendas por sábado", money: true },
+  machineHours: { label: "Horas de máquina por dia", unit: "h" },
+  recharges: { label: "Recargas de crédito", unit: "" }
+};
+const daysBetween = (start, end) => Math.round((Date.parse(`${end}T12:00:00Z`) - Date.parse(`${start}T12:00:00Z`)) / 86400000) + 1;
+// Valor do indicador num relatório de período (r) que cobre `days` dias.
+function metricValue(key, r, days, db, start, end) {
+  if (key === "sales") return Math.round((r.salesCents || 0) / days);
+  if (key === "ticket") return r.averageTicketCents || 0;
+  if (key === "smallShare") {
+    const bands = r.ticketBands || [], total = bands.reduce((s, b) => s + b.count, 0);
+    return total ? Math.round(bands.filter(b => (b.max || Infinity) <= 1000).reduce((s, b) => s + b.count, 0) / total * 100) : 0;
+  }
+  if (key === "saturday") { const sat = (r.byWeekday || []).find(d => d.name === "Sábado"); return sat && sat.days ? Math.round(sat.salesCents / sat.days) : 0; }
+  if (key === "machineHours") return Math.round((r.byMachine || []).reduce((s, m) => s + (m.minutes || 0), 0) / 60 / days * 10) / 10;
+  if (key === "recharges") return (db.charges || []).filter(c => c.kind === "credit" && c.at.slice(0, 10) >= start && c.at.slice(0, 10) <= end).length;
+  return 0;
+}
+// reportFor(start, end) devolve o relatório do período; today no formato AAAA-MM-DD.
+function actionEffect(action, reportFor, today, db, shiftDay) {
+  if (!action.metric || !METRICS[action.metric] || !action.doneAt) return null;
+  const pivot = action.doneAt.slice(0, 10);
+  const beforeStart = shiftDay(pivot, -14), beforeEnd = shiftDay(pivot, -1);
+  const afterEnd = [shiftDay(pivot, 13), today].sort()[0];
+  const afterDays = daysBetween(pivot, afterEnd);
+  const before = metricValue(action.metric, reportFor(beforeStart, beforeEnd), 14, db, beforeStart, beforeEnd);
+  const after = afterDays >= 1 ? metricValue(action.metric, reportFor(pivot, afterEnd), afterDays, db, pivot, afterEnd) : null;
+  const def = METRICS[action.metric];
+  const changePct = before && after !== null ? Math.round((after - before) / Math.abs(before) * 1000) / 10 : null;
+  const better = changePct === null ? null : def.lowerIsBetter ? changePct < 0 : changePct > 0;
+  return { metric: action.metric, label: def.label, money: !!def.money, unit: def.unit || "", before, after, changePct, better, daysMeasured: afterDays, complete: afterDays >= 14 };
+}
+function goalProgress(goal, reportFor, today) {
+  const end = [goal.end, today].sort()[0];
+  const started = today >= goal.start;
+  const soldCents = started ? (reportFor(goal.start, end).salesCents || 0) : 0;
+  const workDays = (a, b) => { let n = 0; for (let d = a; d <= b; d = new Date(Date.parse(`${d}T12:00:00Z`) + 86400000).toISOString().slice(0, 10)) if (new Date(`${d}T12:00:00Z`).getUTCDay() !== 0) n++; return n; };
+  const totalDays = workDays(goal.start, goal.end), elapsed = started ? workDays(goal.start, end) : 0;
+  const expectedCents = Math.round(goal.targetCents * elapsed / Math.max(1, totalDays));
+  return { ...goal, soldCents, expectedCents, percent: Math.round(soldCents / goal.targetCents * 100), status: !started ? "future" : today > goal.end ? (soldCents >= goal.targetCents ? "hit" : "missed") : soldCents >= expectedCents ? "ahead" : "behind" };
+}
+
+// ---- Plano de 30 dias de outubro/2026 (docs/PLANO-30-DIAS-OUTUBRO-2026.md) ----
+const OCT_2026 = {
+  key: "outubro-2026",
+  goals: [
+    { label: "Semana 1 · base", start: "2026-10-01", end: "2026-10-07", targetCents: 130000 },
+    { label: "Semana 2 · preço e combos", start: "2026-10-08", end: "2026-10-14", targetCents: 140000 },
+    { label: "Semana 3 · divulgação e máquinas", start: "2026-10-15", end: "2026-10-21", targetCents: 150000 },
+    { label: "Semana 4 · sábado forte", start: "2026-10-22", end: "2026-10-31", targetCents: 190000 }
+  ],
+  actions: [
+    { key: "meta-realista", title: "Meta de outubro em R$ 6.100 e diária de R$ 226", area: "Metas", priority: "alta", due: "2026-10-01", metric: "sales", owner: "Dono", steps: ["Relatórios > Metas e taxas: meta do mês R$ 6.100", "Meta diária R$ 226"] },
+    { key: "taxas-cartao", title: "Cadastrar taxas da maquininha e custo por página", area: "Custos", priority: "alta", due: "2026-10-01", owner: "Dono", steps: ["Taxa do débito", "Taxa do crédito", "Custo da página P&B", "Custo da página colorida"] },
+    { key: "lancar-despesas", title: "Lançar todas as contas fixas do mês como mensais", area: "Custos", priority: "alta", due: "2026-10-02", owner: "Dono", steps: ["Energia", "Internet", "Água", "Salários", "Contador e outras"] },
+    { key: "estoque-negativo", title: "Contar a bomboniere e dar entrada no estoque negativo", area: "Estoque", priority: "media", due: "2026-10-03", owner: "Atendente", steps: ["Contar a bomboniere", "Importar as notas de compra", "Conferir que não sobrou estoque negativo"] },
+    { key: "cadastrar-custos", title: "Cadastrar o custo dos 30 produtos mais vendidos", area: "Custos", priority: "alta", due: "2026-10-05", owner: "Dono", steps: ["Filtro \"Sem custo cadastrado\" no Catálogo", "Cadastrar os 30 primeiros", "Conferir a margem no relatório"] },
+    { key: "preco-pb", title: "Tabela única da impressão P&B (R$ 1,00 / R$ 0,70 / R$ 0,50)", area: "Preços", priority: "alta", due: "2026-10-08", metric: "ticket", owner: "Dono", steps: ["Cadastrar um item por faixa", "Desativar o cadastro duplicado", "Imprimir a tabela para o balcão"] },
+    { key: "ticket-combos", title: "Cadastrar os 5 combos e treinar a frase do balcão", area: "Vendas", priority: "alta", due: "2026-10-09", metric: "ticket", owner: "Dono", steps: ["Combo Currículo R$ 18,00", "Combo Documento R$ 6,50", "Combo Foto R$ 18,00", "Kit Escola R$ 12,00", "Combo Envio R$ 5,50", "Colar a frase do balcão"] },
+    { key: "oferta-item-a-mais", title: "Oferecer um item a mais em toda venda abaixo de R$ 10,00", area: "Vendas", priority: "alta", due: "2026-10-10", metric: "smallShare", owner: "Atendente", steps: ["Frase padrão no balcão", "Conferir o ticket médio toda segunda"] },
+    { key: "maquinas-ociosas", title: "Lançar a recarga com bônus (R$ 10 = 2h30, R$ 20 = 5h)", area: "Lan house", priority: "alta", due: "2026-10-15", metric: "recharges", owner: "Atendente", steps: ["Placa da recarga no balcão", "Oferecer a quem usa máquina", "Criar login para o cliente"] },
+    { key: "divulgar-servicos", title: "Divulgar os serviços de maior valor (vitrine, Google e WhatsApp)", area: "Marketing", priority: "alta", due: "2026-10-16", metric: "sales", owner: "Dono", steps: ["Placa A4 na vitrine", "Placa no balcão", "Publicação no Google Meu Negócio", "Status do WhatsApp seg, qua e sex"] },
+    { key: "dia-fraco", title: "Sábado da Lan: hora a R$ 4,00 e Kit Escola a R$ 10,00", area: "Vendas", priority: "media", due: "2026-10-23", metric: "saturday", owner: "Dono", steps: ["Divulgar na sexta no WhatsApp", "Placa na porta", "Avaliar no sábado seguinte"] },
+    { key: "horario-fim-tarde", title: "Hora mais barata das 18h às 19h (R$ 3,00) e avaliar em 2 semanas", area: "Lan house", priority: "media", due: "2026-10-22", metric: "machineHours", owner: "Dono", steps: ["Placa com o horário", "Conferir as vendas depois das 18h"] },
+    { key: "fechamento-diario", title: "Fechar o caixa todo dia e mandar o resumo no WhatsApp", area: "Caixa", priority: "media", due: "2026-10-01", owner: "Atendente", steps: ["Abrir com R$ 100,00", "Fechar e enviar o resumo"] },
+    { key: "fechamento-outubro", title: "Fechar outubro e definir a meta de novembro", area: "Metas", priority: "media", due: "2026-10-31", owner: "Dono", steps: ["Relatórios do mês", "Marcar as ações concluídas", "Meta de novembro"] }
+  ]
+};
+const TEMPLATES = { [OCT_2026.key]: OCT_2026 };
+
+module.exports = { suggestActions, METRICS, actionEffect, goalProgress, TEMPLATES };

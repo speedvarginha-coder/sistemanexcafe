@@ -86,6 +86,20 @@ test("operacao completa: login, agente, tempo, caixa, produto e relatorio", asyn
     const first = await request("/api/actions", again);
     assert.ok(first.status === 201 || first.status === 409);
     assert.equal((await request("/api/actions", again)).status, 409, "mesma sugestao nao entra duas vezes");
+    const imported = await request("/api/actions/template", { key: "outubro-2026" });
+    assert.equal(imported.status, 200);
+    const plan2 = (await request("/api/actions")).payload;
+    assert.equal(plan2.goals.length, 4, "metas semanais de outubro");
+    assert.ok(plan2.goals.every(g => typeof g.soldCents === "number" && g.status), "progresso da meta");
+    assert.ok(plan2.templates.find(t => t.key === "outubro-2026").imported);
+    const combos = plan2.actions.find(a => a.key === "ticket-combos");
+    assert.ok(combos.steps.length >= 5 && combos.metric === "ticket");
+    const stepped = (await request(`/api/actions/${combos.id}`, { steps: combos.steps.map((s, i) => ({ text: s.text, done: i === 0 })), status: "done" })).payload.action;
+    assert.equal(stepped.steps[0].done, true);
+    const measured = (await request("/api/actions")).payload.actions.find(a => a.id === combos.id);
+    assert.equal(measured.effect.metric, "ticket");
+    assert.equal(measured.effect.daysMeasured, 1);
+    assert.equal((await request("/api/actions/template", { key: "outubro-2026" })).payload.added, 0, "importar de novo nao duplica");
     assert.equal(fs.existsSync(path.join(dataDir, "db.json")), true);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
