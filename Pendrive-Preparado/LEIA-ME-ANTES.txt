@@ -12,6 +12,10 @@ LANHOUSEMANAGER - PENDRIVE DE INSTALACAO
 4. No fim a maquina reinicia sozinha. Tire o pendrive.
 5. No painel, confira se a maquina aparece DISPONIVEL. Libere e encerre para testar.
 
+Maquina com programa estranho ou que ja deu problema: antes do INSTALAR, execute
+"VERIFICAR SEGURANCA (antes de instalar).bat". Ele limpa o antivirus, esvazia Downloads
+e faz a verificacao completa (demora). O resultado fica em LanHouseManager-Estacoes\verificacao-seguranca.txt.
+
 Se der erro: execute "DIAGNOSTICO (so se der erro).bat" e traga o pendrive ao caixa.
 O detalhe do erro fica em LanHouseManager-Estacoes\erro-instalacao.txt.
 
