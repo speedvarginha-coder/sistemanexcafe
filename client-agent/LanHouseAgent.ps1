@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.1"
+$AgentVersion = "0.3.2"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -1845,8 +1845,9 @@ function Start-PrintReviewProcess {
 
 function Show-PrintError {
     param([string]$Message)
-    Add-Type -AssemblyName System.Windows.Forms
-    [System.Windows.Forms.MessageBox]::Show("Não foi possível concluir a impressão. Nada foi cobrado. Avise o atendente se precisar.`n`n$Message", "Impressão Nexcafé", "OK", "Error") | Out-Null
+    # Popup com prazo e sempre na frente: o loop do agente chama esta funcao, e um MessageBox escondido
+    # atras de outra janela travava o agente inteiro (sem impressao, monitor nem bloqueio no fim do tempo).
+    try { [void](New-Object -ComObject WScript.Shell).Popup("Não foi possível concluir a impressão. Nada foi cobrado. Avise o atendente se precisar.`n`n$Message", 20, "Impressão Nexcafé", 0x10 + 0x40000) } catch { }
 }
 
 function Invoke-PrintReview {
