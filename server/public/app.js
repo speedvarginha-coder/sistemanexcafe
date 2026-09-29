@@ -306,7 +306,7 @@ function machineCard(machine, compact = false) {
   // Contas desta maquina ainda nao pagas (ultimas 12 h): aparecem no cartao para cobrar na hora.
   const dueCharges = active ? [] : (state.openCharges || []).filter(c => c.machineId === machine.id && Date.now() - Date.parse(c.at) < 12 * 3600000);
   const dueCents = dueCharges.reduce((sum, c) => sum + c.amountCents - c.paidCents, 0);
-  const dueHtml = dueCents ? `<div class="machineDue"><div><span>A receber</span><strong>${currency(dueCents)}</strong><small>${html(dueCharges.map(c => c.description.replace(/^Uso [^:]+: /, "tempo ")).join(" + "))}</small></div><button type="button" class="primary" data-action="receiveMachine" data-id="${html(machine.id)}">Receber</button></div>` : "";
+  const dueHtml = dueCents ? `<div class="machineDue"><div><span>A receber</span><strong>${currency(dueCents)}</strong><small>${txt(dueCharges.map(c => c.description.replace(/^Uso [^:]+: /, "tempo ")).join(" + "))}</small></div><button type="button" class="primary" data-action="receiveMachine" data-id="${html(machine.id)}">Receber</button></div>` : "";
   let actionHtml = "";
   if (active) {
     actionHtml = `
@@ -317,7 +317,7 @@ function machineCard(machine, compact = false) {
       </div>`;
   } else if (machine.status === "offline") {
     actionHtml = machine.mac
-      ? `<div class="machineActions"><button class="secondaryBtn" data-action="power" data-id="${html(machine.id)}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg><span>Ligar Estação</span></button></div>`
+      ? `<div class="machineActions"><button class="secondaryBtn" data-action="power" data-id="${html(machine.id)}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg><span>Ligar</span></button></div>`
       : `<span class="machineSetupNote">Aguardando instalação</span>`;
   } else {
     actionHtml = `
@@ -617,7 +617,7 @@ function renderMachines() {
 
   const allOffline = state.machines.length > 0 && counts.offline === state.machines.length;
   $("#fleetNotice").hidden = !allOffline;
-  if (allOffline) $("#fleetNotice").innerHTML = `<strong>Nenhuma estação conectada</strong><span>${counts.offline} estações cadastradas aguardam inicialização. Execute o agente nas estações para conectar ao servidor.</span>`;
+  if (allOffline) $("#fleetNotice").innerHTML = `<strong>Nenhuma máquina conectada.</strong> <span>As ${counts.offline} máquinas cadastradas estão sem contato com o servidor. Confira se estão ligadas e na rede.</span>`;
   
   $("#powerAllButton").disabled = !state.machines.some(machine => machine.status === "offline" && machine.mac);
   $("#shutdownAllButton").disabled = !state.machines.some(machine => machine.status !== "offline");
@@ -658,7 +658,7 @@ function renderMachines() {
       gridEl.innerHTML = !sortedMachines.length ? empty("Nenhuma estação desligada.") : sortedMachines.map(machine => machineCard(machine, true)).join("");
       $("#offlineSection").hidden = true;
     } else {
-      gridEl.innerHTML = !sortedMachines.length ? empty("Nenhuma estação encontrada com os filtros atuais.") : onlineMachines.length ? onlineMachines.map(machine => machineCard(machine)).join("") : empty("Nenhuma estação conectada no momento.");
+      gridEl.innerHTML = !sortedMachines.length ? empty("Nenhuma máquina encontrada com esses filtros.") : onlineMachines.length ? onlineMachines.map(machine => machineCard(machine)).join("") : empty("Nenhuma máquina conectada no momento.");
       $("#offlineSection").hidden = !offlineMachines.length || stationFilter === "active" || stationFilter === "free";
       $("#offlineCount").textContent = offlineMachines.length;
       $("#offlineMachines").innerHTML = offlineMachines.map(machine => machineCard(machine, true)).join("");
@@ -2611,7 +2611,7 @@ function renderReport() {
   setHtml("#reportOpenCharges", pagedTable("reportOpenCharges", ["Data", "Descrição", "Cliente", "Dias", "Falta receber", "Ação"], (r.openCharges || []).map(row => {
     const c = row.clientId && state?.clients?.find(x => x.id === row.clientId);
     const link = c?.phone ? whatsappLink(c.phone, c.name, row.dueCents, row.description) : "";
-    return `<tr><td>${dateTime(row.at)}</td><td>${txt(row.description)}</td><td>${html(row.clientName || "-")}</td><td>${Math.floor((Date.now() - Date.parse(row.at)) / 86400000)}</td><td class="money">${currency(row.dueCents)}</td><td>${link ? `<a class="waButton small" href="${link}" target="_blank" rel="noopener">💬 Cobrar WhatsApp</a>` : '<span class="muted">Sem tel.</span>'}</td></tr>`;
+    return `<tr><td>${dateTime(row.at)}</td><td>${txt(row.description)}</td><td>${html(row.clientName || "-")}</td><td>${Math.floor((Date.now() - Date.parse(row.at)) / 86400000)}</td><td class="money">${currency(row.dueCents)}</td><td>${link ? `<a class="waButton small" href="${link}" target="_blank" rel="noopener">Cobrar WhatsApp</a>` : '<span class="muted">Sem tel.</span>'}</td></tr>`;
   }), "Nenhuma pendência."));
   setHtml("#rpClients", table(["Cliente", "Compras", "Total comprado", "Deve", "Última compra"], (r.clients || []).map(c => `<tr><td>${html(c.name)}</td><td>${c.count}</td><td class="money">${currency(c.salesCents)}</td><td class="money ${c.dueCents ? "bad" : ""}">${currency(c.dueCents)}</td><td>${dateTime(c.lastAt)}</td></tr>`), "Nenhuma venda com cliente identificado. Selecione o cliente no caixa para acompanhar quem mais compra."));
 
@@ -2676,13 +2676,13 @@ function updatePrinterRecon() {
 
   if (divergence === 0) {
     if (badgeEl) {
-      badgeEl.textContent = "✅ 100% Conciliado";
+      badgeEl.textContent = "100% Conciliado";
       badgeEl.className = "rpBadge good";
     }
     if (noteEl) noteEl.innerHTML = `<strong>Perfeito:</strong> As ${machineDiff} folhas impressas na máquina física batem <strong>exatamente</strong> com as ${systemPages} folhas registradas no sistema!`;
   } else if (divergence > 0) {
     if (badgeEl) {
-      badgeEl.textContent = `⚠️ Divergência: +${divergence} folhas na máquina`;
+      badgeEl.textContent = `Divergência: +${divergence} folhas na máquina`;
       badgeEl.className = "rpBadge bad";
     }
     if (noteEl) noteEl.innerHTML = `<strong class="bad">Atenção para conferir:</strong> Saíram <strong>${machineDiff}</strong> folhas na impressora, mas o caixa registrou <strong>${systemPages}</strong> folhas. Há <strong>${divergence} folha(s)</strong> impressas sem cobrança registrada!`;
@@ -2705,7 +2705,7 @@ function renderHourlyPeak() {
 
   const peakBadge = $("#rpHourlyPeakBadge");
   if (peakBadge) {
-    peakBadge.textContent = peak ? `🏆 Pico: ${peak.label}` : "Sem dados";
+    peakBadge.textContent = peak ? `Pico: ${peak.label}` : "Sem dados";
     peakBadge.className = "rpBadge good";
   }
 
@@ -2719,9 +2719,9 @@ function renderHourlyPeak() {
   `).join(""));
 
   const peakInfo = peak ? `
-    <div class="peakBadge">🏆 Horário de Pico: ${peak.label}</div>
+    <div class="peakBadge">Horário de Pico: ${peak.label}</div>
     <span>Maior concentração de faturamento do período: <strong>${currency(peak.salesCents)}</strong> em <strong>${peak.count} vendas</strong>. Reforce troco, papel na impressora e atendimento rápido neste horário.</span>
-    ${slow ? `<span class="muted" style="margin-left:auto">🌙 Horário mais calmo: <strong>${slow.label}</strong> (${slow.count} vendas). Ideal para serviços longos e manutenções.</span>` : ""}
+    ${slow ? `<span class="muted" style="margin-left:auto">Horário mais calmo: <strong>${slow.label}</strong> (${slow.count} vendas). Ideal para serviços longos e manutenções.</span>` : ""}
   ` : `<span class="muted">Sem movimentação no período para definir horários de pico.</span>`;
   setHtml("#rpHourlyPeakInfo", peakInfo);
 }
@@ -2791,15 +2791,15 @@ function renderAbc() {
 
   setHtml("#rpAbcAdvice", `
     <div class="rpAbcAdviceBox A">
-      <strong>👑 Classe A (80% da receita) · ${s.A?.count || 0} itens</strong>
+      <strong>Classe A (80% da receita) · ${s.A?.count || 0} itens</strong>
       ${s.A?.tip || "Itens vitais. Nunca podem faltar estoque ou manutenção."}
     </div>
     <div class="rpAbcAdviceBox B">
-      <strong>⚖️ Classe B (15% da receita) · ${s.B?.count || 0} itens</strong>
+      <strong>Classe B (15% da receita) · ${s.B?.count || 0} itens</strong>
       ${s.B?.tip || "Itens de giro intermediário. Mantenha compras regulares equilibradas."}
     </div>
     <div class="rpAbcAdviceBox C">
-      <strong>📦 Classe C (5% da receita) · ${s.C?.count || 0} itens</strong>
+      <strong>Classe C (5% da receita) · ${s.C?.count || 0} itens</strong>
       ${s.C?.tip || "Itens da cauda longa. Evite manter capital parado."}
     </div>
   `);
@@ -2953,22 +2953,22 @@ function copyReportToWhatsapp() {
   const r = report, dre = r.dre || {};
   const rangeText = r.period === "all" ? "Todo o histórico" : (r.range?.start === r.range?.end ? dayLabel(r.range.start) : `${dayLabel(r.range.start)} a ${dayLabel(r.range.end)}`);
   const lines = [
-    `📊 *FECHAMENTO • SPEED LAN HOUSE & GRÁFICA*`,
-    `📅 *Período:* ${rangeText}`,
+    `*FECHAMENTO • SPEED LAN HOUSE & GRÁFICA*`,
+    `*Período:* ${rangeText}`,
     `───────────────────────`,
-    `💰 *Vendas Totais:* ${currency(r.salesCents || 0)} (${r.salesCount || 0} atendimentos)`,
-    `🎯 *Ticket Médio:* ${currency(r.averageTicketCents || 0)}`,
+    `*Vendas Totais:* ${currency(r.salesCents || 0)} (${r.salesCount || 0} atendimentos)`,
+    `*Ticket Médio:* ${currency(r.averageTicketCents || 0)}`,
     ``,
-    `💵 *Recebimentos por Forma:*`,
+    `*Recebimentos por Forma:*`,
     `  • Dinheiro: ${currency(r.byMethod?.cash || 0)}`,
     `  • Pix: ${currency(r.byMethod?.pix || 0)}`,
     `  • Cartão Débito: ${currency(r.byMethod?.debit || 0)}`,
     `  • Cartão Crédito: ${currency(r.byMethod?.credit || 0)}`,
     `  • Fiado / A receber: ${currency(r.dueCents || 0)}`,
     ``,
-    `🖨️ *Volume Gráfico:* ${r.printAudit?.totalPages || 0} páginas (${r.printAudit?.bwPages || 0} P&B, ${r.printAudit?.colorPages || 0} Color, ${r.printAudit?.xeroxCount || 0} Cópias)`,
+    `*Volume Gráfico:* ${r.printAudit?.totalPages || 0} páginas (${r.printAudit?.bwPages || 0} P&B, ${r.printAudit?.colorPages || 0} Color, ${r.printAudit?.xeroxCount || 0} Cópias)`,
     ``,
-    `📈 *Demonstrativo de Resultado (DRE):*`,
+    `*Demonstrativo de Resultado (DRE):*`,
     `  • (-) CMV (Insumos/Produtos): ${currency(dre.cmvCents || 0)}`,
     `  • (-) Taxas de Cartão/Pix: ${currency(dre.feesCents || 0)}`,
     `  • (-) Despesas Operacionais: ${currency(dre.expensesCents || 0)}`,
@@ -2979,7 +2979,7 @@ function copyReportToWhatsapp() {
   ];
   if (navigator?.clipboard?.writeText) {
     navigator.clipboard.writeText(lines.join("\n")).then(() => {
-      toast("📱 Resumo executivo copiado para o WhatsApp!");
+      toast("Resumo executivo copiado para o WhatsApp!");
     }).catch(() => toast("Não foi possível copiar para a área de transferência."));
   } else {
     toast("Área de transferência não disponível neste navegador.");
@@ -3605,7 +3605,7 @@ function renderDashboardCockpit() {
   const remainingEl = $("#dashGoalRemaining");
   if (remainingEl) {
     if (remainingCents === 0 && todaySalesCents >= dailyGoalCents) {
-      remainingEl.textContent = "🏆 Meta do Dia Atingida!";
+      remainingEl.textContent = "Meta do Dia Atingida!";
       remainingEl.style.color = "#15803d";
     } else {
       remainingEl.textContent = `(Faltam ${currency(remainingCents)})`;
@@ -3618,7 +3618,7 @@ function renderDashboardCockpit() {
     barEl.classList.toggle("completed", pct >= 100);
   }
   setTextSafe("#dashGoalPct", `${pct}% da meta atingida`);
-  setTextSafe("#dashDrawerCash", `💵 Dinheiro na Gaveta: ${currency(expectedCashCents)}`);
+  setTextSafe("#dashDrawerCash", `Dinheiro na gaveta: ${currency(expectedCashCents)}`);
 
   // Meta mensal
   const monthGoalCents = cs.monthGoalCents || 0;
@@ -3639,13 +3639,13 @@ function renderDashboardCockpit() {
     const alerts = [];
     const ha = state.hudAlerts || {};
     if (ha.overdueBillsCount > 0) {
-      alerts.push(`<div class="dashHudAlert danger"><span>⚠️ <strong>${ha.overdueBillsCount} conta(s) a pagar atrasada(s)</strong> (${currency(ha.overdueBillsCents || 0)})</span><button type="button" data-view-go="expenses">Ver despesas</button></div>`);
+      alerts.push(`<div class="dashHudAlert danger"><span><strong>${ha.overdueBillsCount} ${ha.overdueBillsCount === 1 ? "conta atrasada" : "contas atrasadas"}</strong> (${currency(ha.overdueBillsCents || 0)})</span><button type="button" data-view-go="expenses">Ver despesas</button></div>`);
     }
     if (ha.zeroStockCount > 0) {
-      alerts.push(`<div class="dashHudAlert warn"><span>📦 <strong>${ha.zeroStockCount} produto(s) com estoque zerado ou negativo</strong></span><button type="button" data-view-go="products">Repor estoque</button></div>`);
+      alerts.push(`<div class="dashHudAlert warn"><span><strong>${ha.zeroStockCount} produtos com estoque zerado ou negativo</strong></span><button type="button" data-view-go="products">Repor estoque</button></div>`);
     }
     if (ha.lateDebtsCount > 0) {
-      alerts.push(`<div class="dashHudAlert warn"><span>⏳ <strong>${ha.lateDebtsCount} fiado(s) em aberto há mais de 30 dias</strong> (${currency(ha.lateDebtsCents || 0)})</span><button type="button" data-view-go="clients">Cobrar fiados</button></div>`);
+      alerts.push(`<div class="dashHudAlert warn"><span><strong>${ha.lateDebtsCount} ${ha.lateDebtsCount === 1 ? "fiado aberto" : "fiados abertos"} há mais de 30 dias</strong> (${currency(ha.lateDebtsCents || 0)})</span><button type="button" data-view-go="clients">Cobrar fiados</button></div>`);
     }
     hudEl.hidden = !alerts.length;
     hudEl.innerHTML = alerts.join("");
@@ -3671,11 +3671,10 @@ function view(name) {
   currentView = name;
   for (const section of document.querySelectorAll(".view")) section.hidden = section.id !== `view-${name}`;
   for (const button of document.querySelectorAll("[data-view]")) button.classList.toggle("active", button.dataset.view === name);
-  const titles = { machines: "Atendimento", cash: "PDV & Vendas", clients: "Clientes & Saldo", products: "Catálogo & Estoque", settings: "Tarifas & Rede", reports: "Auditoria & Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários" };
-  const label = titles[name] || "Operações";
+  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários" };
+  const label = titles[name] || "Painel";
   $("#pageTitle").textContent = label;
-  const emojis = { machines: "🖥️", cash: "💰", clients: "👥", products: "📦", settings: "⚙️", reports: "📊", users: "👤", expenses: "💸", marketing: "📣", vault: "🔐" };
-  document.title = `${emojis[name] || "🖥️"} [${label}] LanHouse Enterprise`;
+  document.title = `${label} · Nexcafé`;
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
   if (name === "marketing" && !$("#marketingFrame").getAttribute("src")) $("#marketingFrame").setAttribute("src", "/marketing/");

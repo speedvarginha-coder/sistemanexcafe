@@ -67,26 +67,24 @@
       </div>
 
       <nav aria-label="Navegação principal">
+        <div class="navLabel">Operação</div>
         <button data-view="machines" class="active">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           <span>Atendimento</span>
         </button>
         <button data-view="cash">
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-          <span>PDV &amp; Vendas</span>
+          <span>Caixa e vendas</span>
         </button>
         <button data-view="clients">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>Clientes &amp; Saldo</span>
+          <span>Clientes</span>
         </button>
         <button data-view="products">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <span>Catálogo &amp; Estoque</span>
+          <span>Catálogo e estoque</span>
         </button>
-        <button data-view="settings">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          <span>Tarifas &amp; Rede</span>
-        </button>
+        <div class="navLabel">Gestão</div>
         <button data-view="reports">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           <span>Relatórios</span>
@@ -95,17 +93,22 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-2-2-2 2-3-2-3 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg>
           <span>Despesas</span>
         </button>
-        <button data-view="marketing" data-admin-only>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
-          <span>Speed Marketing</span>
+        <div class="navLabel">Administração</div>
+        <button data-view="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Configurações</span>
+        </button>
+        <button data-view="users">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>Operadores</span>
         </button>
         <button data-view="vault" data-admin-only>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           <span>Logins bancários</span>
         </button>
-        <button data-view="users">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span>Operadores</span>
+        <button data-view="marketing" data-admin-only>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+          <span>Speed Marketing</span>
         </button>
       </nav>
 
@@ -704,14 +707,14 @@
             </div>
           </div>
           <form id="settingsForm" class="settingsForm modernFormCard">
-            <label><span>Tarifa por hora avulsa (R$)</span><input name="hourPrice" type="number" min="0.01" step="0.01" required></label>
-            <label><span>Duração padrão sugerida (minutos)</span><input name="defaultMinutes" type="number" min="1" max="1440" required></label>
-            <label class="fullWidth"><span>Tabela progressiva de tempo (minutos=valor):</span><input name="timeTable" type="text" placeholder="15=3.00; 30=3.70; 60=5.00" required></label>
+            <label><span>Preço da hora (R$)</span><input name="hourPrice" type="number" min="0.01" step="0.01" required></label>
+            <label><span>Tempo padrão ao liberar (minutos)</span><input name="defaultMinutes" type="number" min="1" max="1440" required></label>
+            <label class="fullWidth"><span>Preços por fração de tempo (minutos=valor)</span><input name="timeTable" type="text" placeholder="15=3.00; 30=3.70; 60=5.00" required></label>
             <label><span>Arredondar o valor do tempo (para cima)</span><select name="timeRound"><option value="50">De R$ 0,50 em R$ 0,50</option><option value="25">De R$ 0,25 em R$ 0,25</option><option value="100">De R$ 1,00 em R$ 1,00</option><option value="0">Não arredondar</option></select></label>
-            <label><span>Preço Impressão P&amp;B / pág (R$)</span><input name="printBW" type="number" min="0.01" step="0.01" required></label>
-            <label><span>Preço Impressão Colorida / pág (R$)</span><input name="printColor" type="number" min="0.01" step="0.01" required></label>
-            <label class="checkboxLabel fullWidth"><input name="autoRestoreOnTimeEnd" type="checkbox"><span>Limpar diretórios temporários e restaurar ambiente automaticamente no término</span></label>
-            <div class="fullWidth"><button type="submit" class="primary">Salvar parâmetros</button></div>
+            <label><span>Impressão P&amp;B por página (R$)</span><input name="printBW" type="number" min="0.01" step="0.01" required></label>
+            <label><span>Impressão colorida por página (R$)</span><input name="printColor" type="number" min="0.01" step="0.01" required></label>
+            <label class="checkboxLabel fullWidth"><input name="autoRestoreOnTimeEnd" type="checkbox"><span>Limpar a máquina automaticamente quando o tempo acabar</span></label>
+            <div class="fullWidth"><button type="submit" class="primary">Salvar preços</button></div>
           </form>
 
           <div class="sectionHead spaced">
@@ -721,12 +724,12 @@
             </div>
           </div>
           <form id="printersForm" class="settingsForm modernFormCard">
-            <label class="fullWidth"><span>Caminho UNC da impressora padrão</span><input name="printerShare" type="text" placeholder="\\SERVIDOR\Impressora"></label>
+            <label class="fullWidth"><span>Impressora compartilhada (caminho de rede)</span><input name="printerShare" type="text" placeholder="\\SERVIDOR\Impressora"></label>
             <div class="headActions fullWidth">
-              <button type="submit" class="primary">Salvar configuração</button>
-              <button type="button" id="regenerateKeyButton" class="secondaryBtn">Regenerar chave de instalação</button>
+              <button type="submit" class="primary">Salvar</button>
+              <button type="button" id="regenerateKeyButton" class="secondaryBtn">Gerar nova chave de instalação</button>
             </div>
-            <p class="muted fullWidth">A chave e o caminho são encapsulados no arquivo de automação install-config.json.</p>
+            <p class="muted fullWidth">A chave e a impressora vão no arquivo install-config.json do pendrive de instalação.</p>
           </form>
         </section>
 
@@ -757,9 +760,9 @@
               </div>
               <input id="reportDate" type="date" title="Data de referência (o mês desta data)">
               <button type="button" id="financeSettingsButton" class="secondaryBtn">Metas e taxas</button>
-              <button type="button" id="reportCopyWaBtn" class="secondaryBtn" title="Copiar resumo formatado para o WhatsApp">📱 Copiar WhatsApp</button>
+              <button type="button" id="reportCopyWaBtn" class="secondaryBtn" title="Copiar resumo formatado para o WhatsApp">Copiar WhatsApp</button>
               <button type="button" id="reportExportBtn" class="secondaryBtn">Exportar Excel</button>
-              <button type="button" id="reportPrintBtn" class="primary">📄 Imprimir A4</button>
+              <button type="button" id="reportPrintBtn" class="primary">Imprimir A4</button>
             </div>
           </div>
 
@@ -785,7 +788,7 @@
             <!-- Auditoria Grafica & Contador de Paginas e Copias -->
             <div class="rpCard spacedTop" id="rpPrintAuditCard">
               <div class="rpCardHead">
-                <h3>🖨️ Auditoria Gráfica: Contador de Páginas, Cópias & Papel</h3>
+                <h3>Auditoria Gráfica: Contador de Páginas, Cópias & Papel</h3>
                 <span class="muted">reconciliação direta com o contador físico da impressora</span>
               </div>
               <div id="rpPrintAuditGrid" class="rpGrid rpGrid4"></div>
@@ -830,7 +833,7 @@
             <div class="rpCard spacedTop" id="rpHourlyPeakCard">
               <div class="rpCardHead">
                 <h3>⏰ Horários de Pico & Fluxo de Atendimento</h3>
-                <span id="rpHourlyPeakBadge" class="rpBadge good">🏆 Horário de Pico</span>
+                <span id="rpHourlyPeakBadge" class="rpBadge good">Horário de Pico</span>
               </div>
               <div id="rpHourlyDayparts" class="rpGrid rpGrid4"></div>
               <div id="rpHourlyPeakInfo" class="rpHourlyPeakInfo"></div>
@@ -857,13 +860,13 @@
                 <div class="rpCardHead" style="margin-top:12px"><h4 style="margin:0">Comissões e outras receitas</h4><button type="button" class="secondaryBtn" id="addIncomeButton">Lançar comissão</button></div>
                 <div id="rpIncomes"></div>
                 <div class="rpCardHead spacedTop">
-                  <h4 style="margin:0">🏦 Desempenho por Banco Parceiro (Speed Financeira)</h4>
+                  <h4 style="margin:0">Desempenho por Banco Parceiro (Speed Financeira)</h4>
                   <span class="muted">comissões, volume e ticket médio</span>
                 </div>
                 <div id="rpBankPerformance" class="tableWrap"></div>
                 <div id="rpMarketingSyncCard" class="rpMktSyncCard spacedTop">
                   <div class="rpCardHead">
-                    <h4 style="margin:0">📢 Investimento em Anúncios (Speed Marketing)</h4>
+                    <h4 style="margin:0">Investimento em Anúncios (Speed Marketing)</h4>
                     <span class="muted">sincronizado automaticamente</span>
                   </div>
                   <div class="rpGrid rpGrid2">
@@ -943,7 +946,7 @@
             <!-- Painel de Seguranca & Auditoria do Caixa (Anti-Fraude) -->
             <div class="rpCard spacedTop" id="rpSecurityAuditCard">
               <div class="rpCardHead">
-                <h3>🛡️ Painel de Segurança & Auditoria do Caixa (Anti-Fraude)</h3>
+                <h3>Painel de Segurança & Auditoria do Caixa (Anti-Fraude)</h3>
                 <span class="muted">conferência de quebras, cancelamentos e descontos por atendente</span>
               </div>
               <div id="rpSecurityKpis" class="rpGrid rpGrid4"></div>
