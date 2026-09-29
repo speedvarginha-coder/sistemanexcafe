@@ -359,6 +359,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   // Marketing: de onde o cliente veio e qual campanha trouxe a venda.
   const ORIGINS = ["Passou na frente", "Indicação", "Google", "Instagram", "Facebook", "WhatsApp", "Cliente antigo", "Outro"];
   const pickOrigin = value => ORIGINS.includes(value) ? value : "";
+  const FIN_PRODUCTS = ["Consignado INSS", "Antecipação FGTS", "Consignado CLT", "Portabilidade", "Refinanciamento", "Financiamento de veículos"];
+  const LEAD_STAGES = [{ key: "new", label: "Novo contato" }, { key: "simulated", label: "Simulado" }, { key: "proposal", label: "Proposta enviada" }, { key: "won", label: "Contratado" }, { key: "lost", label: "Não fechou" }];
+  const LEAD_SOURCES = ["Serviço da loja", "Indicação", "Campanha", "Passou na frente", "WhatsApp", "Instagram", "Facebook", "Google", "Cliente antigo", "Outro"];
   const campaignCode = value => { const code = label(value, 20).toUpperCase(); return code && (db.campaigns || []).some(c => c.code === code) ? code : ""; };
   function setClientLogin(client, login, password) {
     const clean = label(login, 40).toLowerCase();
@@ -1983,6 +1986,46 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (input.paid !== undefined) { item.paid = input.paid === true || input.paid === "true"; item.paidAt = item.paid ? (item.paidAt || now()) : null; }
       save(); return send(res, 200, { ok: true, expense: item });
     }
+    // Speed Financeira: funil de contatos. Venda cruzada a partir da loja (ex.: serviços do INSS).
+    if (p === "/api/leads" && req.method === "GET") {
+      return send(res, 200, { ok: true, leads: db.leads || [], products: FIN_PRODUCTS, stages: LEAD_STAGES, sources: LEAD_SOURCES });
+    }
+    if (p === "/api/leads" && req.method === "POST") {
+      const input = await readBody(req);
+      const name = label(input.name, 80); if (!name) throw err(400, "Informe o nome");
+      const phone = label(input.phone, 30); if (!phone) throw err(400, "Informe o telefone para retornar o contato");
+      db.leads ||= [];
+      const item = { id: uuid(), name, phone, product: FIN_PRODUCTS.includes(input.product) ? input.product : FIN_PRODUCTS[0], stage: "new", source: LEAD_SOURCES.includes(input.source) ? input.source : "Outro", sourceDetail: label(input.sourceDetail, 100), campaign: campaignCode(input.campaign), clientId: input.clientId && db.clients.some(c => c.id === input.clientId) ? input.clientId : null, notes: label(input.notes, 500), owner: user.name, contractCents: 0, commissionCents: 0, createdAt: now(), updatedAt: now(), stageAt: now(), closedAt: null };
+      db.leads.unshift(item); event("financeira", "Contato da financeira registrado", `${item.product} · ${name} (${item.source})`, user.name); save();
+      return send(res, 201, { ok: true, lead: item });
+    }
+    const leadEdit = p.match(/^\/api\/leads\/([^/]+)$/);
+    if (leadEdit && req.method === "POST") {
+      const input = await readBody(req);
+      const item = (db.leads || []).find(l => l.id === leadEdit[1]); if (!item) throw err(404, "Contato não encontrado");
+      if (input.stage !== undefined) {
+        if (!LEAD_STAGES.some(s => s.key === input.stage)) throw err(400, "Etapa inválida");
+        if (item.stage !== input.stage) { item.stage = input.stage; item.stageAt = now(); }
+        item.closedAt = ["won", "lost"].includes(item.stage) ? (item.closedAt || now()) : null;
+      }
+      if (input.product !== undefined && FIN_PRODUCTS.includes(input.product)) item.product = input.product;
+      if (input.notes !== undefined) item.notes = label(input.notes, 500);
+      if (input.lostReason !== undefined) item.lostReason = label(input.lostReason, 120);
+      if (input.contract !== undefined) item.contractCents = input.contract === "" ? 0 : money(input.contract, "Valor do contrato");
+      if (input.commission !== undefined) item.commissionCents = input.commission === "" ? 0 : money(input.commission, "Comissão");
+      if (item.stage === "won" && !item.commissionCents) throw err(400, "Informe o valor da comissão do contrato");
+      // Comissão de contrato fechado vira receita da Speed Financeira (DRE); desfazer o fechamento remove.
+      db.incomes ||= [];
+      const income = db.incomes.find(i => i.leadId === item.id);
+      if (item.stage === "won") {
+        const desc = `${item.product} · ${item.name}`;
+        if (income) Object.assign(income, { amountCents: item.commissionCents, description: desc });
+        else db.incomes.unshift({ id: uuid(), at: now(), category: "Comissão Speed Financeira", description: desc, amountCents: item.commissionCents, operator: user.name, leadId: item.id });
+      } else if (income) db.incomes.splice(db.incomes.indexOf(income), 1);
+      item.updatedAt = now();
+      if (input.stage === "won") event("financeira", "Contrato fechado", `${item.product} · ${item.name}: comissão R$ ${(item.commissionCents / 100).toFixed(2)}`, user.name);
+      save(); return send(res, 200, { ok: true, lead: item });
+    }
     // Campanhas: código curto escolhido no caixa (ex.: SABADO). O resultado sai das vendas reais.
     if (p === "/api/campaigns" && req.method === "GET") {
       admin(user);
@@ -1997,7 +2040,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       db.campaigns ||= [];
       if (db.campaigns.some(c => c.code === code)) throw err(409, "Já existe uma campanha com esse código");
       const day = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? value : "";
-      const item = { id: uuid(), code, name, channel: label(input.channel, 40), start: day(input.start) || localDay(Date.now()), end: day(input.end), costCents: input.cost ? money(input.cost, "Investimento") : 0, active: true, createdAt: now() };
+      const item = { id: uuid(), code, name, business: input.business === "financeira" ? "financeira" : "loja", channel: label(input.channel, 40), start: day(input.start) || localDay(Date.now()), end: day(input.end), costCents: input.cost ? money(input.cost, "Investimento") : 0, active: true, createdAt: now() };
       db.campaigns.unshift(item); event("sistema", "Campanha criada", `${code} · ${name}`, user.name); save();
       return send(res, 201, { ok: true, campaign: item });
     }
@@ -2017,7 +2060,21 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const end = /^\d{4}-\d{2}-\d{2}$/.test(url.searchParams.get("end") || "") ? url.searchParams.get("end") : today;
       const inRange = at => { const d = localDay(at); return d >= start && d <= end; };
       const clientsById = new Map(db.clients.map(c => [c.id, c]));
-      const byCampaign = new Map((db.campaigns || []).map(c => [c.code, { code: c.code, name: c.name, channel: c.channel, costCents: c.costCents || 0, active: c.active, start: c.start, end: c.end, salesCents: 0, count: 0, clients: new Set(), newClients: 0 }]));
+      const byCampaign = new Map((db.campaigns || []).map(c => [c.code, { code: c.code, name: c.name, business: c.business || "loja", channel: c.channel, costCents: c.costCents || 0, active: c.active, start: c.start, end: c.end, salesCents: 0, count: 0, clients: new Set(), newClients: 0, leads: 0, won: 0, commissionCents: 0 }]));
+      const fin = { leads: 0, won: 0, commissionCents: 0, fromStore: 0, fromStoreWon: 0, byProduct: {}, bySource: {} };
+      for (const lead of db.leads || []) {
+        if (!inRange(lead.createdAt)) continue;
+        fin.leads++;
+        const won = lead.stage === "won";
+        if (won) { fin.won++; fin.commissionCents += lead.commissionCents || 0; }
+        if (lead.source === "Serviço da loja") { fin.fromStore++; if (won) fin.fromStoreWon++; }
+        for (const [bucket, key] of [[fin.byProduct, lead.product], [fin.bySource, lead.source]]) {
+          bucket[key] ||= { leads: 0, won: 0, commissionCents: 0 };
+          bucket[key].leads++; if (won) { bucket[key].won++; bucket[key].commissionCents += lead.commissionCents || 0; }
+        }
+        const camp = lead.campaign && byCampaign.get(lead.campaign);
+        if (camp) { camp.leads++; if (won) { camp.won++; camp.commissionCents += lead.commissionCents || 0; } }
+      }
       const byOrigin = new Map(ORIGINS.map(o => [o, { origin: o, salesCents: 0, count: 0, newClients: 0 }]));
       let totalCents = 0, trackedCents = 0, originCents = 0;
       for (const c of db.charges) {
@@ -2033,9 +2090,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if (client.origin && byOrigin.get(client.origin)) byOrigin.get(client.origin).newClients++;
         if (client.campaign && byCampaign.get(client.campaign)) byCampaign.get(client.campaign).newClients++;
       }
-      const campaigns = [...byCampaign.values()].map(c => ({ ...c, clients: c.clients.size, roi: c.costCents ? Math.round(c.salesCents / c.costCents * 10) / 10 : null })).sort((a, b) => b.salesCents - a.salesCents);
+      const campaigns = [...byCampaign.values()].map(c => ({ ...c, clients: c.clients.size, roi: c.costCents ? Math.round((c.salesCents + c.commissionCents) / c.costCents * 10) / 10 : null })).sort((a, b) => (b.salesCents + b.commissionCents) - (a.salesCents + a.commissionCents));
       const origins = [...byOrigin.values()].filter(o => o.count || o.newClients).sort((a, b) => b.salesCents - a.salesCents);
-      return send(res, 200, { ok: true, start, end, totalCents, trackedCents, originCents, campaigns, origins });
+      return send(res, 200, { ok: true, start, end, totalCents, trackedCents, originCents, campaigns, origins, financeira: fin });
     }
     // Passos de uma ação: lista curta de { text, done }.
     const planSteps = value => (Array.isArray(value) ? value : String(value || "").split(/\n|;/)).map(step => typeof step === "string" ? { text: label(step, 120), done: false } : { text: label(step?.text, 120), done: step?.done === true }).filter(step => step.text).slice(0, 12);

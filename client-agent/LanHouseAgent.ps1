@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.4"
+$AgentVersion = "0.3.5"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -288,7 +288,15 @@ function Copy-FolderContent {
 
     New-Item -ItemType Directory -Path $Destination -Force | Out-Null
     Get-ChildItem -LiteralPath $Source -Force -ErrorAction Stop | Where-Object { -not ($_.Attributes -band [System.IO.FileAttributes]::ReparsePoint) } | ForEach-Object {
-        Copy-Item -LiteralPath $_.FullName -Destination $Destination -Recurse -Force -ErrorAction Stop
+        $item = $_.FullName
+        try {
+            Copy-Item -LiteralPath $item -Destination $Destination -Recurse -Force -ErrorAction Stop
+        } catch {
+            # Arquivo que sumiu durante a copia (antivirus apagou, download terminou): ignora e segue.
+            # Se o arquivo ainda existe, o erro e real e interrompe, para nao salvar um padrao incompleto.
+            if (Test-Path -LiteralPath $item) { throw }
+            Write-AgentLog "Arquivo sumiu durante a copia e foi ignorado: $item"
+        }
     }
 }
 

@@ -80,6 +80,10 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span>Clientes</span>
         </button>
+        <button data-view="leads">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18l-7 9v6l-4 3v-9z"/></svg>
+          <span>Financeira</span>
+        </button>
         <button data-view="products">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span>Catálogo e estoque</span>
@@ -536,6 +540,10 @@
                     <select id="posDestinationSelect">
                       <option value="counter">Balcão (cobrar agora)</option>
                     </select>
+                  </div>
+                  <div id="posFinHint" class="posFinHint" hidden>
+                    <span><strong>Perfil para a financeira.</strong> Ofereça uma simulação de consignado.</span>
+                    <button type="button" id="posFinLeadBtn">Registrar interesse</button>
                   </div>
                   <div class="posDestinationSelector posMarketingRow">
                     <span class="destinationLabel">CAMPANHA:</span>
@@ -1003,6 +1011,19 @@
         </section>
 
         <!-- Visao: Despesas -->
+        <section id="view-leads" class="view" hidden>
+          <div class="sectionHead">
+            <div>
+              <h2>Financeira</h2>
+              <p>Contatos da Speed Financeira: de onde vieram, em que etapa estão e quanto renderam de comissão.</p>
+            </div>
+            <select id="leadProductFilter" aria-label="Produto"><option value="">Todos os produtos</option></select>
+            <button type="button" id="leadAddButton" class="primary">Novo contato</button>
+          </div>
+          <div id="leadKpis" class="metrics"></div>
+          <div id="leadBoard" class="leadBoard"></div>
+        </section>
+
         <section id="view-plan" class="view" hidden>
           <div class="sectionHead">
             <div>
@@ -1102,6 +1123,7 @@
               <div class="auxiliaryCard"><div class="sectionHead"><div><h2>Campanhas</h2><p>Vendas lançadas no caixa com o código da campanha.</p></div></div><div id="mkCampaigns"></div></div>
               <div class="auxiliaryCard"><div class="sectionHead"><div><h2>Como os clientes conheceram a loja</h2><p>Vendas e clientes novos por origem.</p></div></div><div id="mkOrigins"></div></div>
             </div>
+            <div class="auxiliaryCard"><div class="sectionHead"><div><h2>Speed Financeira</h2><p>Contatos, contratos e comissão no período, por produto.</p></div></div><div id="mkFin"></div></div>
           </div>
           <iframe id="marketingFrame" title="Speed Marketing" class="marketingFrame" hidden></iframe>
         </section>

@@ -1067,7 +1067,17 @@ function renderPOS() {
   if (dueCountBadge) dueCountBadge.textContent = (state.openCharges || []).length;
 }
 
+// Venda cruzada: serviço da loja que indica perfil para a Speed Financeira.
+const FIN_HINT = /inss|benef[ií]cio|aposent|extrato de pagamento|consignad|empr[eé]stimo|fgts|detran|crlv|ipva|ve[ií]culo|spc|serasa|boa vista|limpa nome|contrato|holerite|contracheque|carteira de trabalho|ctps/i;
+function finHintItem() { return [...posCart.values()].find(item => FIN_HINT.test(item.name || "")); }
+function suggestedFinProduct(name) {
+  if (/fgts|carteira de trabalho|ctps/i.test(name)) return "Antecipação FGTS";
+  if (/detran|crlv|ipva|ve[ií]culo/i.test(name)) return "Financiamento de veículos";
+  if (/holerite|contracheque/i.test(name)) return "Consignado CLT";
+  return "Consignado INSS";
+}
 function renderPOSTicket() {
+  const hint = finHintItem(); if ($("#posFinHint")) $("#posFinHint").hidden = !hint;
   const emptyCart = $("#posEmptyCart");
   const ticketTable = $("#posTicketTable");
   const rowsEl = $("#posTicketRows");
@@ -3648,7 +3658,13 @@ async function loadMarketingResults() {
     metric(currency(r.trackedCents), `Vieram de campanha (${r.totalCents ? Math.round(r.trackedCents / r.totalCents * 100) : 0}%)`, r.trackedCents ? "free" : "") +
     metric(currency(r.originCents), `Com origem conhecida (${r.totalCents ? Math.round(r.originCents / r.totalCents * 100) : 0}%)`) +
     metric(String(active), active === 1 ? "Campanha ativa" : "Campanhas ativas"));
-  setHtml("#mkCampaigns", r.campaigns.length ? table(["Campanha", "Código", "Vendas", "Valor", "Clientes novos", "Investimento", "Retorno", ""], r.campaigns.map(c => `<tr class="${c.active ? "" : "mutedRow"}"><td><strong>${html(c.name)}</strong>${c.channel ? `<br><small class="muted">${html(c.channel)}</small>` : ""}</td><td><code>${html(c.code)}</code></td><td>${c.count}</td><td class="money">${currency(c.salesCents)}</td><td>${c.newClients}</td><td class="money">${c.costCents ? currency(c.costCents) : "-"}</td><td>${c.roi === null ? "-" : `${String(c.roi).replace(".", ",")}x`}</td><td class="actionsCell"><button type="button" data-mk-toggle="${html(c.code)}">${c.active ? "Encerrar" : "Reativar"}</button></td></tr>`)) :
+  const f = r.financeira || { leads: 0, won: 0, commissionCents: 0, fromStore: 0, fromStoreWon: 0, byProduct: {} };
+  setHtml("#mkFin", `<div class="mkFinKpis">
+      <div><span>Contatos</span><strong>${f.leads}</strong><small>${f.fromStore} vieram de serviço da loja</small></div>
+      <div><span>Contratos</span><strong>${f.won}</strong><small>${f.leads ? Math.round(f.won / f.leads * 100) : 0}% dos contatos</small></div>
+      <div><span>Comissão</span><strong>${currency(f.commissionCents)}</strong><small>${f.fromStoreWon} contrato(s) vindos da loja</small></div>
+    </div>` + (Object.keys(f.byProduct).length ? table(["Produto", "Contatos", "Contratos", "Comissão"], Object.entries(f.byProduct).sort((a, b) => b[1].commissionCents - a[1].commissionCents).map(([k, v]) => `<tr><td>${html(k)}</td><td>${v.leads}</td><td>${v.won}</td><td class="money">${currency(v.commissionCents)}</td></tr>`)) : `<p class="muted">Nenhum contato da financeira no período. Registre em Financeira ou pelo aviso do caixa nos serviços de INSS, Detran e SPC.</p>`));
+  setHtml("#mkCampaigns", r.campaigns.length ? table(["Campanha", "Negócio", "Código", "Resultado", "Valor", "Investimento", "Retorno", ""], r.campaigns.map(c => { const isFin = c.business === "financeira"; return `<tr class="${c.active ? "" : "mutedRow"}"><td><strong>${html(c.name)}</strong>${c.channel ? `<br><small class="muted">${html(c.channel)}</small>` : ""}</td><td>${isFin ? "Financeira" : "Loja"}</td><td><code>${html(c.code)}</code></td><td>${isFin ? `${c.leads} contatos · ${c.won} contratos` : `${c.count} vendas · ${c.newClients} clientes novos`}</td><td class="money">${currency(c.salesCents + c.commissionCents)}</td><td class="money">${c.costCents ? currency(c.costCents) : "-"}</td><td>${c.roi === null ? "-" : `${String(c.roi).replace(".", ",")}x`}</td><td class="actionsCell"><button type="button" data-mk-toggle="${html(c.code)}">${c.active ? "Encerrar" : "Reativar"}</button></td></tr>`; })) :
     `<p class="muted">Nenhuma campanha ainda. Crie uma (ex.: código SABADO para a promoção de sábado) e escolha o código no caixa ao lançar a venda.</p>`);
   setHtml("#mkOrigins", r.origins.length ? table(["Origem", "Vendas", "Valor", "Clientes novos"], r.origins.map(o => `<tr><td>${html(o.origin)}</td><td>${o.count}</td><td class="money">${currency(o.salesCents)}</td><td>${o.newClients}</td></tr>`)) :
     `<p class="muted">Ainda sem origem registrada. Pergunte "como conheceu a loja?" ao cadastrar o cliente ou ao vender para quem vem pela primeira vez.</p>`);
@@ -3659,6 +3675,7 @@ $("#mkPeriod")?.addEventListener("change", loadMarketingResults);
 $("#mkNewCampaign")?.addEventListener("click", () => {
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   openModal("Nova campanha", field("name", "Nome da campanha", "text", "", 'required placeholder="Ex.: Sábado da Lan"') +
+    select("business", "Negócio", [["loja", "Loja (lan house e gráfica)"], ["financeira", "Speed Financeira"]], "loja") +
     field("code", "Código para o caixa (3 a 20 letras, sem espaço)", "text", "", 'required pattern="[A-Za-z0-9]{3,20}" placeholder="SABADO"') +
     select("channel", "Onde será divulgada", ["WhatsApp", "Instagram", "Facebook", "Google Meu Negócio", "Placa na loja", "Panfleto", "Indicação", "Outro"].map(v => [v, v]), "WhatsApp") +
     field("start", "Início", "date", today) + field("end", "Fim (opcional)", "date") + field("cost", "Investimento (R$, opcional)", "number", "", 'min="0" step="0.01"'),
@@ -3753,6 +3770,89 @@ function render() {
   renderUsers();
   renderReport();
 }
+
+// ---- Financeira: funil de contatos da Speed Financeira ----
+let leadData = null;
+async function loadLeads() {
+  try { leadData = await api("/api/leads"); renderLeads(); } catch (cause) { setHtml("#leadBoard", `<p class="muted">${html(cause.message)}</p>`); }
+}
+function renderLeads() {
+  if (!leadData) return;
+  const sel = $("#leadProductFilter");
+  if (sel && sel.options.length <= 1) sel.innerHTML = `<option value="">Todos os produtos</option>${leadData.products.map(p => `<option>${html(p)}</option>`).join("")}`;
+  const product = sel?.value || "";
+  const leads = leadData.leads.filter(l => !product || l.product === product);
+  const month = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }).slice(0, 7);
+  const inMonth = leads.filter(l => (l.createdAt || "").slice(0, 7) === month);
+  const wonMonth = leads.filter(l => l.stage === "won" && (l.closedAt || "").slice(0, 7) === month);
+  const closed = leads.filter(l => l.stage === "won" || l.stage === "lost");
+  const conv = closed.length ? Math.round(closed.filter(l => l.stage === "won").length / closed.length * 100) : 0;
+  const fromStore = inMonth.filter(l => l.source === "Serviço da loja").length;
+  setHtml("#leadKpis",
+    metric(String(inMonth.length), `Contatos no mês (${fromStore} vieram da loja)`) +
+    metric(String(leads.filter(l => !["won", "lost"].includes(l.stage)).length), "Em andamento") +
+    metric(String(wonMonth.length), `Contratos no mês · conversão ${conv}%`, wonMonth.length ? "free" : "") +
+    metric(currency(wonMonth.reduce((s, l) => s + (l.commissionCents || 0), 0)), "Comissão no mês", wonMonth.length ? "free" : ""));
+  const daysAgo = at => Math.max(0, Math.floor((Date.now() - Date.parse(at)) / 86400000));
+  const wa = phone => { const d = String(phone || "").replace(/\D/g, ""); return d ? `https://wa.me/${d.length <= 11 ? "55" + d : d}` : ""; };
+  setHtml("#leadBoard", leadData.stages.map(stage => {
+    const cards = leads.filter(l => l.stage === stage.key);
+    const total = cards.reduce((s, l) => s + (l.commissionCents || 0), 0);
+    return `<div class="leadCol ${stage.key}">
+      <div class="leadColHead"><strong>${html(stage.label)}</strong><span>${cards.length}${stage.key === "won" && total ? ` · ${currency(total)}` : ""}</span></div>
+      ${cards.map(l => `<article class="leadCard">
+        <div class="leadCardTop"><strong>${html(l.name)}</strong><span class="planTag">${html(l.product)}</span></div>
+        <div class="leadMeta">${html(l.source)}${l.sourceDetail ? ` · ${html(l.sourceDetail)}` : ""}${l.campaign ? ` · <code>${html(l.campaign)}</code>` : ""}</div>
+        <div class="leadMeta">${wa(l.phone) ? `<a href="${wa(l.phone)}" target="_blank" rel="noopener">${html(l.phone)}</a>` : html(l.phone)} · ${daysAgo(l.stageAt || l.createdAt)} dia(s) nesta etapa</div>
+        ${l.notes ? `<div class="leadNotes">${html(l.notes)}</div>` : ""}
+        ${l.stage === "won" ? `<div class="leadWon">Comissão ${currency(l.commissionCents)}${l.contractCents ? ` · contrato ${currency(l.contractCents)}` : ""}</div>` : ""}
+        ${l.stage === "lost" && l.lostReason ? `<div class="leadMeta">Motivo: ${html(l.lostReason)}</div>` : ""}
+        <select data-lead-stage="${html(l.id)}" aria-label="Etapa">${leadData.stages.map(s => `<option value="${s.key}" ${s.key === l.stage ? "selected" : ""}>${html(s.label)}</option>`).join("")}</select>
+      </article>`).join("") || `<p class="muted leadEmpty">Nenhum contato.</p>`}
+    </div>`;
+  }).join(""));
+}
+function openLeadModal(prefill = {}) {
+  const products = leadData?.products || ["Consignado INSS", "Antecipação FGTS", "Consignado CLT", "Portabilidade", "Refinanciamento", "Financiamento de veículos"];
+  const sources = leadData?.sources || ["Serviço da loja", "Indicação", "Campanha", "Passou na frente", "WhatsApp", "Instagram", "Facebook", "Google", "Cliente antigo", "Outro"];
+  const camps = (state.campaigns || []);
+  openModal("Novo contato da financeira",
+    field("name", "Nome", "text", prefill.name || "", "required") + field("phone", "Telefone / WhatsApp", "tel", prefill.phone || "", "required") +
+    select("product", "Interesse", products.map(p => [p, p]), prefill.product || products[0]) +
+    select("source", "De onde veio", sources.map(s => [s, s]), prefill.source || "Passou na frente") +
+    field("sourceDetail", "Detalhe (ex.: serviço feito na loja, quem indicou)", "text", prefill.sourceDetail || "") +
+    (camps.length ? select("campaign", "Campanha", [["", "Nenhuma"], ...camps.map(c => [c.code, `${c.code} · ${c.name}`])], "") : "") +
+    field("notes", "Observações (benefício, margem, banco atual)", "text", ""),
+    async values => { await api("/api/leads", { ...values, clientId: prefill.clientId }); toast("Contato registrado na financeira."); if (currentView === "leads") await loadLeads(); }, "Registrar");
+}
+$("#leadAddButton")?.addEventListener("click", () => openLeadModal());
+$("#leadProductFilter")?.addEventListener("change", renderLeads);
+$("#posFinLeadBtn")?.addEventListener("click", async () => {
+  if (!leadData) { try { leadData = await api("/api/leads"); } catch { } }
+  const item = finHintItem();
+  const client = posCustomer.id ? state.clients.find(c => c.id === posCustomer.id) : null;
+  openLeadModal({ name: client?.name || (posCustomer.name !== "Consumidor Final" ? posCustomer.name : ""), phone: client?.phone || "", clientId: client?.id, source: "Serviço da loja", sourceDetail: item?.name || "", product: suggestedFinProduct(item?.name || "") });
+});
+document.addEventListener("change", async event => {
+  const sel = event.target.closest("[data-lead-stage]"); if (!sel) return;
+  const id = sel.dataset.leadStage, stage = sel.value;
+  const lead = leadData.leads.find(l => l.id === id);
+  if (stage === "won") {
+    renderLeads();
+    openModal(`Contrato fechado · ${lead.name}`, `<p class="quoteBox">${html(lead.product)}. A comissão entra como receita da Speed Financeira nos relatórios.</p>` +
+      field("commission", "Comissão recebida (R$)", "number", lead.commissionCents ? (lead.commissionCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required') +
+      field("contract", "Valor do contrato (R$, opcional)", "number", lead.contractCents ? (lead.contractCents / 100).toFixed(2) : "", 'min="0" step="0.01"'),
+      async values => { await api(`/api/leads/${id}`, { stage: "won", commission: values.commission, contract: values.contract }); playChime("success"); toast("Contrato registrado."); await loadLeads(); }, "Confirmar contrato");
+    return;
+  }
+  if (stage === "lost") {
+    renderLeads();
+    openModal(`Não fechou · ${lead.name}`, select("lostReason", "Motivo", ["Sem margem", "Taxa alta", "Desistiu", "Fechou em outro lugar", "Não atende aos requisitos", "Sem retorno do cliente", "Outro"].map(v => [v, v]), "Sem margem"),
+      async values => { await api(`/api/leads/${id}`, { stage: "lost", lostReason: values.lostReason }); await loadLeads(); }, "Salvar");
+    return;
+  }
+  try { await api(`/api/leads/${id}`, { stage }); await loadLeads(); } catch (cause) { toast(cause.message); }
+});
 
 // ---- Plano de ação: sugestões calculadas pelo servidor + ações acompanhadas ----
 let planData = null, planFilter = "open";
@@ -3878,11 +3978,12 @@ function view(name) {
   currentView = name;
   for (const section of document.querySelectorAll(".view")) section.hidden = section.id !== `view-${name}`;
   for (const button of document.querySelectorAll("[data-view]")) button.classList.toggle("active", button.dataset.view === name);
-  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação" };
+  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação", leads: "Financeira" };
   const label = titles[name] || "Painel";
   $("#pageTitle").textContent = label;
   document.title = `${label} · Nexcafé`;
   if (name === "plan") loadPlan();
+  if (name === "leads") loadLeads();
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
   if (name === "marketing" && !$("#marketingResults").hidden) loadMarketingResults();
