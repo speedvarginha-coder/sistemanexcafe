@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.3"
+$AgentVersion = "0.3.4"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -1770,10 +1770,25 @@ function Clear-ClientTraces {
     $roaming = Join-Path $profile "AppData\Roaming"
 
     # Aplicativos que guardam login: fechados e com os dados de sessao apagados.
-    foreach ($name in @("WhatsApp", "Telegram", "Discord", "Spotify", "Teams", "ms-teams", "Zoom", "Skype")) {
+    # Office e leitores de PDF tambem: o Word guarda uma copia de recuperacao do documento nao salvo
+    # e mostrava o arquivo do cliente anterior ao abrir.
+    foreach ($name in @("WhatsApp", "Telegram", "Discord", "Spotify", "Teams", "ms-teams", "Zoom", "Skype", "WINWORD", "EXCEL", "POWERPNT", "MSPUB", "ONENOTE", "AcroRd32", "Acrobat", "FoxitPDFReader", "FoxitReader")) {
         Get-Process -Name $name -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     }
-    Start-Sleep -Milliseconds 500
+    Start-Sleep -Milliseconds 800
+    # Recuperacao automatica do Office: arquivos nao salvos, AutoRecover e a lista "Recuperar documentos".
+    Remove-PathSafe -Path (Join-Path $local "Microsoft\Office\UnsavedFiles") -AllowedRoot $profile
+    foreach ($app in @("Word", "Excel", "PowerPoint", "Publisher")) {
+        $dir = Join-Path $roaming "Microsoft\$app"
+        foreach ($item in @(Get-ChildItem -LiteralPath $dir -Force -ErrorAction SilentlyContinue | Where-Object { $_.Name -notin @("STARTUP", "XLSTART") })) {
+            Remove-PathSafe -Path $item.FullName -AllowedRoot $profile
+        }
+    }
+    foreach ($office in @(Get-ChildItem "HKCU:\Software\Microsoft\Office" -ErrorAction SilentlyContinue | Where-Object { $_.PSChildName -match '^\d+\.\d+$' })) {
+        foreach ($app in @("Word", "Excel", "PowerPoint", "Publisher")) {
+            foreach ($sub in @("Resiliency", "Reading Locations")) { Remove-Item -Path (Join-Path $office.PSPath "$app\$sub") -Recurse -Force -ErrorAction SilentlyContinue }
+        }
+    }
     $appData = @(
         (Join-Path $local "WhatsApp"), (Join-Path $roaming "WhatsApp"),
         (Join-Path $roaming "Telegram Desktop\tdata"),
