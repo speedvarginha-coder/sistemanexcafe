@@ -1,0 +1,23 @@
+﻿CONTA DO CLIENTE SUMIU DA TELA DE ENTRADA DO WINDOWS
+
+Quando acontece: depois do INSTALAR, na tela de entrada so aparece a conta
+"Tecnico da lan house" e a conta do cliente (com os icones) nao aparece mais.
+
+JEITO MAIS FACIL
+1. Entre na conta Tecnico.
+2. Execute "CONTA DO CLIENTE SUMIU.bat" (neste pendrive) e responda Sim no aviso do Windows.
+3. Digite o nome da conta do cliente quando pedir (ex.: COMPUTADOR-15) e aperte Enter.
+4. Saia da conta Tecnico. A conta do cliente volta a aparecer.
+
+PELO COMANDO (se preferir)
+1. Entre na conta Tecnico.
+2. Menu Iniciar, digite cmd, clique com o botao direito em "Prompt de Comando"
+   e escolha "Executar como administrador".
+3. Digite o comando abaixo (troque COMPUTADOR-15 pelo nome da conta do cliente) e aperte Enter:
+
+   net localgroup Usuários COMPUTADOR-15 /add
+
+4. Deve aparecer "Comando concluido com exito". Saia da conta Tecnico.
+
+Para ver o nome das contas da maquina: net user
+Para conferir os grupos da conta:      net user COMPUTADOR-15
