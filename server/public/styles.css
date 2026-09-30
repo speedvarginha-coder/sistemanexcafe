@@ -4743,7 +4743,7 @@ tr.mutedRow td { color: var(--text-muted); }
 .machineActions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .machineActions .btnEndSession { grid-column: 1 / -1; }
 .machineActions button { white-space: nowrap; width: 100%; }
-.machineActions:has(> button:nth-child(2):last-child) { grid-template-columns: 1.6fr 1fr; }
-.machineActions:has(> button:nth-child(2):last-child) .btnEndSession { grid-column: auto; }
 .machineValue.fromCredit { color: var(--inuse-text); font-size: 15px; }
 .machineValue small { font-size: 11px; font-weight: 600; color: var(--text-muted); }
+.machineActions > button:only-of-type:not(.btnEndSession), .machineActions > .btnEndSession + button:last-child { grid-column: 1 / -1; }
+.status { white-space: nowrap; }
