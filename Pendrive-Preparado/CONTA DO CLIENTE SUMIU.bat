@@ -7,15 +7,13 @@ if errorlevel 1 (
   powershell -NoProfile -Command "Start-Process -FilePath '%~f0' -Verb RunAs"
   exit /b
 )
-echo Contas desta maquina:
-net user
-set "conta="
-set /p conta=Digite o nome da conta do cliente (ex.: COMPUTADOR-15) e aperte Enter:
-if "%conta%"=="" goto fim
-powershell -NoProfile -Command "$g = (Get-LocalGroup -SID 'S-1-5-32-545').Name; try { Add-LocalGroupMember -Group $g -Member '%conta%' -ErrorAction Stop; Write-Host 'Pronto: conta colocada no grupo' $g -ForegroundColor Green } catch { if ($_.Exception.Message -match 'membro|member') { Write-Host 'A conta ja estava no grupo' $g -ForegroundColor Yellow } else { Write-Host ('Erro: ' + $_.Exception.Message) -ForegroundColor Red } }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+  "$cfg = 'C:\LanHouseManagerAgent\agent-config.json';" ^
+  "$contas = if (Test-Path $cfg) { @((Get-Content -Raw $cfg | ConvertFrom-Json).ProtectedUsers) } else { @() };" ^
+  "if (-not $contas) { $contas = @(Read-Host 'Digite o nome da conta do cliente (ex.: COMPUTADOR-15)') };" ^
+  "$grupo = (Get-LocalGroup -SID 'S-1-5-32-545').Name;" ^
+  "foreach ($c in $contas) { if (-not $c) { continue }; Write-Host ('Conta do cliente: ' + $c); & net.exe localgroup $grupo $c /add; & net.exe user $c | Select-String 'Associa|Group' };" ^
+  "Write-Host ''; Write-Host 'Pronto. Saia da conta Tecnico: a conta do cliente deve aparecer na tela de entrada.' -ForegroundColor Green"
 echo.
-net user "%conta%" | findstr /i "Grupo Group"
-echo.
-echo Saia da conta Tecnico: a conta do cliente deve aparecer na tela de entrada.
-:fim
+echo (Se aparecer "ja e membro do grupo", a conta ja estava certa.)
 pause
