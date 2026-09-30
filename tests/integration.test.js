@@ -459,7 +459,13 @@ test("ligar e desligar estacoes: shutdown, MAC e wake-on-lan", async () => {
     assert.equal((await request("/api/client/pc-01/event", { title: "Desligamento", shutdownSeq: 1 }, token)).status, 200);
     state = (await request("/api/state")).payload;
     assert.equal(state.machines[0].appliedShutdownSeq, 1);
-    assert.equal((await request("/api/machines/shutdown-all", {})).status, 200);
+    const all = (await request("/api/machines/shutdown-all", {})).payload;
+    assert.equal(all.count, 1, "maquina conectada e livre recebe o desligamento");
+    assert.equal((await request("/api/state")).payload.machines[0].shutdownSeq, 2);
+    assert.equal((await request("/api/machines/pc-01/start", { minutes: 10, billingMode: "postpaid" })).status, 200);
+    const busy = (await request("/api/machines/shutdown-all", {})).payload;
+    assert.equal(busy.count, 0, "maquina em uso nao desliga");
+    assert.deepEqual(busy.inUse, [state.machines[0].name]);
     assert.equal((await request("/api/machines/power-all", {})).status, 200);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

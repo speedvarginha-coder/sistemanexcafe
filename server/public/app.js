@@ -4031,10 +4031,11 @@ $("#powerAllButton").addEventListener("click", async () => {
 });
 
 $("#shutdownAllButton").addEventListener("click", async () => {
-  if (!confirm("ATENÇÃO: Desligar TODAS as estações conectadas?")) return;
+  const busy = state.machines.filter(m => m.session).map(m => m.name);
+  if (!confirm(`Desligar as máquinas livres?${busy.length ? `\n\nFicam ligadas as que estão em uso: ${busy.join(", ")}.` : ""}`)) return;
   try {
     const result = await api("/api/machines/shutdown-all", {});
-    toast(`Comando de desligamento enviado para ${result.count} estação(ões).`);
+    toast(`Desligando ${result.count} máquina(s) livre(s).${result.inUse?.length ? ` Em uso, continuam ligadas: ${result.inUse.join(", ")}.` : ""}`);
     await loadState();
   } catch (cause) { toast(cause.message); }
 });

@@ -1575,10 +1575,16 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       save(); return send(res, 200, { ok: true, machine: publicMachine(item) });
     }
     if (p === "/api/machines/shutdown-all" && req.method === "POST") {
-      let count = 0;
-      for (const item of Object.values(db.machines)) { item.shutdownSeq = (item.shutdownSeq || 0) + 1; touch(item); count++; }
-      event("sistema", "Desligar todas as estacoes", `${count}`, user.name); save();
-      return send(res, 200, { ok: true, count });
+      // So maquinas conectadas e livres: com cliente usando fica ligada; desligada nao guarda o pedido para depois.
+      let count = 0, inUse = [];
+      for (const item of Object.values(db.machines)) {
+        const online = item.lastSeen && Date.now() - Date.parse(item.lastSeen) < 60000;
+        if (!online) continue;
+        if (item.session) { inUse.push(item.name); continue; }
+        item.shutdownSeq = (item.shutdownSeq || 0) + 1; touch(item); count++;
+      }
+      event("sistema", "Desligar maquinas livres", `${count} desligada(s)${inUse.length ? `; em uso mantidas: ${inUse.join(", ")}` : ""}`, user.name); save();
+      return send(res, 200, { ok: true, count, inUse });
     }
     if (p === "/api/machines/power-all" && req.method === "POST") {
       let count = 0;
