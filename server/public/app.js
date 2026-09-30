@@ -4246,8 +4246,9 @@ function openEndModal(machine, restart = false) {
 
   const fields = summaryHtml(machine) + 
     `<p class="quoteBox" style="font-size: 15px;">Total a Receber: <strong style="font-size: 18px; color: var(--primary);">${currency(estimated)}</strong>${session.billingMode === "postpaid" ? " · valor final atualizado no encerramento" : ""}</p>` + 
-    (estimated ? select("paymentMethod", "Meio de Recebimento", methods, state.cashShift ? "cash" : "") : "") + 
-    changeCalculatorHtml;
+    (estimated && state.cashShift ? select("paymentMethod", "Meio de Recebimento", methods, "cash") : "") +
+    (estimated && !state.cashShift ? `<p class="formNotice">O caixa está fechado. Ao encerrar, ${currency(estimated)} ficam em <strong>A receber</strong> (Caixa e vendas); receba depois de abrir o caixa.</p>` : "") +
+    (state.cashShift ? changeCalculatorHtml : "");
 
   openModal(
     `${restart ? "Encerrar e reiniciar" : "Encerrar Atendimento"} · ${machine.name}`, 
@@ -4269,7 +4270,7 @@ function openEndModal(machine, restart = false) {
         changeCents: Math.round(changeVal * 100)
       });
     }, 
-    estimated && state.cashShift ? "Encerrar e Receber" : "Encerrar Terminal"
+    estimated && state.cashShift ? "Encerrar e Receber" : estimated ? "Encerrar (receber depois)" : "Encerrar Terminal"
   );
 
   const form = $("#modalForm");

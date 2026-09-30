@@ -4747,3 +4747,4 @@ tr.mutedRow td { color: var(--text-muted); }
 .machineValue small { font-size: 11px; font-weight: 600; color: var(--text-muted); }
 .machineActions > button:only-of-type:not(.btnEndSession), .machineActions > .btnEndSession + button:last-child { grid-column: 1 / -1; }
 .status { white-space: nowrap; }
+.formNotice { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 8px 0; }
