@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.9"
+$AgentVersion = "0.4.0"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -2375,8 +2375,15 @@ public class LanHouseOverlayForm : Form {
         if ($openSession) { $script:OverlayWarn5 = $true; $script:OverlayWarn1 = $true }
         if (-not $script:OverlayWarn5 -and $total -le 300 -and $total -gt 60) { $script:OverlayWarn5 = $true; try { [System.Media.SystemSounds]::Exclamation.Play() } catch { } }
         if (-not $script:OverlayWarn1 -and $total -le 60) { $script:OverlayWarn1 = $true; try { [System.Media.SystemSounds]::Hand.Play() } catch { } }
+        if ([string]$script:OverlaySession.billingMode -eq "credit") {
+            # Cliente usando o saldo de tempo: o relogio mostra quanto resta; so impressao e consumo sao pagos a parte.
+            $extra = $script:OverlayPrintCents + $script:OverlayExtrasCents
+            $totalLabel.Text = "Saldo de tempo"
+            $breakLabel.Text = "$([string]$script:OverlaySession.customer)" + $(if ($extra -gt 0) { (" · a pagar: R$ {0:N2}" -f ($extra / 100)) } else { " · restante do seu saldo" })
+        } else {
         $totalLabel.Text = "Total " + ("R$ {0:N2}" -f ($script:OverlayValueCents / 100))
         $breakLabel.Text = if ($script:OverlayExtrasCents -gt 0) { ("Tempo R$ {0:N2} + Impr. R$ {1:N2} + Consumo R$ {2:N2}") -f ($script:OverlayTimeCents / 100), ($script:OverlayPrintCents / 100), ($script:OverlayExtrasCents / 100) } else { ("Tempo R$ {0:N2} + Impressões R$ {1:N2}") -f ($script:OverlayTimeCents / 100), ($script:OverlayPrintCents / 100) }
+        }
         if (((Get-Date).ToUniversalTime() - $script:OverlayLastPoll).TotalSeconds -ge 3) {
             $script:OverlayLastPoll = (Get-Date).ToUniversalTime()
             & $load
