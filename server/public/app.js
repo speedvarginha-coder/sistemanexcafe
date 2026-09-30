@@ -351,7 +351,7 @@ function machineCard(machine, compact = false) {
       ${compact ? "" : active ? `
         <div class="machineMiddle">
           <div class="machineClock ${warnProgress}" data-id="${html(machine.id)}">${sessionClock(machine)}</div>
-          <div class="machineValue">${currency(machine.valueCents || 0)}</div>
+          <div class="machineValue${session.billingMode === "credit" ? " fromCredit" : ""}" title="${session.billingMode === "credit" ? "Valor já usado do saldo do cliente (não é cobrado no caixa)" : "Valor da sessão até agora"}">${session.billingMode === "credit" ? `<small>do saldo</small> ` : ""}${currency(machine.valueCents || 0)}</div>
         </div>
         <div class="progressBarTrack">
           <div class="progressBarFill ${warnProgress}" data-progress-id="${html(machine.id)}" style="width: ${progressPercent}%"></div>
@@ -403,6 +403,10 @@ function summaryHtml(machine) {
   rows.push(s.open ? `<div class="summaryRow"><span>Modalidade</span><strong>Tempo livre</strong></div>` : `<div class="summaryRow"><span>Contratado</span><strong>${s.plannedMinutes} min</strong></div>`);
   rows.push(`<div class="summaryRow"><span>Tempo usado</span><strong>${s.usedMinutes} min</strong></div>`);
   rows.push(`<div class="summaryRow"><span>${s.billingMode === "credit" ? "Consumido do saldo" : "Valor do tempo"}</span><strong>${currency(s.timeCents)}</strong></div>`);
+  if (s.billingMode === "credit") {
+    const client = state.clients.find(c => c.id === machine.session?.clientId);
+    if (client) rows.push(`<div class="summaryRow"><span>Saldo que fica para o cliente</span><strong>${formatCredit(Math.max(0, (client.creditSeconds || 0) - (s.usedMinutes || 0) * 60))}</strong></div>`);
+  }
   const bw = (s.prints || []).filter(p => !p.color);
   const color = (s.prints || []).filter(p => p.color);
   const bwPages = bw.reduce((sum, p) => sum + p.pages, 0), colorPages = color.reduce((sum, p) => sum + p.pages, 0);
