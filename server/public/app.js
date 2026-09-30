@@ -4165,8 +4165,16 @@ function openStartModal(machine, wait = null) {
     clientSelect.innerHTML = `<option value="">Cliente Avulso (sem cadastro)</option>${visible.map(item => `<option value="${html(item.id)}">${html(item.name)}${item.creditSeconds ? ` · saldo ${formatCredit(item.creditSeconds)}` : ""}</option>`).join("")}`;
     if (visible.some(item => item.id === selected)) clientSelect.value = selected;
     else if (term && visible.length === 1) clientSelect.value = visible[0].id;
+    if (clientSelect.value !== selected) applyClientMode();
     update();
   });
+  // Cliente com saldo de tempo: a liberação usa o saldo sozinha (liberar em "tempo livre" cobrava de novo).
+  function applyClientMode() {
+    const client = clients.find(item => item.id === clientSelect.value);
+    if (client && (client.creditSeconds || 0) >= 60) { mode.value = "credit"; minutes.value = Math.floor(client.creditSeconds / 60); }
+    else if (mode.value === "credit") mode.value = "open";
+  }
+  clientSelect.addEventListener("change", applyClientMode);
 
   async function update() {
     const credit = mode.value === "credit";
