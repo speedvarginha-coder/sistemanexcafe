@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.3.7"
+$AgentVersion = "0.3.8"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -1613,7 +1613,14 @@ function Set-StationAccounts {
     if (-not (Test-LocalAdmin -User $TechnicianUser)) { Add-LocalGroupMember -Group $admins -Member $TechnicianUser -ErrorAction SilentlyContinue }
     # So rebaixa o cliente depois de garantir um administrador com senha.
     if (-not (Test-LocalAdmin -User $TechnicianUser)) { throw "A conta $TechnicianUser nao ficou administradora; o cliente nao foi alterado." }
-    if (-not (Get-LocalGroupMemberNames -Sid "S-1-5-32-545" | Where-Object { $_ -ieq $ClientUser })) { Add-LocalGroupMember -Group $users -Member $ClientUser -ErrorAction SilentlyContinue }
+    # Conta fora de Usuarios e de Administradores some da tela de entrada do Windows (maquina 15):
+    # confirma que o cliente entrou em Usuarios antes de tirar o administrador.
+    if (-not (Get-LocalGroupMemberNames -Sid "S-1-5-32-545" | Where-Object { $_ -ieq $ClientUser })) {
+        try { Add-LocalGroupMember -Group $users -Member $ClientUser -ErrorAction Stop } catch { & net.exe localgroup "$($users.Name)" "$ClientUser" /add | Out-Null }
+    }
+    if (-not (Get-LocalGroupMemberNames -Sid "S-1-5-32-545" | Where-Object { $_ -ieq $ClientUser })) {
+        throw "Nao foi possivel colocar o usuario $ClientUser no grupo $($users.Name); o administrador dele foi mantido para ele continuar entrando no Windows."
+    }
     if ($clientIsAdmin) {
         try { Remove-LocalGroupMember -Group $admins -Member $ClientUser -ErrorAction Stop }
         catch { & net.exe localgroup "$($admins.Name)" "$ClientUser" /delete | Out-Null }
