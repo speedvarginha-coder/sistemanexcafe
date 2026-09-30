@@ -20,7 +20,15 @@ Add-Section "Permissoes da pasta" { & icacls.exe $root }
 Add-Section "Configuracao (sem token)" { $c = Get-Content -Raw (Join-Path $root "agent-config.json") | ConvertFrom-Json; $c.PSObject.Properties.Remove("AgentToken"); $c | ConvertTo-Json -Depth 4 }
 Add-Section "Usuario atual esta na lista protegida?" { $c = Get-Content -Raw (Join-Path $root "agent-config.json") | ConvertFrom-Json; "ProtectedUsers=[$($c.ProtectedUsers -join ', ')]  USERNAME=[$env:USERNAME]  contem=$($c.ProtectedUsers -contains $env:USERNAME)"; "codigos USERNAME: " + (($env:USERNAME.ToCharArray() | ForEach-Object { [int]$_ }) -join ' '); "codigos Protegido: " + ((([string]$c.ProtectedUsers[0]).ToCharArray() | ForEach-Object { [int]$_ }) -join ' ') }
 Add-Section "Contas da maquina" { Get-LocalUser | Select-Object Name, FullName, Enabled, LastLogon, PrincipalSource | Format-Table -AutoSize }
-Add-Section "Grupos de cada conta" { foreach ($u in Get-LocalUser) { $g = @(foreach ($grp in Get-LocalGroup) { $n = $grp.Name; $members = @(([ADSI]"WinNT://$env:COMPUTERNAME/$n,group").psbase.Invoke("Members") | ForEach-Object { $_.GetType().InvokeMember("Name", "GetProperty", $null, $_, $null) }); if ($members -contains $u.Name) { $n } }); "$($u.Name): $(if ($g) { $g -join ', ' } else { 'NENHUM GRUPO' })" } }
+Add-Section "Grupos de cada conta" {
+    # Le cada grupo uma vez so (ler por conta ficava lento). Grupos principais: Administradores, Usuarios, Convidados.
+    $map = @{}
+    foreach ($sid in @("S-1-5-32-544", "S-1-5-32-545", "S-1-5-32-546")) {
+        $n = (Get-LocalGroup -SID $sid -ErrorAction SilentlyContinue).Name; if (-not $n) { continue }
+        foreach ($m in @(([ADSI]"WinNT://$env:COMPUTERNAME/$n,group").psbase.Invoke("Members") | ForEach-Object { $_.GetType().InvokeMember("Name", "GetProperty", $null, $_, $null) })) { $map[$m] = @($map[$m]) + $n }
+    }
+    foreach ($u in Get-LocalUser) { "$($u.Name): $(if ($map[$u.Name]) { ($map[$u.Name] | Where-Object { $_ }) -join ', ' } else { 'NENHUM GRUPO PRINCIPAL' })" }
+}
 Add-Section "Contas escondidas da tela de entrada" { $k = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon\SpecialAccounts\UserList"; if (Test-Path $k) { Get-ItemProperty $k | Select-Object * -ExcludeProperty PS* } else { "nenhuma (chave nao existe)" }; $p = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -ErrorAction SilentlyContinue; "dontdisplaylastusername=$($p.dontdisplaylastusername)  DontDisplayLockedUserId=$($p.DontDisplayLockedUserId)"; $w = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" -ErrorAction SilentlyContinue; "AutoAdminLogon=$($w.AutoAdminLogon)  DefaultUserName=$($w.DefaultUserName)" }
 Add-Section "Exclusoes do Defender" { try { (Get-MpPreference).ExclusionPath } catch { "sem acesso (precisa de administrador): $($_.Exception.Message)" } }
 Add-Section "Tarefa de atualizacao" { Get-ScheduledTask -TaskName "LanHouseManager-Atualizador" -ErrorAction Stop | Select-Object TaskName, State; (Get-ScheduledTaskInfo -TaskName "LanHouseManager-Atualizador") | Select-Object LastRunTime, LastTaskResult, NextRunTime }
