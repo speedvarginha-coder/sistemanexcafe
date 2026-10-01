@@ -1189,7 +1189,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const reportedMac = normalizeMac(url.searchParams.get("mac")); if (reportedMac) item.mac = reportedMac;
       if (!item.lastPersistedAt || Date.now() - Date.parse(item.lastPersistedAt) > 15000) { item.lastPersistedAt = now(); save(); }
       const cost = sessionCost(item);
-      return send(res, 200, { ok: true, machineId: item.id, serverTime: now(), commandSeq: item.commandSeq, locked: item.locked || !item.session, lockMessage: item.lockMessage, session: item.session, openedSessionId: item.openedSessionId || null, valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, printBWCents: db.settings.printBWCents, printColorCents: db.settings.printColorCents, restoreSeq: item.restoreSeq, restartSeq: item.restartSeq, appliedRestoreSeq: item.appliedRestoreSeq || 0, appliedRestartSeq: item.appliedRestartSeq || 0, shutdownSeq: item.shutdownSeq || 0, appliedShutdownSeq: item.appliedShutdownSeq || 0, monitorUntil: item.monitorUntil || 0, scriptHash: agentScript().hash });
+      return send(res, 200, { ok: true, machineId: item.id, serverTime: now(), commandSeq: item.commandSeq, locked: item.locked || !item.session, lockMessage: item.lockMessage, session: item.session, openedSessionId: item.openedSessionId || null, valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, printBWCents: db.settings.printBWCents, printColorCents: db.settings.printColorCents, restoreSeq: item.restoreSeq, restartSeq: item.restartSeq, appliedRestoreSeq: item.appliedRestoreSeq || 0, appliedRestartSeq: item.appliedRestartSeq || 0, shutdownSeq: item.shutdownSeq || 0, appliedShutdownSeq: item.appliedShutdownSeq || 0, monitorUntil: item.monitorUntil || 0, scriptHash: agentScript().hash, serverHost: os.hostname() });
     }
     // O cliente encerra o proprio acesso pelo relogio da estacao: vira pendencia para pagar no caixa.
     const clientEnd = p.match(/^\/api\/client\/([^/]+)\/end$/);
@@ -1357,7 +1357,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (clientScriptHash && req.method === "GET") {
       // Consulta leve da tarefa de atualizacao (SYSTEM) da estacao; nao altera o estado da maquina.
       const item = getMachine(decodeURIComponent(clientScriptHash[1])); agent(req, item);
-      return send(res, 200, { ok: true, hash: agentScript().hash });
+      return send(res, 200, { ok: true, hash: agentScript().hash, serverHost: os.hostname() });
     }
     const clientScript = p.match(/^\/api\/client\/([^/]+)\/script$/);
     if (clientScript && req.method === "GET") {

@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.4.0"
+$AgentVersion = "0.4.1"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -203,6 +203,49 @@ function Get-AgentCommand {
     $mac = [Uri]::EscapeDataString((Get-AgentMac))
     $uri = "$base/api/client/$id/command?name=$name&user=$user&version=$version&mac=$mac"
     return Invoke-RestMethod -Method Get -Uri $uri -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -TimeoutSec 5
+}
+
+# Servidor mudou de endereco (roteador deu outro IP): procura pelo nome do computador do servidor
+# e por uma pergunta em broadcast na rede ("LHM?" na porta do servidor + 1). Confirma com o token antes de usar.
+function Find-LanServer {
+    param([object]$Config)
+    $port = 4780
+    try { $port = ([Uri]$Config.ServerUrl).Port } catch { }
+    $candidates = New-Object System.Collections.Generic.List[string]
+    if ($Config.ServerHost) {
+        try {
+            foreach ($ip in [System.Net.Dns]::GetHostAddresses([string]$Config.ServerHost)) {
+                if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) { $candidates.Add("http://$($ip.IPAddressToString):$port") }
+            }
+        } catch { }
+    }
+    $udp = $null
+    try {
+        $udp = New-Object System.Net.Sockets.UdpClient
+        $udp.EnableBroadcast = $true
+        $udp.Client.ReceiveTimeout = 2000
+        $bytes = [Text.Encoding]::ASCII.GetBytes("LHM?")
+        [void]$udp.Send($bytes, $bytes.Length, (New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Broadcast, $port + 1)))
+        $remote = New-Object System.Net.IPEndPoint([System.Net.IPAddress]::Any, 0)
+        $reply = [Text.Encoding]::ASCII.GetString($udp.Receive([ref]$remote))
+        if ($reply -match '^LHM:(\d+)$') { $candidates.Add("http://$($remote.Address.IPAddressToString):$($Matches[1])") }
+    } catch { } finally { if ($udp) { $udp.Close() } }
+    $id = [Uri]::EscapeDataString($Config.MachineId)
+    foreach ($base in ($candidates | Select-Object -Unique)) {
+        try {
+            [void](Invoke-RestMethod -Method Get -Uri "$base/api/client/$id/script-hash" -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -TimeoutSec 5)
+            return $base
+        } catch { }
+    }
+    return $null
+}
+
+function Set-ServerAddress {
+    param([object]$Config, [string]$Base, [string]$HostName)
+    $changed = $false
+    if ($Base -and "$($Config.ServerUrl)".TrimEnd("/") -ne $Base) { Add-OrUpdateProperty -Object $Config -Name "ServerUrl" -Value $Base; $changed = $true; Write-AgentLog "Servidor encontrado em $Base." }
+    if ($HostName -and [string]$Config.ServerHost -ne $HostName) { Add-OrUpdateProperty -Object $Config -Name "ServerHost" -Value $HostName; $changed = $true }
+    if ($changed) { try { Save-Config -Config $Config } catch { } } # conta do cliente pode nao gravar; o atualizador (SYSTEM) grava
 }
 
 function Send-AgentEvent {
@@ -1774,7 +1817,15 @@ function Invoke-AgentUpdate {
     $base = "$($config.ServerUrl)".TrimEnd("/")
     $id = [Uri]::EscapeDataString($config.MachineId)
     try {
-        $info = Invoke-RestMethod -Method Get -Uri "$base/api/client/$id/script-hash" -Headers @{ Authorization = "Bearer $($config.AgentToken)" } -TimeoutSec 10
+        try { $info = Invoke-RestMethod -Method Get -Uri "$base/api/client/$id/script-hash" -Headers @{ Authorization = "Bearer $($config.AgentToken)" } -TimeoutSec 10 }
+        catch {
+            # Servidor sumiu do endereco gravado: procura na rede e grava o novo (esta tarefa roda como SYSTEM).
+            $found = Find-LanServer -Config $config
+            if (-not $found) { throw }
+            Set-ServerAddress -Config $config -Base $found
+            $info = Invoke-RestMethod -Method Get -Uri "$found/api/client/$id/script-hash" -Headers @{ Authorization = "Bearer $($config.AgentToken)" } -TimeoutSec 10
+        }
+        if ($info.serverHost) { Set-ServerAddress -Config $config -HostName ([string]$info.serverHost) }
         [void](Save-AgentScriptFromServer -Config $config -ServerHash ([string]$info.hash))
     } catch { Write-AgentLog "Atualizador: $($_.Exception.Message)" }
     try { Invoke-AgentSupervisor -Config $config } catch { Write-AgentLog "Supervisor: $($_.Exception.Message)" }
@@ -1991,6 +2042,7 @@ function Invoke-AgentRun {
     $lastScreenAt = [datetime]::MinValue
     $lastScriptCheck = (Get-Date).AddSeconds(-50)
     $lastFailureEvent = [datetime]::MinValue
+    $lastServerSearch = [datetime]::MinValue
     $nextRestoreAt = [datetime]::MinValue
     $restoreFailures = 0
     $monitorProcess = $null
@@ -2010,6 +2062,7 @@ function Invoke-AgentRun {
         try { [IO.File]::WriteAllText($heartbeat, (Get-Date).ToString("o")) } catch { }
         try {
             $command = Get-AgentCommand -Config $config
+            if ($command.serverHost -and [string]$config.ServerHost -ne [string]$command.serverHost) { Set-ServerAddress -Config $config -HostName ([string]$command.serverHost) }
             $consecutiveFailures = 0
             $lastCommand = $command
             # Primeira conexao depois de instalar (token novo): pedidos de desligar/reiniciar que ja
@@ -2160,6 +2213,11 @@ function Invoke-AgentRun {
             }
             # Falha isolada (rede) nao vai para o painel; so se repetir em seguida.
             $consecutiveFailures++
+            if ($consecutiveFailures -ge 3 -and ((Get-Date) - $lastServerSearch).TotalSeconds -ge 30) {
+                $lastServerSearch = Get-Date
+                $found = Find-LanServer -Config $config
+                if ($found) { Set-ServerAddress -Config $config -Base $found }
+            }
             if ($consecutiveFailures -ge 3 -and ((Get-Date) - $lastFailureEvent).TotalSeconds -ge 30) {
                 Send-AgentEvent -Config $config -Title "Falha no agente" -Detail "$consecutiveFailures falhas seguidas: $($_.Exception.Message)"
                 $lastFailureEvent = Get-Date
