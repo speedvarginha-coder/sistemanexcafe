@@ -168,6 +168,13 @@ const defaultPrintRunner = {
 
 const DEFAULT_DATA_DIR = path.join(__dirname, "data");
 const isOwnerDraw = item => item.category === "Retirada do dono";
+// Preco desta venda: o do cadastro, ou o informado no caixa (fica registrado o preco de tabela em listPriceCents).
+function salePrice(row, product) {
+  if (row.unitPriceCents === undefined || row.unitPriceCents === null || row.unitPriceCents === "") return product.priceCents;
+  const v = Number(row.unitPriceCents);
+  if (!Number.isInteger(v) || v < 1 || v > 10000000) throw Object.assign(new Error("Preco invalido"), { status: 400 });
+  return v;
+}
 const EXPENSE_CATEGORIES = ["Aluguel", "Energia", "Água", "Internet", "Salários", "Impostos", "Contabilidade", "Tarifas bancárias", "Cartão de crédito", "Sistemas e assinaturas", "Compras de mercadoria", "Insumos gráficos", "Manutenção", "Marketing e anúncios", "Transporte e combustível", "Alimentação", "Retirada do dono", "Outros"];
 // Copia diaria em outro disco: se o disco do sistema falhar, caixa, clientes e saldos nao se perdem.
 const DEFAULT_OFFSITE_DIR = process.env.LHM_BACKUP_DIR || (process.platform === "win32" ? "C:\\LanHouseManager-Backup" : "");
@@ -1534,17 +1541,18 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if (!item.session) throw err(409, "Estacao sem sessao ativa");
         const ref = label(input.ref, 80);
         if (ref && db.charges.some(row => row.kind === "sale" && row.ref === ref)) return send(res, 200, { ok: true, duplicate: true, machine: publicMachine(item) });
-        const quantities = new Map();
+        const quantities = new Map(); // produto + preco (preco alterado no caixa vira outra linha)
         for (const row of Array.isArray(input.items) ? input.items.slice(0, 50) : []) {
           const productId = label(row.productId, 80);
-          quantities.set(productId, (quantities.get(productId) || 0) + number(row.quantity, 1, 1000, "Quantidade"));
+          const product = db.products.find(entry => entry.id === productId);
+          if (!product || !product.active) throw err(409, "Produto indisponivel");
+          const unit = salePrice(row, product), key = `${productId}@${unit}`;
+          quantities.set(key, { product, unit, quantity: (quantities.get(key)?.quantity || 0) + number(row.quantity, 1, 1000, "Quantidade") });
         }
         const items = [];
-        for (const [productId, quantity] of quantities) {
-          const product = db.products.find(row => row.id === productId);
-          if (!product || !product.active) throw err(409, "Produto indisponivel");
-          if (product.priceCents < 1) throw err(409, `Configure o preco: ${product.name}`);
-          items.push({ productId, name: product.name, quantity, unitPriceCents: product.priceCents, totalCents: quantity * product.priceCents });
+        for (const { product, unit, quantity } of quantities.values()) {
+          if (unit < 1) throw err(409, `Configure o preco: ${product.name}`);
+          items.push({ productId: product.id, name: product.name, quantity, unitPriceCents: unit, totalCents: quantity * unit, ...(unit !== product.priceCents ? { listPriceCents: product.priceCents } : {}) });
         }
         for (const [color, pages] of [[false, input.printBW], [true, input.printColor]]) {
           if (pages === undefined || pages === null || pages === "" || Number(pages) === 0) continue;
@@ -1723,10 +1731,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
           const product = db.products.find(item => item.id === id);
           if (!product || !product.active) throw err(409, "Produto indisponivel");
           stockNeeded.set(id, (stockNeeded.get(id) || 0) + qty);
-          if (product.priceCents < 1) throw err(409, `Configure o preco: ${product.name}`);
-          const totalCents = qty * product.priceCents;
+          const unit = salePrice(row, product);
+          if (unit < 1) throw err(409, `Configure o preco: ${product.name}`);
+          const totalCents = qty * unit;
           amountCents += totalCents;
-          items.push({ productId: id, name: product.name, category: product.category, quantity: qty, unitPriceCents: product.priceCents, totalCents });
+          items.push({ productId: id, name: product.name, category: product.category, quantity: qty, unitPriceCents: unit, totalCents, ...(unit !== product.priceCents ? { listPriceCents: product.priceCents } : {}) });
         } else {
           const name = label(row.name, 100);
           if (!name) throw err(400, "Informe a descricao do item");

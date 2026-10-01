@@ -669,6 +669,11 @@ test("venda em carrinho e pendencias antigas permanecem operaveis", async () => 
     assert.equal(state.products.find(row => row.id === water.id).stock, 3);
     assert.equal(state.products.find(row => row.id === snack.id).stock, 2);
     assert.equal(state.openCharges.length, 200);
+    // Preco alterado no caixa vale so para a venda e guarda o preco de tabela.
+    const promo = await request("/api/sales", { items: [{ productId: water.id, quantity: 2, unitPriceCents: 250 }], paymentMethod: "cash", ref: "venda-preco" });
+    assert.equal(promo.payload.charge.amountCents, 500);
+    assert.equal(promo.payload.charge.items[0].listPriceCents, 300);
+    assert.equal((await request("/api/sales", { items: [{ productId: water.id, quantity: 1, unitPriceCents: 0 }], paymentMethod: "cash", ref: "venda-preco-0" })).status, 400);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 

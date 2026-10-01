@@ -1242,37 +1242,45 @@ function askPosQty(name, unitCents, onPick) {
   openModal(`Quantidade · ${name}`,
     `<label class="qtyStepper"><span>Quantidade</span><div><button type="button" data-qty-step="-1" aria-label="Diminuir">−</button><input name="qty" type="number" value="1" min="1" max="9999" inputmode="numeric" required><button type="button" data-qty-step="1" aria-label="Aumentar">+</button></div></label>` +
     `<div class="qtyPresets">${presets.map(n => `<button type="button" data-qty-preset="${n}">${n}</button>`).join("")}</div>` +
+    `<label class="qtyPrice"><span>Preço unitário (R$)</span><input name="price" type="text" inputmode="decimal" value="${(unitCents / 100).toFixed(2).replace(".", ",")}" title="Mude só se esta venda tiver outro preço"></label>` +
     `<p class="quoteBox qtyTotalLine" id="qtyTotal">${currency(unitCents)} cada · total <strong>${currency(unitCents)}</strong></p>`,
-    values => { onPick(Math.max(1, Math.min(9999, parseInt(values.qty, 10) || 1))); setTimeout(() => $("#posSearchInput")?.focus(), 50); return Promise.resolve(); }, "Confirmar");
+    values => { onPick(Math.max(1, Math.min(9999, parseInt(values.qty, 10) || 1)), priceOf()); setTimeout(() => $("#posSearchInput")?.focus(), 50); return Promise.resolve(); }, "Confirmar");
   $("#formDialog").classList.remove("wide");
-  const form = $("#modalForm"), qty = form.elements.qty;
+  const form = $("#modalForm"), qty = form.elements.qty, price = form.elements.price;
   qty.select();
-  const showTotal = () => { const n = Math.max(0, parseInt(qty.value, 10) || 0); setHtml("#qtyTotal", `${currency(unitCents)} cada · total <strong>${currency(unitCents * n)}</strong>`); };
+  // Preco desta venda (padrao: o do cadastro). Valor invalido volta para o do cadastro.
+  const priceOf = () => { const v = Math.round(Number(String(price.value).replace(/\./g, "").replace(",", ".")) * 100); return v >= 1 ? v : unitCents; };
+  const showTotal = () => { const n = Math.max(0, parseInt(qty.value, 10) || 0), u = priceOf(); setHtml("#qtyTotal", `${currency(u)} cada${u !== unitCents ? ` <small>(cadastro ${currency(unitCents)})</small>` : ""} · total <strong>${currency(u * n)}</strong>`); };
   qty.addEventListener("input", showTotal);
+  price.addEventListener("input", showTotal);
+  price.addEventListener("focus", () => price.select());
   form.querySelectorAll("[data-qty-step]").forEach(b => b.addEventListener("click", () => { qty.value = Math.max(1, (parseInt(qty.value, 10) || 0) + Number(b.dataset.qtyStep)); showTotal(); qty.focus(); qty.select(); }));
   form.querySelectorAll("[data-qty-preset]").forEach(b => b.addEventListener("click", () => { qty.value = b.dataset.qtyPreset; form.requestSubmit(); }));
 }
-function addPosProduct(id, quantity) {
+function addPosProduct(id, quantity, priceCents) {
   const p = state.products.find(item => item.id === id);
   if (!p) return;
+  const edited = Number.isInteger(priceCents) && priceCents !== p.priceCents;
   if (quantity === undefined) {
     const pending = takePendingQty();
     // Como no sistema anterior: escolher o item abre o pop-up de quantidade (Enter confirma 1).
     if (pending) quantity = pending;
-    else return askPosQty(p.name, p.priceCents, q => addPosProduct(id, q));
+    else return askPosQty(p.name, p.priceCents, (q, price) => addPosProduct(id, q, price));
   }
-  const current = posCart.get(id);
+  const key = edited ? `${id}@${priceCents}` : id; // preco diferente vira outra linha no carrinho
+  const current = posCart.get(key);
   const qtyToAdd = Math.max(1, parseInt(quantity, 10) || 1);
   if (current) {
     current.quantity += qtyToAdd;
   } else {
-    posCart.set(id, {
+    posCart.set(key, {
       id: p.id,
       type: p.type,
       name: p.name,
       code: p.code,
       category: p.category,
-      priceCents: p.priceCents,
+      priceCents: edited ? priceCents : p.priceCents,
+      priceEdited: edited,
       quantity: qtyToAdd,
       maxStock: null
     });
@@ -1505,7 +1513,7 @@ async function submitPOSSale() {
         unitPriceCents: entry.priceCents
       });
     } else {
-      regularItems.push({ productId: entry.id, quantity: entry.quantity });
+      regularItems.push({ productId: entry.id, quantity: entry.quantity, ...(entry.priceEdited ? { unitPriceCents: entry.priceCents } : {}) });
     }
   }
 
@@ -1621,7 +1629,7 @@ async function launchItemsToMachine(machineId) {
         unitPriceCents: entry.priceCents
       });
     } else {
-      regularItems.push({ productId: entry.id, quantity: entry.quantity });
+      regularItems.push({ productId: entry.id, quantity: entry.quantity, ...(entry.priceEdited ? { unitPriceCents: entry.priceCents } : {}) });
     }
   }
 
@@ -1703,7 +1711,7 @@ function setupPOSListeners() {
         if (pending) addPosProduct(prod.id, pending);
         else askPosQty(prod.name, prod.priceCents, q => addPosProduct(prod.id, q));
       } else if (!pending) {
-        askPosQty(def.name, def.priceCents, q => { const c = posCart.get(`quick_${action}`); if (c) c.quantity += q; else posCart.set(`quick_${action}`, { id: `quick_${action}`, type: "custom", name: def.name, code: def.code, category: def.category, priceCents: def.priceCents, quantity: q, maxStock: null }); playChime("success"); renderPOSTicket(); });
+        askPosQty(def.name, def.priceCents, (q, price) => { const k = price !== def.priceCents ? `quick_${action}@${price}` : `quick_${action}`; const c = posCart.get(k); if (c) c.quantity += q; else posCart.set(k, { id: k, type: "custom", name: def.name, code: def.code, category: def.category, priceCents: price, quantity: q, maxStock: null }); playChime("success"); renderPOSTicket(); });
       } else {
         const key = `quick_${action}`;
         const current = posCart.get(key);
