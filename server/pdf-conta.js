@@ -321,6 +321,7 @@ function creditCategory(plain) {
 function debitCategory(plain) {
   if (/(aplicacao|resgate|mesma titularidade|entre contas|transf.* propria)/.test(plain)) return { category: "Movimentação entre contas", include: false };
   if (/(saldo bloqueado|saldo desbloqueado|dinheiro reservado)/.test(plain)) return { category: "Movimentação entre contas", include: false };
+  if (/(maritan loredo|aluguel|locacao)/.test(plain)) return { category: "Aluguel", include: true }; // Bruno Maritan Loredo LTDA = aluguel da loja
   if (/(fatura|cartao de credito|pagto cartao|pag cartao|nu pagamentos)/.test(plain)) return { category: "Cartão de crédito", include: true };
   if (/(sistemas|software)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
   if (/(papel|papelaria|grafica)/.test(plain)) return { category: "Insumos gráficos", include: true };
