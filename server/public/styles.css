@@ -4748,3 +4748,7 @@ tr.mutedRow td { color: var(--text-muted); }
 .machineActions > button:only-of-type:not(.btnEndSession), .machineActions > .btnEndSession + button:last-child { grid-column: 1 / -1; }
 .status { white-space: nowrap; }
 .formNotice { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); border-radius: 8px; padding: 10px 12px; font-size: 13px; margin: 8px 0; }
+/* Quantidade do carrinho editavel */
+.posQtyInput { width: 46px; min-height: 28px; padding: 0 4px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); font-weight: 700; font-size: 13px; -moz-appearance: textfield; }
+.posQtyInput::-webkit-outer-spin-button, .posQtyInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.posQtyInput:focus { outline: 2px solid var(--border-focus); border-color: var(--border-focus); }

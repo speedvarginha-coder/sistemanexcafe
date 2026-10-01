@@ -945,7 +945,7 @@ function renderPOS() {
 
   const sessionSalesCount = $("#posSessionSalesCount");
   if (sessionSalesCount) {
-    const payCount = (state.payments || []).length;
+    const payCount = (state.payments || []).filter(p => state.cashShift && p.shiftId === state.cashShift.id).length;
     sessionSalesCount.textContent = `${payCount} ${payCount === 1 ? "recebimento" : "recebimentos"}`;
   }
 
@@ -1130,7 +1130,7 @@ function renderPOSTicket() {
         <td class="centerCol">
           <div class="posQtyCounter">
             <button type="button" class="posQtyBtn" data-cart-action="dec" data-key="${html(key)}">−</button>
-            <span class="posQtyNum">${entry.quantity}</span>
+            <input class="posQtyNum posQtyInput" type="number" min="0" max="9999" inputmode="numeric" value="${entry.quantity}" data-cart-qty="${html(key)}" aria-label="Quantidade de ${html(entry.name)}" title="Clique e digite a quantidade">
             <button type="button" class="posQtyBtn" data-cart-action="inc" data-key="${html(key)}" ${entry.maxStock && entry.quantity >= entry.maxStock ? "disabled" : ""}>+</button>
           </div>
         </td>
@@ -1165,11 +1165,20 @@ function renderPOSTicket() {
   }
 }
 
-function addPosProduct(id, quantity = 1) {
+// Quantidade digitada antes do clique: "20" na busca + clique no item = 20 unidades (a busca limpa sozinha).
+function takePendingQty() {
+  const input = $("#posSearchInput");
+  const match = String(input?.value || "").match(/^\s*(\d{1,4})\s*[*xX]?\s*$/);
+  if (!match) return 1;
+  input.value = "";
+  const box = $("#posSearchSuggestions"); if (box) box.hidden = true;
+  return Math.max(1, Number(match[1]));
+}
+function addPosProduct(id, quantity) {
   const p = state.products.find(item => item.id === id);
   if (!p) return;
   const current = posCart.get(id);
-  const qtyToAdd = Math.max(1, parseInt(quantity, 10) || 1);
+  const qtyToAdd = quantity === undefined ? takePendingQty() : Math.max(1, parseInt(quantity, 10) || 1);
   if (current) {
     current.quantity += qtyToAdd;
   } else {
@@ -1606,7 +1615,8 @@ function setupPOSListeners() {
       } else {
         const key = `quick_${action}`;
         const current = posCart.get(key);
-        if (current) current.quantity++;
+        const qty = takePendingQty();
+        if (current) current.quantity += qty;
         else posCart.set(key, {
           id: key,
           type: "custom",
@@ -1614,7 +1624,7 @@ function setupPOSListeners() {
           code: def.code,
           category: def.category,
           priceCents: def.priceCents,
-          quantity: 1,
+          quantity: qty,
           maxStock: null
         });
         playChime("success");
@@ -1917,8 +1927,21 @@ function setupPOSListeners() {
     }
   });
 
+  // Quantidade digitada no carrinho (0 remove o item). Enter confirma e volta para a busca.
+  $("#posTicketRows")?.addEventListener("change", event => {
+    const input = event.target.closest("[data-cart-qty]"); if (!input) return;
+    const item = posCart.get(input.dataset.cartQty); if (!item) return;
+    const qty = Math.max(0, Math.min(9999, parseInt(input.value, 10) || 0));
+    if (qty === 0) posCart.delete(input.dataset.cartQty); else item.quantity = qty;
+    renderPOSTicket();
+  });
+  $("#posTicketRows")?.addEventListener("keydown", event => {
+    if (event.key === "Enter" && event.target.closest("[data-cart-qty]")) { event.preventDefault(); event.target.blur(); $("#posSearchInput")?.focus(); }
+  });
+
   // Ações na tabela do cupom
   $("#posTicketRows")?.addEventListener("click", event => {
+    if (event.target.closest("[data-cart-qty]")) { event.target.select?.(); return; }
     const btn = event.target.closest("[data-cart-action]");
     if (!btn) return;
     const action = btn.dataset.cartAction;
