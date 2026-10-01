@@ -1907,8 +1907,16 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (amountCents < 1) throw err(400, "Informe o valor");
       const direction = input.direction === "out" ? "out" : "in"; const reason = label(input.reason, 100);
       if (!reason) throw err(400, "Informe o motivo");
-      db.cashAdjustments.unshift({ id: uuid(), at: now(), shiftId: shift.id, amountCents, direction, reason, operator: user.name });
-      event("caixa", direction === "in" ? "Entrada no caixa" : "Retirada do caixa", reason, user.name); save(); return send(res, 201, { ok: true });
+      const adjustment = { id: uuid(), at: now(), shiftId: shift.id, amountCents, direction, reason, operator: user.name };
+      db.cashAdjustments.unshift(adjustment);
+      // Gasto da loja pago com dinheiro da gaveta (almoco, compra rapida): alem de sair do caixa, entra como despesa no DRE.
+      const expenseCategory = label(input.expenseCategory, 60);
+      if (direction === "out" && expenseCategory) {
+        if (!EXPENSE_CATEGORIES.includes(expenseCategory)) throw err(400, "Categoria invalida");
+        db.expenses.unshift({ id: uuid(), at: adjustment.at, category: expenseCategory, description: reason, amountCents, operator: user.name, paid: true, paidAt: adjustment.at, fileId: null, source: "dinheiro do caixa", adjustmentId: adjustment.id });
+        adjustment.expense = true;
+      }
+      event("caixa", direction === "in" ? "Entrada no caixa" : adjustment.expense ? "Despesa paga com dinheiro do caixa" : "Retirada do caixa", reason, user.name); save(); return send(res, 201, { ok: true });
     }
     if (p === "/api/cash/close" && req.method === "POST") {
       admin(user);

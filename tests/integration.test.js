@@ -674,6 +674,10 @@ test("venda em carrinho e pendencias antigas permanecem operaveis", async () => 
     assert.equal(promo.payload.charge.amountCents, 500);
     assert.equal(promo.payload.charge.items[0].listPriceCents, 300);
     assert.equal((await request("/api/sales", { items: [{ productId: water.id, quantity: 1, unitPriceCents: 0 }], paymentMethod: "cash", ref: "venda-preco-0" })).status, 400);
+    // Despesa paga com dinheiro da gaveta: sai do caixa e entra em Despesas.
+    assert.equal((await request("/api/cash/adjust", { direction: "out", amount: 35, reason: "Almoço", expenseCategory: "Alimentação" })).status, 201);
+    const lunch = (await (await fetch(`${base}/api/expenses`, { headers: { cookie } })).json()).expenses.find(e => e.description === "Almoço");
+    assert.equal(lunch.amountCents, 3500); assert.equal(lunch.category, "Alimentação"); assert.equal(lunch.paid, true);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 

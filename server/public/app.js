@@ -4904,7 +4904,24 @@ $("#cashToggleButton").addEventListener("click", () => {
 
 // Selo do caixa: no Caixa e vendas ja abre o fechamento; em outra tela leva ao caixa.
 $("#shiftBadge").addEventListener("click", () => state?.cashShift && currentView !== "cash" ? view("cash") : $("#cashToggleButton").click());
-$("#cashAdjustButton").addEventListener("click", () => openModal("Sangria ou Suprimento de Gaveta", select("direction", "Operação", [["in", "Suprimento (Entrada de Troco)"], ["out", "Sangria (Retirada de Dinheiro)"]], "out") + field("amount", "Valor da Operação (R$)", "number", "", 'min="0.01" step="0.01" required') + field("reason", "Justificativa / Motivo Contábil", "text", "", "required"), values => api("/api/cash/adjust", values)));
+// Saida da gaveta: sangria (guardar/depositar) ou despesa da loja paga em dinheiro (vai tambem para Despesas/DRE).
+$("#cashAdjustButton").addEventListener("click", () => {
+  const cats = expenseData.categories.length ? expenseData.categories : EXPENSE_CATEGORIES;
+  openModal("Movimentar dinheiro da gaveta",
+    select("op", "Operação", [["expense", "Despesa da loja paga com dinheiro do caixa"], ["out", "Sangria (guardar ou depositar)"], ["in", "Suprimento (entrada de troco)"]], "expense") +
+    `<div id="adjCatWrap">${select("expenseCategory", "Categoria da despesa", cats.map(c => [c, c]), "Alimentação")}</div>` +
+    field("amount", "Valor (R$)", "number", "", 'min="0.01" step="0.01" required') +
+    field("reason", "Descrição", "text", "", 'required placeholder="Ex.: Almoço, Galão de água, Fita adesiva"'),
+    values => api("/api/cash/adjust", { amount: values.amount, reason: values.reason, direction: values.op === "in" ? "in" : "out", expenseCategory: values.op === "expense" ? values.expenseCategory : undefined })
+      .then(() => { if (values.op === "expense") { toast(`Despesa lançada: ${values.reason}.`); loadExpenses().catch(() => {}); } }));
+  const form = $("#modalForm"), op = form.elements.op, wrap = $("#adjCatWrap");
+  const sync = () => { wrap.hidden = op.value !== "expense"; };
+  op.addEventListener("change", sync); sync();
+  // Descricao comum ja escolhe a categoria
+  form.elements.reason.addEventListener("input", e => { const t = e.target.value.toLowerCase();
+    const guess = /almo|lanche|caf[eé]|refei|marmit|janta/.test(t) ? "Alimentação" : /gal[aã]o|[aá]gua mineral|limpeza|fita|papel|caneta/.test(t) ? "Insumos gráficos" : /uber|99|[oô]nibus|gasolina|combust/.test(t) ? "Transporte e combustível" : /conserto|manuten|pe[cç]a/.test(t) ? "Manutenção" : null;
+    if (guess && cats.includes(guess)) form.elements.expenseCategory.value = guess; });
+});
 $("#printSaleButton").addEventListener("click", () => openModal("Registrar Impressão Avulsa de Balcão", field("pages", "Quantidade de Páginas", "number", "1", 'min="1" required') + select("color", "Tipo de Impressão", [["false", "Preto & Branco"], ["true", "Colorida"]], "false") + paymentField(), values => api("/api/print/sale", { ...values, color: values.color === "true" }), "Registrar e Receber"));
 
 document.addEventListener("click", async event => {
