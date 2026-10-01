@@ -919,7 +919,17 @@ function renderPosMachineDue() {
   el.hidden = !rows.length;
   el.innerHTML = rows.length ? `<span>Máquinas a receber:</span>${rows.map(([id, v]) => `<button type="button" data-action="receiveMachine" data-id="${html(id)}"><b>${html(state.machines.find(m => m.id === id)?.name || id)}</b> ${currency(v)} · Receber</button>`).join("")}` : "";
 }
+// Venda atual sempre cabe na janela (a lista rola por dentro): total e Receber nunca ficam escondidos.
+function fitPosTicket() {
+  const card = document.querySelector(".posTicketCard");
+  if (!card || currentView !== "cash" || innerWidth <= 900) { if (card) card.style.maxHeight = ""; return; }
+  card.style.maxHeight = `${Math.max(360, innerHeight - Math.max(76, card.getBoundingClientRect().top) - 12)}px`;
+}
+addEventListener("scroll", fitPosTicket, { passive: true });
+addEventListener("resize", fitPosTicket);
+
 function renderPOS() {
+  requestAnimationFrame(fitPosTicket);
   renderPosMachineDue();
   if (!document.querySelector("[data-fav-product]")) loadPosFavorites(); // F5 direto no caixa: atalhos so depois do estado carregar
   const shift = state.cashShift;
