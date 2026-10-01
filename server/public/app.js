@@ -182,6 +182,7 @@ async function loadState() {
       shiftBadge.classList.toggle("open", !!state.cashShift);
       shiftBadge.title = state.cashShift ? "Caixa aberto · Clique para ver extrato" : "Caixa fechado · Clique para abrir o turno";
       shiftBadge.querySelector("span").textContent = state.cashShift ? `Caixa Aberto · ${currency(state.cashSummary?.expectedCashCents || 0)}` : "Caixa Fechado";
+      shiftBadge.title = state.cashShift ? (currentView === "cash" ? "Clique para fechar o caixa" : "Clique para ir ao caixa") : "Clique para abrir o caixa";
     }
 
     const pendingPrints = (state.printJobs || []).filter(j => j.state === "pending" || j.state === "printing");
@@ -4901,7 +4902,8 @@ $("#cashToggleButton").addEventListener("click", () => {
   }
 });
 
-$("#shiftBadge").addEventListener("click", () => state?.cashShift ? view("cash") : $("#cashToggleButton").click());
+// Selo do caixa: no Caixa e vendas ja abre o fechamento; em outra tela leva ao caixa.
+$("#shiftBadge").addEventListener("click", () => state?.cashShift && currentView !== "cash" ? view("cash") : $("#cashToggleButton").click());
 $("#cashAdjustButton").addEventListener("click", () => openModal("Sangria ou Suprimento de Gaveta", select("direction", "Operação", [["in", "Suprimento (Entrada de Troco)"], ["out", "Sangria (Retirada de Dinheiro)"]], "out") + field("amount", "Valor da Operação (R$)", "number", "", 'min="0.01" step="0.01" required') + field("reason", "Justificativa / Motivo Contábil", "text", "", "required"), values => api("/api/cash/adjust", values)));
 $("#printSaleButton").addEventListener("click", () => openModal("Registrar Impressão Avulsa de Balcão", field("pages", "Quantidade de Páginas", "number", "1", 'min="1" required') + select("color", "Tipo de Impressão", [["false", "Preto & Branco"], ["true", "Colorida"]], "false") + paymentField(), values => api("/api/print/sale", { ...values, color: values.color === "true" }), "Registrar e Receber"));
 
