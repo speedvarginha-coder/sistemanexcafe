@@ -324,7 +324,7 @@ function debitCategory(plain) {
   if (/(maritan loredo|aluguel|locacao)/.test(plain)) return { category: "Aluguel", include: true }; // Bruno Maritan Loredo LTDA = aluguel da loja
   if (/(fatura|cartao de credito|pagto cartao|pag cartao|nu pagamentos)/.test(plain)) return { category: "Cartão de crédito", include: true };
   if (/(sistemas|software)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
-  if (/(papel|papelaria|grafica)/.test(plain)) return { category: "Insumos gráficos", include: true };
+  if (/(papel|papelaria|grafica|agenor pereira|pajeu)/.test(plain)) return { category: "Insumos gráficos", include: true }; // Agenor Pereira = Pajeu Papelaria (A4 e envelope)
   if (/(tarifa|cesta|pacote de servicos|iof|juros|encargo|mensalidade conta|manutencao de conta)/.test(plain)) return { category: "Tarifas bancárias", include: true };
   if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|ministerio da fazenda|municipio de|prefeitura|estado de minas|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
   if (/(hostgator|hospedagem|dominio|registro\.br|flyer|icc informatica|stormtech|alexandria tech)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
