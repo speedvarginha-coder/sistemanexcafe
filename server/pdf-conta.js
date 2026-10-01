@@ -327,7 +327,8 @@ function debitCategory(plain) {
   if (/(papel|papelaria|grafica|agenor pereira|pajeu)/.test(plain)) return { category: "Insumos gráficos", include: true }; // Agenor Pereira = Pajeu Papelaria (A4 e envelope)
   if (/(tarifa|cesta|pacote de servicos|iof|juros|encargo|mensalidade conta|manutencao de conta)/.test(plain)) return { category: "Tarifas bancárias", include: true };
   if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|ministerio da fazenda|municipio de|prefeitura|estado de minas|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
-  if (/(hostgator|hospedagem|dominio|registro\.br|flyer|icc informatica|stormtech|alexandria tech)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
+  if (/icc (informatica|shopping)/.test(plain)) return { category: "Compras de mercadoria", include: true }; // ICC Shopping da Informatica: produtos para a loja
+  if (/(hostgator|hospedagem|dominio|registro\.br|flyer|stormtech|alexandria tech)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
   if (/(saque|retirada|pro.?labore)/.test(plain)) return { category: "Retirada do dono", include: true };
   const rule = CATEGORY_RULES.find(([, re]) => re.test(plain));
   return { category: rule ? rule[0] : merchantCategory(plain), include: true };
