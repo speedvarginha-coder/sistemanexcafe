@@ -4752,3 +4752,13 @@ tr.mutedRow td { color: var(--text-muted); }
 .posQtyInput { width: 46px; min-height: 28px; padding: 0 4px; text-align: center; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-card); font-weight: 700; font-size: 13px; -moz-appearance: textfield; }
 .posQtyInput::-webkit-outer-spin-button, .posQtyInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .posQtyInput:focus { outline: 2px solid var(--border-focus); border-color: var(--border-focus); }
+.qtyPresets { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 10px; }
+.qtyPresets button { min-height: 44px; font-size: 16px; font-weight: 700; border: 1px solid var(--primary-border); background: var(--primary-light); color: var(--primary-active); border-radius: 8px; }
+.qtyPresets button:hover { background: var(--primary); color: #fff; }
+.qtyStepper { display: grid; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+.qtyStepper > div { display: grid; grid-template-columns: 52px 1fr 52px; border: 2px solid var(--primary); border-radius: 10px; overflow: hidden; }
+.qtyStepper button { border: none; background: var(--primary-light); color: var(--primary-active); font-size: 22px; font-weight: 700; min-height: 52px; border-radius: 0; box-shadow: none; }
+.qtyStepper input { border: none; text-align: center; font-size: 24px; font-weight: 700; min-height: 52px; -moz-appearance: textfield; }
+.qtyStepper input::-webkit-outer-spin-button, .qtyStepper input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qtyStepper input:focus { outline: none; background: #fffef3; }
+.qtyTotalLine strong { font-size: 18px; color: var(--primary); }

@@ -1169,16 +1169,38 @@ function renderPOSTicket() {
 function takePendingQty() {
   const input = $("#posSearchInput");
   const match = String(input?.value || "").match(/^\s*(\d{1,4})\s*[*xX]?\s*$/);
-  if (!match) return 1;
+  if (!match) return null;
   input.value = "";
   const box = $("#posSearchSuggestions"); if (box) box.hidden = true;
   return Math.max(1, Number(match[1]));
 }
+// Pop-up de quantidade para servicos (impressao, xerox, scanner...): botoes prontos ou digitar + Enter.
+function askPosQty(name, unitCents, onPick) {
+  const presets = [1, 2, 3, 5, 10, 20, 50];
+  openModal(`Quantidade · ${name}`,
+    `<label class="qtyStepper"><span>Quantidade</span><div><button type="button" data-qty-step="-1" aria-label="Diminuir">−</button><input name="qty" type="number" value="1" min="1" max="9999" inputmode="numeric" required><button type="button" data-qty-step="1" aria-label="Aumentar">+</button></div></label>` +
+    `<div class="qtyPresets">${presets.map(n => `<button type="button" data-qty-preset="${n}">${n}</button>`).join("")}</div>` +
+    `<p class="quoteBox qtyTotalLine" id="qtyTotal">${currency(unitCents)} cada · total <strong>${currency(unitCents)}</strong></p>`,
+    values => { onPick(Math.max(1, Math.min(9999, parseInt(values.qty, 10) || 1))); setTimeout(() => $("#posSearchInput")?.focus(), 50); return Promise.resolve(); }, "Confirmar");
+  $("#formDialog").classList.remove("wide");
+  const form = $("#modalForm"), qty = form.elements.qty;
+  qty.select();
+  const showTotal = () => { const n = Math.max(0, parseInt(qty.value, 10) || 0); setHtml("#qtyTotal", `${currency(unitCents)} cada · total <strong>${currency(unitCents * n)}</strong>`); };
+  qty.addEventListener("input", showTotal);
+  form.querySelectorAll("[data-qty-step]").forEach(b => b.addEventListener("click", () => { qty.value = Math.max(1, (parseInt(qty.value, 10) || 0) + Number(b.dataset.qtyStep)); showTotal(); qty.focus(); qty.select(); }));
+  form.querySelectorAll("[data-qty-preset]").forEach(b => b.addEventListener("click", () => { qty.value = b.dataset.qtyPreset; form.requestSubmit(); }));
+}
 function addPosProduct(id, quantity) {
   const p = state.products.find(item => item.id === id);
   if (!p) return;
+  if (quantity === undefined) {
+    const pending = takePendingQty();
+    // Como no sistema anterior: escolher o item abre o pop-up de quantidade (Enter confirma 1).
+    if (pending) quantity = pending;
+    else return askPosQty(p.name, p.priceCents, q => addPosProduct(id, q));
+  }
   const current = posCart.get(id);
-  const qtyToAdd = quantity === undefined ? takePendingQty() : Math.max(1, parseInt(quantity, 10) || 1);
+  const qtyToAdd = Math.max(1, parseInt(quantity, 10) || 1);
   if (current) {
     current.quantity += qtyToAdd;
   } else {
@@ -1610,12 +1632,17 @@ function setupPOSListeners() {
       const def = QUICK_SHORTCUTS[action];
       if (!def) return;
       const prod = state.products.find(p => p.active && (p.code === def.code || p.name.toLowerCase().includes(def.name.toLowerCase())));
+      // Atalhos do balcao sempre perguntam a quantidade (ou usam a digitada antes do clique).
+      const pending = takePendingQty();
       if (prod) {
-        addPosProduct(prod.id);
+        if (pending) addPosProduct(prod.id, pending);
+        else askPosQty(prod.name, prod.priceCents, q => addPosProduct(prod.id, q));
+      } else if (!pending) {
+        askPosQty(def.name, def.priceCents, q => { const c = posCart.get(`quick_${action}`); if (c) c.quantity += q; else posCart.set(`quick_${action}`, { id: `quick_${action}`, type: "custom", name: def.name, code: def.code, category: def.category, priceCents: def.priceCents, quantity: q, maxStock: null }); playChime("success"); renderPOSTicket(); });
       } else {
         const key = `quick_${action}`;
         const current = posCart.get(key);
-        const qty = takePendingQty();
+        const qty = pending;
         if (current) current.quantity += qty;
         else posCart.set(key, {
           id: key,
@@ -1732,10 +1759,12 @@ function setupPOSListeners() {
   suggestionsBox?.addEventListener("click", event => {
     const item = event.target.closest("[data-suggest-id]");
     if (!item) return;
-    const { qty } = parseInputMultiplier(searchInput?.value || "");
+    const raw = searchInput?.value || "";
+    const { qty } = parseInputMultiplier(raw);
     const prod = state.products.find(p => p.id === item.dataset.suggestId);
-    addPosProduct(item.dataset.suggestId, qty);
-    if (prod) toast(`${qty}× ${prod.name} adicionado ao cupom!`);
+    // Com multiplicador (20*342) lanca direto; sem, abre o pop-up de quantidade.
+    if (raw.includes("*")) { addPosProduct(item.dataset.suggestId, qty); if (prod) toast(`${qty}× ${prod.name} adicionado ao cupom!`); }
+    else addPosProduct(item.dataset.suggestId);
     if (searchInput) {
       searchInput.value = "";
       posSearchTerm = "";
@@ -1806,13 +1835,15 @@ function setupPOSListeners() {
 
       const target = exactCode || exactBarcode || exactName || startsCode || selectedSuggestProd || firstSuggest;
       if (target) {
-        addPosProduct(target.id, qty);
+        // Leitor de codigo de barras e multiplicador (20*342) lancam direto; codigo ou nome abrem o pop-up de quantidade.
+        const direct = raw.includes("*") || target === exactBarcode;
         event.currentTarget.value = "";
         posSearchTerm = "";
         if (suggestionsBox) suggestionsBox.hidden = true;
+        if (direct) { addPosProduct(target.id, qty); toast(`${qty}× ${target.name} adicionado ao cupom!`); }
+        else addPosProduct(target.id);
         renderPOS();
-        toast(`${qty}× ${target.name} adicionado ao cupom!`);
-        event.currentTarget.focus();
+        if (direct) event.currentTarget.focus();
       } else {
         toast(`Nenhum item localizado para "${lookup}".`);
       }
