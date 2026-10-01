@@ -4785,3 +4785,8 @@ tr.mutedRow td { color: var(--text-muted); }
   .posKeyLegend { display: none; }
 }
 @media (min-width: 901px) and (min-height: 860px) { .posKeyLegend { display: block; } }
+
+/* A receber no cartao da maquina: texto encolhe (com ...) e o botao Receber fica sempre dentro */
+.machineDue > div { flex: 1 1 auto; min-width: 0; }
+.machineDue small { max-width: none; }
+.machineDue button { flex-shrink: 0; }
