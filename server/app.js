@@ -6,7 +6,7 @@ const crypto = require("node:crypto");
 const dgram = require("node:dgram");
 const { execFile } = require("node:child_process");
 const { buildZip } = require("./installer-package");
-const { readBill, analyzeText, extractText } = require("./pdf-conta");
+const { readBill, analyzeText, extractText, parseBankCsv } = require("./pdf-conta");
 const { readProducts } = require("./importar-produtos");
 const { suggestActions, METRICS, actionEffect, goalProgress, TEMPLATES } = require("./plano-acao");
 
@@ -1983,25 +1983,31 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (p === "/api/expenses/read" && req.method === "POST") {
       admin(user);
       const type = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
-      const ext = { "application/pdf": ".pdf", "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/bmp": ".bmp", "image/gif": ".gif", "image/tiff": ".tif", "image/heic": ".heic" }[type];
-      if (!ext) throw err(415, "Envie um PDF ou uma foto (JPG ou PNG)");
+      const ext = { "application/pdf": ".pdf", "image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/bmp": ".bmp", "image/gif": ".gif", "image/tiff": ".tif", "image/heic": ".heic", "text/csv": ".csv", "application/vnd.ms-excel": ".csv" }[type];
+      if (!ext) throw err(415, "Envie um PDF, uma foto (JPG ou PNG) ou o extrato em CSV");
       const buffer = await readRaw(req, 20 * 1024 * 1024);
       const fileId = uuid();
       fs.mkdirSync(billsDir, { recursive: true });
       const file = path.join(billsDir, `${fileId}${ext}`);
       fs.writeFileSync(file, buffer);
       backupAttachment("contas", file);
-      let text = "", ocr = false;
+      let text = "", ocr = false, csvItems = null;
+      if (ext === ".csv") {
+        // Extrato CSV do banco (Nubank): ja vem linha a linha, sem OCR.
+        text = buffer.toString("utf8"); if (text.includes("�")) text = buffer.toString("latin1");
+        csvItems = parseBankCsv(text);
+        if (!csvItems) throw err(400, "CSV nao reconhecido: envie o extrato CSV do banco (colunas Data, Valor, Identificador, Descricao)");
+      }
       if (ext === ".pdf") {
         if (buffer.subarray(0, 5).toString("latin1") !== "%PDF-") throw err(400, "Arquivo nao e um PDF");
         try { text = extractText(buffer); } catch { text = ""; }
       }
-      if (text.replace(/\s/g, "").length < 20) {
+      if (!csvItems && text.replace(/\s/g, "").length < 20) {
         const result = await ocrRunner(file);
         if (!result.ok) throw err(422, result.error || "Nao foi possivel ler o arquivo");
         text = result.text || ""; ocr = true;
       }
-      const analysis = analyzeText(text, new Date(), url.searchParams.get("as") === "extrato");
+      const analysis = csvItems ? { kind: "statement", suggestion: { description: "Extrato CSV" }, items: csvItems } : analyzeText(text, new Date(), url.searchParams.get("as") === "extrato");
       if (analysis.kind === "statement") {
         // Ja lancado? Mesmo valor ate 5 dias de diferenca: despesa (a pagar vira "marcar como paga") ou receita.
         const used = new Set();
@@ -2009,7 +2015,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         const since = historyRecords("charges").reduce((min, c) => (c.at < min ? c.at : min), new Date().toISOString()).slice(0, 10);
         analysis.since = since;
         for (const it of analysis.items) if (it.date < since && it.include) { it.include = false; it.old = true; }
+        // Mesmo lancamento do banco ja importado (codigo do banco): nao repete.
+        const refs = new Set([...db.expenses, ...(db.incomes || [])].map(row => row.bankRef).filter(Boolean));
+        for (const it of analysis.items) if (it.bankRef && refs.has(it.bankRef)) { it.include = false; it.match = { id: "", at: `${it.date}T12:00:00-03:00`, description: "já importado antes", pending: false }; }
         for (const it of analysis.items) {
+          if (it.match) continue;
           const t = Date.parse(`${it.date}T12:00:00-03:00`);
           const pool = it.type === "out" ? db.expenses : (db.incomes || []);
           const hit = pool.find(row => !used.has(row.id) && row.amountCents === it.amountCents && Math.abs(Date.parse(row.at) - t) <= 5 * 86400000);
@@ -2034,7 +2044,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if (match) { match.paid = true; match.paidAt = at; stats.paid++; continue; }
         const amountCents = Number.isInteger(row.amountCents) ? row.amountCents : money(row.amount, "Valor");
         if (amountCents < 1) throw err(400, "Valor invalido");
-        const base = { id: uuid(), at, category: label(row.category, 60) || "Outros", description: label(row.description, 120) || "Extrato", amountCents, operator: user.name, fileId, groupId, source };
+        const base = { id: uuid(), at, category: label(row.category, 60) || "Outros", description: label(row.description, 120) || "Extrato", amountCents, operator: user.name, fileId, groupId, source, ...(row.bankRef ? { bankRef: label(row.bankRef, 80) } : {}) };
         if (row.type === "in") { db.incomes.unshift(base); stats.incomes++; }
         else { db.expenses.unshift({ ...base, paid: true, paidAt: at }); stats.expenses++; }
       }

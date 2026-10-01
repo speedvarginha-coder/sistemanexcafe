@@ -56,3 +56,23 @@ SALDO ANTERIOR 500,00C
     ["out", "2026-09-30", 293500, "Aluguel", true]
   ]);
 });
+
+test("extrato CSV Nubank: transferencia com o CNPJ da loja fica de fora, Pix para o CPF do dono e retirada", () => {
+  const { parseBankCsv } = require("../server/pdf-conta");
+  const csv = `Data,Valor,Identificador,Descrição
+05/05/2026,2400.00,a1,Transferência recebida pelo Pix - SPEED SERVICOS - 29.497.887/0001-57 - SUMUP (0404) Agência: 1 Conta: 1
+04/05/2026,1200.00,a2,Depósito Recebido por Boleto
+07/05/2026,-67.99,a3,Transferência enviada pelo Pix - HOSTGATOR - 15.754.475/0001-40 - ITAÚ (0341) Agência: 1 Conta: 2
+10/05/2026,-2900.00,a4,Transferência enviada pelo Pix - GLEISON SANTOS - •••.780.546-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 3
+13/05/2026,-746.34,a5,Transferência enviada pelo Pix - SPEED SERVICOS - 29.497.887/0001-57 - SUMUP (0404) Agência: 1 Conta: 1
+14/05/2026,-3000.00,a6,Pagamento de boleto efetuado - BRUNO MARITAN LOREDO LTDA`;
+  const items = parseBankCsv(csv);
+  assert.deepEqual(items.map(i => [i.bankRef, i.type, i.amountCents, i.category, i.include]), [
+    ["a1", "in", 240000, "Movimentação entre contas", false],
+    ["a2", "in", 120000, "Vendas (já no caixa)", false],
+    ["a3", "out", 6799, "Sistemas e assinaturas", true],
+    ["a4", "out", 290000, "Retirada do dono", true],
+    ["a5", "out", 74634, "Movimentação entre contas", false],
+    ["a6", "out", 300000, "Aluguel", true]
+  ]);
+});

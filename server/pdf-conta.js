@@ -326,10 +326,53 @@ function debitCategory(plain) {
   if (/(sistemas|software)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
   if (/(papel|papelaria|grafica)/.test(plain)) return { category: "Insumos gráficos", include: true };
   if (/(tarifa|cesta|pacote de servicos|iof|juros|encargo|mensalidade conta|manutencao de conta)/.test(plain)) return { category: "Tarifas bancárias", include: true };
-  if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|ministerio da fazenda|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
+  if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|ministerio da fazenda|municipio de|prefeitura|estado de minas|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
+  if (/(hostgator|hospedagem|dominio|registro\.br|flyer|icc informatica|stormtech|alexandria tech)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
   if (/(saque|retirada|pro.?labore)/.test(plain)) return { category: "Retirada do dono", include: true };
   const rule = CATEGORY_RULES.find(([, re]) => re.test(plain));
   return { category: rule ? rule[0] : merchantCategory(plain), include: true };
+}
+// Extrato CSV (Nubank: "Data,Valor,Identificador,Descrição"; ou o mensal organizado: "Data;Valor;Descricao;Identificador").
+// Transferencia com o CNPJ da propria loja (aparece entrando e saindo) = entre contas; Pix para o CPF do dono = retirada.
+function parseBankCsv(text) {
+  const lines = text.replace(/^﻿/, "").split(/\r?\n/);
+  const head = plainOf(lines[0] || "");
+  if (!/^data[,;]valor[,;]/.test(head)) return null;
+  const sep = head.includes(";") ? ";" : ",", idFirst = /^data[,;]valor[,;]identificador/.test(head);
+  const rows = [];
+  for (const line of lines.slice(1)) {
+    const m = sep === "," ? line.match(/^(\d{2})\/(\d{2})\/(\d{4}),(-?[\d.]+),([^,]+),(.*)$/) : line.match(/^(\d{2})\/(\d{2})\/(\d{4});(-?[\d.,]+);"?(.*?)"?;([^;]*)$/);
+    if (!m) continue;
+    const value = Number(sep === "," ? m[4] : m[4].replace(/\./g, "").replace(",", "."));
+    const [id, desc] = sep === "," && idFirst ? [m[5], m[6]] : [m[6], m[5]];
+    if (!value) continue;
+    rows.push({ date: `${m[3]}-${m[2]}-${m[1]}`, value, id: id.trim(), raw: desc.replace(/^"|"$/g, "").trim() });
+  }
+  const cnpjs = { in: new Set(), out: new Set() };
+  for (const r of rows) for (const c of r.raw.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/g) || []) cnpjs[r.value > 0 ? "in" : "out"].add(c);
+  const own = [...cnpjs.in].filter(c => cnpjs.out.has(c) && /transfer/i.test(rows.find(r => r.raw.includes(c))?.raw || ""));
+  const ownNames = new Set(rows.filter(r => own.some(c => r.raw.includes(c))).map(r => plainOf(r.raw.split(" - ")[1] || "").split(" ")[0]).filter(Boolean));
+  // Dono: tambem quem mais recebe Pix em CPF (30% ou mais das saidas do arquivo).
+  const outTotal = rows.filter(r => r.value < 0).reduce((t, r) => t - r.value, 0), byCpf = {};
+  for (const r of rows) if (r.value < 0 && /•••\.\d{3}\.\d{3}-••/.test(r.raw)) { const n = plainOf(r.raw.split(" - ")[1] || "").split(" ")[0]; byCpf[n] = (byCpf[n] || 0) - r.value; }
+  for (const [n, v] of Object.entries(byCpf)) if (v >= outTotal * 0.3) ownNames.add(n);
+  return rows.map(r => {
+    const parts = r.raw.split(" - "), kind = plainOf(parts[0]), name = (parts[1] || "").trim();
+    const type = r.value > 0 ? "in" : "out";
+    let description = r.raw.split(" - ").slice(0, 2).join(" - ");
+    if (/transferencia (enviada|recebida)/.test(kind)) description = `Pix ${type === "in" ? "recebido" : "enviado"} - ${name}`;
+    else if (/pagamento de boleto/.test(kind)) description = `Boleto pago - ${name}`;
+    else if (/deposito recebido por boleto/.test(kind)) description = "Depósito em dinheiro (boleto)";
+    const isOwnCnpj = own.some(c => r.raw.includes(c));
+    const isOwnerCpf = !isOwnCnpj && /•••\.\d{3}\.\d{3}-••/.test(r.raw) && ownNames.has(plainOf(name).split(" ")[0]);
+    let guess;
+    if (isOwnCnpj) guess = { category: "Movimentação entre contas", include: false };
+    else if (isOwnerCpf) guess = type === "out" ? { category: "Retirada do dono", include: true, owner: true } : { category: "Movimentação entre contas", include: false, note: "aporte do dono" };
+    else if (/deposito recebido por boleto/.test(kind)) guess = { category: "Vendas (já no caixa)", include: false, note: "dinheiro do caixa depositado" };
+    else if (/pagamento de fatura/.test(kind)) guess = { category: "Cartão de crédito", include: true };
+    else guess = type === "in" ? creditCategory(plainOf(description)) : debitCategory(plainOf(description)); // so o nome (o banco do destinatario confundia a categoria)
+    return { type, date: r.date, description: description.slice(0, 120), amountCents: Math.round(Math.abs(r.value) * 100), bankRef: r.id, ...guess };
+  });
 }
 const CREDIT_WORDS = /(recebid|receb\b|credito|deposito|estorno|resgate|rendimento|liquidacao|entrada|devolucao)/;
 const DEBIT_WORDS = /(pagamento|pagto|pago|enviad|debito|tarifa|compra|saque|aplicacao|transferencia env|ted env|pix env|boleto|cesta|iof|juros)/;
@@ -425,4 +468,4 @@ function readBill(pdf) {
   return { text: text.slice(0, 4000), suggestion: suggest(text), scanned: false };
 }
 
-module.exports = { readBill, extractText, suggest, boletoFromText, analyzeText, parseCardStatement, parseBankStatement, merchantCategory };
+module.exports = { readBill, extractText, suggest, boletoFromText, analyzeText, parseCardStatement, parseBankStatement, parseBankCsv, merchantCategory };

@@ -3353,7 +3353,7 @@ const afterExpenseSave = () => Promise.all([loadExpenses(), currentView === "rep
 async function importExpenseFile(file, statement = false) {
   if (!file) return;
   if (file.size > 20 * 1024 * 1024) { toast(`${file.name}: arquivo muito grande (máximo 20 MB).`); return; }
-  const type = file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : /\.png$/i.test(file.name) ? "image/png" : "image/jpeg");
+  const type = /\.csv$/i.test(file.name) ? "text/csv" : file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : /\.png$/i.test(file.name) ? "image/png" : "image/jpeg");
   toast(`Lendo ${file.name}...`);
   const response = await fetch(statement ? "/api/expenses/read?as=extrato" : "/api/expenses/read", { method: "POST", headers: { "content-type": type }, body: await file.arrayBuffer() });
   const result = await response.json().catch(() => ({}));
@@ -3416,7 +3416,7 @@ function openStatementReview(result, name) {
         if (!values[`inc_${i}`]) return null;
         const category = values[`cat_${i}`] || it.category;
         if (category === "Movimentação entre contas" || category === "Vendas (já no caixa)") return null;
-        return { type: it.type, date: values[`date_${i}`], description: values[`desc_${i}`], category, amount: values[`amt_${i}`], matchId: it.match?.pending ? it.match.id : null };
+        return { type: it.type, date: values[`date_${i}`], description: values[`desc_${i}`], category, amount: values[`amt_${i}`], matchId: it.match?.pending ? it.match.id : null, bankRef: it.bankRef || null };
       }).filter(Boolean);
       if (!chosen.length) throw new Error("Marque ao menos um lançamento (vendas e movimentação entre contas não são lançadas).");
       return api("/api/statement/import", { rows: chosen, fileId: result.fileId, source: result.suggestion.description || "extrato" })
