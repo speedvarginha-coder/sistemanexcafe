@@ -38,3 +38,21 @@ test("PDF digitalizado (sem texto) avisa para preencher a mao", () => {
   const result = readBill(Buffer.from("%PDF-1.4\n1 0 obj << /Type /Page >> endobj\n%%EOF", "latin1"));
   assert.equal(result.scanned, true);
 });
+
+test("extrato PJ: saidas viram despesas, entradas de venda ficam desmarcadas, comissao entra", () => {
+  const { analyzeText } = require("../server/pdf-conta");
+  const text = `EXTRATO CONTA CORRENTE
+SALDO ANTERIOR 500,00C
+02/09/2026 PIX RECEB.OUTRA IF 120,00C
+04/09/2026 DEB.CONV.DAS SIMPLES 210,33D
+10/09/2026 TED RECEBIDA BANCO PAN COMISSAO 800,00C
+30/09/2026 PAGTO ALUGUEL IMOVEL 2.935,00D`;
+  const r = analyzeText(text, new Date("2026-10-01"));
+  assert.equal(r.kind, "statement");
+  assert.deepEqual(r.items.map(i => [i.type, i.date, i.amountCents, i.category, i.include]), [
+    ["in", "2026-09-02", 12000, "Vendas (já no caixa)", false],
+    ["out", "2026-09-04", 21033, "Impostos", true],
+    ["in", "2026-09-10", 80000, "Comissão Speed Financeira", true],
+    ["out", "2026-09-30", 293500, "Aluguel", true]
+  ]);
+});

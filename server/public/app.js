@@ -3328,16 +3328,20 @@ function expenseForm(values = {}, fixed = false) {
 }
 const afterExpenseSave = () => Promise.all([loadExpenses(), currentView === "reports" ? loadReport() : null]);
 
-async function importExpenseFile(file) {
+async function importExpenseFile(file, statement = false) {
   if (!file) return;
   if (file.size > 20 * 1024 * 1024) { toast(`${file.name}: arquivo muito grande (máximo 20 MB).`); return; }
   const type = file.type || (/\.pdf$/i.test(file.name) ? "application/pdf" : /\.png$/i.test(file.name) ? "image/png" : "image/jpeg");
   toast(`Lendo ${file.name}...`);
-  const response = await fetch("/api/expenses/read", { method: "POST", headers: { "content-type": type }, body: await file.arrayBuffer() });
+  const response = await fetch(statement ? "/api/expenses/read?as=extrato" : "/api/expenses/read", { method: "POST", headers: { "content-type": type }, body: await file.arrayBuffer() });
   const result = await response.json().catch(() => ({}));
   if (!response.ok || !result.ok) throw new Error(`${file.name}: ${result.error || "não foi possível ler"}`);
   const s = result.suggestion || {};
   if (result.kind === "card" && result.items.length) return openCardReview(result, file.name);
+  if (result.kind === "statement") {
+    if (!result.items.length) throw new Error(`${file.name}: não encontrei lançamentos no extrato. Envie o PDF original do banco (não a foto) ou me avise qual banco é.`);
+    return openStatementReview(result, file.name);
+  }
   const note = result.empty ? "Não foi possível ler o texto. Preencha conferindo a conta (o arquivo fica anexado)." : `Lido ${result.ocr ? "pela foto (OCR)" : "do PDF"}${s.fromBarcode ? ", valor e vencimento pela linha digitável" : ""}. Confira antes de salvar.`;
   openModal(`Conta: ${file.name}`, `<p class="quoteBox">${html(note)}</p>` + expenseForm({ ...s, fileId: result.fileId }), values => api("/api/expenses", { ...values, paid: values.paid === "true" }).then(afterExpenseSave), "Salvar conta");
 }
@@ -3365,9 +3369,37 @@ function openCardReview(result, name) {
     }, "Lançar despesas");
 }
 
-async function importExpenseFiles(files) {
+// Extrato PJ: cada linha vira despesa (saida) ou receita (entrada). Vendas da loja e o que ja foi lancado vem desmarcados.
+function openStatementReview(result, name) {
+  const outCats = expenseData.categories.length ? expenseData.categories : EXPENSE_CATEGORIES;
+  const inCats = ["Comissão Speed Financeira", "Outra receita", "Vendas (já no caixa)", "Movimentação entre contas"];
+  const items = result.items;
+  const sum = type => items.filter(it => it.type === type).reduce((s, it) => s + it.amountCents, 0);
+  const rows = items.map((it, i) => {
+    const cats = it.type === "in" ? inCats : [...outCats, "Movimentação entre contas"];
+    const note = it.match ? `<small class="muted">${it.match.pending ? "Conta a pagar" : "Já lançado"}: ${html(it.match.description)} (${new Date(it.match.at).toLocaleDateString("pt-BR")})${it.match.pending ? " · será marcada como paga" : ""}</small>` : "";
+    return `<tr class="${it.type === "in" ? "stIn" : "stOut"}"><td><input type="checkbox" name="inc_${i}" ${it.include ? "checked" : ""}></td><td><input type="date" name="date_${i}" value="${it.date}"></td><td><input name="desc_${i}" value="${html(it.description)}" maxlength="120">${note}</td><td><select name="cat_${i}" ${it.match?.pending ? "disabled" : ""}>${cats.map(c => `<option ${c === it.category ? "selected" : ""}>${html(c)}</option>`).join("")}</select></td><td class="money"><b>${it.type === "in" ? "+" : "-"}</b> <input type="number" name="amt_${i}" value="${(it.amountCents / 100).toFixed(2)}" step="0.01" min="0.01"></td></tr>`;
+  }).join("");
+  $("#formDialog").classList.add("wide");
+  openModal(`Extrato: ${name}`,
+    `<p class="quoteBox">${items.length} lançamento(s): entradas ${currency(sum("in"))}, saídas ${currency(sum("out"))}. Vendas da loja (maquininha, Pix de cliente, depósito do caixa) já estão no caixa e vêm desmarcadas, assim como o que já foi lançado. Contas a pagar encontradas no extrato serão marcadas como pagas. Confira e salve.</p>` +
+    `<div class="tableWrap expReview"><table class="dataTable"><thead><tr><th></th><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table></div>`,
+    values => {
+      const chosen = items.map((it, i) => {
+        if (!values[`inc_${i}`]) return null;
+        const category = values[`cat_${i}`] || it.category;
+        if (category === "Movimentação entre contas" || category === "Vendas (já no caixa)") return null;
+        return { type: it.type, date: values[`date_${i}`], description: values[`desc_${i}`], category, amount: values[`amt_${i}`], matchId: it.match?.pending ? it.match.id : null };
+      }).filter(Boolean);
+      if (!chosen.length) throw new Error("Marque ao menos um lançamento (vendas e movimentação entre contas não são lançadas).");
+      return api("/api/statement/import", { rows: chosen, fileId: result.fileId, source: result.suggestion.description || "extrato" })
+        .then(r => { toast(`Extrato: ${r.expenses} despesa(s), ${r.incomes} receita(s), ${r.paid} conta(s) marcada(s) como paga(s).`); afterExpenseSave(); });
+    }, "Lançar extrato");
+}
+
+async function importExpenseFiles(files, statement = false) {
   for (const file of files) {
-    try { await importExpenseFile(file); await new Promise(r => { const d = $("#formDialog"); if (!d.open) return r(); d.addEventListener("close", r, { once: true }); }); }
+    try { await importExpenseFile(file, statement); await new Promise(r => { const d = $("#formDialog"); if (!d.open) return r(); d.addEventListener("close", r, { once: true }); }); }
     catch (cause) { toast(cause.message); }
   }
 }
@@ -3378,6 +3410,8 @@ function setupExpenseListeners() {
   for (const id of ["#expFilterCategory", "#expFilterStatus"]) $(id)?.addEventListener("change", renderExpenses);
   $("#expSearch")?.addEventListener("input", renderExpenses);
   $("#expImportBtn")?.addEventListener("click", () => $("#expFileInput").click());
+  $("#expStatementBtn")?.addEventListener("click", () => $("#expStatementInput").click());
+  $("#expStatementInput")?.addEventListener("change", event => { const files = [...event.target.files]; event.target.value = ""; importExpenseFiles(files, true); });
   $("#expFileInput")?.addEventListener("change", event => { const files = [...event.target.files]; event.target.value = ""; importExpenseFiles(files); });
   $("#expAddBtn")?.addEventListener("click", () => openModal("Lançar despesa", expenseForm({ paid: true }), values => api("/api/expenses", { ...values, paid: values.paid === "true", source: "manual" }).then(afterExpenseSave)));
   $("#expFixedBtn")?.addEventListener("click", () => openModal("Despesa fixa mensal", `<p class="quoteBox">Cria o lançamento a pagar em todos os meses (aluguel, internet, salário, contador...). Cada mês você marca como paga.</p>` + expenseForm({}, true), values => api("/api/expenses", { ...values, paid: false, source: "fixa mensal" }).then(afterExpenseSave)));

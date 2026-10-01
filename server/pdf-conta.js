@@ -292,10 +292,83 @@ function parseCardStatement(text, reference = new Date()) {
   return items;
 }
 
+// ---------- Extrato da conta PJ: saidas viram despesas, entradas viram receitas (o dono confere) ----------
+const plainOf = text => text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const FULL_MONTHS = { janeiro: 1, fevereiro: 2, marco: 3, abril: 4, maio: 5, junho: 6, julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12 };
+function isBankStatement(plain) {
+  return /extrato/.test(plain) && /saldo/.test(plain) && !isCardStatement(plain);
+}
+// Entradas: vendas da loja (maquininha, Pix de cliente, deposito do caixa) ja estao no caixa e ficam desmarcadas.
+function creditCategory(plain) {
+  if (/(comissao|promotora|banco pan|facta|mercantil|v8 |credspot|bmg|daycoval|ole consignado|safra|c6 consig|consignado)/.test(plain)) return { category: "Comissão Speed Financeira", include: true };
+  if (/(stone|cielo|getnet|pagseguro|pagbank|mercado pago|sumup|rede s|redecard|infinitepay|ton |vero|antecipacao|liquidacao|vendas? cart|deposito|pix receb|recebido|transferencia receb|ted receb|doc receb|credito pix)/.test(plain)) return { category: "Vendas (já no caixa)", include: false };
+  if (/(resgate|aplicacao|rendimento|mesma titularidade|entre contas)/.test(plain)) return { category: "Movimentação entre contas", include: false };
+  return { category: "Outra receita", include: false };
+}
+function debitCategory(plain) {
+  if (/(aplicacao|resgate|mesma titularidade|entre contas|transf.* propria)/.test(plain)) return { category: "Movimentação entre contas", include: false };
+  if (/(fatura|cartao de credito|pagto cartao|pag cartao)/.test(plain)) return { category: "Cartão de crédito", include: true };
+  if (/(tarifa|cesta|pacote de servicos|iof|juros|encargo|mensalidade conta|manutencao de conta)/.test(plain)) return { category: "Tarifas bancárias", include: true };
+  if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
+  if (/(saque|retirada|pro.?labore)/.test(plain)) return { category: "Retirada do dono", include: true };
+  const rule = CATEGORY_RULES.find(([, re]) => re.test(plain));
+  return { category: rule ? rule[0] : merchantCategory(plain), include: true };
+}
+const CREDIT_WORDS = /(recebid|receb\b|credito|deposito|estorno|resgate|rendimento|liquidacao|entrada|devolucao)/;
+const DEBIT_WORDS = /(pagamento|pagto|pago|enviad|debito|tarifa|compra|saque|aplicacao|transferencia env|ted env|pix env|boleto|cesta|iof|juros)/;
+// Linhas com data no inicio (ou data num cabecalho do dia) e valor no fim; o ultimo valor da linha pode ser o saldo.
+function parseBankStatement(text, reference = new Date()) {
+  const items = [];
+  let year = reference.getFullYear(), current = null, prevBalance = null, lastText = "";
+  const yearHit = plainOf(text).match(/\b(?:periodo|de)\b[^\n]{0,40}?\d{2}\/\d{2}\/(20\d{2})/);
+  if (yearHit) year = Number(yearHit[1]);
+  for (const raw of text.split("\n")) {
+    let line = raw.replace(/\s+/g, " ").trim();
+    if (!line) continue;
+    let plain = plainOf(line);
+    let m = plain.match(/^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/) || plain.match(/^(\d{1,2}) (jan|fev|mar|abr|mai|jun|jul|ago|set|out|nov|dez)[a-z]*\.?(?: (\d{4}))?\b/) || plain.match(/^(\d{1,2}) de ([a-z]+) de (\d{4})/);
+    if (m) {
+      const mon = /\d/.test(m[2]) ? Number(m[2]) : MONTHS[m[2].slice(0, 3)] || FULL_MONTHS[m[2]];
+      if (mon >= 1 && mon <= 12 && Number(m[1]) >= 1 && Number(m[1]) <= 31) {
+        if (m[3]) year = Number(m[3].length === 2 ? `20${m[3]}` : m[3]);
+        current = `${year}-${String(mon).padStart(2, "0")}-${String(m[1]).padStart(2, "0")}`;
+        line = line.slice(m[0].length).trim(); plain = plainOf(line);
+      }
+    }
+    const amounts = [...line.matchAll(/([+-]\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})(\s*[-+]|\s*[CD](?![A-Za-z]))?/g)];
+    if (!amounts.length) { if (/[a-z]{3}/.test(plain) && !/saldo|data|historico|descricao|valor/.test(plain)) lastText = line; continue; }
+    const value = token => Math.round(Number(token[2].replace(/-/g, "").replace(/\./g, "").replace(",", ".")) * 100);
+    const balance = amounts.length > 1 ? value(amounts[amounts.length - 1]) : null;
+    if (/saldo|total de (entradas|saidas)|^total\b|limite/.test(plain)) { if (/saldo/.test(plain)) prevBalance = value(amounts[amounts.length - 1]); continue; }
+    if (!current) continue;
+    const tx = amounts[0], amountCents = value(tx);
+    if (!amountCents) continue;
+    const mark = `${tx[1] || ""}${tx[3] || ""}${tx[2].startsWith("-") ? "-" : ""}`.toUpperCase().replace(/\s/g, "");
+    let description = line.replace(tx[0], " ").replace(amounts.length > 1 ? amounts[amounts.length - 1][0] : "", " ").replace(/R\$/g, "").replace(/\s+/g, " ").trim();
+    if (!/[a-z]{3}/i.test(description)) description = lastText;
+    const dplain = plainOf(description);
+    let type = /-|D/.test(mark) ? "out" : /\+|C/.test(mark) ? "in" : null;
+    if (!type && prevBalance !== null && balance !== null) type = prevBalance + amountCents === balance ? "in" : prevBalance - amountCents === balance ? "out" : null;
+    if (!type) type = CREDIT_WORDS.test(dplain) && !DEBIT_WORDS.test(dplain) ? "in" : "out";
+    if (balance !== null) prevBalance = balance;
+    const guess = type === "in" ? creditCategory(dplain) : debitCategory(dplain);
+    items.push({ type, date: current, description: (description || (type === "in" ? "Entrada" : "Saída")).slice(0, 120), amountCents, ...guess });
+    lastText = "";
+  }
+  return items;
+}
+
 // Analisa o texto (vindo do PDF ou do OCR): fatura de cartao vira lista de compras; o resto vira uma conta.
-function analyzeText(text, reference) {
+function analyzeText(text, reference, forceStatement = false) {
   const plain = text.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
   const base = suggest(text);
+  if (forceStatement || isBankStatement(plain)) {
+    const items = parseBankStatement(text, reference);
+    if (items.length || forceStatement) {
+      const bank = (plain.match(/\b(nubank|itau|bradesco|santander|caixa|banco do brasil|inter|c6|sicoob|sicredi|mercado pago|picpay|cora|pagbank|btg|original|safra)\b/) || [])[0];
+      return { kind: "statement", suggestion: { ...base, description: `Extrato${bank ? ` ${bank.toUpperCase()}` : " PJ"}` }, items };
+    }
+  }
   if (isCardStatement(plain)) {
     const items = parseCardStatement(text, reference);
     if (items.length) {
@@ -313,4 +386,4 @@ function readBill(pdf) {
   return { text: text.slice(0, 4000), suggestion: suggest(text), scanned: false };
 }
 
-module.exports = { readBill, extractText, suggest, boletoFromText, analyzeText, parseCardStatement, merchantCategory };
+module.exports = { readBill, extractText, suggest, boletoFromText, analyzeText, parseCardStatement, parseBankStatement, merchantCategory };

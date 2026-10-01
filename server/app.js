@@ -1988,8 +1988,43 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if (!result.ok) throw err(422, result.error || "Nao foi possivel ler o arquivo");
         text = result.text || ""; ocr = true;
       }
-      const analysis = analyzeText(text);
+      const analysis = analyzeText(text, new Date(), url.searchParams.get("as") === "extrato");
+      if (analysis.kind === "statement") {
+        // Ja lancado? Mesmo valor ate 5 dias de diferenca: despesa (a pagar vira "marcar como paga") ou receita.
+        const used = new Set();
+        for (const it of analysis.items) {
+          const t = Date.parse(`${it.date}T12:00:00-03:00`);
+          const pool = it.type === "out" ? db.expenses : (db.incomes || []);
+          const hit = pool.find(row => !used.has(row.id) && row.amountCents === it.amountCents && Math.abs(Date.parse(row.at) - t) <= 5 * 86400000);
+          if (hit) { used.add(hit.id); it.match = { id: hit.id, at: hit.at, description: hit.description, pending: hit.paid === false }; it.include = it.type === "out" && hit.paid === false; }
+        }
+      }
       return send(res, 200, { ok: true, fileId, ocr, empty: text.replace(/\s/g, "").length < 20, kind: analysis.kind, suggestion: analysis.suggestion, items: analysis.items });
+    }
+    // Extrato PJ conferido: novas despesas (ja pagas), receitas e contas a pagar que o extrato mostra como pagas.
+    if (p === "/api/statement/import" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      const rows = Array.isArray(input.rows) ? input.rows.slice(0, 1000) : [];
+      if (!rows.length) throw err(400, "Nenhum lançamento selecionado");
+      const fileId = /^[0-9a-f-]{36}$/.test(String(input.fileId || "")) ? input.fileId : null;
+      const groupId = uuid(), source = label(input.source, 60) || "extrato";
+      db.incomes ||= [];
+      const stats = { expenses: 0, incomes: 0, paid: 0 };
+      for (const row of rows) {
+        const day = /^\d{4}-\d{2}-\d{2}$/.test(String(row.date || "")) ? row.date : localDay(Date.now());
+        const at = new Date(`${day}T12:00:00-03:00`).toISOString();
+        const match = row.matchId ? db.expenses.find(e => e.id === row.matchId && e.paid === false) : null;
+        if (match) { match.paid = true; match.paidAt = at; stats.paid++; continue; }
+        const amountCents = Number.isInteger(row.amountCents) ? row.amountCents : money(row.amount, "Valor");
+        if (amountCents < 1) throw err(400, "Valor invalido");
+        const base = { id: uuid(), at, category: label(row.category, 60) || "Outros", description: label(row.description, 120) || "Extrato", amountCents, operator: user.name, fileId, groupId, source };
+        if (row.type === "in") { db.incomes.unshift(base); stats.incomes++; }
+        else { db.expenses.unshift({ ...base, paid: true, paidAt: at }); stats.expenses++; }
+      }
+      const byDate = (a, b) => String(b.at).localeCompare(String(a.at));
+      db.expenses.sort(byDate); db.incomes.sort(byDate);
+      event("caixa", "Extrato importado", `${source}: ${stats.expenses} despesa(s), ${stats.incomes} receita(s), ${stats.paid} conta(s) baixada(s)`, user.name); save();
+      return send(res, 200, { ok: true, ...stats });
     }
     // Varias despesas de uma vez (compras da fatura do cartao).
     if (p === "/api/expenses/bulk" && req.method === "POST") {
