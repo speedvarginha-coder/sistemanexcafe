@@ -327,7 +327,7 @@ function debitCategory(plain) {
   if (/(papel|papelaria|grafica|agenor pereira|pajeu)/.test(plain)) return { category: "Insumos gráficos", include: true }; // Agenor Pereira = Pajeu Papelaria (A4 e envelope)
   if (/(tarifa|cesta|pacote de servicos|iof|juros|encargo|mensalidade conta|manutencao de conta)/.test(plain)) return { category: "Tarifas bancárias", include: true };
   if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|ministerio da fazenda|municipio de|prefeitura|estado de minas|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
-  if (/icc (informatica|shopping)/.test(plain)) return { category: "Compras de mercadoria", include: true }; // ICC Shopping da Informatica: produtos para a loja
+  if (/icc (informatica|shopping)|mercado ?livre|mercadolivre/.test(plain)) return { category: "Compras de mercadoria", include: true }; // ICC Shopping da Informatica: produtos para a loja
   if (/alexandria (tech|energia)/.test(plain)) return { category: "Energia", include: true }; // Alexandria Energia: energia solar por assinatura
   if (/(hostgator|hospedagem|dominio|registro\.br|flyer|stormtech)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
   if (/(saque|retirada|pro.?labore)/.test(plain)) return { category: "Retirada do dono", include: true };
