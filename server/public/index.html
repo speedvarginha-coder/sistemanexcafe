@@ -434,6 +434,7 @@
                 </button>
               </div>
 
+              <div id="posFavBaskets" class="posFavBaskets" hidden></div>
               <div class="posQuickShortcuts">
                 <button type="button" class="quickShortcutBtn" data-quick-action="xerox_pb">
                   <span class="quickName">Xerox (#342)</span>
@@ -607,15 +608,17 @@
                   </div>
 
                   <div class="posTicketActions">
-                    <button type="button" id="posClearTicketBtn" class="posBtnClear" title="Atalho: F4 ou F8">
+                    <button type="button" id="posClearTicketBtn" class="posBtnClear" title="Atalho: F8">
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                      <span>Limpar (F4)</span>
+                      <span>Limpar (F8)</span>
                     </button>
                     <button type="button" id="posSubmitTicketBtn" class="primary posBtnCheckout" title="Atalho: F2 ou F10">
                       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="20 6 9 17 4 12"/></svg>
-                      <span>Finalizar Venda (F2)</span>
+                      <span>Receber (F2)</span>
                     </button>
                   </div>
+                  <button type="button" id="posLastReceiptBtn" class="posLastReceipt" hidden>Recibo da última venda</button>
+                  <p class="posKeyLegend"><kbd>F1</kbd> buscar · <kbd>Enter</kbd> quantidade · <kbd>F2</kbd> receber · <kbd>F8</kbd> limpar · <kbd>F9</kbd> item avulso<br>No pagamento: <kbd>F1</kbd> dinheiro · <kbd>F2</kbd> Pix · <kbd>F3</kbd> débito · <kbd>F4</kbd> crédito · <kbd>F8</kbd> fiado · <kbd>Enter</kbd> confirma</p>
                 </div>
 
                 <!-- Overlay de Caixa Fechado (Padrão Speed) -->
@@ -1320,22 +1323,27 @@
         <button type="button" class="posMethodBtn active" data-pos-method="cash">
           <span class="methodIcon"></span>
           <span>Dinheiro</span>
+          <kbd class="methodKey">F1</kbd>
         </button>
         <button type="button" class="posMethodBtn" data-pos-method="pix">
           <span class="methodIcon"></span>
           <span>PIX</span>
+          <kbd class="methodKey">F2</kbd>
         </button>
         <button type="button" class="posMethodBtn" data-pos-method="debit">
           <span class="methodIcon"></span>
           <span>Débito</span>
+          <kbd class="methodKey">F3</kbd>
         </button>
         <button type="button" class="posMethodBtn" data-pos-method="credit">
           <span class="methodIcon"></span>
           <span>Crédito</span>
+          <kbd class="methodKey">F4</kbd>
         </button>
         <button type="button" class="posMethodBtn" data-pos-method="fiado">
           <span class="methodIcon"></span>
           <span>Fiado / Prazo</span>
+          <kbd class="methodKey">F8</kbd>
         </button>
       </div>
 
@@ -1396,9 +1404,10 @@
       <p id="posPaymentError" class="formError" hidden></p>
 
       <div class="modalActions">
-        <button type="button" id="posPaymentCancelBtn">Voltar ao Carrinho</button>
+        <button type="button" id="posPaymentCancelBtn">Voltar (Esc)</button>
+        <button type="button" id="posPaymentReceiptBtn">Confirmar e recibo (Ctrl+Enter)</button>
         <button type="button" id="posPaymentConfirmBtn" class="primary">
-          <span>Concluir Venda &amp; Emitir Recibo (Enter)</span>
+          <span>Confirmar venda (Enter)</span>
         </button>
       </div>
     </div>

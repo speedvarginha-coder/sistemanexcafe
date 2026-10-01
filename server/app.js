@@ -1097,6 +1097,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   }
   const proofsDir = path.join(dataDir, "provas");
   let printQueue = Promise.resolve();
+  let favoritesCache = null;
   let localPrinters = { at: 0, list: [] };
   async function readRaw(req, limit) {
     const chunks = [];
@@ -1673,6 +1674,32 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if ("origin" in input) client.origin = pickOrigin(input.origin);
       if ("login" in input) setClientLogin(client, input.login, input.password);
       event("clientes", "Cliente atualizado", client.name, user.name); save(); return send(res, 200, { ok: true, client: publicClient(client) });
+    }
+    // Atalhos do caixa: itens mais vendidos (30 dias) e vendas que se repetem (60 dias). Recalcula a cada 10 min.
+    if (p === "/api/pos/favorites" && req.method === "GET") {
+      if (!favoritesCache || Date.now() - favoritesCache.at > 600000) {
+        const today = localDay(Date.now()), from30 = shiftDay(today, -29), from60 = shiftDay(today, -59);
+        const active = new Map(db.products.filter(pr => pr.active).map(pr => [pr.id, pr]));
+        const qty = new Map(), baskets = new Map();
+        for (const c of historyRecords("charges")) {
+          if (c.kind !== "sale" || !(c.items || []).length) continue;
+          const day = localDay(c.at); if (day < from60) continue;
+          const rows = c.items.filter(it => it.productId && active.has(it.productId));
+          if (!rows.length || rows.length !== c.items.length) continue;
+          if (day >= from30) for (const it of rows) qty.set(it.productId, (qty.get(it.productId) || 0) + it.quantity);
+          if (rows.length > 4) continue;
+          const key = rows.map(it => `${it.quantity}*${it.productId}`).sort().join("|");
+          baskets.set(key, (baskets.get(key) || 0) + 1);
+        }
+        favoritesCache = {
+          at: Date.now(),
+          products: [...qty.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([productId, quantity]) => ({ productId, quantity })),
+          // Cesta repetida com mais de um item, ou um item so com quantidade maior que 1 (ex.: "2x Impressao").
+          baskets: [...baskets.entries()].filter(([key, n]) => n >= 3 && (key.includes("|") || !key.startsWith("1*"))).sort((a, b) => b[1] - a[1]).slice(0, 6)
+            .map(([key, count]) => ({ count, items: key.split("|").map(part => { const [q, productId] = part.split("*"); return { productId, quantity: Number(q) }; }) }))
+        };
+      }
+      return send(res, 200, { ok: true, products: favoritesCache.products, baskets: favoritesCache.baskets });
     }
     if (p === "/api/sales" && req.method === "POST") {
       const input = await readBody(req);

@@ -772,6 +772,7 @@ let posSearchTerm = "";
 let posCustomer = { id: null, name: "Consumidor Final" };
 let posDestination = "counter";
 let posActiveMethod = "cash";
+let posWantReceipt = false, lastReceiptData = null; // recibo so quando pedir (Ctrl+Enter ou botao)
 let posAuditTab = "due";
 
 const CROSS_SELL_RULES = [
@@ -1174,6 +1175,50 @@ function takePendingQty() {
   const box = $("#posSearchSuggestions"); if (box) box.hidden = true;
   return Math.max(1, Number(match[1]));
 }
+// Atalhos automaticos do caixa: os 10 mais vendidos (30 dias) e as vendas que mais se repetem (60 dias).
+let posFavorites = null, posFavoritesAt = 0;
+async function loadPosFavorites(force = false) {
+  if (!force && posFavorites && Date.now() - posFavoritesAt < 600000) return renderPosFavorites();
+  try { posFavorites = await api("/api/pos/favorites"); posFavoritesAt = Date.now(); renderPosFavorites(); } catch { }
+}
+function renderPosFavorites() {
+  if (!posFavorites) return;
+  const byId = new Map(state.products.filter(p => p.active).map(p => [p.id, p]));
+  const short = name => name.replace(/^Impressão /, "Imp. ").replace(/ Balcão$/, " Balc.").replace(/^Recebimento de Arquivos$/, "Receb. arquivo");
+  const baskets = (posFavorites.baskets || []).map(b => ({ ...b, items: b.items.filter(i => byId.has(i.productId)) })).filter(b => b.items.length);
+  const box = $("#posFavBaskets");
+  if (box) {
+    box.hidden = !baskets.length;
+    box.innerHTML = baskets.length ? `<span class="posFavTitle">Vendas frequentes</span>` + baskets.map((b, i) => {
+      const total = b.items.reduce((s, it) => s + it.quantity * byId.get(it.productId).priceCents, 0);
+      return `<button type="button" class="posFavBasket" data-fav-basket="${i}" title="Vendida ${b.count} vezes nos últimos 60 dias">${b.items.map(it => `${it.quantity}× ${html(short(byId.get(it.productId).name))}`).join(" + ")}<strong>${currency(total)}</strong></button>`;
+    }).join("") : "";
+    box._baskets = baskets;
+  }
+  // Botoes rapidos: troca os fixos pelos mais vendidos (mantem Acesso a internet e Lancar PDF).
+  const grid = document.querySelector(".posQuickShortcuts");
+  const top = (posFavorites.products || []).map(p => byId.get(p.productId)).filter(Boolean).filter(p => !/acesso a internet/i.test(p.name)).slice(0, 8);
+  if (grid && top.length) {
+    grid.querySelectorAll("[data-quick-action]:not([data-quick-action='acesso_net'])").forEach(b => { b.hidden = true; });
+    grid.querySelectorAll("[data-fav-product]").forEach(b => b.remove());
+    const anchor = grid.querySelector("[data-quick-action='acesso_net']");
+    top.forEach(p => {
+      const btn = document.createElement("button");
+      btn.type = "button"; btn.className = "quickShortcutBtn"; btn.dataset.favProduct = p.id;
+      btn.innerHTML = `<span class="quickName">${html(short(p.name))}${p.code ? ` (#${html(p.code)})` : ""}</span><span class="quickPrice">${currency(p.priceCents)}</span>`;
+      grid.insertBefore(btn, anchor);
+    });
+  }
+}
+document.addEventListener("click", event => {
+  const fav = event.target.closest("[data-fav-product]");
+  if (fav) { addPosProduct(fav.dataset.favProduct); return; }
+  const basketBtn = event.target.closest("[data-fav-basket]");
+  if (!basketBtn) return;
+  const basket = $("#posFavBaskets")?._baskets?.[Number(basketBtn.dataset.favBasket)]; if (!basket) return;
+  for (const it of basket.items) addPosProduct(it.productId, it.quantity);
+  $("#posSearchInput")?.focus();
+});
 // Pop-up de quantidade para servicos (impressao, xerox, scanner...): botoes prontos ou digitar + Enter.
 function askPosQty(name, unitCents, onPick) {
   const presets = [1, 2, 3, 5, 10, 20, 50];
@@ -1506,13 +1551,16 @@ async function submitPOSSale() {
     toast("Venda finalizada com sucesso!");
     $("#posPaymentDialog").close();
 
-    showReceipt({
+    lastReceiptData = {
       customer: posCustomer.name || "Consumidor Final",
       items: receiptItems,
       totalCents: totals.totalCents,
       paymentMethod: posSplitMode ? "Misto" : posActiveMethod,
       changeCents: (!posSplitMode && posActiveMethod === "cash") ? changeCents : 0
-    });
+    };
+    if ($("#posLastReceiptBtn")) $("#posLastReceiptBtn").hidden = false;
+    if (posWantReceipt) showReceipt(lastReceiptData);
+    else if (lastReceiptData.changeCents) toast(`Venda finalizada. Troco: ${currency(lastReceiptData.changeCents)}`);
 
     if ($("#posOrigin")) $("#posOrigin").value = "";
     posCart.clear();
@@ -2149,7 +2197,26 @@ function setupPOSListeners() {
     });
   });
 
-  $("#posPaymentConfirmBtn")?.addEventListener("click", submitPOSSale);
+  $("#posPaymentConfirmBtn")?.addEventListener("click", () => { posWantReceipt = false; submitPOSSale(); });
+  $("#posPaymentReceiptBtn")?.addEventListener("click", () => { posWantReceipt = true; submitPOSSale(); });
+  $("#posLastReceiptBtn")?.addEventListener("click", () => { if (lastReceiptData) showReceipt(lastReceiptData); });
+  // Pagamento pelo teclado (como no sistema anterior): F1 dinheiro, F2 Pix, F3 debito, F4 credito, F8 fiado,
+  // Enter confirma, Ctrl+Enter confirma e abre o recibo. Fase de captura: vem antes dos outros atalhos da tela.
+  window.addEventListener("keydown", event => {
+    const dialog = $("#posPaymentDialog");
+    if (!dialog?.open) return;
+    const method = { F1: "cash", F2: "pix", F3: "debit", F4: "credit", F8: "fiado" }[event.key];
+    if (method) {
+      event.preventDefault(); event.stopPropagation();
+      dialog.querySelector(`[data-pos-method="${method}"]`)?.click();
+      return;
+    }
+    if (event.key === "Enter" && !event.target.closest?.("#posSplitBox")) {
+      event.preventDefault(); event.stopPropagation();
+      const btn = event.ctrlKey ? $("#posPaymentReceiptBtn") : $("#posPaymentConfirmBtn");
+      if (btn && !btn.disabled && !$("#posPaymentConfirmBtn").disabled) btn.click();
+    }
+  }, true);
 
   document.querySelectorAll(".posAuditTab").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -2180,6 +2247,8 @@ function setupPOSListeners() {
       $("#posSearchInput")?.focus();
       return;
     }
+    // Atalhos do caixa so valem na tela do caixa e sem outra janela aberta.
+    if (currentView !== "cash" || document.querySelector("dialog[open]")) return;
 
     if (event.key === "F1" || (event.key === "/" && !isInput)) {
       event.preventDefault();
@@ -2201,15 +2270,9 @@ function setupPOSListeners() {
       return;
     }
 
-    if (event.key === "F4") {
-      event.preventDefault();
-      $("#posClearTicketBtn")?.click();
-      return;
-    }
-
     if (event.key === "F8") {
       event.preventDefault();
-      $("#cashAdjustButton")?.click();
+      $("#posClearTicketBtn")?.click();
       return;
     }
 
@@ -4041,6 +4104,7 @@ function view(name) {
   $("#pageTitle").textContent = label;
   document.title = `${label} · Nexcafé`;
   if (name === "plan") loadPlan();
+  if (name === "cash") loadPosFavorites();
   if (name === "leads") loadLeads();
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
@@ -4180,6 +4244,10 @@ function openModal(title, fields, onSubmit, submitText = "Salvar") {
   $("#modalFields input:not([type=hidden]), #modalFields select")?.focus();
 }
 
+// Enter confirma a janela mesmo com o foco numa lista (ex.: "Encerrar & Receber" com Dinheiro selecionado).
+$("#modalForm").addEventListener("keydown", event => {
+  if (event.key === "Enter" && event.target.tagName === "SELECT") { event.preventDefault(); $("#modalForm").requestSubmit(); }
+});
 $("#modalClose").addEventListener("click", () => $("#formDialog").close());
 $("#modalCancel").addEventListener("click", () => $("#formDialog").close());
 
@@ -4312,18 +4380,20 @@ function openEndModal(machine, restart = false) {
       playChime("success");
       toast(`Terminal ${machine.name} encerrado com sucesso.`);
       
-      // Oferecer emissão de comprovante
+      // Recibo so quando pedir: fica no botao "Recibo da ultima venda" do caixa.
       const givenVal = Number($("#endGivenInput")?.value) || 0;
       const changeVal = Math.max(0, givenVal - (estimated / 100));
-      showReceipt({
+      lastReceiptData = {
         machineName: machine.name,
         customer: machine.summary?.customer || session.customer || "Avulso",
         session: machine.summary,
         totalCents: estimated,
         paymentMethod: values.paymentMethod || "cash",
         changeCents: Math.round(changeVal * 100)
-      });
-    }, 
+      };
+      if ($("#posLastReceiptBtn")) $("#posLastReceiptBtn").hidden = false;
+      if (lastReceiptData.changeCents) toast(`Troco: ${currency(lastReceiptData.changeCents)}`);
+    },
     estimated && state.cashShift ? "Encerrar e Receber" : estimated ? "Encerrar (receber depois)" : "Encerrar Terminal"
   );
 
@@ -4917,19 +4987,15 @@ document.addEventListener("keydown", event => {
     document.querySelectorAll("dialog[open]").forEach(d => d.close());
     return;
   }
-  if (event.key === "F2" || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k")) {
+  // F2 fora do caixa: abre o caixa (nova venda). Dentro do caixa o F2 e "Receber" (atalhos do caixa).
+  if ((event.key === "F2" && currentView !== "cash") || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k")) {
     event.preventDefault();
     view("cash");
     const s = $("#posSearchInput");
     if (s) { s.focus(); s.select(); }
     return;
   }
-  if (event.key === "F8" && currentView === "cash") {
-    event.preventDefault();
-    $("#posClearTicketBtn")?.click();
-    return;
-  }
-  if (event.key === "F10" && currentView === "cash") {
+  if (event.key === "F10" && currentView === "cash" && !document.querySelector("dialog[open]")) {
     event.preventDefault();
     $("#posSubmitTicketBtn")?.click();
     return;
