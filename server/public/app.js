@@ -1014,14 +1014,13 @@ function renderPOS() {
 
   // 5. Destino de consumo (Balcão ou Estação Ativa)
   // Campanha e origem da venda (marketing): lista atualizada a cada ciclo sem perder a escolha.
-  const campSelect = $("#posCampaign"), originSelect = $("#posOrigin");
+  const campSelect = $("#posCampaign");
   if (campSelect) {
     const cur = campSelect.value, list = state.campaigns || [];
     const sig = list.map(c => c.code).join("|");
     if (campSelect.dataset.sig !== sig) { campSelect.innerHTML = `<option value="">Nenhuma</option>${list.map(c => `<option value="${html(c.code)}">${html(c.code)} · ${html(c.name)}</option>`).join("")}`; campSelect.dataset.sig = sig; campSelect.value = list.some(c => c.code === cur) ? cur : ""; }
-    campSelect.closest(".posMarketingRow").hidden = false;
+    campSelect.closest(".posMarketingRow").hidden = !list.length; // sem campanha ativa a linha some
   }
-  if (originSelect && originSelect.options.length <= 1) originSelect.innerHTML = `<option value="">Como conheceu?</option>${(state.origins || []).map(o => `<option>${html(o)}</option>`).join("")}`;
   const destSelect = $("#posDestinationSelect");
   if (destSelect) {
     const curDest = posDestination;
@@ -1555,8 +1554,7 @@ async function submitPOSSale() {
         discountCents: totals.discountCents,
         ref,
         clientId: posCustomer.id || null,
-        campaign: $("#posCampaign")?.value || undefined,
-        origin: $("#posOrigin")?.value || undefined
+        campaign: $("#posCampaign")?.value || undefined
       };
 
       if (posSplitMode && posSplitPayments.length) {
@@ -1587,7 +1585,6 @@ async function submitPOSSale() {
     if (posWantReceipt) showReceipt(lastReceiptData);
     else if (lastReceiptData.changeCents) toast(`Venda finalizada. Troco: ${currency(lastReceiptData.changeCents)}`);
 
-    if ($("#posOrigin")) $("#posOrigin").value = "";
     posCart.clear();
     posDiscountRaw = "";
     const discInput = $("#posDiscountInput");
