@@ -1554,7 +1554,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         }
         if (!items.length) throw err(400, "Adicione ao menos um item");
         const amountCents = items.reduce((sum, row) => sum + row.totalCents, 0);
-        charge("sale", `Consumo ${item.name}: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, amountCents, { items, ref, machineId: item.id, clientId: item.session.clientId || null, sessionId: item.session.id });
+        charge("sale", `Consumo ${item.name}: ${items.map(row => `${row.quantity}x ${row.name}`).join(", ").slice(0, 160)}`, amountCents, { items, ref, machineId: item.id, clientId: item.session.clientId || null, sessionId: item.session.id });
         for (const row of items) {
           const product = row.productId && db.products.find(entry => entry.id === row.productId);
           if (product && product.type === "stock") {
@@ -1761,7 +1761,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if (!clientId || !db.clients.some(row => row.id === clientId && row.active)) throw err(400, "Selecione um cliente cadastrado para vender fiado / a prazo");
       }
 
-      const sale = charge("sale", `Venda balcao: ${items.reduce((sum, row) => sum + row.quantity, 0)} item(ns)`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId, campaign: campaignCode(input.campaign), origin: pickOrigin(input.origin) });
+      const sale = charge("sale", `Venda balcao: ${items.map(row => `${row.quantity}x ${row.name}`).join(", ").slice(0, 160)}`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId, campaign: campaignCode(input.campaign), origin: pickOrigin(input.origin) });
       for (const row of planned) pay(sale, row.amountCents, row.method, user.name);
 
       for (const row of items) {

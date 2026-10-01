@@ -308,7 +308,7 @@ function machineCard(machine, compact = false) {
   // Contas desta maquina ainda nao pagas (ultimas 12 h): aparecem no cartao para cobrar na hora.
   const dueCharges = active ? [] : (state.openCharges || []).filter(c => c.machineId === machine.id && Date.now() - Date.parse(c.at) < 12 * 3600000);
   const dueCents = dueCharges.reduce((sum, c) => sum + c.amountCents - c.paidCents, 0);
-  const dueHtml = dueCents ? `<div class="machineDue"><div><span>A receber</span><strong>${currency(dueCents)}</strong><small>${txt(dueCharges.map(c => c.description.replace(/^Uso [^:]+: /, "tempo ")).join(" + "))}</small></div><button type="button" class="primary" data-action="receiveMachine" data-id="${html(machine.id)}">Receber</button></div>` : "";
+  const dueHtml = dueCents ? `<div class="machineDue"><div><span>A receber</span><strong>${currency(dueCents)}</strong><small>${txt(dueCharges.map(c => chargeLabel(c).replace(/^Uso [^:]+: /, "tempo ")).join(" + "))}</small></div><button type="button" class="primary" data-action="receiveMachine" data-id="${html(machine.id)}">Receber</button></div>` : "";
   let actionHtml = "";
   if (active) {
     actionHtml = `
@@ -747,6 +747,12 @@ function renderMachinesTable(machines) {
   `;
 }
 
+// Consumo/venda antigos diziam so "2 item(ns)": mostra os itens para conferir.
+function chargeLabel(c) {
+  if (!c?.items?.length || !/item\(ns\)$/.test(c.description || "")) return c?.description || "";
+  return c.description.replace(/\d+ item\(ns\)$/, c.items.map(it => `${it.quantity}x ${it.name}`).join(", "));
+}
+
 function renderCash() {
   const due = state.openCharges || [];
   const shift = state.cashShift;
@@ -756,7 +762,7 @@ function renderCash() {
   $("#cashToggleButton").textContent = shift ? "Fechar caixa" : "Abrir caixa";
   $("#cashToggleButton").disabled = !!shift && state.user.role !== "admin";
   $("#cashAdjustButton").disabled = !shift; $("#printSaleButton").disabled = !shift;
-  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${txt(item.description)}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
+  $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${txt(chargeLabel(item))}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
   $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador"], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(state.charges.find(c => c.id === item.chargeId)?.description || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method]}</td><td>${html(item.operator)}</td></tr>`), "Nenhum recebimento registrado.");
   $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado", "Diferença", ""], state.cashShifts.filter(item => item.closedAt).map(item => { const diff = item.closingCountedCents - item.closingExpectedCents; return `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td><td class="money ${diff < 0 ? "bad" : ""}">${diff ? currency(diff) : "-"}</td><td class="actionsCell"><button type="button" data-shift-summary="${html(item.id)}">Resumo</button></td></tr>`; }), "Nenhum caixa fechado.");
 
@@ -4979,7 +4985,7 @@ document.addEventListener("click", async event => {
       if (!total) return;
       if (!state.cashShift) { toast("Abra o caixa antes de receber."); return; }
       openModal(`Receber · ${machine ? machine.name : id}`,
-        `<div class="dueList">${due.map(c => `<div><span>${txt(c.description)}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong>${currency(total)}</strong></div></div>` + paymentField(),
+        `<div class="dueList">${due.map(c => `<div><span>${txt(chargeLabel(c))}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong>${currency(total)}</strong></div></div>` + paymentField(),
         async values => { for (const c of due) await api(`/api/charges/${c.id}/pay`, { amount: ((c.amountCents - c.paidCents) / 100).toFixed(2), method: values.paymentMethod }); playChime("success"); toast(`Recebido ${currency(total)}.`); },
         `Receber ${currency(total)}`);
     } else if (action === "pay") {
