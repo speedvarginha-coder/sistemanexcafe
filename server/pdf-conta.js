@@ -387,13 +387,13 @@ function parseBankStatement(text, reference = new Date()) {
     if (!it.description) it.description = it.type === "in" ? "Entrada" : "Saída";
     delete it.lines;
   }
-  // Quem mais recebe Pix da conta (30% ou mais das saidas) e o proprio dono: transferencia, nao despesa.
+  // Quem mais recebe Pix da conta (30% ou mais das saidas) e o proprio dono: retirada (no DRE sai depois do lucro).
   const outs = items.filter(it => it.type === "out" && /pix env|transfer|ted/.test(plainOf(it.description)));
   const byName = new Map();
   for (const it of outs) { const name = plainOf(it.description).replace(/^.*?(enviado|enviada|transferencia|ted)\s*-?\s*/, "").slice(0, 30); if (name.length > 5) byName.set(name, (byName.get(name) || 0) + it.amountCents); }
   const total = items.filter(it => it.type === "out").reduce((s, it) => s + it.amountCents, 0);
   const [owner, ownerCents] = [...byName.entries()].sort((a, b) => b[1] - a[1])[0] || [];
-  if (owner && ownerCents >= total * 0.3 && outs.filter(it => plainOf(it.description).includes(owner)).length >= 3) for (const it of outs) if (plainOf(it.description).includes(owner)) Object.assign(it, { category: "Movimentação entre contas", include: false, owner: true });
+  if (owner && ownerCents >= total * 0.3 && outs.filter(it => plainOf(it.description).includes(owner)).length >= 3) for (const it of outs) if (plainOf(it.description).includes(owner)) Object.assign(it, { category: "Retirada do dono", include: true, owner: true });
   return items;
 }
 

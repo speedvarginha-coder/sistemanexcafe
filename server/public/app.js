@@ -3014,6 +3014,7 @@ function renderDRE() {
     ${dre.incomesCents ? line("(+) Comissões e outras receitas", dre.incomesCents, "", "Speed Financeira e receitas fora do caixa") : ""}
     ${line("(-) Despesas operacionais do período", -(dre.expensesCents || 0), "neg", "aluguel, energia, internet, salários...")}
     ${line("(=) Resultado líquido do período", dre.profitCents, `total ${dre.profitCents >= 0 ? "good" : "bad"}`, `Margem líquida real: ${dre.netMarginPct || 0}%`)}
+    ${dre.ownerDrawCents ? line("(-) Retiradas do dono", -dre.ownerDrawCents, "neg", "sua parte do lucro (Pix para a conta pessoal)") + line("(=) Sobra na loja após retiradas", dre.profitCents - dre.ownerDrawCents, `sub ${dre.profitCents - dre.ownerDrawCents >= 0 ? "good" : "bad"}`, "o que fica para reserva e investimento") : ""}
   </tbody></table>`);
 
   const covPct = dre.coveragePct || 0;
@@ -3386,7 +3387,7 @@ function openStatementReview(result, name) {
   }).join("");
   $("#formDialog").classList.add("wide");
   openModal(`Extrato: ${name}`,
-    `<p class="quoteBox">${items.length} lançamento(s): entradas ${currency(sum("in"))}, saídas ${currency(sum("out"))}. ${sales.length} venda(s) da loja (maquininha e Pix de cliente, ${currency(sales.reduce((s, it) => s + it.amountCents, 0))}) já estão no caixa e ficaram de fora. Transferências para o dono, o que já foi lançado e movimentações entre contas vêm desmarcados. Contas a pagar encontradas no extrato serão marcadas como pagas. Confira e salve.</p>` +
+    `<p class="quoteBox">${items.length} lançamento(s): entradas ${currency(sum("in"))}, saídas ${currency(sum("out"))}. ${sales.length} venda(s) da loja (maquininha e Pix de cliente, ${currency(sales.reduce((s, it) => s + it.amountCents, 0))}) já estão no caixa e ficaram de fora. Pix para a sua conta pessoal entram como Retirada do dono (no DRE saem depois do lucro). O que já foi lançado e movimentações entre contas vêm desmarcados. Contas a pagar encontradas no extrato serão marcadas como pagas. Confira e salve.</p>` +
     (old.length ? `<label class="checkLine"><input type="checkbox" id="stShowOld"> Mostrar ${old.length} lançamento(s) antes de ${since} (início das vendas no sistema; vêm desmarcados para o resultado desses meses não ficar só com despesa)</label>` : "") +
     `<div class="tableWrap expReview"><table class="dataTable"><thead><tr><th></th><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table></div>`,
     values => {

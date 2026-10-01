@@ -167,6 +167,7 @@ const defaultPrintRunner = {
 };
 
 const DEFAULT_DATA_DIR = path.join(__dirname, "data");
+const isOwnerDraw = item => item.category === "Retirada do dono";
 const EXPENSE_CATEGORIES = ["Aluguel", "Energia", "Água", "Internet", "Salários", "Impostos", "Contabilidade", "Tarifas bancárias", "Cartão de crédito", "Sistemas e assinaturas", "Compras de mercadoria", "Insumos gráficos", "Manutenção", "Marketing e anúncios", "Transporte e combustível", "Alimentação", "Retirada do dono", "Outros"];
 // Copia diaria em outro disco: se o disco do sistema falhar, caixa, clientes e saldos nao se perdem.
 const DEFAULT_OFFSITE_DIR = process.env.LHM_BACKUP_DIR || (process.platform === "win32" ? "C:\\LanHouseManager-Backup" : "");
@@ -742,9 +743,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const receivedCents = payments.reduce((sum, item) => sum + item.amountCents, 0);
     const openCharges = db.charges.filter(item => item.amountCents > item.paidCents);
     const dueCents = openCharges.reduce((sum, item) => sum + item.amountCents - item.paidCents, 0);
-    const expensesCents = expenses.reduce((sum, item) => sum + item.amountCents, 0);
+    // Retirada do dono nao e despesa da loja: sai depois do lucro, em linha propria.
+    const ownerDrawCents = expenses.filter(isOwnerDraw).reduce((sum, item) => sum + item.amountCents, 0);
+    const expensesCents = expenses.filter(item => !isOwnerDraw(item)).reduce((sum, item) => sum + item.amountCents, 0);
     const byExpenseCategory = {};
-    for (const item of expenses) byExpenseCategory[item.category] = (byExpenseCategory[item.category] || 0) + item.amountCents;
+    for (const item of expenses.filter(item => !isOwnerDraw(item))) byExpenseCategory[item.category] = (byExpenseCategory[item.category] || 0) + item.amountCents;
 
     // Configuracoes de taxas e calculo de custos
     const settings = db.settings || {};
@@ -767,7 +770,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     for (const sale of prevCharges) { const d = localDay(sale.at); prevByDayMap[d] ||= { date: d, salesCents: 0, count: 0 }; prevByDayMap[d].salesCents += sale.amountCents; prevByDayMap[d].count++; }
     const summaryOf = (list, pays, start, end) => {
       const sales = list.reduce((sum, item) => sum + item.amountCents, 0);
-      const exp = (db.expenses || []).filter(item => start && inRange(item.at, start, end)).reduce((sum, item) => sum + item.amountCents, 0);
+      const exp = (db.expenses || []).filter(item => start && inRange(item.at, start, end) && !isOwnerDraw(item)).reduce((sum, item) => sum + item.amountCents, 0);
       const fees = feeOf(pays);
       const cmv = list.reduce((sum, sale) => sum + costOfCharge(sale), 0);
       const profit = sales - fees - cmv - exp;
@@ -818,7 +821,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     for (const row of monthly) Object.assign(row, { salesCents: 0, cmvCents: 0, feesCents: 0, expensesCents: 0, count: 0 });
     for (const sale of allCharges) { const row = monthly[monthIndex.get(localDay(sale.at).slice(0, 7))]; if (row) { row.salesCents += sale.amountCents; row.cmvCents += costOfCharge(sale); row.count++; } }
     for (const item of allPayments) { const row = monthly[monthIndex.get(localDay(item.at).slice(0, 7))]; if (row) row.feesCents += Math.round(item.amountCents * (feePct[item.method] || 0) / 100); }
-    for (const item of db.expenses || []) { const row = monthly[monthIndex.get(localDay(item.at).slice(0, 7))]; if (row) row.expensesCents += item.amountCents; }
+    for (const item of db.expenses || []) { if (isOwnerDraw(item)) continue; const row = monthly[monthIndex.get(localDay(item.at).slice(0, 7))]; if (row) row.expensesCents += item.amountCents; }
     for (const item of db.incomes || []) { const row = monthly[monthIndex.get(localDay(item.at).slice(0, 7))]; if (row) row.incomesCents = (row.incomesCents || 0) + item.amountCents; }
     for (const row of monthly) row.resultCents = row.salesCents + (row.incomesCents || 0) - row.cmvCents - row.feesCents - row.expensesCents;
 
@@ -827,7 +830,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const yearRow = y => (yearly[y] ||= Array.from({ length: 12 }, () => ({ salesCents: 0, count: 0, cmvCents: 0, feesCents: 0, expensesCents: 0 })));
     for (const sale of allCharges) { const d = localDay(sale.at); const row = yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1]; row.salesCents += sale.amountCents; row.count++; row.cmvCents += costOfCharge(sale); }
     for (const item of allPayments) { const d = localDay(item.at); yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1].feesCents += Math.round(item.amountCents * (feePct[item.method] || 0) / 100); }
-    for (const item of db.expenses || []) { const d = localDay(item.at); yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1].expensesCents += item.amountCents; }
+    for (const item of db.expenses || []) { if (isOwnerDraw(item)) continue; const d = localDay(item.at); yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1].expensesCents += item.amountCents; }
     for (const item of db.incomes || []) { const d = localDay(item.at); const row = yearRow(d.slice(0, 4))[Number(d.slice(5, 7)) - 1]; row.incomesCents = (row.incomesCents || 0) + item.amountCents; }
     for (const rows of Object.values(yearly)) for (const row of rows) row.resultCents = row.salesCents + (row.incomesCents || 0) - row.cmvCents - row.feesCents - row.expensesCents;
 
@@ -1065,6 +1068,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         grossProfitCents: salesCents - feesCents - cmvCents,
         expensesCents,
         profitCents: salesCents + incomesCents - feesCents - cmvCents - expensesCents,
+        ownerDrawCents,
         incomesCents,
         marketingSpendCents,
         marketingCommissionCents,
