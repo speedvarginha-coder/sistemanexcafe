@@ -204,7 +204,7 @@ function boletoFromText(text) {
 const CATEGORY_RULES = [
   ["Energia", /\b(cemig|energia eletrica|kwh|enel|cpfl|light s\.?a|equatorial|energisa|celesc|copel|coelba|neoenergia|elektro)\b/],
   ["Água", /\b(copasa|saae|sabesp|sanepar|agua e esgoto|cedae|embasa|caesb|saneamento|abastecimento de agua)\b/],
-  ["Internet", /\b(internet|fibra|banda larga|mbps|vivo|claro|oi fibra|telecom|provedor|algar|telefonia|brisanet|desktop sa)\b/],
+  ["Internet", /\b(internet|fibra|banda larga|mbps|vivo|claro|oi fibra|telecom|provedor|algar|telefonia|brisanet|desktop sa|alares)\b/],
   ["Aluguel", /\b(aluguel|locacao|locatario|locador|imobiliaria|condominio)\b/],
   ["Impostos", /\b(simples nacional|documento de arrecadacao|das\b|darf|receita federal|iptu|icms|issqn|prefeitura municipal|tributo)\b/],
   ["Salários", /\b(holerite|folha de pagamento|pro-labore|pro labore|recibo de pagamento de salario|salario)\b/],
