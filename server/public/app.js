@@ -915,6 +915,7 @@ function renderPosMachineDue() {
 }
 function renderPOS() {
   renderPosMachineDue();
+  if (!document.querySelector("[data-fav-product]")) loadPosFavorites(); // F5 direto no caixa: atalhos so depois do estado carregar
   const shift = state.cashShift;
   const summary = state.cashSummary || {};
   const settings = state.settings || {};
@@ -950,16 +951,16 @@ function renderPOS() {
     sessionSalesCount.textContent = `${payCount} ${payCount === 1 ? "recebimento" : "recebimentos"}`;
   }
 
-  // Meta diária (R$ 500,00)
-  const goalCents = settings.dailyGoalCents || 50000;
-  const receivedCents = summary.receivedCents || 0;
+  // Faturamento do dia (tudo recebido hoje, em qualquer turno) contra a meta diaria
+  const goalCents = summary.dailyGoalCents || settings.dailyGoalCents || 50000;
+  const receivedCents = summary.todaySalesCents || 0;
   const goalPct = Math.min(100, Math.round((receivedCents / goalCents) * 100));
 
   const goalBadge = $("#posGoalPercentBadge");
   if (goalBadge) goalBadge.textContent = `${goalPct}%`;
 
   const goalTarget = $("#posGoalTargetVal");
-  if (goalTarget) goalTarget.textContent = currency(goalCents);
+  if (goalTarget) goalTarget.textContent = currency(receivedCents);
 
   const goalBar = $("#posGoalProgressBar");
   if (goalBar) goalBar.style.width = `${goalPct}%`;
@@ -969,7 +970,7 @@ function renderPOS() {
     if (receivedCents >= goalCents) {
       goalRem.innerHTML = `<strong style="color: #22c55e;">Meta diária superada! (+${currency(receivedCents - goalCents)})</strong>`;
     } else {
-      goalRem.textContent = `Faltam ${currency(goalCents - receivedCents)} para atingir a meta`;
+      goalRem.textContent = `Meta ${currency(goalCents)} · faltam ${currency(goalCents - receivedCents)}`;
     }
   }
 
@@ -1182,7 +1183,7 @@ async function loadPosFavorites(force = false) {
   try { posFavorites = await api("/api/pos/favorites"); posFavoritesAt = Date.now(); renderPosFavorites(); } catch { }
 }
 function renderPosFavorites() {
-  if (!posFavorites) return;
+  if (!posFavorites || !state?.products) return;
   const byId = new Map(state.products.filter(p => p.active).map(p => [p.id, p]));
   const short = name => name.replace(/^Impressão /, "Imp. ").replace(/ Balcão$/, " Balc.").replace(/^Recebimento de Arquivos$/, "Receb. arquivo");
   const baskets = (posFavorites.baskets || []).map(b => ({ ...b, items: b.items.filter(i => byId.has(i.productId)) })).filter(b => b.items.length);
