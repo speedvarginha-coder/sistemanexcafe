@@ -3375,14 +3375,19 @@ function openStatementReview(result, name) {
   const inCats = ["Comissão Speed Financeira", "Outra receita", "Vendas (já no caixa)", "Movimentação entre contas"];
   const items = result.items;
   const sum = type => items.filter(it => it.type === type).reduce((s, it) => s + it.amountCents, 0);
+  const sales = items.filter(it => it.category === "Vendas (já no caixa)");
+  const old = items.filter(it => it.old && it.category !== "Vendas (já no caixa)");
+  const since = result.since ? new Date(`${result.since}T12:00:00`).toLocaleDateString("pt-BR") : "";
   const rows = items.map((it, i) => {
+    if (it.category === "Vendas (já no caixa)") return "";
     const cats = it.type === "in" ? inCats : [...outCats, "Movimentação entre contas"];
     const note = it.match ? `<small class="muted">${it.match.pending ? "Conta a pagar" : "Já lançado"}: ${html(it.match.description)} (${new Date(it.match.at).toLocaleDateString("pt-BR")})${it.match.pending ? " · será marcada como paga" : ""}</small>` : "";
-    return `<tr class="${it.type === "in" ? "stIn" : "stOut"}"><td><input type="checkbox" name="inc_${i}" ${it.include ? "checked" : ""}></td><td><input type="date" name="date_${i}" value="${it.date}"></td><td><input name="desc_${i}" value="${html(it.description)}" maxlength="120">${note}</td><td><select name="cat_${i}" ${it.match?.pending ? "disabled" : ""}>${cats.map(c => `<option ${c === it.category ? "selected" : ""}>${html(c)}</option>`).join("")}</select></td><td class="money"><b>${it.type === "in" ? "+" : "-"}</b> <input type="number" name="amt_${i}" value="${(it.amountCents / 100).toFixed(2)}" step="0.01" min="0.01"></td></tr>`;
+    return `<tr class="${it.type === "in" ? "stIn" : "stOut"}" ${it.old ? "data-st-old hidden" : ""}><td><input type="checkbox" name="inc_${i}" ${it.include ? "checked" : ""}></td><td><input type="date" name="date_${i}" value="${it.date}"></td><td><input name="desc_${i}" value="${html(it.description)}" maxlength="120">${note}</td><td><select name="cat_${i}" ${it.match?.pending ? "disabled" : ""}>${cats.map(c => `<option ${c === it.category ? "selected" : ""}>${html(c)}</option>`).join("")}</select></td><td class="money"><b>${it.type === "in" ? "+" : "-"}</b> <input type="number" name="amt_${i}" value="${(it.amountCents / 100).toFixed(2)}" step="0.01" min="0.01"></td></tr>`;
   }).join("");
   $("#formDialog").classList.add("wide");
   openModal(`Extrato: ${name}`,
-    `<p class="quoteBox">${items.length} lançamento(s): entradas ${currency(sum("in"))}, saídas ${currency(sum("out"))}. Vendas da loja (maquininha, Pix de cliente, depósito do caixa) já estão no caixa e vêm desmarcadas, assim como o que já foi lançado. Contas a pagar encontradas no extrato serão marcadas como pagas. Confira e salve.</p>` +
+    `<p class="quoteBox">${items.length} lançamento(s): entradas ${currency(sum("in"))}, saídas ${currency(sum("out"))}. ${sales.length} venda(s) da loja (maquininha e Pix de cliente, ${currency(sales.reduce((s, it) => s + it.amountCents, 0))}) já estão no caixa e ficaram de fora. Transferências para o dono, o que já foi lançado e movimentações entre contas vêm desmarcados. Contas a pagar encontradas no extrato serão marcadas como pagas. Confira e salve.</p>` +
+    (old.length ? `<label class="checkLine"><input type="checkbox" id="stShowOld"> Mostrar ${old.length} lançamento(s) antes de ${since} (início das vendas no sistema; vêm desmarcados para o resultado desses meses não ficar só com despesa)</label>` : "") +
     `<div class="tableWrap expReview"><table class="dataTable"><thead><tr><th></th><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead><tbody>${rows}</tbody></table></div>`,
     values => {
       const chosen = items.map((it, i) => {
@@ -3395,6 +3400,7 @@ function openStatementReview(result, name) {
       return api("/api/statement/import", { rows: chosen, fileId: result.fileId, source: result.suggestion.description || "extrato" })
         .then(r => { toast(`Extrato: ${r.expenses} despesa(s), ${r.incomes} receita(s), ${r.paid} conta(s) marcada(s) como paga(s).`); afterExpenseSave(); });
     }, "Lançar extrato");
+  $("#stShowOld")?.addEventListener("change", event => document.querySelectorAll("[data-st-old]").forEach(row => { row.hidden = !event.target.checked; }));
 }
 
 async function importExpenseFiles(files, statement = false) {

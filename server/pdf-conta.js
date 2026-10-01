@@ -130,7 +130,10 @@ function decodeBytes(bytes, cmap) {
 // Interpreta os operadores de texto (Tf, Tj, TJ, ', ", Td, TD, Tm, T*) de um stream de conteudo.
 function contentText(content, fonts) {
   const s = content.toString("latin1");
-  let out = "", font = null, lastY = null;
+  let out = "", font = null, lastY = null, fontName = "", fontSize = 12, glyph = null;
+  // PDF que desenha letra por letra (ex.: extrato SumUp) nao tem o caractere de espaco: o espaco e um avanco maior
+  // que a largura da letra. Largura = menor avanco visto depois daquela letra; sobra maior que ~1/6 da fonte = espaco.
+  const gaps = [];
   const stack = [];
   let i = 0;
   while (i < s.length) {
@@ -152,16 +155,25 @@ function contentText(content, fonts) {
     if (/^[-+.\d]+$/.test(token)) { stack.push({ num: Number(token) }); continue; }
     const args = stack.splice(0);
     const text = str => decodeBytes(str, font);
-    if (token === "Tf") { const name = args.find(a => a.name)?.name; font = fonts.get(name) || null; }
-    else if (token === "Tj") { const a = args.find(x => x.str); if (a) out += text(a.str); }
+    glyph = token === "Td" || token === "TD" ? glyph : token === "Tj" ? glyph : null;
+    if (token === "Tf") { const name = args.find(a => a.name)?.name; font = fonts.get(name) || null; fontName = name || ""; fontSize = args.find(a => "num" in a)?.num || 12; }
+    else if (token === "Tj") { const a = args.find(x => x.str); glyph = null; if (a) { const t = text(a.str); out += t; if ([...t].length === 1) glyph = `${fontName}:${t}`; } }
     else if (token === "'" || token === "\"") { out += "\n"; const a = args.find(x => x.str); if (a) out += text(a.str); }
     else if (token === "TJ") { const a = args.find(x => x.arr); if (a) for (const part of a.arr) { if (part.str) out += text(part.str); else if (part.num < -180) out += " "; } }
     else if (token === "T*") out += "\n";
-    else if (token === "Td" || token === "TD") { const nums = args.filter(a => "num" in a); const ty = nums[1]?.num || 0; out += ty ? "\n" : " "; }
+    else if (token === "Td" || token === "TD") {
+      const nums = args.filter(a => "num" in a); const ty = nums[1]?.num || 0;
+      if (!ty && glyph) { gaps.push({ key: glyph, dx: nums[0]?.num || 0, size: fontSize }); out += `\u0001${gaps.length - 1}\u0002`; }
+      else out += ty ? "\n" : " ";
+      glyph = null;
+    }
     else if (token === "Tm") { const nums = args.filter(a => "num" in a); const y = nums[5]?.num; if (lastY !== null && y !== lastY) out += "\n"; else out += " "; lastY = y; }
     else if (token === "ET") out += " ";
   }
-  return out;
+  if (!gaps.length) return out;
+  const width = new Map();
+  for (const g of gaps) if (g.dx > 0) width.set(g.key, Math.min(width.get(g.key) ?? Infinity, g.dx));
+  return out.replace(/\u0001(\d+)\u0002/g, (_, i) => { const g = gaps[i]; return g.dx < 0 || g.dx - (width.get(g.key) ?? g.dx) > g.size / 6 ? " " : ""; });
 }
 
 function extractText(pdf) {
@@ -302,14 +314,18 @@ function isBankStatement(plain) {
 function creditCategory(plain) {
   if (/(comissao|promotora|banco pan|facta|mercantil|v8 |credspot|bmg|daycoval|ole consignado|safra|c6 consig|consignado)/.test(plain)) return { category: "Comissão Speed Financeira", include: true };
   if (/(stone|cielo|getnet|pagseguro|pagbank|mercado pago|sumup|rede s|redecard|infinitepay|ton |vero|antecipacao|liquidacao|vendas? cart|deposito|pix receb|recebido|transferencia receb|ted receb|doc receb|credito pix)/.test(plain)) return { category: "Vendas (já no caixa)", include: false };
-  if (/(resgate|aplicacao|rendimento|mesma titularidade|entre contas)/.test(plain)) return { category: "Movimentação entre contas", include: false };
+  if (/(resgate|aplicacao|mesma titularidade|entre contas|saldo desbloqueado|saldo bloqueado)/.test(plain)) return { category: "Movimentação entre contas", include: false };
+  if (/rendimento/.test(plain)) return { category: "Outra receita", include: false };
   return { category: "Outra receita", include: false };
 }
 function debitCategory(plain) {
   if (/(aplicacao|resgate|mesma titularidade|entre contas|transf.* propria)/.test(plain)) return { category: "Movimentação entre contas", include: false };
-  if (/(fatura|cartao de credito|pagto cartao|pag cartao)/.test(plain)) return { category: "Cartão de crédito", include: true };
+  if (/(saldo bloqueado|saldo desbloqueado|dinheiro reservado)/.test(plain)) return { category: "Movimentação entre contas", include: false };
+  if (/(fatura|cartao de credito|pagto cartao|pag cartao|nu pagamentos)/.test(plain)) return { category: "Cartão de crédito", include: true };
+  if (/(sistemas|software)/.test(plain)) return { category: "Sistemas e assinaturas", include: true };
+  if (/(papel|papelaria|grafica)/.test(plain)) return { category: "Insumos gráficos", include: true };
   if (/(tarifa|cesta|pacote de servicos|iof|juros|encargo|mensalidade conta|manutencao de conta)/.test(plain)) return { category: "Tarifas bancárias", include: true };
-  if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
+  if (/(\bdas\b|simples nacional|darf|gps|inss|fgts|iptu|issqn|receita federal|ministerio da fazenda|tributo|imposto)/.test(plain)) return { category: "Impostos", include: true };
   if (/(saque|retirada|pro.?labore)/.test(plain)) return { category: "Retirada do dono", include: true };
   const rule = CATEGORY_RULES.find(([, re]) => re.test(plain));
   return { category: rule ? rule[0] : merchantCategory(plain), include: true };
@@ -319,7 +335,7 @@ const DEBIT_WORDS = /(pagamento|pagto|pago|enviad|debito|tarifa|compra|saque|apl
 // Linhas com data no inicio (ou data num cabecalho do dia) e valor no fim; o ultimo valor da linha pode ser o saldo.
 function parseBankStatement(text, reference = new Date()) {
   const items = [];
-  let year = reference.getFullYear(), current = null, prevBalance = null, lastText = "";
+  let year = reference.getFullYear(), current = null, prevBalance = null, lastText = "", open = null;
   const yearHit = plainOf(text).match(/\b(?:periodo|de)\b[^\n]{0,40}?\d{2}\/\d{2}\/(20\d{2})/);
   if (yearHit) year = Number(yearHit[1]);
   for (const raw of text.split("\n")) {
@@ -336,7 +352,14 @@ function parseBankStatement(text, reference = new Date()) {
       }
     }
     const amounts = [...line.matchAll(/([+-]\s*)?(?:R\$\s*)?(-?\d{1,3}(?:\.\d{3})*,\d{2})(\s*[-+]|\s*[CD](?![A-Za-z]))?/g)];
-    if (!amounts.length) { if (/[a-z]{3}/.test(plain) && !/saldo|data|historico|descricao|valor/.test(plain)) lastText = line; continue; }
+    if (m) { lastText = ""; open = null; }
+    if (!amounts.length) {
+      const junk = /^(extrato|agencia|conta\b|ainda com duvidas|fale com|para as demais|feira das|pagina|data e hora|tipo$|descricao$|valor)/.test(plain) || /^[\d\s.:/-]*$/.test(plain);
+      if (open && !junk && open.lines < 3) { open.description = `${open.description}${open.lines === 0 ? "" : open.lines === 1 ? " - " : " "}${line.replace(/&amp;/g, "&")}`; open.lines++; }
+      else if (/[a-z]{3}/.test(plain) && !junk && !/saldo|historico/.test(plain)) lastText = line;
+      continue;
+    }
+    open = null;
     const value = token => Math.round(Number(token[2].replace(/-/g, "").replace(/\./g, "").replace(",", ".")) * 100);
     const balance = amounts.length > 1 ? value(amounts[amounts.length - 1]) : null;
     if (/saldo|total de (entradas|saidas)|^total\b|limite/.test(plain)) { if (/saldo/.test(plain)) prevBalance = value(amounts[amounts.length - 1]); continue; }
@@ -345,16 +368,31 @@ function parseBankStatement(text, reference = new Date()) {
     if (!amountCents) continue;
     const mark = `${tx[1] || ""}${tx[3] || ""}${tx[2].startsWith("-") ? "-" : ""}`.toUpperCase().replace(/\s/g, "");
     let description = line.replace(tx[0], " ").replace(amounts.length > 1 ? amounts[amounts.length - 1][0] : "", " ").replace(/R\$/g, "").replace(/\s+/g, " ").trim();
-    if (!/[a-z]{3}/i.test(description)) description = lastText;
-    const dplain = plainOf(description);
     let type = /-|D/.test(mark) ? "out" : /\+|C/.test(mark) ? "in" : null;
     if (!type && prevBalance !== null && balance !== null) type = prevBalance + amountCents === balance ? "in" : prevBalance - amountCents === balance ? "out" : null;
-    if (!type) type = CREDIT_WORDS.test(dplain) && !DEBIT_WORDS.test(dplain) ? "in" : "out";
     if (balance !== null) prevBalance = balance;
-    const guess = type === "in" ? creditCategory(dplain) : debitCategory(dplain);
-    items.push({ type, date: current, description: (description || (type === "in" ? "Entrada" : "Saída")).slice(0, 120), amountCents, ...guess });
+    const item = { type, date: current, description, amountCents, lines: 0 };
+    if (!/[a-z]{3}/i.test(description)) { item.description = lastText; if (!lastText) { item.lines = 0; open = item; item.description = ""; } }
+    items.push(item);
     lastText = "";
   }
+  // Extrato em que so as saidas tem sinal (ex.: SumUp): valor sem sinal e entrada.
+  const signed = items.some(it => it.type === "out");
+  for (const it of items) {
+    it.description = it.description.replace(/&amp;/g, "&").slice(0, 120);
+    const dplain = plainOf(it.description);
+    if (!it.type) it.type = signed ? "in" : CREDIT_WORDS.test(dplain) && !DEBIT_WORDS.test(dplain) ? "in" : "out";
+    Object.assign(it, it.type === "in" ? creditCategory(dplain) : debitCategory(dplain));
+    if (!it.description) it.description = it.type === "in" ? "Entrada" : "Saída";
+    delete it.lines;
+  }
+  // Quem mais recebe Pix da conta (30% ou mais das saidas) e o proprio dono: transferencia, nao despesa.
+  const outs = items.filter(it => it.type === "out" && /pix env|transfer|ted/.test(plainOf(it.description)));
+  const byName = new Map();
+  for (const it of outs) { const name = plainOf(it.description).replace(/^.*?(enviado|enviada|transferencia|ted)\s*-?\s*/, "").slice(0, 30); if (name.length > 5) byName.set(name, (byName.get(name) || 0) + it.amountCents); }
+  const total = items.filter(it => it.type === "out").reduce((s, it) => s + it.amountCents, 0);
+  const [owner, ownerCents] = [...byName.entries()].sort((a, b) => b[1] - a[1])[0] || [];
+  if (owner && ownerCents >= total * 0.3 && outs.filter(it => plainOf(it.description).includes(owner)).length >= 3) for (const it of outs) if (plainOf(it.description).includes(owner)) Object.assign(it, { category: "Movimentação entre contas", include: false, owner: true });
   return items;
 }
 
@@ -365,7 +403,7 @@ function analyzeText(text, reference, forceStatement = false) {
   if (forceStatement || isBankStatement(plain)) {
     const items = parseBankStatement(text, reference);
     if (items.length || forceStatement) {
-      const bank = (plain.match(/\b(nubank|itau|bradesco|santander|caixa|banco do brasil|inter|c6|sicoob|sicredi|mercado pago|picpay|cora|pagbank|btg|original|safra)\b/) || [])[0];
+      const bank = (plain.slice(0, 1500).match(/\b(sumup|nubank|itau|bradesco|santander|caixa|banco do brasil|inter|c6|sicoob|sicredi|mercado pago|picpay|cora|pagbank|btg|original|safra)\b/) || [])[0];
       return { kind: "statement", suggestion: { ...base, description: `Extrato${bank ? ` ${bank.toUpperCase()}` : " PJ"}` }, items };
     }
   }

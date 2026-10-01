@@ -1992,6 +1992,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (analysis.kind === "statement") {
         // Ja lancado? Mesmo valor ate 5 dias de diferenca: despesa (a pagar vira "marcar como paga") ou receita.
         const used = new Set();
+        // Antes do inicio das vendas no sistema o resultado do mes ficaria so com despesa: vem desmarcado.
+        const since = historyRecords("charges").reduce((min, c) => (c.at < min ? c.at : min), new Date().toISOString()).slice(0, 10);
+        analysis.since = since;
+        for (const it of analysis.items) if (it.date < since && it.include) { it.include = false; it.old = true; }
         for (const it of analysis.items) {
           const t = Date.parse(`${it.date}T12:00:00-03:00`);
           const pool = it.type === "out" ? db.expenses : (db.incomes || []);
@@ -1999,7 +2003,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
           if (hit) { used.add(hit.id); it.match = { id: hit.id, at: hit.at, description: hit.description, pending: hit.paid === false }; it.include = it.type === "out" && hit.paid === false; }
         }
       }
-      return send(res, 200, { ok: true, fileId, ocr, empty: text.replace(/\s/g, "").length < 20, kind: analysis.kind, suggestion: analysis.suggestion, items: analysis.items });
+      return send(res, 200, { ok: true, fileId, ocr, empty: text.replace(/\s/g, "").length < 20, kind: analysis.kind, suggestion: analysis.suggestion, items: analysis.items, since: analysis.since });
     }
     // Extrato PJ conferido: novas despesas (ja pagas), receitas e contas a pagar que o extrato mostra como pagas.
     if (p === "/api/statement/import" && req.method === "POST") {
