@@ -4892,12 +4892,13 @@ $("#cashToggleButton").addEventListener("click", () => {
   if (!state.cashShift) {
     openModal("Abertura de Caixa do Turno", field("opening", "Fundo Inicial de Troco em Dinheiro (R$)", "number", "0.00", 'min="0" step="0.01" required'), values => api("/api/cash/open", values), "Abrir Caixa");
   } else {
-    openModal("Fechamento & Conciliação de Caixa", `<p class="quoteBox">Dinheiro Esperado em Gaveta: <strong>${currency(state.cashSummary?.expectedCashCents)}</strong></p>` + field("counted", "Dinheiro Efetivamente Contado (R$)", "number", "", 'min="0" step="0.01" required') + '<p id="cashDifference" class="muted">Informe o valor apurado fisicamente para auditoria de quebra.</p>', async values => { const result = await api("/api/cash/close", values); setTimeout(() => openShiftSummary(result.shift.id).catch(cause => toast(cause.message)), 350); }, "Fechar caixa");
+    openModal("Fechamento & Conciliação de Caixa", `<p class="quoteBox">Dinheiro Esperado em Gaveta: <strong>${currency(state.cashSummary?.expectedCashCents)}</strong></p>` + field("counted", "Dinheiro Efetivamente Contado (R$)", "number", "", 'min="0" step="0.01" required') + '<p id="cashDifference" class="muted">Informe o valor apurado fisicamente para auditoria de quebra.</p>' + '<label class="checkLine" id="extraWrap" hidden><input type="checkbox" name="extraAsSale" checked> Lançar a sobra como <b>venda não lançada</b> (vendas da correria ou resto de outro dia), para o relatório bater com o depósito</label>', async values => { const result = await api("/api/cash/close", { counted: values.counted, extraAsSale: !!values.extraAsSale }); setTimeout(() => openShiftSummary(result.shift.id).catch(cause => toast(cause.message)), 350); }, "Fechar caixa");
     $("#modalForm").elements.counted.addEventListener("input", event => {
       const value = Number(event.currentTarget.value);
       const diff = Math.round(value * 100) - (state.cashSummary?.expectedCashCents || 0);
       const diffText = diff === 0 ? "Exato (sem quebra)" : diff > 0 ? `Sobra de caixa: +${currency(diff)}` : `Falta de caixa: ${currency(diff)}`;
       $("#cashDifference").innerHTML = event.currentTarget.value === "" ? "Informe o valor apurado fisicamente para auditoria de quebra." : `<strong>${diffText}</strong>`;
+      $("#extraWrap").hidden = !(event.currentTarget.value !== "" && diff > 0);
     });
   }
 });

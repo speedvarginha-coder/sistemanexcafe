@@ -1926,7 +1926,14 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const adjustments = db.cashAdjustments.filter(item => item.shiftId === shift.id).reduce((sum, item) => sum + (item.direction === "in" ? item.amountCents : -item.amountCents), 0);
       shift.closingExpectedCents = shift.openingCents + receivedCash + adjustments;
       shift.closingCountedCents = counted; shift.closedAt = now(); shift.closedBy = user.name;
-      event("caixa", "Caixa fechado", `Diferenca: ${counted - shift.closingExpectedCents} centavos`, user.name); save();
+      // Sobrou dinheiro (venda feita na correria sem lancar, ou resto de outro dia): vira receita para o DRE bater com o deposito.
+      const extra = counted - shift.closingExpectedCents;
+      if (extra > 0 && input.extraAsSale) {
+        db.incomes ||= [];
+        db.incomes.unshift({ id: uuid(), at: shift.closedAt, category: "Venda não lançada (sobra de caixa)", description: `Sobra no fechamento do caixa (${shift.closedAt.slice(0, 10).split("-").reverse().join("/")})`, amountCents: extra, operator: user.name, shiftId: shift.id });
+        shift.extraAsSale = true;
+      }
+      event("caixa", "Caixa fechado", `Diferenca: ${extra} centavos${shift.extraAsSale ? " (sobra lancada como venda nao lancada)" : ""}`, user.name); save();
       return send(res, 200, { ok: true, shift });
     }
     // Resumo do turno para imprimir ou mandar no WhatsApp no fechamento.
