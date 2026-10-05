@@ -2333,6 +2333,21 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       event(item.machineId || "caixa", "Pendencia cancelada", `${item.description}: R$ ${(cancelledCents / 100).toFixed(2)} (${reason})`, user.name); save();
       return send(res, 200, { ok: true, charge: item });
     }
+    // Cliente trocou a forma de pagamento depois de recebido: so no caixa aberto (admin pode em qualquer turno).
+    const paymentMethod = p.match(/^\/api\/payments\/([^/]+)\/method$/);
+    if (paymentMethod && req.method === "POST") {
+      const input = await readBody(req);
+      const item = db.payments.find(row => row.id === decodeURIComponent(paymentMethod[1])); if (!item) throw err(404, "Recebimento nao encontrado");
+      if (!METHODS.includes(input.method)) throw err(400, "Forma de pagamento invalida");
+      const shift = currentShift();
+      if (user.role !== "admin" && (!shift || item.shiftId !== shift.id)) throw err(403, "So da para alterar recebimentos do caixa aberto");
+      if (item.method === input.method) return send(res, 200, { ok: true });
+      const before = item.method;
+      item.methodHistory = [...(item.methodHistory || []), { from: before, to: input.method, at: now(), by: user.name }];
+      item.method = input.method;
+      event("caixa", "Forma de pagamento alterada", `${(item.amountCents / 100).toFixed(2)}: ${before} -> ${input.method}`, user.name); save();
+      return send(res, 200, { ok: true });
+    }
     const payment = p.match(/^\/api\/charges\/([^/]+)\/pay$/);
     if (payment && req.method === "POST") {
       const item = db.charges.find(row => row.id === payment[1]); if (!item) throw err(404, "Cobranca nao encontrada");

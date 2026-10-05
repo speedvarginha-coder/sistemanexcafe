@@ -764,7 +764,8 @@ function renderCash() {
   $("#cashToggleButton").disabled = !!shift && state.user.role !== "admin";
   $("#cashAdjustButton").disabled = !shift; $("#printSaleButton").disabled = !shift;
   $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${txt(chargeLabel(item))}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
-  $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador"], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(state.charges.find(c => c.id === item.chargeId)?.description || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method]}</td><td>${html(item.operator)}</td></tr>`), "Nenhum recebimento registrado.");
+  const canEditPay = item => state.user.role === "admin" || (shift && item.shiftId === shift.id);
+  $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador", ""], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(chargeLabel(state.charges.find(c => c.id === item.chargeId)) || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method] || item.method}${item.methodHistory?.length ? ' <small class="muted" title="Forma de pagamento alterada">(alterado)</small>' : ""}</td><td>${html(item.operator)}</td><td>${canEditPay(item) ? `<button type="button" data-action="changePayMethod" data-id="${html(item.id)}">Alterar</button>` : ""}</td></tr>`), "Nenhum recebimento registrado.");
   $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado", "Diferença", ""], state.cashShifts.filter(item => item.closedAt).map(item => { const diff = item.closingCountedCents - item.closingExpectedCents; return `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td><td class="money ${diff < 0 ? "bad" : ""}">${diff ? currency(diff) : "-"}</td><td class="actionsCell"><button type="button" data-shift-summary="${html(item.id)}">Resumo</button></td></tr>`; }), "Nenhum caixa fechado.");
 
   renderPOS();
@@ -5013,6 +5014,11 @@ document.addEventListener("click", async event => {
     } else if (action === "pair" && machine) {
       const result = await api(`/api/machines/${encodeURIComponent(id)}/pair`, {});
       showPair(result.pairingCode);
+    } else if (action === "changePayMethod") {
+      const pay = state.payments.find(p => p.id === id); if (!pay) return;
+      openModal(`Alterar forma de pagamento · ${currency(pay.amountCents)}`,
+        `<p class="quoteBox">${html(chargeLabel(state.charges.find(c => c.id === pay.chargeId)) || "Pagamento")}<br>Hoje está como <strong>${methodName[pay.method] || pay.method}</strong>.</p>` + select("method", "Nova forma de pagamento", options.map(m => [m, methodName[m]]), pay.method === "cash" ? "pix" : "cash"),
+        values => api(`/api/payments/${encodeURIComponent(id)}/method`, { method: values.method }).then(() => toast(`Forma de pagamento alterada para ${methodName[values.method]}.`)), "Salvar");
     } else if (action === "receiveMachine") {
       const machine = state.machines.find(m => m.id === id);
       const due = (state.openCharges || []).filter(c => c.machineId === id && Date.now() - Date.parse(c.at) < 12 * 3600000);

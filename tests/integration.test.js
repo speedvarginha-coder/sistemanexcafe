@@ -678,6 +678,12 @@ test("venda em carrinho e pendencias antigas permanecem operaveis", async () => 
     assert.equal((await request("/api/cash/adjust", { direction: "out", amount: 35, reason: "Almoço", expenseCategory: "Alimentação" })).status, 201);
     const lunch = (await (await fetch(`${base}/api/expenses`, { headers: { cookie } })).json()).expenses.find(e => e.description === "Almoço");
     assert.equal(lunch.amountCents, 3500); assert.equal(lunch.category, "Alimentação"); assert.equal(lunch.paid, true);
+    // Cliente trocou a forma de pagamento: Pix vira dinheiro e a gaveta acompanha.
+    const promoPay = (await request("/api/state")).payload.payments.find(x => x.chargeId === promo.payload.charge.id);
+    const drawerBefore = (await request("/api/state")).payload.cashSummary.expectedCashCents;
+    assert.equal((await request(`/api/payments/${promoPay.id}/method`, { method: "pix" })).status, 200);
+    assert.equal((await request("/api/state")).payload.cashSummary.expectedCashCents, drawerBefore - 500);
+    assert.equal((await request(`/api/payments/${promoPay.id}/method`, { method: "boleto" })).status, 400);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
