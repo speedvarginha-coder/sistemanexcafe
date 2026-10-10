@@ -1445,12 +1445,26 @@ function calcPOSChange() {
   const given = Number(givenInput.value) || 0;
 
   if (given < total && given > 0) {
-    changeDisplay.innerHTML = `<span style="color: var(--danger-accent);">Faltam ${currency(Math.round((total - given) * 100))}</span>`;
+    // Pagou parte em dinheiro: um clique fecha a venda com o restante em outra forma.
+    changeDisplay.innerHTML = `<span style="color: var(--danger-accent);">Faltam ${currency(Math.round((total - given) * 100))}</span>
+      <span class="posRestButtons">Restante em: <button type="button" data-pos-rest="pix">PIX</button><button type="button" data-pos-rest="debit">Débito</button><button type="button" data-pos-rest="credit">Crédito</button></span>`;
   } else {
     const change = Math.max(0, given - total);
     changeDisplay.textContent = `Troco: ${currency(Math.round(change * 100))}`;
   }
 }
+
+$("#posChangeDisplay")?.addEventListener("click", event => {
+  const button = event.target.closest("[data-pos-rest]");
+  if (!button) return;
+  const totalCents = getPOSTotals().totalCents;
+  const cashCents = Math.round((Number($("#posPaidGivenInput")?.value) || 0) * 100);
+  if (cashCents < 1 || cashCents >= totalCents) return;
+  posSplitMode = true;
+  posSplitPayments = [{ method: "cash", amountCents: cashCents }, { method: button.dataset.posRest, amountCents: totalCents - cashCents }];
+  posWantReceipt = false;
+  submitPOSSale();
+});
 
 function renderPOSSplitPayments() {
   const listEl = $("#posSplitList");
