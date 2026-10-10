@@ -4325,6 +4325,9 @@ td.warn { color: var(--accent-text); }
 
 /* Valor a receber no cartao da maquina */
 .machineDue { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--accent-light); border: 1px solid #f5dd7a; border-radius: var(--radius-md); padding: 10px 12px; margin: 8px 0; }
+/* Máquina em uso sem mouse/teclado há muito tempo (cliente pode ter ido embora) */
+.machine.idleAlert { border-color: var(--danger-accent); box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.18); }
+.machineIdleAlert { background: #fde8e8; color: #9b1c1c; border: 1px solid #f5b5b5; border-radius: var(--radius-md); padding: 6px 10px; margin: 8px 0; font-size: 12px; font-weight: 700; }
 .machineDue span { display: block; font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-text); }
 .machineDue strong { font-size: 20px; color: #0b3a1e; }
 .machineDue small { display: block; font-size: 11px; color: var(--text-muted); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

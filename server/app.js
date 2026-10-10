@@ -1232,6 +1232,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       item.lastSeen = now(); item.ip = req.socket.remoteAddress;
       item.windowsUser = label(url.searchParams.get("user"), 60); item.agentVersion = label(url.searchParams.get("version"), 30);
       const reportedMac = normalizeMac(url.searchParams.get("mac")); if (reportedMac) item.mac = reportedMac;
+      // Segundos sem mouse e teclado na estacao (so o processo da sessao do usuario envia): avisa maquina esquecida aberta.
+      const idle = Number(url.searchParams.get("idle"));
+      if (url.searchParams.get("idle") && Number.isFinite(idle) && idle >= 0) { item.idleSeconds = Math.floor(idle); item.idleAt = now(); }
       if (!item.lastPersistedAt || Date.now() - Date.parse(item.lastPersistedAt) > 15000) { item.lastPersistedAt = now(); save(); }
       const cost = sessionCost(item);
       return send(res, 200, { ok: true, machineId: item.id, serverTime: now(), commandSeq: item.commandSeq, locked: item.locked || !item.session, lockMessage: item.lockMessage, session: item.session, openedSessionId: item.openedSessionId || null, valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, printBWCents: db.settings.printBWCents, printColorCents: db.settings.printColorCents, restoreSeq: item.restoreSeq, restartSeq: item.restartSeq, appliedRestoreSeq: item.appliedRestoreSeq || 0, appliedRestartSeq: item.appliedRestartSeq || 0, shutdownSeq: item.shutdownSeq || 0, appliedShutdownSeq: item.appliedShutdownSeq || 0, monitorUntil: item.monitorUntil || 0, scriptHash: agentScript().hash, serverHost: os.hostname() });
@@ -2451,6 +2454,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         printColorCostCents: input.printColorCost !== undefined && input.printColorCost !== "" ? money(input.printColorCost, "Custo da pagina colorida") : (db.settings.printColorCostCents || 0),
         pixKey: input.pixKey !== undefined ? label(input.pixKey, 100) : (db.settings.pixKey || ""),
         receiptHeader: input.receiptHeader !== undefined ? label(input.receiptHeader, 500) : (db.settings.receiptHeader || ""),
+        idleAlertMinutes: input.idleAlertMinutes !== undefined && input.idleAlertMinutes !== "" ? number(input.idleAlertMinutes, 0, 600, "Aviso de maquina sem uso") : (db.settings.idleAlertMinutes ?? 15),
         panelOnlyHere: input.panelOnlyHere === true || input.panelOnlyHere === "true"
       });
       event("sistema", "Metas e taxas atualizadas", "", user.name); save();

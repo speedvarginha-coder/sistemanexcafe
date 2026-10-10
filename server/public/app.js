@@ -345,8 +345,13 @@ function machineCard(machine, compact = false) {
   if (lastTone && lastTone !== tone) machineToneChanged[machine.id] = Date.now();
   machineToneSeen[machine.id] = tone;
   const justChanged = Date.now() - (machineToneChanged[machine.id] || 0) < 1500;
+  // Máquina esquecida aberta: sessão ativa e ninguém mexe no mouse/teclado há mais que o limite (Metas e taxas; 0 desliga).
+  const idleLimitMin = state.settings?.idleAlertMinutes ?? 15;
+  const idleFresh = machine.idleAt && Date.now() + serverOffset - Date.parse(machine.idleAt) < 90000;
+  const idleAlert = active && !machine.locked && machine.status !== "offline" && idleLimitMin > 0 && idleFresh && machine.idleSeconds >= idleLimitMin * 60;
+  const idleAlertHtml = idleAlert ? `<div class="machineIdleAlert" title="Ninguém mexe no mouse ou teclado desta máquina">Sem uso há ${Math.floor(machine.idleSeconds / 60)} min · o cliente ainda está aí?</div>` : "";
   return `
-    <article class="machine ${tone}${compact ? " compact" : ""}${justChanged ? " stateChanged" : ""}" data-machine="${html(machine.id)}">
+    <article class="machine ${tone}${compact ? " compact" : ""}${justChanged ? " stateChanged" : ""}${idleAlert ? " idleAlert" : ""}" data-machine="${html(machine.id)}">
       <div class="machineTop">
         <div class="machineHeaderInfo">
           <h3>${html(machine.name)}</h3>
@@ -374,6 +379,7 @@ function machineCard(machine, compact = false) {
         </div>
       `}
 
+      ${idleAlertHtml}
       ${dueHtml}
       ${actionHtml}
 
@@ -3248,6 +3254,7 @@ function openFinanceSettings() {
     field("printBWCost", "Custo de papel e tinta por página P&B (R$)", "number", ((s.printBWCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
     field("printColorCost", "Custo de papel e tinta por página colorida (R$)", "number", ((s.printColorCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
     field("pixKey", "Chave Pix (para cobranças por WhatsApp)", "text", s.pixKey || "", 'maxlength="100" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"') +
+    field("idleAlertMinutes", "Avisar máquina em uso sem mouse/teclado após (min, 0 desliga)", "number", String(s.idleAlertMinutes ?? 15), 'min="0" max="600" step="1"') +
     `<label>Dados da empresa no recibo (uma informação por linha; a primeira sai em destaque)<textarea name="receiptHeader" rows="5" maxlength="500" placeholder="Speed Lan House&#10;CNPJ 00.000.000/0001-00&#10;Rua Exemplo, 123 - Centro - Varginha/MG&#10;WhatsApp (35) 99999-9999">${html(s.receiptHeader || "")}</textarea></label>` +
     select("panelOnlyHere", "Onde o painel pode ser aberto", [["false", "Em qualquer computador da loja (com senha)"], ["true", "Só neste computador (caixa)"]], String(Boolean(s.panelOnlyHere))),
     values => api("/api/settings/finance", values).then(() => loadReport()));

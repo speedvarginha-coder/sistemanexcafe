@@ -14,7 +14,7 @@
 $ErrorActionPreference = "Stop"
 # Barra de progresso do Invoke-RestMethod deixa cada envio (tela do monitor, eventos) bem mais lento no PowerShell 5.1.
 $ProgressPreference = "SilentlyContinue"
-$AgentVersion = "0.4.1"
+$AgentVersion = "0.4.2"
 $InstallRoot = "C:\LanHouseManagerAgent"
 $ConfigPath = Join-Path $InstallRoot "agent-config.json"
 $UserDataRoot = Join-Path $env:LOCALAPPDATA "LanHouseManagerAgent"
@@ -192,6 +192,24 @@ function Find-AgentMac {
     return ""
 }
 
+# Segundos sem mouse e teclado na sessao do usuario. Vazio fora da sessao interativa (servico na sessao 0
+# nao enxerga a entrada do usuario e mandaria um valor errado).
+function Get-AgentIdleSeconds {
+    try {
+        if ((Get-Process -Id $PID).SessionId -eq 0) { return "" }
+        if (-not ("LhmIdle.Input" -as [type])) {
+            Add-Type -Namespace LhmIdle -Name Input -MemberDefinition '[StructLayout(LayoutKind.Sequential)] public struct LASTINPUTINFO { public uint cbSize; public uint dwTime; } [DllImport("user32.dll")] public static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);'
+        }
+        $info = New-Object LhmIdle.Input+LASTINPUTINFO
+        $info.cbSize = [System.Runtime.InteropServices.Marshal]::SizeOf($info)
+        if (-not [LhmIdle.Input]::GetLastInputInfo([ref]$info)) { return "" }
+        $nowTicks = [double][BitConverter]::ToUInt32([BitConverter]::GetBytes([Environment]::TickCount), 0)
+        $elapsed = $nowTicks - [double]$info.dwTime
+        if ($elapsed -lt 0) { $elapsed += 4294967296 }
+        return [string][int][Math]::Floor($elapsed / 1000)
+    } catch { return "" }
+}
+
 function Get-AgentCommand {
     param([object]$Config)
 
@@ -201,7 +219,8 @@ function Get-AgentCommand {
     $user = [Uri]::EscapeDataString($env:USERNAME)
     $version = [Uri]::EscapeDataString($AgentVersion)
     $mac = [Uri]::EscapeDataString((Get-AgentMac))
-    $uri = "$base/api/client/$id/command?name=$name&user=$user&version=$version&mac=$mac"
+    $idle = Get-AgentIdleSeconds
+    $uri = "$base/api/client/$id/command?name=$name&user=$user&version=$version&mac=$mac&idle=$idle"
     return Invoke-RestMethod -Method Get -Uri $uri -Headers @{ Authorization = "Bearer $($Config.AgentToken)" } -TimeoutSec 5
 }
 
