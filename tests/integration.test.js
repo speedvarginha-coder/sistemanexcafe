@@ -1080,6 +1080,39 @@ test("estacao informa tempo sem mouse/teclado; processo sem o dado nao apaga o v
   }
 });
 
+test("meta da Speed Financeira: soma o valor dos contratos fechados no mes, separada da meta da loja", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    assert.equal((await request("/api/settings/finance", { monthGoal: 15000, dailyGoal: 580, finContractGoal: 30000 })).status, 200);
+    const lead = (await request("/api/leads", { name: "Cliente INSS", phone: "35999990000" })).payload.lead;
+    await request("/api/leads", { name: "Outro contato", phone: "35999991111" });
+    assert.equal((await request(`/api/leads/${lead.id}`, { stage: "won", contract: 12000, commission: 600 })).status, 200);
+    const goal = (await request("/api/reports")).payload.goal;
+    assert.equal(goal.finGoalCents, 3000000);
+    assert.equal(goal.finContractsCents, 1200000);
+    assert.equal(goal.finContracts, 1);
+    assert.equal(goal.monthGoalCents, 1500000, "meta da loja continua separada");
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
 test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto, estoque negativo e DRE", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
   const server = createApp({ dataDir });

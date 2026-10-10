@@ -2555,6 +2555,14 @@ const dayLabel = day => `${day.slice(8, 10)}/${day.slice(5, 7)}`;
 const monthLabel = month => new Date(`${month}-15T12:00:00`).toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
 const kpi = (label, value, sub = "", tone = "") => `<div class="rpKpi ${tone}"><span>${html(label)}</span><strong>${value}</strong><small>${sub}</small></div>`;
 const bar = (value, max, color = "var(--primary)") => `<div class="rpBar"><i style="width:${Math.max(1.5, max ? value / max * 100 : 0)}%;background:${color}"></i></div>`;
+// Meta da Speed Financeira (valor dos contratos fechados no mês), separada da meta de vendas da loja.
+function finGoalHtml(g) {
+  if (!g.finGoalCents) return "";
+  const pct = Math.round(g.finContractsCents / g.finGoalCents * 100);
+  return `<div class="rpGoalLine" style="margin-top: 12px;"><span><b>Speed Financeira</b> · contratos fechados no mês (${g.finContracts || 0})</span><b class="${g.finContractsCents >= g.finGoalCents ? "good" : ""}">${currency(g.finContractsCents)} de ${currency(g.finGoalCents)} (${pct}%)</b></div>
+    ${bar(Math.min(g.finContractsCents, g.finGoalCents), g.finGoalCents, g.finContractsCents >= g.finGoalCents ? "var(--primary)" : "var(--accent)")}
+    <div class="rpGoalLine"><span>Projeção do mês</span><b class="${g.finProjectionCents >= g.finGoalCents ? "good" : "bad"}">${currency(g.finProjectionCents)}</b></div>`;
+}
 const EXPENSE_CATEGORIES = ["Aluguel", "Energia", "Água", "Internet", "Salários", "Impostos", "Contabilidade", "Tarifas bancárias", "Cartão de crédito", "Sistemas e assinaturas", "Compras de mercadoria", "Insumos gráficos", "Manutenção", "Marketing e anúncios", "Transporte e combustível", "Alimentação", "Retirada do dono", "Outros"];
 const STRATEGIES = ["", "Porta de entrada", "Alta margem", "Alto ticket", "Recorrente", "Venda casada", "Rever preço", "Baixa rentabilidade", "Candidato a eliminar"];
 let abcFilter = "";
@@ -2661,8 +2669,8 @@ function renderOverview() {
       <div class="rpGoalLine"><span>Projeção do mês</span><b class="${g.projectionCents >= g.monthGoalCents ? "good" : "bad"}">${currency(g.projectionCents)}</b></div>
       <div class="rpGoalLine"><span>Precisa por dia</span><b>${currency(g.neededPerDayCents)}</b></div>
       <div class="rpGoalLine"><span>Dias úteis restantes</span><b>${g.remainingDays}</b></div></div></div>
-      <div class="rpToday"><span>Hoje</span><strong>${currency(r.todayCents)}</strong>${g.dailyGoalCents ? `${bar(r.todayCents, g.dailyGoalCents, r.todayCents >= g.dailyGoalCents ? "var(--primary)" : "var(--accent)")}<small>meta do dia ${currency(g.dailyGoalCents)}</small>` : ""}</div>`
-    : `<p class="muted">Defina a meta em <strong>Metas e taxas</strong>.</p>`);
+      <div class="rpToday"><span>Hoje</span><strong>${currency(r.todayCents)}</strong>${g.dailyGoalCents ? `${bar(r.todayCents, g.dailyGoalCents, r.todayCents >= g.dailyGoalCents ? "var(--primary)" : "var(--accent)")}<small>meta do dia ${currency(g.dailyGoalCents)}</small>` : ""}</div>` + finGoalHtml(g)
+    : `<p class="muted">Defina a meta em <strong>Metas e taxas</strong>.</p>` + finGoalHtml(g));
 
   setHtml("#rpCompare", cmp ? `<table class="rpCompare"><thead><tr><th></th><th>Agora</th><th>Antes</th><th></th></tr></thead><tbody>${[
     ["Vendas", cmp.current.salesCents, cmp.previous.salesCents, currency],
@@ -3245,6 +3253,7 @@ function openFinanceSettings() {
   const pct = v => String(v ?? 0);
   openModal("Metas e taxas",
     field("monthGoal", "Meta de vendas do mês (R$)", "number", ((s.monthGoalCents || 0) / 100).toFixed(2), 'min="0" step="0.01" required') +
+    field("finContractGoal", "Meta da Speed Financeira: valor dos contratos fechados no mês (R$)", "number", ((s.finContractGoalCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
     field("dailyGoal", "Meta de vendas por dia (R$)", "number", ((s.dailyGoalCents || 0) / 100).toFixed(2), 'min="0" step="0.01" required') +
     select("workDays", "Dias de funcionamento por semana", [["6", "6 (fecha domingo)"], ["7", "7 (todos os dias)"], ["5", "5 (fecha sábado e domingo)"]], String(s.workDays || 6)) +
     field("feeDebit", "Taxa do débito (%)", "number", pct(s.feeDebitPct), 'min="0" max="20" step="0.01"') +

@@ -854,6 +854,12 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       neededPerDayCents: remainingDays ? Math.max(0, Math.round((monthGoalCents - monthSalesCents) / remainingDays)) : Math.max(0, monthGoalCents - monthSalesCents),
       percent: monthGoalCents ? Math.round(monthSalesCents / monthGoalCents * 1000) / 10 : 0
     };
+    // Speed Financeira: meta separada, sobre o valor dos contratos fechados no mes (funil da financeira).
+    const finWon = (db.leads || []).filter(lead => lead.stage === "won" && lead.closedAt && inRange(lead.closedAt, monthStart, date));
+    goal.finGoalCents = settings.finContractGoalCents || 0;
+    goal.finContractsCents = finWon.reduce((sum, lead) => sum + (lead.contractCents || 0), 0);
+    goal.finContracts = finWon.length;
+    goal.finProjectionCents = workedDays ? goal.finContractsCents + Math.round(goal.finContractsCents / workedDays) * remainingDays : 0;
 
     // Ultimos 12 meses: receita, custo, taxas, despesas e resultado.
     const monthly = Array.from({ length: 12 }, () => ({}));
@@ -2447,6 +2453,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const pct = (value, field) => { const n = Number(String(value ?? 0).replace(",", ".")); if (!Number.isFinite(n) || n < 0 || n > 20) throw err(400, `${field} invalida`); return Math.round(n * 100) / 100; };
       Object.assign(db.settings, {
         monthGoalCents: money(input.monthGoal, "Meta mensal"), dailyGoalCents: money(input.dailyGoal, "Meta diaria"),
+        finContractGoalCents: input.finContractGoal !== undefined && input.finContractGoal !== "" ? money(input.finContractGoal, "Meta de contratos da financeira") : (db.settings.finContractGoalCents || 0),
         feeDebitPct: pct(input.feeDebit, "Taxa do debito"), feeCreditPct: pct(input.feeCredit, "Taxa do credito"),
         feeCardPct: pct(input.feeCard, "Taxa do cartao"), feePixPct: pct(input.feePix, "Taxa do Pix"),
         workDays: number(input.workDays ?? 6, 1, 7, "Dias de trabalho por semana"),
