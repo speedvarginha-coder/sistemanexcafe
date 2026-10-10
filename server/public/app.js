@@ -441,7 +441,7 @@ function receiptHtml(data) {
   if (data.items && data.items.length) {
     itemsHtml = data.items.map(it => `
       <div class="receiptRow">
-        <span>${html(it.quantity)}x ${html(it.name)}</span>
+        <span>${it.quantity ? `${html(it.quantity)}x ` : ""}${html(it.name)}</span>
         <span>${currency(it.totalCents)}</span>
       </div>
     `).join("");
@@ -500,9 +500,10 @@ function printPaymentReceipt(paymentId) {
   const pay = state.payments.find(p => p.id === paymentId); if (!pay) return;
   const group = state.payments.filter(p => samePaymentGroup(pay, p));
   const charges = [...new Map(group.map(p => [p.chargeId, state.charges.find(c => c.id === p.chargeId)])).values()].filter(Boolean);
-  const items = charges.flatMap(c => c.items?.length
-    ? c.items.map(it => ({ quantity: it.quantity, name: it.name, totalCents: it.totalCents }))
-    : [{ quantity: 1, name: chargeLabel(c) || c.description, totalCents: c.originalTotalCents || c.amountCents }]);
+  const items = [
+    ...charges.filter(c => c.items?.length).flatMap(c => c.items.map(it => ({ quantity: it.quantity, name: it.name, totalCents: it.totalCents }))),
+    ...groupPrintLines(charges.filter(c => !c.items?.length), c => c.originalTotalCents || c.amountCents).map(line => ({ name: line.label, totalCents: line.cents }))
+  ];
   const machineIds = [...new Set(charges.map(c => c.machineId).filter(Boolean))];
   const clientId = charges.find(c => c.clientId)?.clientId;
   printReceiptHtml(receiptHtml({
@@ -811,6 +812,20 @@ function renderMachinesTable(machines) {
 function chargeLabel(c) {
   if (!c?.items?.length || !/item\(ns\)$/.test(c.description || "")) return c?.description || "";
   return c.description.replace(/\d+ item\(ns\)$/, c.items.map(it => `${it.quantity}x ${it.name}`).join(", "));
+}
+
+// Junta as impressões de uma conta numa linha por tipo (P&B / colorida), em vez de uma linha por trabalho.
+function groupPrintLines(charges, centsOf) {
+  const lines = [], prints = {};
+  for (const c of charges) {
+    if (c.kind !== "print") { lines.push({ label: chargeLabel(c), cents: centsOf(c) }); continue; }
+    const type = c.color ? "coloridas" : "P&B";
+    if (!prints[type]) lines.push(prints[type] = { type, pages: 0, cents: 0 });
+    prints[type].pages += c.quantity || Number(/(\d+) pag/.exec(c.description || "")?.[1]) || 0;
+    prints[type].cents += centsOf(c);
+  }
+  for (const line of lines) if (line.type) line.label = `Impressões ${line.type}: ${line.pages} pág`;
+  return lines;
 }
 
 function renderCash() {
@@ -5209,7 +5224,7 @@ document.addEventListener("click", async event => {
       if (!total) return;
       if (!state.cashShift) { toast("Abra o caixa antes de receber."); return; }
       openModal(`Receber · ${machine ? machine.name : id}`,
-        `<div class="dueList">${due.map(c => `<div><span>${txt(chargeLabel(c))}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong id="dueTotalValue">${currency(total)}</strong></div></div>` +
+        `<div class="dueList">${groupPrintLines(due, c => c.amountCents - c.paidCents).map(line => `<div><span>${txt(line.label)}</span><strong>${currency(line.cents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong id="dueTotalValue">${currency(total)}</strong></div></div>` +
         `<label>Desconto (R$)<input type="number" name="discount" id="dueDiscount" min="0" max="${(total / 100).toFixed(2)}" step="0.01" placeholder="0,00"></label>` + paymentField() +
         `<label>Valor entregue em dinheiro (R$)<input type="number" id="dueGiven" min="0" step="0.01" placeholder="Opcional: calcula o troco"></label><div id="dueChange" class="changeDisplay" hidden></div><input type="hidden" name="cashCents" value="0">`,
         async values => {
