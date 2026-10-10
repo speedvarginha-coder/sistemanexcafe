@@ -997,6 +997,53 @@ test("cancelar pendencia: so administrador, com motivo, preserva o que ja foi pa
   }
 });
 
+test("receber da maquina: desconto e pagamento numa operacao so, com o mesmo receiptId", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data, token = null) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (token) headers.authorization = `Bearer ${token}`;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    const setCookie = response.headers.get("set-cookie");
+    if (setCookie) cookie = setCookie.split(";")[0];
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    await request("/api/login", { name: "admin", password: "senha-teste-123" });
+    const created = await request("/api/machines/register", { id: "pc-01", name: "PC 01" });
+    const token = (await request("/api/agent/enroll", { id: "pc-01", name: "PC 01", code: created.payload.pairingCode })).payload.token;
+    await request("/api/client/pc-01/command", undefined, token);
+    await request("/api/machines/pc-01/start", { minutes: 60, billingMode: "postpaid" });
+    await request("/api/machines/pc-01/end", {});
+    const charge = (await request("/api/state")).payload.openCharges[0];
+    const total = charge.amountCents;
+    assert.ok(total > 100);
+    const closed = await request("/api/charges/receive", { ids: [charge.id], discountCents: 100, method: "pix" });
+    assert.equal(closed.status, 409, "caixa fechado recusa");
+    assert.equal((await request("/api/state")).payload.openCharges[0].amountCents, total, "recusa nao aplica o desconto");
+    await request("/api/cash/open", { opening: 0 });
+    const received = await request("/api/charges/receive", { ids: [charge.id], discountCents: 100, method: "pix" });
+    assert.equal(received.status, 200);
+    assert.equal(received.payload.receivedCents, total - 100);
+    assert.equal(received.payload.discountCents, 100);
+    const state = (await request("/api/state")).payload;
+    assert.equal(state.openCharges.length, 0);
+    const payments = state.payments.filter(row => row.receiptId === received.payload.receiptId);
+    assert.equal(payments.length, 1);
+    assert.equal(payments[0].amountCents, total - 100);
+    assert.equal(state.charges.find(row => row.id === charge.id).discountCents, 100);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
 test("PDV: debito/credito, misto fechando o total, fiado com cliente, desconto, estoque negativo e DRE", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
   const server = createApp({ dataDir });

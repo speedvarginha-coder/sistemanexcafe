@@ -404,12 +404,13 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const item = { id: uuid(), at: now(), kind, description, amountCents, paidCents: 0, ...fields };
     db.charges.unshift(item); return item;
   }
-  function pay(item, amountCents, method, operator) {
+  // receiptId: mesmo valor em todos os pagamentos de um recebimento (ex.: Receber da maquina quita varias pendencias).
+  function pay(item, amountCents, method, operator, receiptId) {
     const shift = currentShift(); if (!shift) throw err(409, "Abra o caixa antes de receber");
     if (!METHODS.includes(method)) throw err(400, "Forma de pagamento invalida");
     if (!Number.isInteger(amountCents) || amountCents < 1 || amountCents > item.amountCents - item.paidCents) throw err(400, "Valor excede a pendencia");
     item.paidCents += amountCents;
-    db.payments.unshift({ id: uuid(), at: now(), chargeId: item.id, amountCents, method, shiftId: shift.id, operator });
+    db.payments.unshift({ id: uuid(), at: now(), chargeId: item.id, amountCents, method, shiftId: shift.id, operator, ...(receiptId ? { receiptId } : {}) });
     event(item.machineId || "caixa", "Pagamento registrado", item.description, operator);
   }
   // Desconto em pendencias: abate do tempo primeiro, depois do resto. Fica em discountCents (relatorios e auditoria por operador).
@@ -1625,8 +1626,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         // Desconto no encerramento (ex.: esqueceu de fechar a maquina).
         const discounted = discountCharges(db.charges.filter(row => row.sessionId === sessionId), input.discountCents, user.name);
         if (discounted) event(item.id, "Desconto no encerramento", `R$ ${(discounted / 100).toFixed(2)}`, user.name);
+        const receiptId = uuid();
         if (paymentMethod) for (const chargeItem of db.charges.filter(row => row.sessionId === sessionId && row.amountCents > row.paidCents)) {
-          pay(chargeItem, chargeItem.amountCents - chargeItem.paidCents, paymentMethod, user.name);
+          pay(chargeItem, chargeItem.amountCents - chargeItem.paidCents, paymentMethod, user.name, receiptId);
         }
       }
       else throw err(404, "Acao nao encontrada");
@@ -2397,14 +2399,22 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       event("caixa", "Forma de pagamento alterada", `${(item.amountCents / 100).toFixed(2)}: ${before} -> ${input.method}`, user.name); save();
       return send(res, 200, { ok: true });
     }
-    if (p === "/api/charges/discount" && req.method === "POST") {
+    // Receber varias pendencias de uma vez (Receber da maquina): desconto e pagamento na mesma operacao,
+    // validados antes de mexer em qualquer coisa, e todos os pagamentos com o mesmo receiptId.
+    if (p === "/api/charges/receive" && req.method === "POST") {
       const input = await readBody(req);
+      if (!currentShift()) throw err(409, "Abra o caixa antes de receber");
+      if (!METHODS.includes(input.method)) throw err(400, "Forma de pagamento invalida");
       const ids = Array.isArray(input.ids) ? input.ids.map(id => label(id, 60)) : [];
-      const list = db.charges.filter(row => ids.includes(row.id));
-      if (!list.length) throw err(404, "Cobranca nao encontrada");
+      const list = db.charges.filter(row => ids.includes(row.id) && row.amountCents > row.paidCents);
+      if (!list.length) throw err(404, "Nenhuma pendencia em aberto");
       const discounted = discountCharges(list, input.discountCents, user.name);
-      if (discounted) { event(list[0].machineId || "caixa", "Desconto no recebimento", `R$ ${(discounted / 100).toFixed(2)}`, user.name); save(); }
-      return send(res, 200, { ok: true, charges: list });
+      if (discounted) event(list[0].machineId || "caixa", "Desconto no recebimento", `R$ ${(discounted / 100).toFixed(2)}`, user.name);
+      const receiptId = uuid();
+      let receivedCents = 0;
+      for (const row of list) if (row.amountCents > row.paidCents) { receivedCents += row.amountCents - row.paidCents; pay(row, row.amountCents - row.paidCents, input.method, user.name, receiptId); }
+      save();
+      return send(res, 200, { ok: true, receiptId, receivedCents, discountCents: discounted });
     }
     const payment = p.match(/^\/api\/charges\/([^/]+)\/pay$/);
     if (payment && req.method === "POST") {

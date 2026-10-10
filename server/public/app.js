@@ -72,8 +72,11 @@ async function api(path, data) {
   return result;
 }
 
-// Um "Receber" da máquina gera um pagamento por pendência: mesmo meio, operador e caixa em até 5 s formam um recebimento só.
-const samePaymentGroup = (a, b) => a.method === b.method && a.operator === b.operator && a.shiftId === b.shiftId && Math.abs(Date.parse(a.at) - Date.parse(b.at)) <= 5000;
+// Um "Receber" da máquina gera um pagamento por pendência, todos com o mesmo receiptId.
+// Pagamentos antigos (sem receiptId): mesmo meio, operador e caixa em até 5 s formam um recebimento só.
+const samePaymentGroup = (a, b) => (a.receiptId || b.receiptId)
+  ? a.receiptId === b.receiptId
+  : a.method === b.method && a.operator === b.operator && a.shiftId === b.shiftId && Math.abs(Date.parse(a.at) - Date.parse(b.at)) <= 5000;
 
 function toast(message) {
   const el = $("#toast");
@@ -5160,10 +5163,8 @@ document.addEventListener("click", async event => {
         `<label>Desconto (R$)<input type="number" name="discount" id="dueDiscount" min="0" max="${(total / 100).toFixed(2)}" step="0.01" placeholder="0,00"></label>` + paymentField(),
         async values => {
           const discountCents = Math.min(total, Math.max(0, Math.round((Number(values.discount) || 0) * 100)));
-          let charges = due;
-          if (discountCents) charges = (await api("/api/charges/discount", { ids: due.map(c => c.id), discountCents })).charges;
-          for (const c of charges) if (c.amountCents > c.paidCents) await api(`/api/charges/${c.id}/pay`, { amount: ((c.amountCents - c.paidCents) / 100).toFixed(2), method: values.paymentMethod });
-          playChime("success"); toast(`Recebido ${currency(total - discountCents)}${discountCents ? ` (desconto ${currency(discountCents)})` : ""}.`);
+          const result = await api("/api/charges/receive", { ids: due.map(c => c.id), discountCents, method: values.paymentMethod });
+          playChime("success"); toast(`Recebido ${currency(result.receivedCents)}${result.discountCents ? ` (desconto ${currency(result.discountCents)})` : ""}.`);
         },
         `Receber ${currency(total)}`);
       $("#dueDiscount").addEventListener("input", event => {
