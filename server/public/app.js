@@ -4184,7 +4184,7 @@ document.addEventListener("change", async event => {
     renderLeads();
     openModal(`Contrato fechado · ${lead.name}`, `<p class="quoteBox">${html(lead.product)}. A comissão entra como receita da Speed Financeira nos relatórios.</p>` +
       field("commission", "Comissão recebida (R$)", "number", lead.commissionCents ? (lead.commissionCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required') +
-      field("contract", "Valor do contrato (R$, opcional)", "number", lead.contractCents ? (lead.contractCents / 100).toFixed(2) : "", 'min="0" step="0.01"'),
+      field("contract", "Valor do contrato (R$, conta na meta da financeira)", "number", lead.contractCents ? (lead.contractCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required'),
       async values => { await api(`/api/leads/${id}`, { stage: "won", commission: values.commission, contract: values.contract }); playChime("success"); toast("Contrato registrado."); await loadLeads(); }, "Confirmar contrato");
     return;
   }
