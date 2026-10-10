@@ -426,6 +426,19 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     }
     return Math.max(0, Number.isInteger(cents) ? cents : 0) - left;
   }
+  // Quita as pendencias num recebimento so (mesmo receiptId). cashCents: parte paga em dinheiro
+  // (pagamento dividido), abatida primeiro; o restante vai em method. Quem chama valida caixa e forma antes.
+  function receiveCharges(list, method, operator, cashCents = 0) {
+    const receiptId = uuid();
+    let cashLeft = Math.max(0, Number.isInteger(cashCents) ? cashCents : 0), receivedCents = 0;
+    for (const row of list) {
+      let open = row.amountCents - row.paidCents;
+      const cash = Math.min(cashLeft, open);
+      if (cash > 0) { pay(row, cash, "cash", operator, receiptId); cashLeft -= cash; open -= cash; receivedCents += cash; }
+      if (open > 0) { pay(row, open, method, operator, receiptId); receivedCents += open; }
+    }
+    return { receiptId, receivedCents };
+  }
   function finish(item, reason, operator, restore = true, restart = false) {
     const session = item.session; if (!session) throw err(409, "Maquina sem sessao ativa");
     const elapsedSeconds = Math.max(1, Math.ceil((Date.now() - Date.parse(session.startedAt)) / 1000));
@@ -1626,10 +1639,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         // Desconto no encerramento (ex.: esqueceu de fechar a maquina).
         const discounted = discountCharges(db.charges.filter(row => row.sessionId === sessionId), input.discountCents, user.name);
         if (discounted) event(item.id, "Desconto no encerramento", `R$ ${(discounted / 100).toFixed(2)}`, user.name);
-        const receiptId = uuid();
-        if (paymentMethod) for (const chargeItem of db.charges.filter(row => row.sessionId === sessionId && row.amountCents > row.paidCents)) {
-          pay(chargeItem, chargeItem.amountCents - chargeItem.paidCents, paymentMethod, user.name, receiptId);
-        }
+        if (paymentMethod) receiveCharges(db.charges.filter(row => row.sessionId === sessionId && row.amountCents > row.paidCents), paymentMethod, user.name, input.cashCents);
       }
       else throw err(404, "Acao nao encontrada");
       save(); return send(res, 200, { ok: true, machine: publicMachine(item) });
@@ -2410,9 +2420,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (!list.length) throw err(404, "Nenhuma pendencia em aberto");
       const discounted = discountCharges(list, input.discountCents, user.name);
       if (discounted) event(list[0].machineId || "caixa", "Desconto no recebimento", `R$ ${(discounted / 100).toFixed(2)}`, user.name);
-      const receiptId = uuid();
-      let receivedCents = 0;
-      for (const row of list) if (row.amountCents > row.paidCents) { receivedCents += row.amountCents - row.paidCents; pay(row, row.amountCents - row.paidCents, input.method, user.name, receiptId); }
+      const { receiptId, receivedCents } = receiveCharges(list.filter(row => row.amountCents > row.paidCents), input.method, user.name, input.cashCents);
       save();
       return send(res, 200, { ok: true, receiptId, receivedCents, discountCents: discounted });
     }

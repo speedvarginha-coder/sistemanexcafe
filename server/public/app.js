@@ -511,7 +511,7 @@ function printPaymentReceipt(paymentId) {
     customer: state.clients.find(c => c.id === clientId)?.name || "",
     discountCents: charges.reduce((sum, c) => sum + (c.discountCents || 0), 0),
     totalCents: group.reduce((sum, p) => sum + p.amountCents, 0),
-    paymentMethod: pay.method
+    paymentMethod: [...new Set(group.map(p => p.method))].map(m => `${methodName[m] || m}${new Set(group.map(p => p.method)).size > 1 ? ` ${currency(group.filter(p => p.method === m).reduce((sum, p) => sum + p.amountCents, 0))}` : ""}`).join(" + ")
   }));
 }
 
@@ -837,7 +837,8 @@ function renderCash() {
     const machineName = machineIds.length === 1 ? state.machines.find(m => m.id === machineIds[0])?.name || machineIds[0] : "";
     const description = group.length === 1 ? html(labels[0]) : `<span title="${html(labels.join("\n"))}">Recebimento${machineName ? ` ${html(machineName)}` : ""} · ${group.length} itens</span>`;
     const edited = group.some(p => p.methodHistory?.length);
-    return `<tr><td>${dateTime(item.at)}</td><td>${description}</td><td class="money">${currency(group.reduce((sum, p) => sum + p.amountCents, 0))}</td><td>${methodName[item.method] || item.method}${edited ? ' <small class="muted" title="Forma de pagamento alterada">(alterado)</small>' : ""}</td><td>${html(item.operator)}</td><td class="actionsCell"><button type="button" class="primary" data-action="printPayReceipt" data-id="${html(item.id)}" title="Imprimir recibo deste recebimento">Recibo</button>${canEditPay(item) ? `<button type="button" data-action="changePayMethod" data-id="${html(item.id)}">Alterar</button>` : ""}</td></tr>`;
+    const methods = [...new Set(group.map(p => p.method))].map(m => methodName[m] || m).join(" + ");
+    return `<tr><td>${dateTime(item.at)}</td><td>${description}</td><td class="money">${currency(group.reduce((sum, p) => sum + p.amountCents, 0))}</td><td>${methods}${edited ? ' <small class="muted" title="Forma de pagamento alterada">(alterado)</small>' : ""}</td><td>${html(item.operator)}</td><td class="actionsCell"><button type="button" class="primary" data-action="printPayReceipt" data-id="${html(item.id)}" title="Imprimir recibo deste recebimento">Recibo</button>${canEditPay(item) ? `<button type="button" data-action="changePayMethod" data-id="${html(item.id)}">Alterar</button>` : ""}</td></tr>`;
   }), "Nenhum recebimento registrado.");
   $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado", "Diferença", ""], state.cashShifts.filter(item => item.closedAt).map(item => { const diff = item.closingCountedCents - item.closingExpectedCents; return `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td><td class="money ${diff < 0 ? "bad" : ""}">${diff ? currency(diff) : "-"}</td><td class="actionsCell"><button type="button" data-shift-summary="${html(item.id)}">Resumo</button></td></tr>`; }), "Nenhum caixa fechado.");
 
@@ -1445,23 +1446,27 @@ function calcPOSChange() {
   const given = Number(givenInput.value) || 0;
 
   if (given < total && given > 0) {
-    // Pagou parte em dinheiro: um clique fecha a venda com o restante em outra forma.
-    changeDisplay.innerHTML = `<span style="color: var(--danger-accent);">Faltam ${currency(Math.round((total - given) * 100))}</span>
-      <span class="posRestButtons">Restante em: <button type="button" data-pos-rest="pix">PIX</button><button type="button" data-pos-rest="debit">Débito</button><button type="button" data-pos-rest="credit">Crédito</button></span>`;
+    changeDisplay.innerHTML = cashShortHtml(Math.round((total - given) * 100));
   } else {
     const change = Math.max(0, given - total);
     changeDisplay.textContent = `Troco: ${currency(Math.round(change * 100))}`;
   }
 }
 
+// Pagou parte em dinheiro: mostra quanto falta e um clique fecha com o restante em outra forma.
+function cashShortHtml(missingCents) {
+  return `<span style="color: var(--danger-accent);">Faltam ${currency(missingCents)}</span>
+    <span class="posRestButtons">Restante em: <button type="button" data-pay-rest="pix">PIX</button><button type="button" data-pay-rest="debit">Débito</button><button type="button" data-pay-rest="credit">Crédito</button></span>`;
+}
+
 $("#posChangeDisplay")?.addEventListener("click", event => {
-  const button = event.target.closest("[data-pos-rest]");
+  const button = event.target.closest("[data-pay-rest]");
   if (!button) return;
   const totalCents = getPOSTotals().totalCents;
   const cashCents = Math.round((Number($("#posPaidGivenInput")?.value) || 0) * 100);
   if (cashCents < 1 || cashCents >= totalCents) return;
   posSplitMode = true;
-  posSplitPayments = [{ method: "cash", amountCents: cashCents }, { method: button.dataset.posRest, amountCents: totalCents - cashCents }];
+  posSplitPayments = [{ method: "cash", amountCents: cashCents }, { method: button.dataset.payRest, amountCents: totalCents - cashCents }];
   posWantReceipt = false;
   submitPOSSale();
 });
@@ -1617,6 +1622,19 @@ async function submitPOSSale() {
   confirmBtn.disabled = true;
 
   try {
+    // Pagamento dividido com tempo de máquina: o tempo sai de uma parcela que o cubra inteiro
+    // (a liberação aceita uma forma só) e o restante das parcelas paga os outros itens.
+    let salePayments = posSplitMode && posSplitPayments.length ? posSplitPayments.map(p => ({ ...p })) : null;
+    let machineMethod = posActiveMethod;
+    const machineCents = machineTimeItem ? machineTimeItem.priceCents * machineTimeItem.quantity : 0;
+    if (salePayments && machineCents) {
+      const cover = salePayments.find(p => p.amountCents >= machineCents);
+      if (!cover) throw new Error(`No pagamento dividido, uma das parcelas precisa cobrir o tempo de máquina inteiro (${currency(machineCents)}).`);
+      machineMethod = cover.method;
+      cover.amountCents -= machineCents;
+      salePayments = salePayments.filter(p => p.amountCents > 0);
+    }
+
     // 1. Se tem tempo de máquina, libera estação
     if (machineTimeItem) {
       let targetId = $("#posMachineSelect")?.value;
@@ -1625,7 +1643,7 @@ async function submitPOSSale() {
         if (free) targetId = free.id;
         else throw new Error("Nenhum terminal livre para liberar o tempo contratado.");
       }
-      const pMethod = posActiveMethod === "pix" ? "pix" : (posActiveMethod === "debit" || posActiveMethod === "credit") ? "card" : "cash";
+      const pMethod = ["pix", "debit", "credit"].includes(machineMethod) ? machineMethod : "cash";
       await api(`/api/machines/${encodeURIComponent(targetId)}/start`, {
         minutes: machineTimeItem.open ? undefined : machineTimeItem.minutes,
         billingMode: machineTimeItem.open ? "open" : "prepaid",
@@ -1646,8 +1664,8 @@ async function submitPOSSale() {
         campaign: $("#posCampaign")?.value || undefined
       };
 
-      if (posSplitMode && posSplitPayments.length) {
-        payload.payments = posSplitPayments;
+      if (salePayments) {
+        payload.payments = salePayments;
       } else {
         payload.paymentMethod = posActiveMethod;
       }
@@ -4536,6 +4554,7 @@ function openEndModal(machine, restart = false) {
           </div>
         </div>
         <div id="endChangeDisplay" class="changeDisplay">Troco: R$ 0,00</div>
+        <input type="hidden" name="cashCents" value="0">
       </div>
     `;
   }
@@ -4552,7 +4571,8 @@ function openEndModal(machine, restart = false) {
     fields, 
     async values => {
       const discountCents = estimated - due();
-      await api(`/api/machines/${encodeURIComponent(machine.id)}/end`, { restart, paymentMethod: values.paymentMethod || "", discountCents });
+      const cashCents = Number(values.cashCents) || 0;
+      await api(`/api/machines/${encodeURIComponent(machine.id)}/end`, { restart, paymentMethod: values.paymentMethod || "", discountCents, cashCents });
       playChime("success");
       toast(`Terminal ${machine.name} encerrado com sucesso.`);
       
@@ -4564,7 +4584,7 @@ function openEndModal(machine, restart = false) {
         customer: machine.summary?.customer || session.customer || "Avulso",
         session: machine.summary,
         totalCents: due(),
-        paymentMethod: values.paymentMethod || "cash",
+        paymentMethod: cashCents ? `Dinheiro ${currency(cashCents)} + ${methodName[values.paymentMethod]}` : values.paymentMethod || "cash",
         changeCents: Math.round(changeVal * 100)
       };
       if ($("#posLastReceiptBtn")) $("#posLastReceiptBtn").hidden = false;
@@ -4593,12 +4613,20 @@ function openEndModal(machine, restart = false) {
     const change = Math.max(0, given - total);
     if (endChange) {
       if (given < total && given > 0) {
-        endChange.innerHTML = `<span style="color: var(--danger-accent);">Faltam ${currency(Math.round((total - given) * 100))}</span>`;
+        endChange.innerHTML = cashShortHtml(Math.round((total - given) * 100));
       } else {
         endChange.textContent = `Troco: ${currency(Math.round(change * 100))}`;
       }
     }
   }
+  // "Restante em PIX/Débito/Crédito": a parte em dinheiro vai em cashCents e o resto na forma escolhida.
+  endChange?.addEventListener("click", event => {
+    const button = event.target.closest("[data-pay-rest]");
+    if (!button) return;
+    form.elements.cashCents.value = Math.round((Number(endGiven?.value) || 0) * 100);
+    method.value = button.dataset.payRest;
+    form.requestSubmit();
+  });
 
   if (method) {
     method.addEventListener("change", () => {
@@ -5158,13 +5186,21 @@ document.addEventListener("click", async event => {
       const pay = state.payments.find(p => p.id === id); if (!pay) return;
       const group = state.payments.filter(p => samePaymentGroup(pay, p));
       const groupCents = group.reduce((sum, p) => sum + p.amountCents, 0);
-      openModal(`Alterar forma de pagamento · ${currency(pay.amountCents)}`,
-        `<p class="quoteBox">${html(chargeLabel(state.charges.find(c => c.id === pay.chargeId)) || "Pagamento")}<br>Hoje está como <strong>${methodName[pay.method] || pay.method}</strong>.</p>` + select("method", "Nova forma de pagamento", options.map(m => [m, methodName[m]]), pay.method === "cash" ? "pix" : "cash") +
-        (group.length > 1 ? select("scope", "Aplicar a", [["group", `Todo o recebimento: ${group.length} lançamentos, ${currency(groupCents)}`], ["one", `Só este lançamento (${currency(pay.amountCents)})`]], "group") : ""),
+      // Recebimento dividido (ex.: dinheiro + Pix): dá para trocar só uma das partes.
+      const parts = [...new Set(group.map(p => p.method))].map(m => [m, group.filter(p => p.method === m)]);
+      const scopes = parts.length > 1
+        ? parts.map(([m, list]) => [`m:${m}`, `Só a parte em ${methodName[m] || m} (${currency(list.reduce((sum, p) => sum + p.amountCents, 0))})`])
+        : [["group", `Todo o recebimento: ${group.length} lançamentos, ${currency(groupCents)}`], ["one", `Só este lançamento (${currency(pay.amountCents)})`]];
+      const methodsNow = parts.map(([m]) => methodName[m] || m).join(" + ");
+      openModal(`Alterar forma de pagamento · ${currency(groupCents)}`,
+        `<p class="quoteBox">${html(chargeLabel(state.charges.find(c => c.id === pay.chargeId)) || "Pagamento")}<br>Hoje está como <strong>${methodsNow}</strong>.</p>` + select("method", "Nova forma de pagamento", options.map(m => [m, methodName[m]]), pay.method === "cash" ? "pix" : "cash") +
+        (group.length > 1 ? select("scope", "Aplicar a", scopes, scopes[0][0]) : ""),
         async values => {
-          const targets = values.scope === "group" ? group : [pay];
+          const scope = values.scope || "one";
+          const targets = scope === "group" ? group : scope.startsWith("m:") ? group.filter(p => p.method === scope.slice(2)) : [pay];
           for (const p of targets) await api(`/api/payments/${encodeURIComponent(p.id)}/method`, { method: values.method });
-          toast(`Forma de pagamento alterada para ${methodName[values.method]}${targets.length > 1 ? ` em ${targets.length} lançamentos (${currency(groupCents)})` : ""}.`);
+          const cents = targets.reduce((sum, p) => sum + p.amountCents, 0);
+          toast(`Forma de pagamento alterada para ${methodName[values.method]}${targets.length > 1 ? ` em ${targets.length} lançamentos` : ""} (${currency(cents)}).`);
         }, "Salvar");
     } else if (action === "receiveMachine") {
       const machine = state.machines.find(m => m.id === id);
@@ -5174,17 +5210,33 @@ document.addEventListener("click", async event => {
       if (!state.cashShift) { toast("Abra o caixa antes de receber."); return; }
       openModal(`Receber · ${machine ? machine.name : id}`,
         `<div class="dueList">${due.map(c => `<div><span>${txt(chargeLabel(c))}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong id="dueTotalValue">${currency(total)}</strong></div></div>` +
-        `<label>Desconto (R$)<input type="number" name="discount" id="dueDiscount" min="0" max="${(total / 100).toFixed(2)}" step="0.01" placeholder="0,00"></label>` + paymentField(),
+        `<label>Desconto (R$)<input type="number" name="discount" id="dueDiscount" min="0" max="${(total / 100).toFixed(2)}" step="0.01" placeholder="0,00"></label>` + paymentField() +
+        `<label>Valor entregue em dinheiro (R$)<input type="number" id="dueGiven" min="0" step="0.01" placeholder="Opcional: calcula o troco"></label><div id="dueChange" class="changeDisplay" hidden></div><input type="hidden" name="cashCents" value="0">`,
         async values => {
           const discountCents = Math.min(total, Math.max(0, Math.round((Number(values.discount) || 0) * 100)));
-          const result = await api("/api/charges/receive", { ids: due.map(c => c.id), discountCents, method: values.paymentMethod });
-          playChime("success"); toast(`Recebido ${currency(result.receivedCents)}${result.discountCents ? ` (desconto ${currency(result.discountCents)})` : ""}.`);
+          const result = await api("/api/charges/receive", { ids: due.map(c => c.id), discountCents, method: values.paymentMethod, cashCents: Number(values.cashCents) || 0 });
+          playChime("success"); toast(`Recebido ${currency(result.receivedCents)}${result.discountCents ? ` (desconto ${currency(result.discountCents)})` : ""}.${changeCents() ? ` Troco: ${currency(changeCents())}` : ""}`);
         },
         `Receber ${currency(total)}`);
-      $("#dueDiscount").addEventListener("input", event => {
-        const left = total - Math.min(total, Math.max(0, Math.round((Number(event.target.value) || 0) * 100)));
-        $("#dueTotalValue").textContent = currency(left);
-        $("#modalSubmit").textContent = `Receber ${currency(left)}`;
+      const form = $("#modalForm");
+      const left = () => total - Math.min(total, Math.max(0, Math.round((Number($("#dueDiscount").value) || 0) * 100)));
+      const given = () => Math.round((Number($("#dueGiven").value) || 0) * 100);
+      const changeCents = () => Math.max(0, given() - left());
+      const refresh = () => {
+        $("#dueTotalValue").textContent = currency(left());
+        $("#modalSubmit").textContent = `Receber ${currency(left())}`;
+        $("#dueChange").hidden = !given();
+        $("#dueChange").innerHTML = given() && given() < left() ? cashShortHtml(left() - given()) : `Troco: ${currency(changeCents())}`;
+      };
+      $("#dueDiscount").addEventListener("input", refresh);
+      $("#dueGiven").addEventListener("input", refresh);
+      // "Restante em PIX/Débito/Crédito": a parte em dinheiro vai em cashCents e o resto na forma escolhida.
+      $("#dueChange").addEventListener("click", event => {
+        const button = event.target.closest("[data-pay-rest]");
+        if (!button) return;
+        form.elements.cashCents.value = given();
+        form.elements.paymentMethod.value = button.dataset.payRest;
+        form.requestSubmit();
       });
     } else if (action === "pay") {
       const charge = (state.openCharges || []).find(item => item.id === id);

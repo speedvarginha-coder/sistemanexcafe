@@ -1028,15 +1028,17 @@ test("receber da maquina: desconto e pagamento numa operacao so, com o mesmo rec
     assert.equal(closed.status, 409, "caixa fechado recusa");
     assert.equal((await request("/api/state")).payload.openCharges[0].amountCents, total, "recusa nao aplica o desconto");
     await request("/api/cash/open", { opening: 0 });
-    const received = await request("/api/charges/receive", { ids: [charge.id], discountCents: 100, method: "pix" });
+    // Desconto de R$ 1,00, R$ 1,00 em dinheiro e o restante no Pix.
+    const received = await request("/api/charges/receive", { ids: [charge.id], discountCents: 100, method: "pix", cashCents: 100 });
     assert.equal(received.status, 200);
     assert.equal(received.payload.receivedCents, total - 100);
     assert.equal(received.payload.discountCents, 100);
     const state = (await request("/api/state")).payload;
     assert.equal(state.openCharges.length, 0);
     const payments = state.payments.filter(row => row.receiptId === received.payload.receiptId);
-    assert.equal(payments.length, 1);
-    assert.equal(payments[0].amountCents, total - 100);
+    assert.equal(payments.length, 2);
+    assert.equal(payments.find(row => row.method === "cash").amountCents, 100);
+    assert.equal(payments.find(row => row.method === "pix").amountCents, total - 200);
     assert.equal(state.charges.find(row => row.id === charge.id).discountCents, 100);
   } finally {
     await new Promise(resolve => server.close(resolve));
