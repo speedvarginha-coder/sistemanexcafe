@@ -72,6 +72,9 @@ async function api(path, data) {
   return result;
 }
 
+// Um "Receber" da máquina gera um pagamento por pendência: mesmo meio, operador e caixa em até 5 s formam um recebimento só.
+const samePaymentGroup = (a, b) => a.method === b.method && a.operator === b.operator && a.shiftId === b.shiftId && Math.abs(Date.parse(a.at) - Date.parse(b.at)) <= 5000;
+
 function toast(message) {
   const el = $("#toast");
   if (!el) return;
@@ -379,6 +382,7 @@ function machineCard(machine, compact = false) {
             <button data-action="summary" data-id="${html(machine.id)}">Resumo</button>
             <button data-action="move" data-id="${html(machine.id)}">Mover</button>
             <button data-action="restart" data-id="${html(machine.id)}">Reiniciar</button>
+            ${machine.session.billingMode !== "credit" ? `<button data-action="setClient" data-id="${html(machine.id)}">Cliente</button>` : ""}
           ` : ""}
           <button data-action="monitor" data-id="${html(machine.id)}" ${machine.status === "offline" ? "disabled" : ""}>Monitorar</button>
           ${active ? "" : `
@@ -424,8 +428,12 @@ function summaryHtml(machine) {
 function showReceipt(data) {
   const paper = $("#receiptPaper");
   if (!paper) return;
+  paper.innerHTML = receiptHtml(data);
+  $("#receiptDialog").showModal();
+}
 
-  const nowStr = new Date().toLocaleString("pt-BR");
+function receiptHtml(data) {
+  const nowStr = new Date(data.at || Date.now()).toLocaleString("pt-BR");
   let itemsHtml = "";
   if (data.items && data.items.length) {
     itemsHtml = data.items.map(it => `
@@ -441,10 +449,12 @@ function showReceipt(data) {
     for (const ex of s.extras || []) itemsHtml += `<div class="receiptRow"><span>${ex.quantity}x ${html(ex.name)}</span><span>${currency(ex.amountCents)}</span></div>`;
   }
 
-  paper.innerHTML = `
+  const [company, ...companyLines] = (state.settings?.receiptHeader || "").split("\n").map(line => line.trim()).filter(Boolean);
+  return `
     <div class="receiptHeader">
-      <h3>NEXCAFÉ</h3>
-      <p>Data: ${nowStr} · Operador: ${html(state.user?.name || "admin")}</p>
+      <h3>${html(company || "NEXCAFÉ")}</h3>
+      ${companyLines.map(line => `<p>${html(line)}</p>`).join("")}
+      <p>Data: ${nowStr} · Operador: ${html(data.operator || state.user?.name || "admin")}</p>
     </div>
     <div class="receiptSection">
       ${data.machineName ? `<div class="receiptRow"><span>Terminal:</span><strong>${html(data.machineName)}</strong></div>` : ""}
@@ -454,6 +464,7 @@ function showReceipt(data) {
     <div class="receiptSection">
       ${itemsHtml || '<div class="receiptRow"><span>Atendimento de Balcão</span><span>-</span></div>'}
     </div>
+    ${data.discountCents ? `<div class="receiptRow"><span>Desconto</span><span>-${currency(data.discountCents)}</span></div>` : ""}
     <div class="receiptDivider"></div>
     <div class="receiptTotalRow">
       <span>TOTAL PAGO:</span>
@@ -471,16 +482,61 @@ function showReceipt(data) {
     ` : ""}
     <div class="receiptFooter">
       <p>AUTENTICAÇÃO: ${Math.random().toString(36).slice(2, 10).toUpperCase()}-${Date.now().toString().slice(-4)}</p>
+      <p>Documento sem valor fiscal</p>
       <p>Obrigado pela preferência · Volte sempre!</p>
     </div>
   `;
-
-  $("#receiptDialog").showModal();
 }
 
 $("#receiptCloseBtn")?.addEventListener("click", () => $("#receiptDialog").close());
 $("#receiptDoneBtn")?.addEventListener("click", () => $("#receiptDialog").close());
-$("#receiptPrintBtn")?.addEventListener("click", () => window.print());
+$("#receiptPrintBtn")?.addEventListener("click", () => printReceiptHtml($("#receiptPaper").innerHTML));
+
+// Recibo de um recebimento já registrado (linha de "Recebimentos do turno"): vai direto para a impressão.
+function printPaymentReceipt(paymentId) {
+  const pay = state.payments.find(p => p.id === paymentId); if (!pay) return;
+  const group = state.payments.filter(p => samePaymentGroup(pay, p));
+  const charges = [...new Map(group.map(p => [p.chargeId, state.charges.find(c => c.id === p.chargeId)])).values()].filter(Boolean);
+  const items = charges.flatMap(c => c.items?.length
+    ? c.items.map(it => ({ quantity: it.quantity, name: it.name, totalCents: it.totalCents }))
+    : [{ quantity: 1, name: chargeLabel(c) || c.description, totalCents: c.originalTotalCents || c.amountCents }]);
+  const machineIds = [...new Set(charges.map(c => c.machineId).filter(Boolean))];
+  const clientId = charges.find(c => c.clientId)?.clientId;
+  printReceiptHtml(receiptHtml({
+    at: pay.at, operator: pay.operator, items,
+    machineName: machineIds.length === 1 ? state.machines.find(m => m.id === machineIds[0])?.name || machineIds[0] : "",
+    customer: state.clients.find(c => c.id === clientId)?.name || "",
+    discountCents: charges.reduce((sum, c) => sum + (c.discountCents || 0), 0),
+    totalCents: group.reduce((sum, p) => sum + p.amountCents, 0),
+    paymentMethod: pay.method
+  }));
+}
+
+// Imprime o recibo num documento próprio: imprimir a página do painel cortava o recibo e gastava várias folhas.
+function printReceiptHtml(body) {
+  const frame = document.createElement("iframe");
+  frame.style.cssText = "position:fixed;width:0;height:0;border:0;right:0;bottom:0";
+  document.body.appendChild(frame);
+  const doc = frame.contentDocument;
+  doc.open();
+  doc.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Recibo</title><style>
+    @page { size: 80mm auto; margin: 4mm; }
+    body { margin: 0; width: 72mm; font: 12px/1.45 Arial, sans-serif; color: #000; }
+    .receiptHeader { text-align: center; border-bottom: 1px dashed #000; padding-bottom: 8px; margin-bottom: 8px; }
+    .receiptHeader h3 { margin: 0; font-size: 15px; }
+    .receiptHeader p { margin: 1px 0 0; font-size: 11px; }
+    .receiptSection { margin: 6px 0; }
+    .receiptRow { display: flex; justify-content: space-between; gap: 8px; margin: 2px 0; }
+    .receiptDivider { border-top: 1px dashed #000; margin: 8px 0; }
+    .receiptTotalRow { display: flex; justify-content: space-between; font-size: 14px; font-weight: 800; margin-top: 4px; }
+    .receiptFooter { text-align: center; font-size: 10px; margin-top: 10px; border-top: 1px dashed #000; padding-top: 8px; }
+    .receiptFooter p { margin: 1px 0; }
+  </style></head><body>${body}</body></html>`);
+  doc.close();
+  frame.contentWindow.focus();
+  frame.contentWindow.print();
+  setTimeout(() => frame.remove(), 1000);
+}
 
 let monitorTimer = null, monitorId = null, monitorMeta = { width: 0, height: 0 }, monitorLastMove = 0, monitorUrl = null, monitorLastAt = 0;
 function stopMonitor() {
@@ -765,7 +821,21 @@ function renderCash() {
   $("#cashAdjustButton").disabled = !shift; $("#printSaleButton").disabled = !shift;
   $("#dueList").innerHTML = table(["Data", "Descrição", "Máquina", "Valor", "Pago", "Ação"], due.map(item => `<tr><td>${dateTime(item.at)}</td><td>${txt(chargeLabel(item))}</td><td>${html(state.machines.find(m => m.id === item.machineId)?.name || item.machineId || "-")}</td><td class="money">${currency(item.amountCents)}</td><td class="money">${currency(item.paidCents)}</td><td class="actionsCell"><button class="primary" data-action="pay" data-id="${item.id}" ${!shift ? "disabled" : ""}>Receber</button>${state.user.role === "admin" ? `<button data-action="cancelCharge" data-id="${item.id}">Cancelar</button>` : ""}</td></tr>`), "Sem pendências.");
   const canEditPay = item => state.user.role === "admin" || (shift && item.shiftId === shift.id);
-  $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador", ""], state.payments.slice(0, 40).map(item => `<tr><td>${dateTime(item.at)}</td><td>${html(chargeLabel(state.charges.find(c => c.id === item.chargeId)) || "Pagamento")}</td><td class="money">${currency(item.amountCents)}</td><td>${methodName[item.method] || item.method}${item.methodHistory?.length ? ' <small class="muted" title="Forma de pagamento alterada">(alterado)</small>' : ""}</td><td>${html(item.operator)}</td><td>${canEditPay(item) ? `<button type="button" data-action="changePayMethod" data-id="${html(item.id)}">Alterar</button>` : ""}</td></tr>`), "Nenhum recebimento registrado.");
+  const payGroups = [];
+  for (const pay of state.payments) {
+    const last = payGroups[payGroups.length - 1];
+    if (last && samePaymentGroup(last[0], pay)) last.push(pay); else payGroups.push([pay]);
+  }
+  $("#paymentList").innerHTML = table(["Data", "Descrição", "Valor", "Meio", "Operador", ""], payGroups.slice(0, 40).map(group => {
+    const item = group[0];
+    const charges = group.map(p => state.charges.find(c => c.id === p.chargeId));
+    const labels = charges.map(c => chargeLabel(c) || "Pagamento");
+    const machineIds = [...new Set(charges.map(c => c?.machineId).filter(Boolean))];
+    const machineName = machineIds.length === 1 ? state.machines.find(m => m.id === machineIds[0])?.name || machineIds[0] : "";
+    const description = group.length === 1 ? html(labels[0]) : `<span title="${html(labels.join("\n"))}">Recebimento${machineName ? ` ${html(machineName)}` : ""} · ${group.length} itens</span>`;
+    const edited = group.some(p => p.methodHistory?.length);
+    return `<tr><td>${dateTime(item.at)}</td><td>${description}</td><td class="money">${currency(group.reduce((sum, p) => sum + p.amountCents, 0))}</td><td>${methodName[item.method] || item.method}${edited ? ' <small class="muted" title="Forma de pagamento alterada">(alterado)</small>' : ""}</td><td>${html(item.operator)}</td><td class="actionsCell"><button type="button" class="primary" data-action="printPayReceipt" data-id="${html(item.id)}" title="Imprimir recibo deste recebimento">Recibo</button>${canEditPay(item) ? `<button type="button" data-action="changePayMethod" data-id="${html(item.id)}">Alterar</button>` : ""}</td></tr>`;
+  }), "Nenhum recebimento registrado.");
   $("#shiftList").innerHTML = table(["Abertura", "Fechamento", "Operador", "Esperado", "Contado", "Diferença", ""], state.cashShifts.filter(item => item.closedAt).map(item => { const diff = item.closingCountedCents - item.closingExpectedCents; return `<tr><td>${dateTime(item.openedAt)}</td><td>${dateTime(item.closedAt)}</td><td>${html(item.closedBy)}</td><td class="money">${currency(item.closingExpectedCents)}</td><td class="money">${currency(item.closingCountedCents)}</td><td class="money ${diff < 0 ? "bad" : ""}">${diff ? currency(diff) : "-"}</td><td class="actionsCell"><button type="button" data-shift-summary="${html(item.id)}">Resumo</button></td></tr>`; }), "Nenhum caixa fechado.");
 
   renderPOS();
@@ -3107,8 +3177,9 @@ function expenseFields(values = {}) {
   return select("category", "Categoria", EXPENSE_CATEGORIES.map(name => [name, name]), values.category || "Aluguel") +
     field("description", "Descrição", "text", values.description || "", 'maxlength="120"') +
     field("amount", "Valor (R$)", "number", values.amountCents ? (values.amountCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required') +
-    field("date", "Vencimento / data", "date", values.dueDate || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }), "required") +
+    field("date", "Data do vencimento", "date", values.dueDate || expToday(), "required") +
     select("paid", "Situação", [["false", "A pagar"], ["true", "Já paga"]], values.paid === true ? "true" : "false") +
+    expensePaymentField(values) +
     (values.fileId ? `<input type="hidden" name="fileId" value="${html(values.fileId)}">` : "");
 }
 function saveExpense(values) { return api("/api/expenses", { ...values, paid: values.paid === "true" }).then(() => loadReport()); }
@@ -3127,6 +3198,7 @@ function openFinanceSettings() {
     field("printBWCost", "Custo de papel e tinta por página P&B (R$)", "number", ((s.printBWCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
     field("printColorCost", "Custo de papel e tinta por página colorida (R$)", "number", ((s.printColorCostCents || 0) / 100).toFixed(2), 'min="0" step="0.01"') +
     field("pixKey", "Chave Pix (para cobranças por WhatsApp)", "text", s.pixKey || "", 'maxlength="100" placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"') +
+    `<label>Dados da empresa no recibo (uma informação por linha; a primeira sai em destaque)<textarea name="receiptHeader" rows="5" maxlength="500" placeholder="Speed Lan House&#10;CNPJ 00.000.000/0001-00&#10;Rua Exemplo, 123 - Centro - Varginha/MG&#10;WhatsApp (35) 99999-9999">${html(s.receiptHeader || "")}</textarea></label>` +
     select("panelOnlyHere", "Onde o painel pode ser aberto", [["false", "Em qualquer computador da loja (com senha)"], ["true", "Só neste computador (caixa)"]], String(Boolean(s.panelOnlyHere))),
     values => api("/api/settings/finance", values).then(() => loadReport()));
 }
@@ -3262,7 +3334,7 @@ function setupReportListeners() {
   $("#billFileInput")?.addEventListener("change", event => { const file = event.target.files[0]; event.target.value = ""; importExpenseFiles([file]); });
   $("#view-reports")?.addEventListener("click", event => {
     const payId = event.target.closest("[data-expense-pay]")?.dataset.expensePay;
-    if (payId) { api(`/api/expenses/${encodeURIComponent(payId)}/pay`, {}).then(() => loadReport()).catch(cause => toast(cause.message)); return; }
+    if (payId) { openExpensePayment(payId, () => loadReport()); return; }
     const delId = event.target.closest("[data-expense-delete]")?.dataset.expenseDelete;
     if (delId && confirm("Excluir esta despesa?")) api(`/api/expenses/${encodeURIComponent(delId)}/delete`, {}).then(() => loadReport()).catch(cause => toast(cause.message));
   });
@@ -3331,8 +3403,9 @@ function renderExpenses() {
   const rows = inMonth.filter(e => (!cat || e.category === cat) && (!term || e.description.toLowerCase().includes(term)) &&
     (!status || (status === "open" && e.paid === false) || (status === "paid" && e.paid !== false) || (status === "late" && e.paid === false && expDay(e) < today)))
     .sort((a, b) => b.at.localeCompare(a.at));
-  setHtml("#expTable", pagedTable("expTable", ["Data", "Categoria", "Descrição", "Valor", "Situação", "Origem", ""], rows.map(e => `<tr>
+  setHtml("#expTable", pagedTable("expTable", ["Vencimento", "Pagamento", "Categoria", "Descrição", "Valor", "Situação", "Origem", ""], rows.map(e => `<tr>
     <td>${new Date(e.at).toLocaleDateString("pt-BR")}</td>
+    <td>${e.paid !== false && e.paidAt ? new Date(e.paidAt).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—"}</td>
     <td>${admin && !e.legacy ? `<select data-exp-cat="${e.id}">${expenseData.categories.concat(expenseData.categories.includes(e.category) ? [] : [e.category]).map(c => `<option ${c === e.category ? "selected" : ""}>${html(c)}</option>`).join("")}</select>` : html(e.category)}</td>
     <td>${html(e.description)} ${fileLink(e)}</td>
     <td class="money">${currency(e.amountCents)}</td>
@@ -3346,9 +3419,27 @@ function expenseForm(values = {}, fixed = false) {
   return select("category", "Categoria", cats.map(c => [c, c]), values.category && cats.includes(values.category) ? values.category : (values.category ? "Outros" : "Aluguel")) +
     field("description", "Descrição / fornecedor", "text", values.description || "", 'maxlength="120" required') +
     field("amount", "Valor (R$)", "number", values.amountCents ? (values.amountCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required') +
-    field("date", fixed ? "Primeiro vencimento" : "Vencimento / data", "date", values.dueDate || values.date || expToday(), "required") +
+    field("date", fixed ? "Primeiro vencimento" : "Data do vencimento", "date", values.dueDate || values.date || expToday(), "required") +
     (fixed ? field("repeatMonths", "Repetir por quantos meses", "number", "12", 'min="2" max="24" required') : select("paid", "Situação", [["false", "A pagar"], ["true", "Já paga"]], values.paid === true ? "true" : "false")) +
+    (fixed ? "" : expensePaymentField(values)) +
     (values.fileId ? `<input type="hidden" name="fileId" value="${html(values.fileId)}"><input type="hidden" name="source" value="conta enviada">` : "");
+}
+function expensePaymentField(values = {}) {
+  return field("paidDate", "Data do pagamento", "date", values.paidAt ? expDay({ at: values.paidAt }) : expToday(), "required");
+}
+function syncExpensePaymentField() {
+  const form = $("#modalForm"), input = form.elements.paidDate;
+  if (!input || !form.elements.paid) return;
+  const paid = form.elements.paid.value === "true";
+  input.closest("label").hidden = !paid;
+  input.disabled = !paid;
+}
+$("#modalForm").addEventListener("change", event => {
+  if (event.target.name === "paid") syncExpensePaymentField();
+});
+function openExpensePayment(id, afterSave) {
+  openModal("Registrar pagamento da despesa", expensePaymentField(),
+    values => api(`/api/expenses/${encodeURIComponent(id)}/pay`, { paidDate: values.paidDate }).then(afterSave), "Confirmar pagamento");
 }
 const afterExpenseSave = () => Promise.all([loadExpenses(), currentView === "reports" ? loadReport() : null]);
 
@@ -3452,7 +3543,7 @@ function setupExpenseListeners() {
   drop?.addEventListener("drop", event => { event.preventDefault(); drop.classList.remove("over"); importExpenseFiles([...event.dataTransfer.files]); });
   $("#view-expenses")?.addEventListener("click", event => {
     const pay = event.target.closest("[data-exp-pay]")?.dataset.expPay;
-    if (pay) return api(`/api/expenses/${encodeURIComponent(pay)}/pay`, {}).then(afterExpenseSave).catch(cause => toast(cause.message));
+    if (pay) { openExpensePayment(pay, afterExpenseSave); return; }
     const del = event.target.closest("[data-exp-del]")?.dataset.expDel;
     if (del && confirm("Excluir esta despesa?")) return api(`/api/expenses/${encodeURIComponent(del)}/delete`, {}).then(afterExpenseSave).catch(cause => toast(cause.message));
     const edit = event.target.closest("[data-exp-edit]")?.dataset.expEdit;
@@ -4301,6 +4392,7 @@ async function openShiftSummary(shiftId) {
 function openModal(title, fields, onSubmit, submitText = "Salvar") {
   $("#modalTitle").textContent = title;
   $("#modalFields").innerHTML = fields;
+  syncExpensePaymentField();
   $("#modalSubmit").textContent = submitText;
   $("#modalSubmit").disabled = false;
   $("#modalError").hidden = true;
@@ -4432,7 +4524,8 @@ function openEndModal(machine, restart = false) {
   }
 
   const fields = summaryHtml(machine) + 
-    `<p class="quoteBox" style="font-size: 15px;">Total a Receber: <strong style="font-size: 18px; color: var(--primary);">${currency(estimated)}</strong>${session.billingMode === "postpaid" ? " · valor final atualizado no encerramento" : ""}</p>` + 
+    `<p class="quoteBox" style="font-size: 15px;">Total a Receber: <strong id="endTotal" style="font-size: 18px; color: var(--primary);">${currency(estimated)}</strong>${session.billingMode === "postpaid" ? " · valor final atualizado no encerramento" : ""}</p>` +
+    (estimated ? `<label>Desconto (R$)<input type="number" name="discount" id="endDiscount" min="0" max="${(estimated / 100).toFixed(2)}" step="0.01" placeholder="0,00"></label>` : "") +
     (estimated && state.cashShift ? select("paymentMethod", "Meio de Recebimento", methods, "cash") : "") +
     (estimated && !state.cashShift ? `<p class="formNotice">O caixa está fechado. Ao encerrar, ${currency(estimated)} ficam em <strong>A receber</strong> (Caixa e vendas); receba depois de abrir o caixa.</p>` : "") +
     (state.cashShift ? changeCalculatorHtml : "");
@@ -4441,18 +4534,19 @@ function openEndModal(machine, restart = false) {
     `${restart ? "Encerrar e reiniciar" : "Encerrar Atendimento"} · ${machine.name}`, 
     fields, 
     async values => {
-      await api(`/api/machines/${encodeURIComponent(machine.id)}/end`, { restart, paymentMethod: values.paymentMethod || "" });
+      const discountCents = estimated - due();
+      await api(`/api/machines/${encodeURIComponent(machine.id)}/end`, { restart, paymentMethod: values.paymentMethod || "", discountCents });
       playChime("success");
       toast(`Terminal ${machine.name} encerrado com sucesso.`);
       
       // Recibo so quando pedir: fica no botao "Recibo da ultima venda" do caixa.
       const givenVal = Number($("#endGivenInput")?.value) || 0;
-      const changeVal = Math.max(0, givenVal - (estimated / 100));
+      const changeVal = Math.max(0, givenVal - (due() / 100));
       lastReceiptData = {
         machineName: machine.name,
         customer: machine.summary?.customer || session.customer || "Avulso",
         session: machine.summary,
-        totalCents: estimated,
+        totalCents: due(),
         paymentMethod: values.paymentMethod || "cash",
         changeCents: Math.round(changeVal * 100)
       };
@@ -4467,9 +4561,18 @@ function openEndModal(machine, restart = false) {
   const endCalc = $("#endCashCalculator");
   const endChange = $("#endChangeDisplay");
   const endGiven = $("#endGivenInput");
+  const endDiscount = $("#endDiscount");
+  function due() {
+    const discount = Math.round((Number(endDiscount?.value) || 0) * 100);
+    return estimated - Math.min(estimated, Math.max(0, discount));
+  }
+  if (endDiscount) endDiscount.addEventListener("input", () => {
+    $("#endTotal").textContent = currency(due());
+    calcEndChange(Number(endGiven?.value) || 0);
+  });
 
   function calcEndChange(given) {
-    const total = estimated / 100;
+    const total = due() / 100;
     const change = Math.max(0, given - total);
     if (endChange) {
       if (given < total && given > 0) {
@@ -4495,7 +4598,7 @@ function openEndModal(machine, restart = false) {
     endCalc.querySelectorAll("[data-end-val]").forEach(btn => {
       btn.addEventListener("click", () => {
         const val = btn.dataset.endVal;
-        const total = estimated / 100;
+        const total = due() / 100;
         let given = total;
         if (val === "exact") given = total;
         else given = Number(val);
@@ -4536,7 +4639,7 @@ function renderSale() {
       <div class="cartRow">
         <span>
           <strong>${html(product.name)}</strong>
-          <small>${quantity} × ${currency(product.priceCents)}</small>
+          <small><input type="number" class="cartQty" data-sale-qty="${html(id)}" min="1" max="999" step="1" value="${quantity}" aria-label="Quantidade de ${html(product.name)}" style="width: 56px; padding: 2px 6px; font-size: 13px;"> × ${currency(product.priceCents)}</small>
         </span>
         <strong class="money">${currency(product.priceCents * quantity)}</strong>
         <button type="button" data-sale-remove="${html(id)}" aria-label="Remover uma unidade de ${html(product.name)}">−</button>
@@ -4651,6 +4754,19 @@ $("#saleSearch").addEventListener("keydown", event => {
   } else {
     toast(`Item "${lookup}" não localizado.`);
   }
+});
+
+// Quantidade digitada direto no carrinho; 0 ou vazio remove o item.
+$("#saleDialog").addEventListener("change", event => {
+  const input = event.target.closest("[data-sale-qty]");
+  if (!input) return;
+  const qty = Math.min(999, Math.floor(Number(input.value) || 0));
+  if (qty < 1) saleCart.delete(input.dataset.saleQty);
+  else saleCart.set(input.dataset.saleQty, qty);
+  renderSale();
+});
+$("#saleDialog").addEventListener("keydown", event => {
+  if (event.key === "Enter" && event.target.matches("[data-sale-qty]")) { event.preventDefault(); event.target.blur(); $("#saleSearch").focus(); }
 });
 
 $("#saleDialog").addEventListener("click", event => {
@@ -4993,6 +5109,11 @@ document.addEventListener("click", async event => {
       const free = state.machines.filter(m => m.id !== machine.id && !m.session && m.status !== "offline" && m.status !== "maintenance");
       if (!free.length) { toast("Nenhum terminal livre para receber a transferência."); return; }
       openModal(`Transferir Sessão · ${machine.name}`, select("targetId", "Terminal de Destino", free.map(m => [m.id, `${m.name} · ${m.id}`]), free[0].id), values => api(`/api/machines/${encodeURIComponent(id)}/move`, { targetId: values.targetId }), "Transferir");
+    } else if (action === "setClient" && machine?.session) {
+      const clients = state.clients.filter(c => c.active).slice().sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+      openModal(`Cliente da sessão · ${machine.name}`,
+        select("clientId", "Cliente", [["", "Avulso"], ...clients.map(c => [c.id, c.name])], machine.session.clientId || ""),
+        values => api(`/api/machines/${encodeURIComponent(id)}/client`, { clientId: values.clientId }).then(() => toast("Cliente da sessão atualizado.")), "Salvar");
     } else if (action === "maintenance" && machine) {
       await api(`/api/machines/${encodeURIComponent(id)}/maintenance`, {});
       await loadState(); toast(machine.maintenance ? "Manutenção finalizada." : "Terminal colocado em manutenção.");
@@ -5014,11 +5135,20 @@ document.addEventListener("click", async event => {
     } else if (action === "pair" && machine) {
       const result = await api(`/api/machines/${encodeURIComponent(id)}/pair`, {});
       showPair(result.pairingCode);
+    } else if (action === "printPayReceipt") {
+      printPaymentReceipt(id);
     } else if (action === "changePayMethod") {
       const pay = state.payments.find(p => p.id === id); if (!pay) return;
+      const group = state.payments.filter(p => samePaymentGroup(pay, p));
+      const groupCents = group.reduce((sum, p) => sum + p.amountCents, 0);
       openModal(`Alterar forma de pagamento · ${currency(pay.amountCents)}`,
-        `<p class="quoteBox">${html(chargeLabel(state.charges.find(c => c.id === pay.chargeId)) || "Pagamento")}<br>Hoje está como <strong>${methodName[pay.method] || pay.method}</strong>.</p>` + select("method", "Nova forma de pagamento", options.map(m => [m, methodName[m]]), pay.method === "cash" ? "pix" : "cash"),
-        values => api(`/api/payments/${encodeURIComponent(id)}/method`, { method: values.method }).then(() => toast(`Forma de pagamento alterada para ${methodName[values.method]}.`)), "Salvar");
+        `<p class="quoteBox">${html(chargeLabel(state.charges.find(c => c.id === pay.chargeId)) || "Pagamento")}<br>Hoje está como <strong>${methodName[pay.method] || pay.method}</strong>.</p>` + select("method", "Nova forma de pagamento", options.map(m => [m, methodName[m]]), pay.method === "cash" ? "pix" : "cash") +
+        (group.length > 1 ? select("scope", "Aplicar a", [["group", `Todo o recebimento: ${group.length} lançamentos, ${currency(groupCents)}`], ["one", `Só este lançamento (${currency(pay.amountCents)})`]], "group") : ""),
+        async values => {
+          const targets = values.scope === "group" ? group : [pay];
+          for (const p of targets) await api(`/api/payments/${encodeURIComponent(p.id)}/method`, { method: values.method });
+          toast(`Forma de pagamento alterada para ${methodName[values.method]}${targets.length > 1 ? ` em ${targets.length} lançamentos (${currency(groupCents)})` : ""}.`);
+        }, "Salvar");
     } else if (action === "receiveMachine") {
       const machine = state.machines.find(m => m.id === id);
       const due = (state.openCharges || []).filter(c => c.machineId === id && Date.now() - Date.parse(c.at) < 12 * 3600000);
@@ -5026,9 +5156,21 @@ document.addEventListener("click", async event => {
       if (!total) return;
       if (!state.cashShift) { toast("Abra o caixa antes de receber."); return; }
       openModal(`Receber · ${machine ? machine.name : id}`,
-        `<div class="dueList">${due.map(c => `<div><span>${txt(chargeLabel(c))}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong>${currency(total)}</strong></div></div>` + paymentField(),
-        async values => { for (const c of due) await api(`/api/charges/${c.id}/pay`, { amount: ((c.amountCents - c.paidCents) / 100).toFixed(2), method: values.paymentMethod }); playChime("success"); toast(`Recebido ${currency(total)}.`); },
+        `<div class="dueList">${due.map(c => `<div><span>${txt(chargeLabel(c))}</span><strong>${currency(c.amountCents - c.paidCents)}</strong></div>`).join("")}<div class="dueTotal"><span>Total</span><strong id="dueTotalValue">${currency(total)}</strong></div></div>` +
+        `<label>Desconto (R$)<input type="number" name="discount" id="dueDiscount" min="0" max="${(total / 100).toFixed(2)}" step="0.01" placeholder="0,00"></label>` + paymentField(),
+        async values => {
+          const discountCents = Math.min(total, Math.max(0, Math.round((Number(values.discount) || 0) * 100)));
+          let charges = due;
+          if (discountCents) charges = (await api("/api/charges/discount", { ids: due.map(c => c.id), discountCents })).charges;
+          for (const c of charges) if (c.amountCents > c.paidCents) await api(`/api/charges/${c.id}/pay`, { amount: ((c.amountCents - c.paidCents) / 100).toFixed(2), method: values.paymentMethod });
+          playChime("success"); toast(`Recebido ${currency(total - discountCents)}${discountCents ? ` (desconto ${currency(discountCents)})` : ""}.`);
+        },
         `Receber ${currency(total)}`);
+      $("#dueDiscount").addEventListener("input", event => {
+        const left = total - Math.min(total, Math.max(0, Math.round((Number(event.target.value) || 0) * 100)));
+        $("#dueTotalValue").textContent = currency(left);
+        $("#modalSubmit").textContent = `Receber ${currency(left)}`;
+      });
     } else if (action === "pay") {
       const charge = (state.openCharges || []).find(item => item.id === id);
       if (!charge) return;
@@ -5115,6 +5257,7 @@ async function loadPrintRoute(refresh = false) {
     };
     fill($("#printBlack"), result.black);
     fill($("#printColor"), result.color);
+    if ($("#printColorQuality")) $("#printColorQuality").value = result.colorQuality || "High";
     $("#printBlackPrice").value = ((result.blackCents || 0) / 100).toFixed(2);
     $("#printColorPrice").value = ((result.colorCents || 0) / 100).toFixed(2);
     const isAdmin = state && state.user.role === "admin";
@@ -5127,17 +5270,31 @@ async function loadPrintRoute(refresh = false) {
   }
 }
 
+$("#openDriverPrefsBtn")?.addEventListener("click", async () => {
+  const printer = $("#printColor")?.value;
+  if (!printer) { toast("Selecione a impressora colorida antes."); return; }
+  try {
+    await api("/api/printers/open-driver-prefs", { printer });
+    toast(`Abrindo preferências de ${printer} no Windows...`);
+  } catch (cause) { toast(cause.message); }
+});
+
 $("#printRouteRefresh").addEventListener("click", () => loadPrintRoute(true));
 $("#printRoute").addEventListener("submit", async event => {
   event.preventDefault();
   try {
-    const payload = { black: $("#printBlack").value, color: $("#printColor").value };
+    const payload = {
+      black: $("#printBlack").value,
+      color: $("#printColor").value,
+      colorQuality: $("#printColorQuality")?.value || "High"
+    };
     if (state && state.user.role === "admin") {
       payload.blackPrice = $("#printBlackPrice").value;
       payload.colorPrice = $("#printColorPrice").value;
     }
     const result = await api("/api/settings/print-route", payload);
-    toast(`Filas atualizadas · P&B: ${result.black} (${currency(result.blackCents)}/pág) · Colorido: ${result.color} (${currency(result.colorCents)}/pág)`);
+    const qLabels = { High: "Alta qualidade (300 DPI)", Standard: "Padrão", Draft: "Rascunho" };
+    toast(`Impressoras atualizadas · P&B: ${result.black} (${currency(result.blackCents)}/pág) · Colorida: ${result.color} [${qLabels[result.colorQuality] || result.colorQuality}] (${currency(result.colorCents)}/pág)`);
     loadState();
   } catch (cause) { toast(cause.message); }
 });

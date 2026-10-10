@@ -1532,26 +1532,6 @@ button.secondaryBtn svg {
   gap: 8px;
 }
 
-/* Estilos de Impressão Direta */
-@media print {
-  body * {
-    visibility: hidden;
-  }
-  .receiptPaper, .receiptPaper * {
-    visibility: visible;
-  }
-  .receiptPaper {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    margin: 0;
-    padding: 5mm;
-    border: none;
-    box-shadow: none;
-  }
-}
-
 /* ==========================================================================
    Tabelas, Painéis Auxiliares e Modais
    ========================================================================== */

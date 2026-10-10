@@ -3,7 +3,9 @@ param(
     [string]$Action = "List",
     [string]$Path,
     [string]$Printer,
-    [switch]$Color
+    [switch]$Color,
+    [ValidateSet("Draft", "Standard", "High")]
+    [string]$Quality = "High"
 )
 
 # Impressao feita pelo computador do caixa: as estacoes so enxergam a "Impressao Nexcafe"
@@ -65,7 +67,7 @@ function Get-PdfPageImage {
 }
 
 function Send-PdfToPrinter {
-    param([string]$Path, [string]$Printer, [bool]$Color)
+    param([string]$Path, [string]$Printer, [bool]$Color, [string]$Quality = "High")
     $queue = Get-Printer -Name $Printer -ErrorAction Stop
     $queueStatus = [string]$queue.PrinterStatus
     if ($queueStatus -match 'Offline|Error|PaperOut|NotAvailable|UserIntervention|DoorOpen|NoToner') {
@@ -77,6 +79,24 @@ function Send-PdfToPrinter {
     $settings = New-Object System.Drawing.Printing.PrinterSettings
     $settings.PrinterName = $Printer
     if (-not $settings.IsValid) { throw "Impressora indisponivel no caixa: $Printer" }
+
+    # Solicita resolucao High ou especificada ao driver da impressora
+    if ($Quality -eq "High" -or $Color) {
+        foreach ($res in $settings.PrinterResolutions) {
+            if ($res.Kind -eq [System.Drawing.Printing.PrinterResolutionKind]::High) {
+                $settings.DefaultPageSettings.PrinterResolution = $res
+                break
+            }
+        }
+    } elseif ($Quality -eq "Draft") {
+        foreach ($res in $settings.PrinterResolutions) {
+            if ($res.Kind -eq [System.Drawing.Printing.PrinterResolutionKind]::Draft) {
+                $settings.DefaultPageSettings.PrinterResolution = $res
+                break
+            }
+        }
+    }
+
     $print = New-Object System.Drawing.Printing.PrintDocument
     try {
         $print.PrinterSettings = $settings
@@ -90,10 +110,29 @@ function Send-PdfToPrinter {
             try { $eventArgs.PageSettings.Landscape = ($page.Size.Width -gt $page.Size.Height) }
             finally { $page.Dispose() }
             $eventArgs.PageSettings.Color = $Color
+            if ($Quality -eq "High" -or $Color) {
+                foreach ($res in $settings.PrinterResolutions) {
+                    if ($res.Kind -eq [System.Drawing.Printing.PrinterResolutionKind]::High) {
+                        $eventArgs.PageSettings.PrinterResolution = $res
+                        break
+                    }
+                }
+            }
         })
         $print.add_PrintPage({ param($sender, $eventArgs)
-            $bitmap = Get-PdfPageImage -Document $document -Index $script:PdfIndex -Scale 2.5
+            # Escala de resolucao de renderizacao:
+            # High ou Colorida: 4.167 (300 DPI) para nitidez fotografica e cores densas
+            # Standard: 3.0 (216 DPI)
+            # Draft: 2.0 (144 DPI)
+            $scaleFactor = if ($Quality -eq "High" -or $Color) { 4.167 } elseif ($Quality -eq "Draft") { 2.0 } else { 3.0 }
+            $bitmap = Get-PdfPageImage -Document $document -Index $script:PdfIndex -Scale $scaleFactor
             try {
+                if ($Quality -eq "High" -or $Color) {
+                    $eventArgs.Graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                    $eventArgs.Graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+                    $eventArgs.Graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+                    $eventArgs.Graphics.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+                }
                 $target = $eventArgs.MarginBounds
                 $scale = [Math]::Min($target.Width / $bitmap.Width, $target.Height / $bitmap.Height)
                 $destW = [int]($bitmap.Width * $scale)
@@ -117,7 +156,7 @@ try {
     } else {
         if (-not (Test-Path -LiteralPath $Path)) { throw "Arquivo de impressao nao encontrado." }
         $Path = [System.IO.Path]::GetFullPath($Path)
-        $pages = Send-PdfToPrinter -Path $Path -Printer $Printer -Color ([bool]$Color)
+        $pages = Send-PdfToPrinter -Path $Path -Printer $Printer -Color ([bool]$Color) -Quality $Quality
         Write-Output (ConvertTo-Json -InputObject @{ ok = $true; pages = $pages } -Compress)
     }
     exit 0

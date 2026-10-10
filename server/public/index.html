@@ -353,9 +353,18 @@
                     <span>Preço colorida (R$ por página)</span>
                     <input id="printColorPrice" type="number" min="0.01" step="0.01" inputmode="decimal">
                   </label>
+                  <label class="printQualityField">
+                    <span>Qualidade / Nível de tinta (Colorida)</span>
+                    <select id="printColorQuality">
+                      <option value="High" selected>⭐ Alto (Máxima definição / 300 DPI / Cores vivas - Recomendado)</option>
+                      <option value="Standard">Padrão (Normal)</option>
+                      <option value="Draft">Rascunho (Econômico / Menos tinta)</option>
+                    </select>
+                  </label>
                 </div>
                 <div class="printRouteActions">
                   <button type="button" id="printRouteRefresh" title="Recarrega a lista de impressoras do Windows">Atualizar impressoras</button>
+                  <button type="button" id="openDriverPrefsBtn" class="secondary" title="Abre as propriedades e nivel de qualidade do driver da impressora no Windows">⚙️ Abrir Configuração do Windows</button>
                   <button type="submit" class="primary">Salvar</button>
                 </div>
               </form>

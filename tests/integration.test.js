@@ -1083,6 +1083,19 @@ test("despesas: foto lida por OCR, fatura do cartao em lote, despesa fixa mensal
     await request("/api/setup", { name: "admin", password: "senha-teste-123" });
     await request("/api/login", { name: "admin", password: "senha-teste-123" });
 
+    const avulsa = await request("/api/expenses", { category: "Outros", description: "Compra avulsa", amount: 25, date: "2026-09-30", paid: true, paidDate: "2026-10-02" });
+    assert.equal(avulsa.status, 200);
+    assert.equal(avulsa.payload.expense.at.slice(0, 10), "2026-09-30");
+    assert.equal(avulsa.payload.expense.paidAt.slice(0, 10), "2026-10-02");
+    const expenseId = avulsa.payload.expense.id;
+    const corrected = await request(`/api/expenses/${expenseId}/update`, { paidDate: "2026-10-03" });
+    assert.equal(corrected.payload.expense.paidAt.slice(0, 10), "2026-10-03");
+    assert.equal(corrected.payload.expense.at.slice(0, 10), "2026-09-30");
+    assert.equal((await request(`/api/expenses/${expenseId}/update`, { description: "Nao deve salvar", paidDate: "2026-02-30" })).status, 400);
+    assert.equal((await request("/api/expenses")).payload.expenses.find(e => e.id === expenseId).description, "Compra avulsa");
+    assert.equal((await request(`/api/expenses/${expenseId}/update`, { paid: false })).payload.expense.paidAt, null);
+    assert.equal((await request(`/api/expenses/${expenseId}/pay`, { paidDate: "2026-10-04" })).payload.expense.paidAt.slice(0, 10), "2026-10-04");
+    assert.equal((await request("/api/expenses", { category: "Outros", amount: 1, paid: true, paidDate: "data-invalida" })).status, 400);
     const photo = await request("/api/expenses/read", Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]), "image/jpeg");
     assert.equal(photo.status, 200);
     assert.equal(photo.payload.ocr, true, "foto passa pelo OCR");

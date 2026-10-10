@@ -20,6 +20,13 @@ const BACKUP_KEEP_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const err = (status, message) => Object.assign(new Error(message), { status });
 const now = () => new Date().toISOString();
+function expensePaymentDate(value, fallback = now()) {
+  if (value === undefined || value === "") return fallback;
+  const day = String(value);
+  const date = new Date(`${day}T12:00:00-03:00`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== day) throw err(400, "Data do pagamento invalida");
+  return date.toISOString();
+}
 const uuid = () => crypto.randomUUID();
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
 const label = (value, max = 100) => String(value ?? "").trim().slice(0, max);
@@ -163,7 +170,7 @@ function runPrintScript(args, timeout = 240000) {
 }
 const defaultPrintRunner = {
   list: () => runPrintScript(["-Action", "List"], 30000),
-  print: ({ file, printer, color }) => runPrintScript(["-Action", "Print", "-Path", file, "-Printer", printer, ...(color ? ["-Color"] : [])]),
+  print: ({ file, printer, color, quality }) => runPrintScript(["-Action", "Print", "-Path", file, "-Printer", printer, ...(color ? ["-Color"] : []), "-Quality", quality || "High"]),
 };
 
 const DEFAULT_DATA_DIR = path.join(__dirname, "data");
@@ -404,6 +411,19 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     item.paidCents += amountCents;
     db.payments.unshift({ id: uuid(), at: now(), chargeId: item.id, amountCents, method, shiftId: shift.id, operator });
     event(item.machineId || "caixa", "Pagamento registrado", item.description, operator);
+  }
+  // Desconto em pendencias: abate do tempo primeiro, depois do resto. Fica em discountCents (relatorios e auditoria por operador).
+  function discountCharges(list, cents, operator) {
+    let left = Math.max(0, Number.isInteger(cents) ? cents : 0);
+    const pending = list.filter(row => row.amountCents > row.paidCents).sort((a, b) => (b.kind === "time") - (a.kind === "time"));
+    for (const row of pending) {
+      const cut = Math.min(left, row.amountCents - row.paidCents);
+      if (!cut) continue;
+      row.originalTotalCents ??= row.amountCents;
+      row.amountCents -= cut; row.discountCents = (row.discountCents || 0) + cut; row.operator = operator;
+      left -= cut;
+    }
+    return Math.max(0, Number.isInteger(cents) ? cents : 0) - left;
   }
   function finish(item, reason, operator, restore = true, restart = false) {
     const session = item.session; if (!session) throw err(409, "Maquina sem sessao ativa");
@@ -1317,7 +1337,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       fs.mkdirSync(spoolDir, { recursive: true });
       const file = path.join(spoolDir, `${printJob.id}.pdf`);
       fs.writeFileSync(file, body);
-      const run = () => printRunner.print({ file, printer, color });
+      const quality = (color ? db.settings.printColorQuality : db.settings.printBWQuality) || "High";
+      const run = () => printRunner.print({ file, printer, color, quality });
       const result = await (printQueue = printQueue.then(run, run));
       fs.rmSync(file, { force: true });
       if (!result || !result.ok) {
@@ -1531,6 +1552,27 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         item.session = null; item.locked = true; item.lockMessage = `Cliente transferido para ${target.name}`; item.restoreSeq = (item.restoreSeq || 0) + 1; touch(item);
         event(item.id, "Sessao transferida", `Para ${target.name}`, user.name);
         event(target.id, "Sessao recebida", `De ${item.name}`, user.name);
+      } else if (action === "client") {
+        // Troca o cliente da sessao em andamento (ex.: liberou como Avulso por engano).
+        const session = item.session; if (!session) throw err(409, "Estacao sem sessao ativa");
+        if (session.billingMode === "credit") throw err(409, "Sessao com saldo de tempo: encerre e libere de novo");
+        const clientId = input.clientId ? label(input.clientId, 50) : null;
+        const client = clientId && db.clients.find(row => row.id === clientId && row.active);
+        if (clientId && !client) throw err(400, "Cliente nao encontrado");
+        // Pos-pago com cliente que tem saldo: passa a usar o saldo desde o inicio da sessao (nada foi cobrado ainda).
+        const elapsedSeconds = Math.ceil((Date.now() - Date.parse(session.startedAt)) / 1000);
+        const useCredit = client && session.billingMode === "postpaid" && (client.creditSeconds || 0) > elapsedSeconds + 60;
+        if (useCredit && Object.values(db.machines).some(row => row !== item && row.session?.clientId === client.id)) throw err(409, "Cliente ja usa outra estacao");
+        session.clientId = client ? client.id : null; session.customer = client ? client.name : label(input.customer, 80);
+        for (const row of db.charges) if (row.sessionId === session.id) row.clientId = session.clientId;
+        let detail = session.customer || "Avulso";
+        if (useCredit) {
+          session.billingMode = "credit"; session.open = false; session.creditSeconds = client.creditSeconds;
+          session.plannedMinutes = Math.floor(client.creditSeconds / 60);
+          session.endsAt = new Date(Date.parse(session.startedAt) + client.creditSeconds * 1000).toISOString();
+          detail += " (passou a usar o saldo)";
+        }
+        touch(item); event(item.id, "Cliente da sessao alterado", detail, user.name);
       } else if (action === "maintenance") {
         item.maintenance = !item.maintenance;
         item.locked = true;
@@ -1580,6 +1622,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         const paymentMethod = input.paymentMethod || "";
         if (paymentMethod && (!METHODS.includes(paymentMethod) || !currentShift())) throw err(409, "Abra o caixa e escolha uma forma de pagamento valida");
         const sessionId = finish(item, "attendant", user.name, true, Boolean(input.restart));
+        // Desconto no encerramento (ex.: esqueceu de fechar a maquina).
+        const discounted = discountCharges(db.charges.filter(row => row.sessionId === sessionId), input.discountCents, user.name);
+        if (discounted) event(item.id, "Desconto no encerramento", `R$ ${(discounted / 100).toFixed(2)}`, user.name);
         if (paymentMethod) for (const chargeItem of db.charges.filter(row => row.sessionId === sessionId && row.amountCents > row.paidCents)) {
           pay(chargeItem, chargeItem.amountCents - chargeItem.paidCents, paymentMethod, user.name);
         }
@@ -1977,6 +2022,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (amountCents < 1) throw err(400, "Informe o valor da despesa");
       const day = /^\d{4}-\d{2}-\d{2}$/.test(String(input.date || "")) ? input.date : localDay(Date.now());
       // Conta a pagar: fica pendente ate marcar como paga. PDF anexado fica em data/contas.
+      const paidAt = input.paid !== false ? expensePaymentDate(input.paidDate) : null;
       const fileId = /^[0-9a-f-]{36}$/.test(String(input.fileId || "")) && fs.existsSync(billsDir) && fs.readdirSync(billsDir).some(name => name.startsWith(input.fileId)) ? input.fileId : null;
       const repeat = Number.isInteger(Number(input.repeatMonths)) ? Math.max(1, Math.min(24, Number(input.repeatMonths))) : 1;
       const groupId = repeat > 1 ? uuid() : null;
@@ -1987,7 +2033,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         const last = new Date(Date.UTC(y, m - 1 + i + 1, 0)).getUTCDate();
         const when = `${new Date(Date.UTC(y, m - 1 + i, 1)).toISOString().slice(0, 7)}-${String(Math.min(d, last)).padStart(2, "0")}`;
         const paidNow = input.paid !== false && i === 0;
-        created.push({ id: uuid(), at: new Date(`${when}T12:00:00-03:00`).toISOString(), category, description, amountCents, operator: user.name, paid: paidNow, paidAt: paidNow ? now() : null, fileId: i === 0 ? fileId : null, groupId, source: label(input.source, 30) || "manual" });
+        created.push({ id: uuid(), at: new Date(`${when}T12:00:00-03:00`).toISOString(), category, description, amountCents, operator: user.name, paid: paidNow, paidAt: paidNow ? paidAt : null, fileId: i === 0 ? fileId : null, groupId, source: label(input.source, 30) || "manual" });
       }
       const item = created[0];
       db.expenses.unshift(...created); event("caixa", "Despesa lancada", `${description}: R$ ${(amountCents / 100).toFixed(2)}`, user.name); save();
@@ -2089,11 +2135,13 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (expenseUpdate && req.method === "POST") {
       admin(user); const item = db.expenses.find(row => row.id === expenseUpdate[1]); if (!item) throw err(404, "Despesa nao encontrada");
       const input = await readBody(req);
+      const paid = input.paid === undefined ? item.paid !== false : input.paid === true || input.paid === "true";
+      const paidAt = paid ? expensePaymentDate(input.paidDate, item.paidAt || now()) : null;
       if (input.category !== undefined) item.category = label(input.category, 60) || item.category;
       if (input.description !== undefined) item.description = label(input.description, 120) || item.description;
       if (input.amount !== undefined || input.amountCents !== undefined) item.amountCents = Number.isInteger(input.amountCents) ? input.amountCents : money(input.amount, "Valor");
       if (/^\d{4}-\d{2}-\d{2}$/.test(String(input.date || ""))) item.at = new Date(`${input.date}T12:00:00-03:00`).toISOString();
-      if (input.paid !== undefined) { item.paid = input.paid === true || input.paid === "true"; item.paidAt = item.paid ? (item.paidAt || now()) : null; }
+      if (input.paid !== undefined || input.paidDate !== undefined) { item.paid = paid; item.paidAt = paidAt; }
       save(); return send(res, 200, { ok: true, expense: item });
     }
     // Speed Financeira: funil de contatos. Venda cruzada a partir da loja (ex.: serviços do INSS).
@@ -2303,7 +2351,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const expensePay = p.match(/^\/api\/expenses\/([^/]+)\/pay$/);
     if (expensePay && req.method === "POST") {
       admin(user); const item = db.expenses.find(row => row.id === expensePay[1]); if (!item) throw err(404, "Despesa nao encontrada");
-      Object.assign(item, { paid: true, paidAt: now(), paidBy: user.name });
+      const input = await readBody(req);
+      Object.assign(item, { paid: true, paidAt: expensePaymentDate(input.paidDate, item.paidAt || now()), paidBy: user.name });
       event("caixa", "Conta paga", `${item.description}: R$ ${(item.amountCents / 100).toFixed(2)}`, user.name); save();
       return send(res, 200, { ok: true, expense: item });
     }
@@ -2348,6 +2397,15 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       event("caixa", "Forma de pagamento alterada", `${(item.amountCents / 100).toFixed(2)}: ${before} -> ${input.method}`, user.name); save();
       return send(res, 200, { ok: true });
     }
+    if (p === "/api/charges/discount" && req.method === "POST") {
+      const input = await readBody(req);
+      const ids = Array.isArray(input.ids) ? input.ids.map(id => label(id, 60)) : [];
+      const list = db.charges.filter(row => ids.includes(row.id));
+      if (!list.length) throw err(404, "Cobranca nao encontrada");
+      const discounted = discountCharges(list, input.discountCents, user.name);
+      if (discounted) { event(list[0].machineId || "caixa", "Desconto no recebimento", `R$ ${(discounted / 100).toFixed(2)}`, user.name); save(); }
+      return send(res, 200, { ok: true, charges: list });
+    }
     const payment = p.match(/^\/api\/charges\/([^/]+)\/pay$/);
     if (payment && req.method === "POST") {
       const item = db.charges.find(row => row.id === payment[1]); if (!item) throw err(404, "Cobranca nao encontrada");
@@ -2374,6 +2432,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         printBWCostCents: input.printBWCost !== undefined && input.printBWCost !== "" ? money(input.printBWCost, "Custo da pagina P&B") : (db.settings.printBWCostCents || 0),
         printColorCostCents: input.printColorCost !== undefined && input.printColorCost !== "" ? money(input.printColorCost, "Custo da pagina colorida") : (db.settings.printColorCostCents || 0),
         pixKey: input.pixKey !== undefined ? label(input.pixKey, 100) : (db.settings.pixKey || ""),
+        receiptHeader: input.receiptHeader !== undefined ? label(input.receiptHeader, 500) : (db.settings.receiptHeader || ""),
         panelOnlyHere: input.panelOnlyHere === true || input.panelOnlyHere === "true"
       });
       event("sistema", "Metas e taxas atualizadas", "", user.name); save();
@@ -2385,7 +2444,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         if (!result || !result.ok) throw err(502, `Nao foi possivel listar as impressoras do caixa: ${(result && result.error) || "erro"}`);
         localPrinters = { at: Date.now(), list: [].concat(result.printers || []).filter(Boolean).map(value => label(value, 200)) };
       }
-      return send(res, 200, { ok: true, printers: localPrinters.list, black: db.settings.printBlackPrinter || "", color: db.settings.printColorPrinter || "", blackCents: db.settings.printBWCents, colorCents: db.settings.printColorCents });
+      return send(res, 200, { ok: true, printers: localPrinters.list, black: db.settings.printBlackPrinter || "", color: db.settings.printColorPrinter || "", blackCents: db.settings.printBWCents, colorCents: db.settings.printColorCents, colorQuality: db.settings.printColorQuality || "High" });
     }
     if (p === "/api/settings/print-route" && req.method === "POST") {
       const input = await readBody(req);
@@ -2396,10 +2455,21 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const blackCents = changePrice ? money(input.blackPrice, "Preço P&B") : db.settings.printBWCents;
       const colorCents = changePrice ? money(input.colorPrice, "Preço colorido") : db.settings.printColorCents;
       if (blackCents < 1 || colorCents < 1) throw err(400, "Preços da impressão devem ser maiores que zero");
+      const colorQuality = ["High", "Standard", "Draft"].includes(input.colorQuality) ? input.colorQuality : (db.settings.printColorQuality || "High");
       db.settings.printBlackPrinter = black; db.settings.printColorPrinter = color;
       db.settings.printBWCents = blackCents; db.settings.printColorCents = colorCents;
-      event("sistema", "Impressoras do atendimento", `P&B: ${black} R$ ${(blackCents / 100).toFixed(2)}; Colorida: ${color} R$ ${(colorCents / 100).toFixed(2)}`, user.name); save();
-      return send(res, 200, { ok: true, black, color, blackCents, colorCents });
+      db.settings.printColorQuality = colorQuality;
+      event("sistema", "Impressoras do atendimento", `P&B: ${black} R$ ${(blackCents / 100).toFixed(2)}; Colorida: ${color} R$ ${(colorCents / 100).toFixed(2)} (Qualidade: ${colorQuality})`, user.name); save();
+      return send(res, 200, { ok: true, black, color, blackCents, colorCents, colorQuality });
+    }
+    if (p === "/api/printers/open-driver-prefs" && req.method === "POST") {
+      const input = await readBody(req);
+      const printer = label(input.printer || db.settings.printColorPrinter, 200);
+      if (!printer) throw err(400, "Nenhuma impressora selecionada");
+      execFile("rundll32.exe", ["printui.dll,PrintUIEntry", "/e", "/n", printer], err => {
+        if (err) console.error("Erro ao abrir preferencias da impressora:", err);
+      });
+      return send(res, 200, { ok: true, printer });
     }
     if (p === "/api/settings/printers" && req.method === "POST") {
       admin(user); const input = await readBody(req);
