@@ -4424,7 +4424,7 @@ async function openShiftSummary(shiftId) {
     `*Por tipo de venda*`, ...kinds.map(([k, v]) => `  ${k}: ${currency(v)}`), ``,
     `*Gaveta*`, `  Troco inicial: ${currency(r.shift.openingCents)}`,
     ...(adjIn.length ? [`  Suprimentos: ${currency(sum(adjIn))}`] : []), ...(adjOut.length ? [`  Sangrias: ${currency(sum(adjOut))}`] : []),
-    `  Esperado: ${currency(r.expectedCents)}`, ...(r.countedCents !== null ? [`  Contado: ${currency(r.countedCents)} (${diffText})`] : []), ``,
+    `  Esperado: ${currency(r.expectedCents)}`, ...(r.countedCents !== null ? [`  Contado: ${currency(r.countedCents)} (${diffText})`, `  Depósito: ${currency(Math.max(0, r.countedCents - r.shift.openingCents))} (ficam ${currency(Math.min(r.countedCents, r.shift.openingCents))} de troco)`] : []), ``,
     `*A receber*`, `  Deixado em aberto neste turno: ${currency(r.newDueCents)} (${r.newDueCount})`, `  Total em aberto na loja: ${currency(r.pendingCents)} (${r.pendingCount})`,
     ...(r.cancelledCount ? [`  Cancelado no turno: ${currency(r.cancelledCents)} (${r.cancelledCount})`] : [])
   ].join("\n");
@@ -4433,7 +4433,7 @@ async function openShiftSummary(shiftId) {
     <div class="shiftKpis">
       <div><span>Recebido</span><strong>${currency(r.receivedCents)}</strong><small>${r.paymentsCount} ${r.paymentsCount === 1 ? "recebimento" : "recebimentos"}</small></div>
       <div><span>Gaveta esperada</span><strong>${currency(r.expectedCents)}</strong><small>troco inicial ${currency(r.shift.openingCents)}</small></div>
-      <div class="${diff ? (diff > 0 ? "good" : "bad") : ""}"><span>Contado</span><strong>${r.countedCents === null ? "-" : currency(r.countedCents)}</strong><small>${html(diffText)}</small></div>
+      <div class="${diff ? (diff > 0 ? "good" : "bad") : ""}"><span>Contado</span><strong>${r.countedCents === null ? "-" : currency(r.countedCents)}</strong><small>${html(diffText)}${r.countedCents === null ? "" : ` · depósito ${currency(Math.max(0, r.countedCents - r.shift.openingCents))}`}</small></div>
       <div class="${r.newDueCents ? "bad" : ""}"><span>Ficou a receber</span><strong>${currency(r.newDueCents)}</strong><small>total na loja ${currency(r.pendingCents)}</small></div>
     </div>
     <div class="shiftCols">
@@ -5085,12 +5085,16 @@ $("#cashToggleButton").addEventListener("click", () => {
   if (!state.cashShift) {
     openModal("Abertura de Caixa do Turno", field("opening", "Fundo Inicial de Troco em Dinheiro (R$)", "number", "0.00", 'min="0" step="0.01" required'), values => api("/api/cash/open", values), "Abrir Caixa");
   } else {
-    openModal("Fechamento & Conciliação de Caixa", `<p class="quoteBox">Dinheiro Esperado em Gaveta: <strong>${currency(state.cashSummary?.expectedCashCents)}</strong></p>` + field("counted", "Dinheiro Efetivamente Contado (R$)", "number", "", 'min="0" step="0.01" required') + '<p id="cashDifference" class="muted">Informe o valor apurado fisicamente para auditoria de quebra.</p>' + '<label class="checkLine" id="extraWrap" hidden><input type="checkbox" name="extraAsSale" checked> Lançar a sobra como <b>venda não lançada</b> (vendas da correria ou resto de outro dia), para o relatório bater com o depósito</label>', async values => { const result = await api("/api/cash/close", { counted: values.counted, extraAsSale: !!values.extraAsSale }); setTimeout(() => openShiftSummary(result.shift.id).catch(cause => toast(cause.message)), 350); }, "Fechar caixa");
+    // O troco do dia (normalmente R$ 100) fica na gaveta para a proxima abertura; so o excedente vai para deposito.
+    const expectedCash = state.cashSummary?.expectedCashCents || 0;
+    const fund = state.cashShift.openingCents ?? 10000;
+    const depositText = counted => counted >= fund ? `Retirar para depósito: <strong>${currency(counted - fund)}</strong> · ficam ${currency(fund)} de troco na gaveta` : `Faltam ${currency(fund - counted)} para completar o troco de ${currency(fund)}`;
+    openModal("Fechamento & Conciliação de Caixa", `<p class="quoteBox">Dinheiro Esperado em Gaveta: <strong>${currency(expectedCash)}</strong><br><small>${currency(fund)} de troco ficam na gaveta + ${currency(Math.max(0, expectedCash - fund))} para depósito</small></p>` + field("counted", `Total contado na gaveta, com os ${currency(fund)} de troco (R$)`, "number", "", 'min="0" step="0.01" required') + '<p id="cashDifference" class="muted">Conte todo o dinheiro da gaveta, antes de separar o depósito.</p>' + '<label class="checkLine" id="extraWrap" hidden><input type="checkbox" name="extraAsSale" checked> Lançar a sobra como <b>venda não lançada</b> (vendas da correria ou resto de outro dia), para o relatório bater com o depósito</label>', async values => { const result = await api("/api/cash/close", { counted: values.counted, extraAsSale: !!values.extraAsSale }); setTimeout(() => openShiftSummary(result.shift.id).catch(cause => toast(cause.message)), 350); }, "Fechar caixa");
     $("#modalForm").elements.counted.addEventListener("input", event => {
       const value = Number(event.currentTarget.value);
-      const diff = Math.round(value * 100) - (state.cashSummary?.expectedCashCents || 0);
+      const diff = Math.round(value * 100) - expectedCash;
       const diffText = diff === 0 ? "Exato (sem quebra)" : diff > 0 ? `Sobra de caixa: +${currency(diff)}` : `Falta de caixa: ${currency(diff)}`;
-      $("#cashDifference").innerHTML = event.currentTarget.value === "" ? "Informe o valor apurado fisicamente para auditoria de quebra." : `<strong>${diffText}</strong>`;
+      $("#cashDifference").innerHTML = event.currentTarget.value === "" ? "Conte todo o dinheiro da gaveta, antes de separar o depósito." : `<strong>${diffText}</strong><br>${depositText(Math.round(value * 100))}`;
       $("#extraWrap").hidden = !(event.currentTarget.value !== "" && diff > 0);
     });
   }
