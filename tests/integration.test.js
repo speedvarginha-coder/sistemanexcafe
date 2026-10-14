@@ -1434,3 +1434,48 @@ test("custo por pagina entra no CMV, comissao soma no resultado e contas a vence
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("pausar sessao: bloqueia a tela, para o relogio e retomar desconta o tempo parado", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
+  const server = createApp({ dataDir });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data, token = null) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (token) headers.authorization = `Bearer ${token}`;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    const login = await fetch(`${base}/api/login`, { method: "POST", headers: { "content-type": "application/json", origin: base }, body: JSON.stringify({ name: "admin", password: "senha-teste-123" }) });
+    cookie = login.headers.get("set-cookie").split(";")[0];
+    const created = await request("/api/machines/register", { id: "pc-01", name: "PC 01" });
+    const token = (await request("/api/agent/enroll", { id: "pc-01", name: "PC 01", code: created.payload.pairingCode })).payload.token;
+    await request("/api/client/pc-01/command", undefined, token);
+    await request("/api/machines/pc-01/start", { billingMode: "open" });
+    const before = (await request("/api/state")).payload.machines[0].session;
+
+    assert.equal((await request("/api/machines/pc-01/pause", {})).status, 200);
+    assert.equal((await request("/api/machines/pc-01/pause", {})).status, 409, "nao pausa duas vezes");
+    const paused = (await request("/api/state")).payload.machines[0];
+    assert.equal(paused.locked, true, "tela bloqueada");
+    assert.ok(paused.session.pausedAt);
+    assert.equal((await request("/api/machines/pc-01/move", { targetId: "pc-01" })).status, 409);
+    const frozen = paused.summary.usedMinutes;
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    assert.equal((await request("/api/state")).payload.machines[0].summary.usedMinutes, frozen, "relogio parado");
+
+    assert.equal((await request("/api/machines/pc-01/unlock", {})).status, 200);
+    const resumed = (await request("/api/state")).payload.machines[0];
+    assert.equal(resumed.locked, false);
+    assert.equal(resumed.session.pausedAt, undefined);
+    assert.ok(Date.parse(resumed.session.startedAt) - Date.parse(before.startedAt) >= 1100, "inicio empurrado pela pausa");
+    assert.ok(resumed.session.pausedMs >= 1100);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+});

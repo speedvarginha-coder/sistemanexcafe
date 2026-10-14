@@ -337,10 +337,12 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (!item.lastSeen || Date.now() - Date.parse(item.lastSeen) > OFFLINE_MS) return "offline";
     return item.locked ? "locked" : item.session ? "in_use" : "free";
   }
+  // Sessao pausada (cliente saiu e volta): o relogio fica parado no momento da pausa.
+  const sessionNow = session => session.pausedAt ? Date.parse(session.pausedAt) : Date.now();
   function sessionCost(item) {
     const session = item.session;
     if (!session) return { timeCents: 0, printCents: 0, extrasCents: 0, totalCents: 0 };
-    const elapsedSeconds = Math.max(1, Math.ceil((Date.now() - Date.parse(session.startedAt)) / 1000));
+    const elapsedSeconds = Math.max(1, Math.ceil((sessionNow(session) - Date.parse(session.startedAt)) / 1000));
     let timeCents;
     if (session.billingMode === "credit") {
       const usedSeconds = Math.min(session.creditSeconds || 0, elapsedSeconds);
@@ -357,7 +359,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   function sessionSummary(item) {
     const session = item.session;
     if (!session) return null;
-    const elapsedSeconds = Math.max(1, Math.ceil((Date.now() - Date.parse(session.startedAt)) / 1000));
+    const elapsedSeconds = Math.max(1, Math.ceil((sessionNow(session) - Date.parse(session.startedAt)) / 1000));
     const usedMinutes = Math.min(session.plannedMinutes, Math.max(1, Math.ceil(elapsedSeconds / 60)));
     const cost = sessionCost(item);
     const client = db.clients.find(row => row.id === session.clientId);
@@ -368,7 +370,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   function publicMachine(item) {
     const { agentHash, pairingHash, pairingExpiresAt, ...safe } = item;
     const cost = sessionCost(item);
-    return { ...safe, status: status(item), valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, summary: sessionSummary(item), remainingMs: item.session ? Math.max(0, Date.parse(item.session.endsAt) - Date.now()) : 0 };
+    return { ...safe, status: status(item), valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, summary: sessionSummary(item), remainingMs: item.session ? Math.max(0, Date.parse(item.session.endsAt) - sessionNow(item.session)) : 0 };
   }
   const publicClient = client => ({ id: client.id, name: client.name, phone: client.phone, active: client.active, createdAt: client.createdAt, login: client.login || "", creditSeconds: client.creditSeconds || 0, origin: client.origin || "" });
   // Marketing: de onde o cliente veio e qual campanha trouxe a venda.
@@ -441,7 +443,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   }
   function finish(item, reason, operator, restore = true, restart = false) {
     const session = item.session; if (!session) throw err(409, "Maquina sem sessao ativa");
-    const elapsedSeconds = Math.max(1, Math.ceil((Date.now() - Date.parse(session.startedAt)) / 1000));
+    const elapsedSeconds = Math.max(1, Math.ceil((sessionNow(session) - Date.parse(session.startedAt)) / 1000));
     let summary;
     if (session.billingMode === "credit") {
       const client = db.clients.find(row => row.id === session.clientId);
@@ -463,7 +465,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   }
   function expire() {
     let changed = false;
-    for (const item of Object.values(db.machines)) if (item.session && Date.parse(item.session.endsAt) <= Date.now()) { finish(item, "expired", "sistema", db.settings.autoRestoreOnTimeEnd); changed = true; }
+    for (const item of Object.values(db.machines)) if (item.session && !item.session.pausedAt && Date.parse(item.session.endsAt) <= Date.now()) { finish(item, "expired", "sistema", db.settings.autoRestoreOnTimeEnd); changed = true; }
     if (changed) save();
   }
   function send(res, statusCode, value, extra = {}) {
@@ -1554,9 +1556,25 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         item.session.plannedMinutes += minutes; touch(item); event(item.id, "Tempo adicionado", `${minutes} min`, user.name);
       } else if (action === "lock") {
         item.locked = true; item.lockMessage = label(input.message || "Bloqueada pelo atendente", 100); touch(item); event(item.id, "Maquina bloqueada", item.lockMessage, user.name);
+      } else if (action === "pause") {
+        // Cliente saiu (foi ao carro) e volta: bloqueia a tela e para o relogio; nada e cobrado durante a pausa.
+        if (!item.session) throw err(409, "Estacao sem sessao ativa");
+        if (item.session.pausedAt) throw err(409, "Sessao ja esta pausada");
+        item.session.pausedAt = now(); item.locked = true; item.lockMessage = "Sessao pausada. O tempo esta parado ate o atendente retomar.";
+        touch(item); event(item.id, "Sessao pausada", "relogio parado", user.name);
       } else if (action === "unlock") {
         if (!item.session) throw err(409, "Abra uma sessao antes de desbloquear a estacao");
-        item.locked = false; item.lockMessage = ""; touch(item); event(item.id, "Maquina desbloqueada", "", user.name);
+        let detail = "";
+        if (item.session.pausedAt) {
+          // Retomar: empurra inicio e fim pelo tempo parado, assim tudo que conta pelo relogio ignora a pausa.
+          const pausedMs = Math.max(0, Date.now() - Date.parse(item.session.pausedAt));
+          item.session.startedAt = new Date(Date.parse(item.session.startedAt) + pausedMs).toISOString();
+          item.session.endsAt = new Date(Date.parse(item.session.endsAt) + pausedMs).toISOString();
+          item.session.pausedMs = (item.session.pausedMs || 0) + pausedMs;
+          delete item.session.pausedAt;
+          detail = `pausa de ${Math.round(pausedMs / 60000)} min`;
+        }
+        item.locked = false; item.lockMessage = ""; touch(item); event(item.id, detail ? "Sessao retomada" : "Maquina desbloqueada", detail, user.name);
       } else if (action === "reboot") {
         // Reinicio sem sessao (com cliente, use "Encerrar e reiniciar" para cobrar e restaurar).
         if (item.session) throw err(409, "Estacao com cliente: use Encerrar e reiniciar");
@@ -1569,6 +1587,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         wakeOnLan(item.mac); event(item.id, "Ligar (Wake-on-LAN)", item.mac, user.name);
       } else if (action === "move") {
         if (!item.session) throw err(409, "Estacao sem sessao ativa");
+        if (item.session.pausedAt) throw err(409, "Retome a sessao antes de mover");
         const target = getMachine(machineId(input.targetId));
         if (target.id === item.id) throw err(400, "Escolha outra estacao");
         if (target.session) throw err(409, "Estacao de destino em uso");
@@ -1587,7 +1606,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         const client = clientId && db.clients.find(row => row.id === clientId && row.active);
         if (clientId && !client) throw err(400, "Cliente nao encontrado");
         // Pos-pago com cliente que tem saldo: passa a usar o saldo desde o inicio da sessao (nada foi cobrado ainda).
-        const elapsedSeconds = Math.ceil((Date.now() - Date.parse(session.startedAt)) / 1000);
+        const elapsedSeconds = Math.ceil((sessionNow(session) - Date.parse(session.startedAt)) / 1000);
         const useCredit = client && session.billingMode === "postpaid" && (client.creditSeconds || 0) > elapsedSeconds + 60;
         if (useCredit && Object.values(db.machines).some(row => row !== item && row.session?.clientId === client.id)) throw err(409, "Cliente ja usa outra estacao");
         session.clientId = client ? client.id : null; session.customer = client ? client.name : label(input.customer, 80);

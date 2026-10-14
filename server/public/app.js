@@ -236,6 +236,7 @@ function clock(ms) {
 function sessionClock(machine, now = Date.now() + serverOffset) {
   const session = machine.session;
   if (!session) return clock(0);
+  if (session.pausedAt) now = Date.parse(session.pausedAt);
   return session.open ? clock(Math.max(0, now - Date.parse(session.startedAt))) : clock(Math.max(0, Date.parse(session.endsAt) - now));
 }
 
@@ -249,7 +250,7 @@ function tickClocks() {
     if (clockEl) {
       clockEl.textContent = sessionClock(machine, now);
       if (!machine.session.open) {
-        const remaining = Date.parse(machine.session.endsAt) - now;
+        const remaining = Date.parse(machine.session.endsAt) - (machine.session.pausedAt ? Date.parse(machine.session.pausedAt) : now);
         const isWarn = remaining > 0 && remaining <= 10 * 60000;
         const isExpired = remaining <= 0;
         clockEl.classList.toggle("warn", isWarn);
@@ -302,7 +303,7 @@ function machineCard(machine, compact = false) {
       progressPercent = 100;
     } else {
       const totalMs = Math.max(1, (session.plannedMinutes || 1) * 60000);
-      const remainingMs = Math.max(0, Date.parse(session.endsAt) - (Date.now() + serverOffset));
+      const remainingMs = Math.max(0, Date.parse(session.endsAt) - (session.pausedAt ? Date.parse(session.pausedAt) : Date.now() + serverOffset));
       progressPercent = Math.min(100, Math.max(0, (remainingMs / totalMs) * 100));
       if (remainingMs <= 0) warnProgress = "expired";
       else if (remainingMs <= 10 * 60000) warnProgress = "warn";
@@ -387,7 +388,7 @@ function machineCard(machine, compact = false) {
         <summary>Comandos</summary>
         <div class="machineMoreActions">
           ${active ? `
-            <button data-action="${machine.locked ? "unlock" : "lock"}" data-id="${html(machine.id)}">${machine.locked ? "Retomar" : "Pausar"}</button>
+            <button data-action="${machine.locked ? "unlock" : "pause"}" data-id="${html(machine.id)}" title="Bloqueia a tela e para o relogio ate retomar">${session.pausedAt ? "Retomar" : machine.locked ? "Desbloquear" : "Pausar"}</button>
             <button data-action="summary" data-id="${html(machine.id)}">Resumo</button>
             <button data-action="move" data-id="${html(machine.id)}">Mover</button>
             <button data-action="restart" data-id="${html(machine.id)}">Reiniciar</button>
@@ -5203,7 +5204,7 @@ document.addEventListener("click", async event => {
       openModal(`Extrato Operacional · ${machine.name}`, summaryHtml(machine), () => {}, "Concluir");
     } else if (action === "end" && machine) {
       openEndModal(machine);
-    } else if (["lock", "unlock", "restart"].includes(action) && machine) {
+    } else if (["lock", "unlock", "pause", "restart"].includes(action) && machine) {
       if (action === "restart") { openEndModal(machine, true); return; }
       await api(`/api/machines/${encodeURIComponent(id)}/${action === "restart" ? "end" : action}`, action === "restart" ? { restart: true } : {});
       await loadState(); toast("Comando transmitido com sucesso.");
