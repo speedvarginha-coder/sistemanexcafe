@@ -1370,12 +1370,16 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         throw err(502, `Nao foi possivel imprimir no caixa: ${printJob.error}`);
       }
       const printed = Number.isInteger(result.pages) && result.pages > 0 ? result.pages : pages;
-      printJob.pages = printed; printJob.amountCents = printed * rate;
+      // Pediu colorido, mas o documento nao tem cor nenhuma (ex.: contracheque em cinza): cobra como P&B.
+      const noColor = color && result.hasColor === false;
+      const billColor = color && !noColor;
+      printJob.pages = printed; printJob.amountCents = printed * (billColor ? rate : db.settings.printBWCents);
+      if (noColor) printJob.noColor = true;
       printJob.state = "confirmed"; printJob.printedAt = now();
       const stillOpen = item.session && item.session.id === printJob.sessionId;
-      charge("print", `Impressao ${color ? "colorida" : "P&B"}: ${printed} pag${stillOpen ? "" : " (apos encerrar a sessao)"}`, printJob.amountCents, { machineId: item.id, quantity: printed, color, printPrinter: printer, printJobId: printJob.id, sessionId: stillOpen ? printJob.sessionId : null });
-      event(item.id, "Impressao enviada a impressora", `${printed} pag ${color ? "colorida" : "P&B"}`, "servidor"); save();
-      return send(res, 200, { ok: true, printId: printJob.id, pages: printed, color, amountCents: printJob.amountCents, printer });
+      charge("print", `Impressao ${billColor ? "colorida" : "P&B"}: ${printed} pag${noColor ? " (documento sem cor)" : ""}${stillOpen ? "" : " (apos encerrar a sessao)"}`, printJob.amountCents, { machineId: item.id, quantity: printed, color: billColor, printPrinter: printer, printJobId: printJob.id, sessionId: stillOpen ? printJob.sessionId : null });
+      event(item.id, noColor ? "Impressao colorida sem cor" : "Impressao enviada a impressora", noColor ? `${printed} pag: documento sem cor, cobrado como P&B` : `${printed} pag ${color ? "colorida" : "P&B"}`, "servidor"); save();
+      return send(res, 200, { ok: true, printId: printJob.id, pages: printed, color: billColor, noColor, amountCents: printJob.amountCents, printer });
     }
     const clientScreen = p.match(/^\/api\/client\/([^/]+)\/screen$/);
     if (clientScreen && req.method === "POST") {

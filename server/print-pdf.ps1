@@ -66,6 +66,27 @@ function Get-PdfPageImage {
     }
 }
 
+# Documento sem cor mandado como colorido (ex.: contracheque em escala de cinza) e cobrado como P&B.
+# Reduz a pagina e procura pixels com saturacao; exige alguns pixels para ignorar ruido de digitalizacao.
+function Test-BitmapHasColor {
+    param([System.Drawing.Bitmap]$Bitmap)
+    $width = [Math]::Min(240, $Bitmap.Width)
+    $height = [Math]::Max(1, [int]($Bitmap.Height * $width / $Bitmap.Width))
+    $small = New-Object System.Drawing.Bitmap($Bitmap, $width, $height)
+    try {
+        $found = 0
+        for ($y = 0; $y -lt $height; $y++) {
+            for ($x = 0; $x -lt $width; $x++) {
+                $p = $small.GetPixel($x, $y)
+                $max = [Math]::Max($p.R, [Math]::Max($p.G, $p.B))
+                $min = [Math]::Min($p.R, [Math]::Min($p.G, $p.B))
+                if ($max - $min -gt 40) { $found++; if ($found -ge 4) { return $true } }
+            }
+        }
+        return $false
+    } finally { $small.Dispose() }
+}
+
 function Send-PdfToPrinter {
     param([string]$Path, [string]$Printer, [bool]$Color, [string]$Quality = "High")
     $queue = Get-Printer -Name $Printer -ErrorAction Stop
@@ -105,6 +126,7 @@ function Send-PdfToPrinter {
         $print.DefaultPageSettings.Color = $Color
         $print.DefaultPageSettings.Margins = New-Object System.Drawing.Printing.Margins(25, 25, 25, 25)
         $script:PdfIndex = 0
+        $script:HasColor = $false
         $print.add_QueryPageSettings({ param($sender, $eventArgs)
             $page = $document.GetPage($script:PdfIndex)
             try { $eventArgs.PageSettings.Landscape = ($page.Size.Width -gt $page.Size.Height) }
@@ -127,6 +149,7 @@ function Send-PdfToPrinter {
             $scaleFactor = if ($Quality -eq "High" -or $Color) { 4.167 } elseif ($Quality -eq "Draft") { 2.0 } else { 3.0 }
             $bitmap = Get-PdfPageImage -Document $document -Index $script:PdfIndex -Scale $scaleFactor
             try {
+                if ($Color -and -not $script:HasColor) { $script:HasColor = Test-BitmapHasColor -Bitmap $bitmap }
                 if ($Quality -eq "High" -or $Color) {
                     $eventArgs.Graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
                     $eventArgs.Graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
@@ -157,7 +180,9 @@ try {
         if (-not (Test-Path -LiteralPath $Path)) { throw "Arquivo de impressao nao encontrado." }
         $Path = [System.IO.Path]::GetFullPath($Path)
         $pages = Send-PdfToPrinter -Path $Path -Printer $Printer -Color ([bool]$Color) -Quality $Quality
-        Write-Output (ConvertTo-Json -InputObject @{ ok = $true; pages = $pages } -Compress)
+        $output = @{ ok = $true; pages = $pages }
+        if ($Color) { $output.hasColor = [bool]$script:HasColor }
+        Write-Output (ConvertTo-Json -InputObject $output -Compress)
     }
     exit 0
 } catch {

@@ -690,14 +690,15 @@ test("venda em carrinho e pendencias antigas permanecem operaveis", async () => 
 test("impressao pelo caixa: estacao envia PDF e cobra quando a fila do Windows aceita", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-test-"));
   const printed = [];
-  let failNext = false;
+  let failNext = false, grayNext = false;
   const printRunner = {
     list: async () => ({ ok: true, printers: ["HP Laser MFP 432 PCL6", "EPSON176647 (L375 Series)"] }),
     print: async job => {
       if (failNext) { failNext = false; return { ok: false, error: "Sem papel" }; }
       assert.equal(fs.readFileSync(job.file).subarray(0, 4).toString("latin1"), "%PDF");
       printed.push(job);
-      return { ok: true, pages: 2 };
+      if (grayNext) { grayNext = false; return { ok: true, pages: 2, hasColor: false }; }
+      return { ok: true, pages: 2, ...(job.color ? { hasColor: true } : {}) };
     },
   };
   const server = createApp({ dataDir, printRunner });
@@ -737,6 +738,12 @@ test("impressao pelo caixa: estacao envia PDF e cobra quando a fila do Windows a
     assert.equal(printed[0].color, true);
     assert.equal(fs.existsSync(printed[0].file), false, "arquivo temporario removido");
 
+    grayNext = true;
+    const gray = await upload(token, "pages=2&color=1");
+    assert.equal(gray.payload.noColor, true);
+    assert.equal(gray.payload.amountCents, 200, "colorido sem cor cobra P&B");
+    assert.equal(printed[1].printer, "EPSON176647 (L375 Series)", "imprime na colorida mesmo assim");
+
     failNext = true;
     const failed = await upload(token, "pages=2&color=0");
     assert.equal(failed.status, 502);
@@ -744,10 +751,10 @@ test("impressao pelo caixa: estacao envia PDF e cobra quando a fila do Windows a
 
     const state = (await request("/api/state")).payload;
     const prints = state.charges.filter(row => row.kind === "print");
-    assert.equal(prints.length, 1, "impressao com falha nao gera cobranca");
+    assert.equal(prints.length, 2, "impressao com falha nao gera cobranca");
     assert.equal(prints[0].sessionId, state.machines[0].session.id);
-    assert.equal(state.machines[0].printCents, 400);
-    assert.deepEqual(state.printJobs.map(job => job.state), ["failed", "confirmed"]);
+    assert.equal(state.machines[0].printCents, 600);
+    assert.deepEqual(state.printJobs.map(job => job.state), ["failed", "confirmed", "confirmed"]);
     assert.equal(state.settings.printColorPrinter, "EPSON176647 (L375 Series)");
     assert.equal((await request("/api/settings", { defaultMinutes: 60, hourPrice: 5, printBW: 1, printColor: 2, timeTable: "15=3.00; 30=3.70; 60=5.00" })).status, 200);
     assert.equal((await request("/api/state")).payload.settings.printBlackPrinter, "HP Laser MFP 432 PCL6", "salvar tarifas preserva impressoras");
