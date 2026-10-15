@@ -36,13 +36,6 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-varginha-pix-imediato.html"
     },
     {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Varginha? Análise de prós e contras em 2026",
-      "cidade": "Varginha",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts.html"
-    },
-    {
       "slug": "portabilidade-consignado-varginha-reduzir-juros",
       "title": "Portabilidade de empréstimo consignado em Varginha: como reduzir juros e pegar troco",
       "cidade": "Varginha",
@@ -92,6 +85,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-varginha.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-varginha",
+      "title": "Como contratar empréstimo consignado CLT em Varginha: regras de margem, convênios e simulação",
+      "cidade": "Varginha",
+      "file": "artigos_gerados/como-contratar-consignado-clt-varginha.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-varginha.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-varginha",
       "title": "Empréstimo BPC/LOAS em Varginha: o que a lei permite e como contratar com segurança",
       "cidade": "Varginha",
@@ -125,13 +125,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Três Corações",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-tres-coracoes.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-tres-coracoes.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-tres-coracoes",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Três Corações? Análise de prós e contras em 2026",
-      "cidade": "Três Corações",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-tres-coracoes.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-tres-coracoes.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-tres-coracoes",
@@ -183,6 +176,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-tres-coracoes.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-tres-coracoes",
+      "title": "Como contratar empréstimo consignado CLT em Três Corações: regras de margem, convênios e simulação",
+      "cidade": "Três Corações",
+      "file": "artigos_gerados/como-contratar-consignado-clt-tres-coracoes.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-tres-coracoes.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-tres-coracoes",
       "title": "Empréstimo BPC/LOAS em Três Corações: o que a lei permite e como contratar com segurança",
       "cidade": "Três Corações",
@@ -216,13 +216,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Três Pontas",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-tres-pontas.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-tres-pontas.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-tres-pontas",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Três Pontas? Análise de prós e contras em 2026",
-      "cidade": "Três Pontas",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-tres-pontas.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-tres-pontas.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-tres-pontas",
@@ -274,6 +267,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-tres-pontas.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-tres-pontas",
+      "title": "Como contratar empréstimo consignado CLT em Três Pontas: regras de margem, convênios e simulação",
+      "cidade": "Três Pontas",
+      "file": "artigos_gerados/como-contratar-consignado-clt-tres-pontas.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-tres-pontas.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-tres-pontas",
       "title": "Empréstimo BPC/LOAS em Três Pontas: o que a lei permite e como contratar com segurança",
       "cidade": "Três Pontas",
@@ -307,13 +307,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Elói Mendes",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-eloi-mendes.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-eloi-mendes.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-eloi-mendes",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Elói Mendes? Análise de prós e contras em 2026",
-      "cidade": "Elói Mendes",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-eloi-mendes.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-eloi-mendes.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-eloi-mendes",
@@ -365,6 +358,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-eloi-mendes.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-eloi-mendes",
+      "title": "Como contratar empréstimo consignado CLT em Elói Mendes: regras de margem, convênios e simulação",
+      "cidade": "Elói Mendes",
+      "file": "artigos_gerados/como-contratar-consignado-clt-eloi-mendes.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-eloi-mendes.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-eloi-mendes",
       "title": "Empréstimo BPC/LOAS em Elói Mendes: o que a lei permite e como contratar com segurança",
       "cidade": "Elói Mendes",
@@ -398,13 +398,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Boa Esperança",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-boa-esperanca.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-boa-esperanca.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-boa-esperanca",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Boa Esperança? Análise de prós e contras em 2026",
-      "cidade": "Boa Esperança",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-boa-esperanca.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-boa-esperanca.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-boa-esperanca",
@@ -456,6 +449,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-boa-esperanca.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-boa-esperanca",
+      "title": "Como contratar empréstimo consignado CLT em Boa Esperança: regras de margem, convênios e simulação",
+      "cidade": "Boa Esperança",
+      "file": "artigos_gerados/como-contratar-consignado-clt-boa-esperanca.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-boa-esperanca.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-boa-esperanca",
       "title": "Empréstimo BPC/LOAS em Boa Esperança: o que a lei permite e como contratar com segurança",
       "cidade": "Boa Esperança",
@@ -489,13 +489,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Cambuquira",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-cambuquira.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-cambuquira.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-cambuquira",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Cambuquira? Análise de prós e contras em 2026",
-      "cidade": "Cambuquira",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-cambuquira.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-cambuquira.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-cambuquira",
@@ -547,6 +540,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-cambuquira.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-cambuquira",
+      "title": "Como contratar empréstimo consignado CLT em Cambuquira: regras de margem, convênios e simulação",
+      "cidade": "Cambuquira",
+      "file": "artigos_gerados/como-contratar-consignado-clt-cambuquira.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-cambuquira.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-cambuquira",
       "title": "Empréstimo BPC/LOAS em Cambuquira: o que a lei permite e como contratar com segurança",
       "cidade": "Cambuquira",
@@ -580,13 +580,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "São Lourenço",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-sao-lourenco.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-sao-lourenco.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-sao-lourenco",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em São Lourenço? Análise de prós e contras em 2026",
-      "cidade": "São Lourenço",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-sao-lourenco.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-sao-lourenco.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-sao-lourenco",
@@ -638,6 +631,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-sao-lourenco.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-sao-lourenco",
+      "title": "Como contratar empréstimo consignado CLT em São Lourenço: regras de margem, convênios e simulação",
+      "cidade": "São Lourenço",
+      "file": "artigos_gerados/como-contratar-consignado-clt-sao-lourenco.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-sao-lourenco.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-sao-lourenco",
       "title": "Empréstimo BPC/LOAS em São Lourenço: o que a lei permite e como contratar com segurança",
       "cidade": "São Lourenço",
@@ -671,13 +671,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Pouso Alegre",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-pouso-alegre.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-pouso-alegre.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-pouso-alegre",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Pouso Alegre? Análise de prós e contras em 2026",
-      "cidade": "Pouso Alegre",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-pouso-alegre.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-pouso-alegre.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-pouso-alegre",
@@ -729,6 +722,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-pouso-alegre.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-pouso-alegre",
+      "title": "Como contratar empréstimo consignado CLT em Pouso Alegre: regras de margem, convênios e simulação",
+      "cidade": "Pouso Alegre",
+      "file": "artigos_gerados/como-contratar-consignado-clt-pouso-alegre.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-pouso-alegre.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-pouso-alegre",
       "title": "Empréstimo BPC/LOAS em Pouso Alegre: o que a lei permite e como contratar com segurança",
       "cidade": "Pouso Alegre",
@@ -762,13 +762,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Carmo da Cachoeira",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-carmo-da-cachoeira.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-carmo-da-cachoeira.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-carmo-da-cachoeira",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Carmo da Cachoeira? Análise de prós e contras em 2026",
-      "cidade": "Carmo da Cachoeira",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-carmo-da-cachoeira.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-carmo-da-cachoeira.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-carmo-da-cachoeira",
@@ -820,6 +813,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-carmo-da-cachoeira.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-carmo-da-cachoeira",
+      "title": "Como contratar empréstimo consignado CLT em Carmo da Cachoeira: regras de margem, convênios e simulação",
+      "cidade": "Carmo da Cachoeira",
+      "file": "artigos_gerados/como-contratar-consignado-clt-carmo-da-cachoeira.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-carmo-da-cachoeira.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-carmo-da-cachoeira",
       "title": "Empréstimo BPC/LOAS em Carmo da Cachoeira: o que a lei permite e como contratar com segurança",
       "cidade": "Carmo da Cachoeira",
@@ -853,13 +853,6 @@ window.DADOS_ARTIGOS = {
       "cidade": "Alfenas",
       "file": "artigos_gerados/como-antecipar-fgts-pix-imediato-alfenas.html",
       "url": "https://speedfinanceira.com.br/guia/como-antecipar-fgts-pix-imediato-alfenas.html"
-    },
-    {
-      "slug": "vale-a-pena-antecipar-saque-aniversario-fgts-alfenas",
-      "title": "Vale a pena antecipar o Saque-Aniversário do FGTS em Alfenas? Análise de prós e contras em 2026",
-      "cidade": "Alfenas",
-      "file": "artigos_gerados/vale-a-pena-antecipar-saque-aniversario-fgts-alfenas.html",
-      "url": "https://speedfinanceira.com.br/guia/vale-a-pena-antecipar-saque-aniversario-fgts-alfenas.html"
     },
     {
       "slug": "portabilidade-consignado-reduzir-juros-alfenas",
@@ -911,6 +904,13 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/consignado-clt-alfenas.html"
     },
     {
+      "slug": "como-contratar-consignado-clt-alfenas",
+      "title": "Como contratar empréstimo consignado CLT em Alfenas: regras de margem, convênios e simulação",
+      "cidade": "Alfenas",
+      "file": "artigos_gerados/como-contratar-consignado-clt-alfenas.html",
+      "url": "https://speedfinanceira.com.br/guia/como-contratar-consignado-clt-alfenas.html"
+    },
+    {
       "slug": "emprestimo-bpc-loas-alfenas",
       "title": "Empréstimo BPC/LOAS em Alfenas: o que a lei permite e como contratar com segurança",
       "cidade": "Alfenas",
@@ -918,5 +918,5 @@ window.DADOS_ARTIGOS = {
       "url": "https://speedfinanceira.com.br/guia/emprestimo-bpc-loas-alfenas.html"
     }
   ],
-  "gerado_em": "2026-10-15T10:58:45"
+  "gerado_em": "2026-10-15T13:37:53"
 };
