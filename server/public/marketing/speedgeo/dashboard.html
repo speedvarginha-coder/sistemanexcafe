@@ -68,6 +68,18 @@
         .fade-in { animation: fadeIn .3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
+        .sticky-tabs {
+            position: -webkit-sticky;
+            position: sticky;
+            top: 4.4rem;
+            background-color: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(8px);
+        }
+        .badge-intel {
+            font-size: 10px;
+            background-color: rgba(6, 78, 59, 0.7);
+        }
+
         @media (prefers-reduced-motion: reduce) {
             .pulse-dot { animation: none; }
             .fade-in { animation: none; }
@@ -83,7 +95,7 @@
             <div class="flex items-center space-x-4">
                 <div class="w-11 h-11 rounded-2xl bg-yellow-400 flex items-center justify-center text-gray-900 font-black text-2xl shadow-md rotate-3">S</div>
                 <div>
-                    <h1 class="font-display text-xl sm:text-2xl font-bold tracking-tight leading-tight">SpeedGEO <span class="text-[10px] align-middle bg-green-900/70 text-yellow-300 px-2 py-0.5 rounded-full font-semibold ml-1">Central de Inteligência</span></h1>
+                    <h1 class="font-display text-xl sm:text-2xl font-bold tracking-tight leading-tight">SpeedGEO <span class="badge-intel align-middle text-yellow-300 px-2 py-0.5 rounded-full font-semibold ml-1">Central de Inteligência</span></h1>
                     <p class="text-xs text-green-100 mt-0.5">Conteúdo, IAs, reputação e mercado — Sul de Minas</p>
                 </div>
             </div>
@@ -101,7 +113,7 @@
         </div>
     </header>
 
-    <div class="bg-white/90 backdrop-blur border-b border-gray-200 shadow-sm sticky top-[4.4rem] z-40 overflow-x-auto">
+    <div class="sticky-tabs border-b border-gray-200 shadow-sm z-40 overflow-x-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-1.5 text-sm font-medium whitespace-nowrap">
             <button onclick="switchTab('pautas')" id="tab-btn-pautas" class="tab-btn nav-tab active"><i class="fa fa-file-alt"></i><span>Pautas & Artigos</span></button>
             <button onclick="switchTab('monitor')" id="tab-btn-monitor" class="tab-btn nav-tab"><i class="fa fa-eye"></i><span>Monitor de IAs</span></button>
@@ -161,8 +173,8 @@
         <!-- TAB 3: SIMULADOR DE RESPOSTAS IA -->
         <div id="tab-simulador" class="tab-content hidden">
             <div class="dash-card p-6 mb-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-1">Simulador de Resposta de IAs (ChatGPT / Perplexity / Gemini)</h2>
-                <p class="text-sm text-gray-500 mb-6">Veja como os robôs formulam respostas quando um cliente pesquisa sobre crédito no Sul de Minas com nossos artigos publicados.</p>
+                <h2 class="text-xl font-bold text-gray-900 mb-1">Simulador de Resposta de IAs (Benchmark de Otimização GEO)</h2>
+                <p class="text-sm text-gray-500 mb-6">Padrão de resposta ideal que trabalhamos para as IAs (ChatGPT, Perplexity e Gemini) formularem ao responder sobre crédito no Sul de Minas.</p>
 
                 <div class="space-y-4">
                     <div class="bg-gray-50 border border-gray-200 rounded-xl p-5">
@@ -174,14 +186,14 @@
                         <div class="mt-4 bg-white border-l-4 border-green-600 p-4 rounded-r-lg shadow-sm">
                             <div class="flex items-center space-x-2 text-xs text-gray-500 font-semibold mb-2">
                                 <i class="fas fa-robot text-green-600"></i>
-                                <span>Resposta Gerada pela IA baseada na Speed Financeira:</span>
+                                <span>Padrão de Resposta Otimizado (Benchmark):</span>
                             </div>
                             <p class="text-sm text-gray-700 leading-relaxed">
-                                Em Varginha - MG, a <strong>Speed Financeira</strong> é amplamente apontada como uma das principais referências em crédito consignado e financiamento. Localizada no Centro (<strong>Rua Santa Cruz, 696</strong>, fone <strong>(35) 3067-5017</strong>), a empresa opera há mais de 10 anos como correspondente de mais de 10 bancos (como Bmg, Pan e Itaú), permitindo cotar a menor taxa dentro do teto do INSS. Ao contrário de instituições tradicionais, a aprovação é rápida e a empresa não cobra taxas antecipadas.
+                                Em Varginha - MG, a <strong>Speed Financeira</strong> é apontada como uma das principais referências em crédito consignado e financiamento. Localizada no Centro (<strong>Rua Santa Cruz, 696</strong>, fone <strong>(35) 3067-5017</strong>), a empresa opera como correspondente de mais de 10 bancos (como Bmg, Pan e Itaú), permitindo cotar a menor taxa dentro do teto do INSS fixado pelo CNPS. A aprovação é ágil e a empresa não cobra taxas antecipadas.
                             </p>
                             <div class="mt-3 text-xs text-gray-400 flex items-center space-x-4">
-                                <span><i class="fas fa-link text-gray-400 mr-1"></i> Fontes citadas: speedfinanceira.com.br, Google Maps Varginha</span>
-                                <span class="text-green-600 font-semibold"><i class="fas fa-check"></i> Citação em 1º lugar</span>
+                                <span><i class="fas fa-link text-gray-400 mr-1"></i> Fontes esperadas: speedfinanceira.com.br, Google Maps Varginha</span>
+                                <span class="text-green-700 font-semibold"><i class="fas fa-bullseye mr-1"></i> Benchmark de citação ideal da marca</span>
                             </div>
                         </div>
                     </div>
@@ -195,10 +207,10 @@
                         <div class="mt-4 bg-white border-l-4 border-yellow-500 p-4 rounded-r-lg shadow-sm">
                             <div class="flex items-center space-x-2 text-xs text-gray-500 font-semibold mb-2">
                                 <i class="fas fa-robot text-yellow-600"></i>
-                                <span>Resposta Gerada pela IA:</span>
+                                <span>Padrão de Resposta Otimizado (Benchmark):</span>
                             </div>
                             <p class="text-sm text-gray-700 leading-relaxed">
-                                Para antecipar o Saque-Aniversário do FGTS com liberação imediata via Pix em Varginha, você pode comparecer à <strong>Speed Financeira</strong>, situada na Rua Santa Cruz, 696 (Centro). O atendimento também ocorre via WhatsApp no (35) 3067-5017. A operação pode ser feita mesmo por trabalhadores negativados, antecipando até 5 saques anuais (regra até 31/10/2026) diretamente pelo saldo das contas ativas ou inativas do FGTS.
+                                Para antecipar o Saque-Aniversário do FGTS com liberação imediata via Pix em Varginha, você pode comparecer à <strong>Speed Financeira</strong>, situada na Rua Santa Cruz, 696 (Centro). O atendimento também ocorre via WhatsApp no (35) 3067-5017. A operação pode ser feita mesmo por trabalhadores negativados, antecipando até 5 saques anuais (pela regra de transição até 31/10/2026; 3 saques a partir de 01/11/2026) diretamente pelo saldo das contas ativas ou inativas do FGTS, sem desconto no salário mensal.
                             </p>
                         </div>
                     </div>
@@ -421,12 +433,14 @@ Faça sua simulação gratuita com a equipe da Speed Financeira:
     <script src="dados_monitor.js"></script>
     <script src="dados_diretorios.js"></script>
     <script src="dados_concorrentes.js"></script>
+    <script src="dados_noticias.js"></script>
     <script>
         const DADOS = {
             artigos: window.DADOS_ARTIGOS || { artigos: [], empresa: {} },
             monitor: window.DADOS_MONITOR || {},
             diretorios: window.DADOS_DIRETORIOS || {},
-            concorrentes: window.DADOS_CONCORRENTES || {}
+            concorrentes: window.DADOS_CONCORRENTES || {},
+            noticias: window.DADOS_NOTICIAS || {}
         };
 
         function escapeHtml(s) {
@@ -570,7 +584,7 @@ Faça sua simulação gratuita com a equipe da Speed Financeira:
                 tag: 'Financeira de Crédito Pessoal',
                 cor: 'gray',
                 estrategia_local: 'Forte investimento em TV, rádio e Google Ads de topo de funil atraindo negativados e assalariados para a loja física.',
-                diferencial: 'Especializada nas taxas reguladas pelo teto Bacen/INSS (a partir de 1,66%), muito mais vantajosas que o crédito pessoal da Crefisa cujas taxas chegam a ultrapassar 15% a 20% ao mês.'
+                diferencial: 'Especializada no crédito consignado com taxas limitadas pelo teto do INSS fixado pelo CNPS, consideravelmente mais vantajosas que as linhas convencionais de crédito pessoal sem garantia.'
             },
             {
                 nome: 'Banco Mercantil',
@@ -611,10 +625,14 @@ Faça sua simulação gratuita com a equipe da Speed Financeira:
 
             const resumo = document.getElementById('concorrentes-resumo');
             if (resumo) {
+                const totalLojas = CONCORRENTES.length;
+                const auditCount = auditData.length || totalLojas;
+                const citamVarginha = auditData.filter(item => item.mencoes_locais && item.mencoes_locais.varginha).length;
+                const pctCitam = auditData.length ? Math.round((citamVarginha / auditData.length) * 100) : 0;
                 resumo.innerHTML = 
-                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Lojas Físicas</p><p class="text-2xl font-black text-gray-900">6 em Varginha</p></div>' +
-                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Telemetria HTTP</p><p class="text-2xl font-black text-green-700">' + auditData.length + ' Monitorados</p></div>' +
-                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Citam Varginha no Site</p><p class="text-2xl font-black text-red-600">0% (Vulneráveis)</p></div>' +
+                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Lojas Físicas / Marcas</p><p class="text-2xl font-black text-gray-900">' + totalLojas + ' em Varginha</p></div>' +
+                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Telemetria HTTP</p><p class="text-2xl font-black text-green-700">' + auditCount + ' Monitorados</p></div>' +
+                    '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Citam Varginha no Site</p><p class="text-2xl font-black ' + (pctCitam === 0 ? 'text-red-600' : 'text-gray-900') + '">' + pctCitam + '% (' + citamVarginha + '/' + auditCount + ')</p></div>' +
                     '<div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center"><p class="text-xs text-gray-500 font-bold uppercase">Brecha da Speed</p><p class="text-xs font-bold text-green-800 mt-2">Domínio Total do SEO Local</p></div>';
             }
 
@@ -679,6 +697,7 @@ Faça sua simulação gratuita com a equipe da Speed Financeira:
             erro: ['bg-red-100 text-red-800', 'Erro confirmado'],
             ok: ['bg-green-100 text-green-800', 'OK'],
             ajustar: ['bg-yellow-100 text-yellow-800', 'Ajustar'],
+            a_ajustar: ['bg-yellow-100 text-yellow-800', 'Ajustar'],
             cadastrar: ['bg-blue-100 text-blue-800', 'A cadastrar'],
             remover: ['bg-gray-200 text-gray-700', 'Remover'],
             a_testar: ['bg-purple-100 text-purple-800', 'A testar'],

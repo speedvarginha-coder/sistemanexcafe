@@ -1,119 +1,11 @@
 window.DADOS_NOTICIAS = {
-  "ultima_execucao": "2026-09-21T18:45:26",
-  "total_historico": 807,
-  "novos": 20,
+  "ultima_execucao": "2026-10-15T10:06:05",
+  "total_historico": 200,
+  "novos": 312,
   "itens_para_revisar": [
     {
-      "link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNOXIxWndfclJwT21INGlCYW5IUkZWbklFbnE0TDhNUUxYVHV6ZnEzTHd0VVpYRTVwOExodHh2RXc2cTFTNWdOSzI0aEd1V1FLOHFkWXVJQmRSZFV2MkxCSHhoTnZVdjJHd09Fa00wMWpyYnFKWnQ4aEpBTGVtY0hnMXRlWU1XTm9fNHNxUkVDblo5UQ?oc=5",
-      "titulo": "Queda da Selic aumenta busca por financiamento de veículos - O Hoje",
-      "data": "Sat, 19 Sep 2026 12:00:28 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [
-        "aumenta"
-      ],
-      "descricao": "Queda da Selic aumenta busca por financiamento de veículos &nbsp;&nbsp; O Hoje",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxNOFB6WEJFLVl2MFF0c3R4NldkLTVvZnB5WFN2MXhkWDduZS0wS0lsQlptWVBNSW5GWGJheGpIT184UHBrU2ZqeG9ncTNNanY2NFJCSHRzMUtTa2R6VDVYYkt4T3ZiWjNmLUJaeFZJTVNCRUI2NTY4UllYTDlKYXFkOGNOVXRoNzlQc2ZoakdJNzM1UGt0Z1VOeGNMTXhYY2FoaHU4ZEZ0cXg4NXNLQ09veXdLeGZXd1RPMXpNWGotUFE4QjlkWV81ZGdsN0daUTg4cUllM1VyR05DU0pVWHo2czU3RS1OMWlSN0xyblhSY2I0c3d6?oc=5",
-      "titulo": "Programa Move Brasil reduz exigência para motoristas de app e abre financiamento de até 84 meses para C3, Basalt e Aircross - noticiasautomotivas.com.br",
-      "data": "Sat, 19 Sep 2026 00:57:28 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [
-        "reduz"
-      ],
-      "descricao": "Programa Move Brasil reduz exigência para motoristas de app e abre financiamento de até 84 meses para C3, Basalt e Aircross &nbsp;&nbsp; noticiasautomotivas.com.br",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQX2hEaVZ3YzRsMzR1Tndhc1lTclhaS3dGdDI3cnUzRWtpX3Z1MUZ4ZzJKTnZMTzdJcHV1X3Z3NFcwclk3cGtWVWVFOWhBMHFCbl9ibjlPV21DaEs0QXMtNlZVOHdoNGFwWXotemlxOXltWlMzTmJZVVQwZ3ZwUlpKVkl6THd5N2szRkdrZlVOOExNU3V4V0tVSU1nRXlrME1ESjBOalY4YngzeG16?oc=5",
-      "titulo": "CMN eleva para R$ 200 mil teto para financiar carro de aplicativo - Poder360",
-      "data": "Thu, 27 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos",
-        "Regras Gerais / Bacen"
-      ],
-      "revisar": [
-        "teto",
-        "eleva"
-      ],
-      "descricao": "CMN eleva para R$ 200 mil teto para financiar carro de aplicativo &nbsp;&nbsp; Poder360",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxQekk4TWtlaVlKTm9Ia2lMbV9tUVB2SzVhNXF1RWU2LTBuSEZVbUR4M1d5U2ZJWld0c0JiRUNNbUFwak01NlBoamVtTHlxaVdmWk9CV3VoLXhva0hpMDZ0YzJ5Y2taUjVidmQzQ1hFem9pNUV6ZndobU5HTHNhMkpUaXJnMHpzYWFNajh4UUxEMjRiQnM5aUQ1YkVlUE45SHNJN2ExUnZ4YnBPWnU0QUdYS1dHZU1DcUJ3NmVHVTVGWDdlOGVqU1JQQ3pJNUc0eXVmRmFmOTMzSmloSjdfNV9LSEFCRzc5UdIB9AFBVV95cUxPWEx1WVU1MXpEdjVmYVllNW0zYW1rVHd5QVVweG12VURYMVJCRGlkSm5ldG94a0JZVlgzTEJVVzE2c0xqM1E5TVFCUkw1ZC1LMFJQMHR1cldqZjVVTzZfeXNxQ2pxMXA0UERKQ01OVTBOT2VLTUtFS3I4d0tqNThBb0E1NVBiRUFhbUVjYzJrMEFfMjFEOWJZMDhPN3ozTkxDeEZaY2wyRlJXZ0dudndDSnVqYzlfTzFOVldodlBFai1IU2V6aElqV0NoZnYxZ19TM3NQZ2Z0cUtUOGRLUjg2UjRRUmlaOEUxZm1vMWFhU3laV3My?oc=5",
-      "titulo": "Move Brasil: veja quais carros será possível comprar com a elevação do teto de crédito para R$ 200 mil - Extra online",
-      "data": "Fri, 21 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [
-        "teto",
-        "eleva"
-      ],
-      "descricao": "Move Brasil: veja quais carros será possível comprar com a elevação do teto de crédito para R$ 200 mil &nbsp;&nbsp; Extra online",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi1AFBVV95cUxQcFJFZ0RtMTQ5czZzbktFWVBZc084WkVlMzh4ZnMtVTY4SWFpbXRWMU1UdHVlMS1EZlhqZ1ZPd2lyeG5GWUtpMXhJNGFodmJPb0RFUUZFMTVkVHd4M2t4V0dOWVdHZ0J1bHFsdWsyM2hmYlhjb3RVMXdFaGhYOEVxQThtdUdzdklldjZHZzdxTEFLdmtIa0tOdjBpblpReEJySkJ6bHQyM2F3el9PdWhaYUo5YWVZTFpoV0dxSjJtdGVET0FvbHpjTFFGYTJuNEIyZVRRSw?oc=5",
-      "titulo": "Consignado do INSS volta a ter margem maior, mas TCU barra cartão de aposentado; entenda - Folha de S.Paulo",
-      "data": "Mon, 14 Sep 2026 07:00:00 GMT",
-      "fonte": "Google News: consignado INSS",
-      "tipo": "google",
-      "grupos": [
-        "Consignado INSS"
-      ],
-      "revisar": [
-        "volta"
-      ],
-      "descricao": "Consignado do INSS volta a ter margem maior, mas TCU barra cartão de aposentado; entenda &nbsp;&nbsp; Folha de S.Paulo",
-      "detectado_em": "2026-09-21T17:47:59"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMiyAFBVV95cUxPYkhOcTlNekRqbi1OMGVxUE5ZMXRaYlVVR3NRQnAtVFlFZkxEUkt6dVFXSFJGMFlzdGFmc1pwUVFMcjdvRzYtM2JaN1J6MkxnS3VlT09lMWZEeU9wRFdNbXBJcnRQamdtM1JSaVhqaS0ydk5sUmhQTTllRUZFelJyN0dpTDhiZEZTQVlmSWVfVElvWVduMlh6ZlQyb2pSSmhUX3Q3d3B3bTRXU3FrYTNQRU5pTmQtQmtIY3NybVEtUGRIOXVOalllTg?oc=5",
-      "titulo": "Margem total de 45% do INSS voltou a valer; confira as mudanças - meutudo",
-      "data": "Tue, 15 Sep 2026 16:46:42 GMT",
-      "fonte": "Google News: consignado INSS",
-      "tipo": "google",
-      "grupos": [
-        "Consignado INSS"
-      ],
-      "revisar": [
-        "mudan"
-      ],
-      "descricao": "Margem total de 45% do INSS voltou a valer; confira as mudanças &nbsp;&nbsp; meutudo",
-      "detectado_em": "2026-09-21T17:47:59"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMiiwFBVV95cUxPaWY5VWZrdGJuVWxUTjBBMWNwbHpoajVfMGoyUXU5c2p2SU1rTFhOaXFyU3VrcVdiTFFvbFRkVkhGN0xwbVBKUHhkM0NWaktfNkhrcnhkQUxQMnpfTzlIa0NORkU4S0dyeF84T3JwZjB2VThmZUNJQkRoZmJMYWVFNHJvUURkejFjMWo4?oc=5",
-      "titulo": "Margem consignável do INSS volta a 45% para aposentados - ISTOÉ DINHEIRO",
-      "data": "Tue, 15 Sep 2026 19:46:01 GMT",
-      "fonte": "Google News: consignado INSS",
-      "tipo": "google",
-      "grupos": [
-        "Consignado INSS"
-      ],
-      "revisar": [
-        "volta"
-      ],
-      "descricao": "Margem consignável do INSS volta a 45% para aposentados &nbsp;&nbsp; ISTOÉ DINHEIRO",
-      "detectado_em": "2026-09-21T17:47:59"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi8wFBVV95cUxNVlVIazUyWTFjRm1rdkE0elFSQ1dHS212YkN5WVp1dUJqUGhIY1dGVXlXbFdlVE83RmNoYmdpM196SVk0V2EwbmpZNWhEekhKUXM0c1pCeHlqUEwxMEo2OFBCZzJOU1BFMG5IWklKbi13Vktra1NlTVc3bTE0UURRSWJkSnV1eFRUc256Q1Frbk41THVLa0JTdVE3WlFQZGdCMU04YmE5R3MwUHNBUmhyMlJQZC0teFNqZzY3UVppLXVndnZwTnZfTGFWR1htdzREN3d2UGh2MjY1VV9fd2ljNlBBMzRzZmdxdnEwOV8tdGt1NDDSAYICQVVfeXFMUHZTMk1LYjE5d1hhZHVQXzhfV3BvS1NMNDNqZlFNanpWNzNIRVU0MTRFdV9zdU1ZOTJBdUlicjlEWDgzanJaaWo1RHNfSjV3MXhES1JjTmFHLVVhQ1JwQnRCR1h2czJuWlNqeFNrbXhGRFllT2h5VFZaVDJvbzVhelNJSjRxMFZkMWdlMDJ2c2I4NzdOamlTb21KYUprcHItVE5lLWhYbHkyQ3N5eUYtdVhLeExlM1Fob3dDRkU2eWI5VTFha2k3YXU4OEYyRlFIZmcwaUQzSkQ2MTl1dTVVNDZFMlRBM1hlbGQ4X3FhNXpvdDR5SUhWWlI1ZDhlajk1dUV3?oc=5",
-      "titulo": "Aposentados e pensionistas do INSS sem biometria facial podem voltar a contratar empréstimo consignado - O GLOBO",
+      "link": "https://news.google.com/rss/articles/CBMijgFBVV95cUxQT2JQaEREUnJOMlVsa29oMnBEbjd5Z1oyWUxzYzZaY0RmODlTRGRtNlExWVdPS01TS01Yc1YyYzBoZWljV0tEQ3hIZjhSQ1I0TnUybUFBVWQ1eElHdkpBeXVtZnAwV1I0MFFpUHJRcGcyR0l4aHZDWjA1S1FFdE1CcEhROU90ekFxWFZfYzVn?oc=5",
+      "titulo": "INSS pode estabelecer teto de juros do consignado de aposentados, decide STF - Consultor Jurídico",
       "data": "Mon, 31 Aug 2026 07:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
@@ -121,533 +13,631 @@ window.DADOS_NOTICIAS = {
         "Consignado INSS"
       ],
       "revisar": [
-        "volta"
+        "teto de juros"
       ],
-      "descricao": "Aposentados e pensionistas do INSS sem biometria facial podem voltar a contratar empréstimo consignado &nbsp;&nbsp; O GLOBO",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "INSS pode estabelecer teto de juros do consignado de aposentados, decide STF &nbsp;&nbsp; Consultor Jurídico",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxPMzJFaENhbE5ndmRfdnVhRzlsQkNXZHNUZG5YckUxblk4NW81ZDRneWNSdjl5cjNXSzBLNldTYkJjcnJNSERuR1JiYmpNeWFkdWU0Nnk2eVY0c3A2TkVJYmdnUHE4ZUlDZEotaF9iX1ljNk9aOXpKYVlqd244YU0wenlkZ041Z3pQYjBIcUVlYmIwTTI2aHF2LW1FMDN1VGhURm9FMnNvd3k5a2xQbEg2Z2IxN0p6RUpoWFdpaA?oc=5",
-      "titulo": "STF mantém competência do INSS para fixar teto de juros do crédito consignado - stf noticias",
-      "data": "Tue, 01 Sep 2026 13:05:32 GMT",
+      "link": "https://news.google.com/rss/articles/CBMi9gFBVV95cUxPZzFwLThTT3l1V2JKTzdwM3c4M0NwSVNCVmNFcFBZUnRqMnBZb05rWkhRY2RkR2Jpa2Q1ZlpCZzE4eU45OERIVlB0RWM5WjNPa2NVUkNLVW5PQjV4YlFVV28wWEJOUWh4Y2VUeHU4T1pqcnhnS0hxRXQtaGg4VUVUbEYweHlZaENCVUR5YVR1MXd0WVhrLUd1a2F0dzZYWFJqYXNBSWZrdWw5eEpVTVlHZm9TX2laTW5FTThURk5pczNCcDFub2FfZXhyVEZVb1dhRWZYNmQxM0VOZlpYNHp3cHhIN2JmcTFPWE9HSFVuaXM2Z051ZUHSAYQCQVVfeXFMT20xT3gweDI0MjhlcC1BUnpCRXlKMERwYkdNUy1oYkFqWUwzTEVKb25CUUtNeHpGOUdUdmh0T2dVblp5ckxBdWJoOWVJVHk0b1l6RUFINkFNLTRPS1lhV1pHU2I4YVptdWtOLXdDNmZPY05VUHBMcUdLY0k5NWpRSkNRT3JuNXh5THI5WEU1bWpMYVh4ZkxlMVdLVlBsZmlxZXBBZkx2ak1raGU3VERaLTdaMnlDbmVVY1lmU3lZZUppU25CanFlczRoMjBKYkJIMHhmRUpRQlMxNUhuM1g1Ti1YUktaVEVNQWRQeFNJV3JoVTIzcU1yN1VTMldJTHBfOU1hNVE?oc=5",
+      "titulo": "Teto de juros do consignado do INSS não será mais atrelado à Selic, como avaliava o ministro da Previdência Social - Extra online",
+      "data": "Tue, 22 Sep 2026 07:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [
-        "teto"
+        "teto de juros"
       ],
-      "descricao": "STF mantém competência do INSS para fixar teto de juros do crédito consignado &nbsp;&nbsp; stf noticias",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "Teto de juros do consignado do INSS não será mais atrelado à Selic, como avaliava o ministro da Previdência Social &nbsp;&nbsp; Extra online",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxOWXlzQ0VzZ1FhaFBwcjltZTNoN2otQXA2aHhOcDExVkZxaXcxOS1iSDdpei15TERCaUkyeTBHcmVBek85SHUxcVFSUWoweGpmWjlGeGtKYVA5SF9ySFJ2Mks4MXBGNDI5R3JZSXBCQk9YZEVFSkpjVTVDWFFVZklObUZrRXhSbkc3dm9fV2hHNWYzVThFN05STnd5VVQwNlhoRkhNNjd0eHg5Qm5WMEpwZ19R?oc=5",
-      "titulo": "STF: INSS e CNPS podem fixar teto de juros do consignado a aposentados - Migalhas",
-      "data": "Sat, 29 Aug 2026 07:00:00 GMT",
+      "link": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxOV055NTJXaE80LWJkakZnMVFyVkRkaTFKRF9ueTJYVXZiSXVJSWhwa2JRUzl6RVNydUI4alozSnByUXdpaHpXOURqMmlCcjJHcGNZOHU4RlJSeVZsa1J5dEFTX0V1NE02TG1tTVFTRjVjdV9fc3p3a1Q2VkRoMmdwcXQyUllxUjI1S2hjOUU5Y04xN2hiNkwxbkp6dzNYdHJxRV8wRnhKY2daN0JEUmdzRDhTY0tSTGFyVHNyajMxRmVWd3U1cU1meW5jeEdya0lybnRDRzRENXU?oc=5",
+      "titulo": "INSS: novas regras do consignado para aposentados estão em vigor - Agência Brasil",
+      "data": "Tue, 19 May 2026 07:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [
-        "teto"
+        "novas regras"
       ],
-      "descricao": "STF: INSS e CNPS podem fixar teto de juros do consignado a aposentados &nbsp;&nbsp; Migalhas",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "INSS: novas regras do consignado para aposentados estão em vigor &nbsp;&nbsp; Agência Brasil",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMi1wFBVV95cUxOREMwM3BSNFNRRXotNUpIWmtRbktZLWc0dGFfbXI5MnFtOGgzdk5Xb3JSUkxxajFSbXhwbktsalpsV0JDNG1WM0tEclNET3ByNW94TV9iZjNsSWlIaW5Lblp4U0ZwRUc1NlVvcnJNTzU5VWV5Ny1fc2JfUmNsOWsxYjFlZmxNaWRBTVFrWV9LVlZPT05SekpKZ0wxRkoyNGtCLW1JN251bXAzdno0VDZ4RTA3Unlwd0xBX3M5VGh1ek9MSkdZQXZfTl9KeWZyTWFYemlUa1RHQQ?oc=5",
-      "titulo": "Fim de MP faz margem do consignado do INSS voltar ao limite de 45% - correiodamanha.com.br",
-      "data": "Thu, 03 Sep 2026 07:00:00 GMT",
+      "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNVklTbjByaTlWME0ydDBqZEVHaEk5YUpIU0NmNDNiaHB4ck14T2QxYUxybnc0R2JaajRMRnRuNGppVFdNZU9hd0tsZ2ZIcUxEU3prb0NidUdCV0pRSkNfTml5c0xFeEhHUzF6dVF6SDM4NXJORkk0UTBVM21wOW1LbE5jZWMxNVdqLXpJa0dLOHJqOHdnSmFwcWpiNGRtazJzQ2p2OHdCNmlUT053WGZZam1oa3Q0bGo5TEVQNQ?oc=5",
+      "titulo": "STF analisa competência do INSS para fixar teto de juros no crédito consignado - Jurinews",
+      "data": "Tue, 25 Aug 2026 07:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [
-        "limite",
-        "volta"
+        "teto de juros"
       ],
-      "descricao": "Fim de MP faz margem do consignado do INSS voltar ao limite de 45% &nbsp;&nbsp; correiodamanha.com.br",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "STF analisa competência do INSS para fixar teto de juros no crédito consignado &nbsp;&nbsp; Jurinews",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxQWFE0QmJSaVp5SDJFR21hV3B2MmtrQ2k2em9GTnBoRE10SDBNYlh5T1JCTlptMlFWeEVYcU5sZFQ3Rk9jQlk1VDEzOWNySlhfTjVLNk9wcUJOS1lVM2FabEVnYWM2ZHVHN0VpcENXLUNQc01tcURUVFdrVTc5VUVKY3NheHYwZERQS2ZqUjlfZ1p2UQ?oc=5",
-      "titulo": "Consignado do INSS volta a ter margem de 45% - Portal Contabeis",
-      "data": "Mon, 14 Sep 2026 20:00:01 GMT",
+      "link": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNWjJBYTdaNUdWRXpKV1F2NVByaEd1cS1USk54cHYzRDBnaWxrMlByOG5MdFl3RDRUT1RwcUk4cGphbmNSYkMzV0ZFSGVmMjNIaWUzNC0wN0V0TW45b2hYanlENlFBYXRwN3M3bnhMV1luSExqVW91TWs2b21oZWZsNlB2NTFfWTNEeVYtd0thOWZuaE9EOG96UlpVR3JmMEE0T19xN05UazZwbjQ5bGwzZmNqWXRGMHhUMG9oMTNMazRiejQ?oc=5",
+      "titulo": "DPEMT alerta para endividamento após novas regras para empréstimos consignados - Defensoria MT",
+      "data": "Wed, 26 Aug 2026 07:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [
-        "volta"
+        "novas regras"
       ],
-      "descricao": "Consignado do INSS volta a ter margem de 45% &nbsp;&nbsp; Portal Contabeis",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "DPEMT alerta para endividamento após novas regras para empréstimos consignados &nbsp;&nbsp; Defensoria MT",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxPZmNSdzBXNmgwbmVCNTZrVllXYmE0cU1JemNBN1hRdmJwLUFzQnVZWVdCX25ReXVwMWpra1ViX2xQUmZpaVJfVmxSQzF4MHgtd0YxUG9jVEp4VmZJWXhaNmIxX09RNjVmTy1hTlBOeWdEakQybEVvOG16UFQtUzB5c0pZSTVMRk1oQ2FpYzYxc1FXc3dVeUZCaXVkVFBJdjMwclRtSE9ReWlXRG9zLUpxTTJEN3FqZzNLTTFjTnJIQUk1cG8?oc=5",
-      "titulo": "STF forma maioria para INSS fixar teto de juros no crédito consignado para beneficiários - JOTA Info",
-      "data": "Fri, 28 Aug 2026 07:00:00 GMT",
+      "link": "https://news.google.com/rss/articles/CBMi6wFBVV95cUxQTGJteno5QzF6aVVoRVlkb1VlQWpaMFljdGtoWWpKRld0cHdEd1M3TElqb0JydnlvQW1oTVRMQ3d2aVJFOVB0Y0VmS3RMRzJtZ05ONnBpcEM5b25RZjN1VHFkZTBLZFZUa0FQV0tXWE9mT1JoNmotUDNyTTFGU09FM1dEWjQwWUQwRlhsOWF3QzVIQnpKMGRRcl9HRWFTQmlnNE9jU1Q1WENGNkF3LXRlODVPaE5KVjA5bHZLZzFtUjJORGR5MDU0TG1NZ19jakpwQVFsc0NONnd1MW9fc1Jobnpvb1dmS0l6MDd30gH6AUFVX3lxTFBPeVJ5dlljSTV3MGhheVRTUGZ2TFFyanh0X2p1V0tJNEFZUGJaTFJuUzR3RVNjbGZCcDdCaUYtTzhlUXpTSmlyT1pOaTM5QXk1X2J4RHpOMmJYRGhVNzB1TS16S3J3NDJvcS12cG5CTUZOTDRGTFlEU3hfYzh1UFdiXzFvZmpQUGY0T3g5YlIxZ0hoZVBOVDVBal9MTEpyWTFqNFljTUhQeDgzY0E5UlZBbEZ6NzJDRGN1eGtqN2dSWXA4N1RzTzJfTktlRC1VRzVTdXc3VWt6V2d4TE1vU2lWVVJhWm13bzRGOEx3eC1Day1TV3JVbDlRMUE?oc=5",
+      "titulo": "Exclusivo: INSS vai editar novas regras para evitar fraudes no crédito consignado e prepara ‘leilão’ - Valor Econômico",
+      "data": "Tue, 03 Mar 2026 08:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [
-        "teto"
+        "novas regras"
       ],
-      "descricao": "STF forma maioria para INSS fixar teto de juros no crédito consignado para beneficiários &nbsp;&nbsp; JOTA Info",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "Exclusivo: INSS vai editar novas regras para evitar fraudes no crédito consignado e prepara ‘leilão’ &nbsp;&nbsp; Valor Econômico",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxPeWhTd3hidE93YXlfUHhnNGhCci1HQVRsX04ySmtEOElBZlcwVGI3NlRTVzdQdUZITEZOeFN2ck1XdnBwRWpNNGZGX2pzQTNMdi13R1NFeEZ1QThESmRMTm5LLUxscHdEVmotTkNIZEdpVkZYdE5yT2pGRHF1TjhsOHNxd2ItSV9qQW95LXhvdTluZ2pwT1d5QVlqakNMcmZjYUMzYVFySnlWWkItaXVBRUpISmRtOFp2Yk54WmdpTQ?oc=5",
-      "titulo": "INSS: Mudanças no crédito consignado e nova forma de validação para aposentados - bra1.com.br",
-      "data": "Mon, 21 Sep 2026 13:26:00 GMT",
+      "link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPcEcwblNjUDhleW16YzVDZTZocGhrQzJ3eS1xVTZzb0VCNVpkMGFiVFJXYnJvZ0VjbG5VZ21TdG02TWJvT0g1Ui1zUlpOUmRxbVlpQ1dacUZDSU90d3lUd3VKdkkzQlQ0bE9MVUhPR3RfQXF2Q1Jwa0pQc1J3Ni1VQTJnWEtGVV9tdDVOc1IxUUtCMGtxSmpuS0Vnb1hUakszOXFhNktBNHVlellWeFo2YzVB?oc=5",
+      "titulo": "Por que o consignado do INSS foi suspenso? Entenda a decisão do TCU - InvesTalk",
+      "data": "Thu, 30 Apr 2026 07:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [
-        "mudan"
+        "decisão do tcu"
       ],
-      "descricao": "INSS: Mudanças no crédito consignado e nova forma de validação para aposentados &nbsp;&nbsp; bra1.com.br",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "Por que o consignado do INSS foi suspenso? Entenda a decisão do TCU &nbsp;&nbsp; InvesTalk",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNOUZhU0ljN3l2OTJVNXNpa2syZkRvY0pmTGE2X2lCbjV3S1VNVkI3c2d3UTU4R0ZLTHIzdDVLT3NMR0Y1UWpwU1hhTVl0ZnVWV0VXYWVZS2RhZUozQlpwTjdIZ21HNVBRNDBZMjVHMFJWSkdsZmxOUUJYZHktXzlOQWo4QXI3Ui1vMjNlSjR0SGwtWnZ5VHJUUWU3VkRBTHJxNnNWV3lmMjIyUGZ3VGNodnhlaEFxdFNNVHZzNQ?oc=5",
-      "titulo": "STF decide que INSS pode definir teto de juros do consignado; entenda - Folha de S.Paulo",
-      "data": "Tue, 08 Sep 2026 07:00:00 GMT",
+      "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNVVBuUlVpOW4waTF2UVpzcGludk9pWko3a3BrRzlfSkpGTllrcUhoT2c5LWctSUpzQldYWm5RUGZXcHptRFRRdmxzaE5CWi1wVk95SlUtTDcwUHNmanMyXzFqd0NwZXAxTkZDSGpGS2tENVdWbEI2R0NoVnlSXzZxd2k2ZWVFRWdNemgxY2lzMVhENnJNdFl4RDd5NGdiM0xDeFRXM2VzUm92WGZSVjZPRWtRS1VJS2dLQzVwbnJVUkRCY3JqNHfSAdQBQVVfeXFMTTBLODd2S0V1N1pndXNrNlllb3lGTk9vVEZlZVNrc0x3ZzcxeFdldjV2RGhFbHV1UGFzaVdqc0J1SWpCdEx3RXF5OXhKSkZZX3d0XzlBU1BGcTBUdkZfX0NHZEcySlFsTl9sOVVoSG9XZXpGVkhQWDQtZ204dFpBVFBhYXZ4amdEbHNLcWlFdTVqVjV4R1RhYnpqOGRUeHJGdXJuZmJIeS12dEowQUJJZXJxRVV6SlhKQTRlVC1mazVISFpFcnl1dGNlUkxhNGlCbWtfNi0?oc=5",
+      "titulo": "Governo recorre de decisão do TCU e tenta liberar consignado do INSS - O GLOBO",
+      "data": "Wed, 06 May 2026 07:00:00 GMT",
       "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [
-        "teto",
-        "decide"
+        "decisão do tcu"
       ],
-      "descricao": "STF decide que INSS pode definir teto de juros do consignado; entenda &nbsp;&nbsp; Folha de S.Paulo",
-      "detectado_em": "2026-09-21T17:47:59"
+      "descricao": "Governo recorre de decisão do TCU e tenta liberar consignado do INSS &nbsp;&nbsp; O GLOBO",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNdWNXZFJXa3g0SkRJNzA5UmpiR1VWWFBFQkN5QkVzNnBQTTAzOWxuZzV5LUpyQXVQeVBjUGtpY3d5azA2Y2Zjb3d2eVFkd3RYQ2Y3MjcxMUpFU2x6VW44c00wam0yZ1N3T0Zub0tTeEE3MFlfXzFDcGthZlg3QV91ZHhHRk43NS1TYks4ZGpaQkRnTWNBcVc3UlJDNlRwRURqSDlwT3lrSUZJWXBVVmZOVUlsU2hYdTBvN3Y4MlE2Q0oxUEM3VVHSAdQBQVVfeXFMTWM3cnUxMzBjSy04TG5Nb2dZbTZkQ2Q3UzZlRVdXN0swOS04NklybmxaVnRhNjNOZ2JEOXFwQ09UVndoQUFXNk1fRVd3U3psNldUR09NUEx2cllGYWwtNXF5NVBLTDE1MERHd1QtcWJFMXctWkxpMmFwbkZNWUdHWGRyNDFFd2pQdGZmV0k0SGY4X2tCa3VOWGkxbTlOZng2TmZFVVp4SFNBdjRqWEZHQzlOcnN2UFlheVZZY3liWkVFbXRONmV2UmZYRF9STlZvcDR5N2c?oc=5",
+      "titulo": "Bancos elogiam decisão do TCU que reverteu suspensão do consignado INSS - Valor Econômico",
+      "data": "Fri, 08 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "decisão do tcu"
+      ],
+      "descricao": "Bancos elogiam decisão do TCU que reverteu suspensão do consignado INSS &nbsp;&nbsp; Valor Econômico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxQY1d3MzdKSWNWNWVWNGgydmkxYUlNM2puN0IxRlFzcVhFMlRaRnV3Q1RsRzlnRHBqamdTYklHaVh4bVh6OGdEcHU0cW9YMjJqTnM1dF94ZExBZ2dGbXZ4UEliWWlrTDBBelVTbmdqeXYwWkVFalBzZWRLRjdUQkR6MWZSUS1QOXdlMG5aWVVFUk1SU2xHNUI2ZGZ4VTlzcXBuZExwaWRPWThaR1pRSlNiRUFPRDhRaE40M19oWUNocHoyS3FCN0HSAdQBQVVfeXFMTkRXbG9kQnBjQkNQQWpiWGEwdEdiQlhEbGFVN05vNXBMQzJaNnhfTFJNalJPOHdIU3VXc1FlUU9QXzlGa0hJU2VBMVBwQ1VhZzdEUDlhaUthVFEwRHlPZUJONUpIdGNpaVlOR3JkOU5HQ08welFkZ1lWVG9PR0pnemwta3FDNGhSR3lDMEhFSVJubzBjZnhWLTV0eEtMOVVpSnQwZ1VDS0dzOFk1TGYtMFowMVQyYV84ZGF1SzFvNkVLZlNYNFlRcGE1UHA4MTBzSDNTQ0g?oc=5",
+      "titulo": "Governo e bancos criticam decisão do TCU de suspender novas concessões de consignado - Valor Econômico",
+      "data": "Mon, 04 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "decisão do tcu"
+      ],
+      "descricao": "Governo e bancos criticam decisão do TCU de suspender novas concessões de consignado &nbsp;&nbsp; Valor Econômico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi8gFBVV95cUxQUk9NMVV0NWdDdExMWHFhVU1tQXdhbG1uc2pDczg0RlpDOFYtWUNQV29oNnJlc2lpRkNGSi1jSDdoeFZvamZ6QXpsdUtHQUZaTDFtUmtyalJRMElHeDN0ZEk5SExTRnZ5NXdYX19WUGJ5Yy1RSTRybEJlYVAwQk9iTXVRQTN5Tjd6b3VXQXNONzBLdFE1ellOVUpRd0N1NktsSjRVUGUyMXRxOGVkUy1OWVJOdmV3RWphRzBkM1lJVnhiVk8waDdLZlcwQktoZWRmT1kyOV9QNHdJNGY2cE9UbzNEdFVmcW9NRE84TzZaajkyUdIBgAJBVV95cUxOVzN3cjBQVVVYSXFkdUlLWjlMeFUyNklRRHRKUTRSbWpXdnFVb0xqaWtUNU1xR0xVYS0wMXdsRHYyNUYyN1RrdXpONFlYMUoxUm52STJZb0lrckxweWNvRlNiM3U5RFRVNFBfVTAwOXlnNUl1MmRaTUdoQ05jTF85SjdEeGl3c0VvYWNBSzVVaGdRT2JHcGozbjBqc1J2Q1hoc2ZRRVVKRU5rXzl2eWpXRnQ2UnBuYzcyVmRjRFRYbGxlcVctanhmM0taMlVsVUFfN1BuTVlIYVlzRXByc1pvSTlFdzhEUjZoZ2NqQVJmaS1SNi1UX1hPTTl3YWFhcUtN?oc=5",
+      "titulo": "Bancos manifestam ‘surpresa e insegurança’ com decisão do TCU de suspender crédito consignado do INSS - Valor Econômico",
+      "data": "Mon, 04 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "decisão do tcu"
+      ],
+      "descricao": "Bancos manifestam ‘surpresa e insegurança’ com decisão do TCU de suspender crédito consignado do INSS &nbsp;&nbsp; Valor Econômico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQNzUwOE9pMnN6MHpmeVI3VHdfT2hvU3pGcE1fMnZoM0pXMTZsTTBaUzZycFJYMFlGSDFHcDRqQ1BCTTdDM2ljUFJ4QkxqNW5OQUxoUVRxRUI1dnpDMk5DOFlxaURfOGQ5bTQtcnR2bGtlSDdtNl90MTBMb2FJR0ZuWnVyYWhvbjJPRmtiQ19kcDlOa2o0Zk8tdE5ZVnNTaFZGNG1tZlF0QXhOUHc2V2l6QkFyQ2JwQjFNNkhVX1pha0FrUQ?oc=5",
+      "titulo": "Novas regras do consignado entram em vigor; veja o que muda para aposentados e servidores - VEJA",
+      "data": "Tue, 19 May 2026 07:00:00 GMT",
+      "fonte": "Google News: margem consignável INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "novas regras"
+      ],
+      "descricao": "Novas regras do consignado entram em vigor; veja o que muda para aposentados e servidores &nbsp;&nbsp; VEJA",
+      "detectado_em": "2026-10-15T10:05:59"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi6gFBVV95cUxOS1NVbGNXSUxybU1IMTdTamxZUkxVeTMxc1NEREVKWVd2Vi1tcUU0QmhiSDR1SE5ybG5kTTBrT2JERUJUTzJoR2FzQ0FsZEZHVnQ2TWZTVmlZTC1yRnZpdm56bnAzNWdneGxiSnZiY3h4V2Fud19vQjlfaURIM2UwbG45dEc1bVdUaThDME9qNXliWFFELTR3dmNkdWcwMnVDQk11ZzZldzRVWEVVamd1Z0lkVmVYS2liS1Q1bXhRVUVpQXZPNlFQS0NnRGE4anlGWFY5ODlqaHh2VG0xMDNxU21kUUtSY0Z3dlE?oc=5",
+      "titulo": "INSS confirma nova regra do consignado sem biometria; aposentados e pensionistas ganham alternativa para liberar empréstimo - ND Mais",
+      "data": "Wed, 26 Aug 2026 07:00:00 GMT",
+      "fonte": "Google News: margem consignável INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "nova regra"
+      ],
+      "descricao": "INSS confirma nova regra do consignado sem biometria; aposentados e pensionistas ganham alternativa para liberar empréstimo &nbsp;&nbsp; ND Mais",
+      "detectado_em": "2026-10-15T10:05:59"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxPS2F2eEtYVUU3RlF1TUJGT0NoOXNpVXpWdTRvdFlRbDRPYWw2RGgtS0JuY3ZRQjJWQ0JUSkFFWFE3Vl9PYVd0OEVDWnY0OVFIUHpCQzNWWUI1cEVaM3BKUmxROHQ0bW5BTmNtSi1saWN6aDR0TG1HU3VpVWZwSFl5eDd2NzNGbVhJdVk3T0M5ZDViUkxISDd5TWl4c2ZjY0ZoVHpJM0pkUnl3R05vSHNMVA?oc=5",
+      "titulo": "Consignado do INSS mudou: entenda a nova margem e o que vale agora - Folha do Estado da Bahia",
+      "data": "Tue, 15 Sep 2026 07:00:00 GMT",
+      "fonte": "Google News: margem consignável INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "nova margem"
+      ],
+      "descricao": "Consignado do INSS mudou: entenda a nova margem e o que vale agora &nbsp;&nbsp; Folha do Estado da Bahia",
+      "detectado_em": "2026-10-15T10:05:59"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi6gFBVV95cUxQakRLX0R6QzF1cGFQLXZCYXk5dm5iclhmRHMyd2plaS1NV1E3VmFCWGVGLVJ0eXZMU1hqd1h4UUp2Vm1pal81bWFTTktVaHVZazdMVWtjTVBRMHAzV3RHWHljZ1dDekp2c2FRUV9uNkhabURHOFRHWUJCWGNvRHVKaHJVRGRnbXNVZjhFUzVRVjIxa1IyT2NMVWF4V0xYRGRjTXZoczdGYmxBSUNnWFp4TERJUzl6UzVLa2s5LTFIMFppNThxRHIwOWx3dHdzd2NGXzlQTWJQNEQ4cWNvUHZTTUxqS1F2MklkVnfSAfgBQVVfeXFMUHIwcl8xSEpPSWlrUUNNLVFER0xCLXh2Y3dVeS04OHlaMVFQcW14dDdLSmtSZ3BtNEZwZ1p6QU8wcUgya2hCS2xDQXZMaTRTd0FjbW5uaEZiOHd5UklFVjN3dDRsRWp6d1ktYUo5ZEQ2Ry1iUV9uMURpZTVVenZhZXRra3M2RlpQNDlDTGZKdGoybmN6TWdqdVQ2aGFQQzVUZ1hqM3hFN0pFR1JUVTdXTndQZ3dBYWJEUEJxZlVFNUQ5RTMyTm55ZGgtSlViX0JETlFfcm9Wc3kxc2FWa2ZhYTAtMlk1OG5mVnVNa2FtUC1meW1vcVUtYmM?oc=5",
+      "titulo": "Novas regras para contratação de crédito consignado do INSS começam a valer nesta terça-feira - Extra online",
+      "data": "Mon, 18 May 2026 07:00:00 GMT",
+      "fonte": "Google News: margem consignável INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "novas regras"
+      ],
+      "descricao": "Novas regras para contratação de crédito consignado do INSS começam a valer nesta terça-feira &nbsp;&nbsp; Extra online",
+      "detectado_em": "2026-10-15T10:05:59"
     }
   ],
   "recentes": [
     {
-      "link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNOXIxWndfclJwT21INGlCYW5IUkZWbklFbnE0TDhNUUxYVHV6ZnEzTHd0VVpYRTVwOExodHh2RXc2cTFTNWdOSzI0aEd1V1FLOHFkWXVJQmRSZFV2MkxCSHhoTnZVdjJHd09Fa00wMWpyYnFKWnQ4aEpBTGVtY0hnMXRlWU1XTm9fNHNxUkVDblo5UQ?oc=5",
-      "titulo": "Queda da Selic aumenta busca por financiamento de veículos - O Hoje",
-      "data": "Sat, 19 Sep 2026 12:00:28 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [
-        "aumenta"
-      ],
-      "descricao": "Queda da Selic aumenta busca por financiamento de veículos &nbsp;&nbsp; O Hoje",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxONjRRSU1UWjJPMUdhbVNpMDNNR21FbnFKdW9wdjlOVmhGaTNVVzJGYTNEQzc4c2V1MHpwX0pidktZckxuREliVnpkNUFHdUViYWt6Qi1vMHNTOXh6QThyTmVmTkdBZFlNLUE5VlJrZU9WNjBxczZjNFI5WkpmeWlRNm94QkRncjN1RDN1RG95MEt1Q1VTWU5tTnd4MFE0ZHhMTGVTSHh2b0E0YWZUa0ZNMDFNTFdIaWpyZEgySjVR0gHDAUFVX3lxTE5rVk1HYTNPSnczb1EzRHRJTHVlZEZ3Nk1pdXRxT2dvNXZkUENkQWtxajlDaFd0ZUE1ZnBkX3NoN1doWHNmeXR0TFRVWW1TWDllVEM5d3E1TkFKOURBNWlUX2RXYTRlUUl3dUdoX2ZZQjk1TENESE90QzNmMGNCX3VUcDZjZWFoV05kUGpiTFFMUEFUQ2FnMWJSeGZCVDlzTVhkWkNpU05YbFpkR3N3ZkxZd0xEajI1NUkySU9LdTk4V0wybw?oc=5",
-      "titulo": "Senado aprova MP para financiar veículos de motoristas de aplicativos - Portal Piauí Hoje",
-      "data": "Wed, 02 Sep 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Senado aprova MP para financiar veículos de motoristas de aplicativos &nbsp;&nbsp; Portal Piauí Hoje",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxNOFB6WEJFLVl2MFF0c3R4NldkLTVvZnB5WFN2MXhkWDduZS0wS0lsQlptWVBNSW5GWGJheGpIT184UHBrU2ZqeG9ncTNNanY2NFJCSHRzMUtTa2R6VDVYYkt4T3ZiWjNmLUJaeFZJTVNCRUI2NTY4UllYTDlKYXFkOGNOVXRoNzlQc2ZoakdJNzM1UGt0Z1VOeGNMTXhYY2FoaHU4ZEZ0cXg4NXNLQ09veXdLeGZXd1RPMXpNWGotUFE4QjlkWV81ZGdsN0daUTg4cUllM1VyR05DU0pVWHo2czU3RS1OMWlSN0xyblhSY2I0c3d6?oc=5",
-      "titulo": "Programa Move Brasil reduz exigência para motoristas de app e abre financiamento de até 84 meses para C3, Basalt e Aircross - noticiasautomotivas.com.br",
-      "data": "Sat, 19 Sep 2026 00:57:28 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [
-        "reduz"
-      ],
-      "descricao": "Programa Move Brasil reduz exigência para motoristas de app e abre financiamento de até 84 meses para C3, Basalt e Aircross &nbsp;&nbsp; noticiasautomotivas.com.br",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxOOTVxakRrbVVud2ViU2RZR0syTmkyd1UzSnVkaWRDSHlONlhRdGhFQ0g2dlhiQXk3M0lwZG5VUjhIcFpSa0hWcVRMRmtyb3ZZVmdST0dHNzBMQmhUVHFHNnZQZ1VGekZzQzVtcEFaTktVa3Z0NnptV0k0R3BSNXZVWFFxM0JrbDBySGszTzBJdGhZNGphMFNBU09TV2tPOWdLSmQyM1IzQzBBMzduTkwyTWxVSUhPUUpmUVBtWmkzMlpxVU1pdG13QkdTWTliVXh4MjZsUi14YS1KTDhvczVkMHVUQks1MHZN?oc=5",
-      "titulo": "Aproveite o último dia da Quinzena do Automóvel em Panambi para garantir seu carro novo - Sicredi",
-      "data": "Fri, 31 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Aproveite o último dia da Quinzena do Automóvel em Panambi para garantir seu carro novo &nbsp;&nbsp; Sicredi",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxQclZNMEtrTGxvaThvLW5CcW1ucmpCdVRFQ21QaWU0R000T3ZkSXVodlNkeHJJZ3ctaFNuOVM5MjcwVW52Z2RJaUhXOEc5MzJpWm9OMHZhbS1lSnBVUGhtWkhlRjc1UTcxdVVTeFVacDVENnRhSVZiejhFS19RempVWTBrazFhVjJJMFNjanR1b2lVNlpIT3lwLTR4b1N5QjZLUHZ0ag?oc=5",
-      "titulo": "Conquiste seu carro novo com o Sicredi - Sicredi",
-      "data": "Mon, 27 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Conquiste seu carro novo com o Sicredi &nbsp;&nbsp; Sicredi",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNcnpLVnJuN09STGk3NDRXbElYY0ZWOGlQN0JzN2xzdFdpVWthMGc4WDlJZTJKcVE2b29rX0VQUzlkRDN0c043Vk92UzM0NVZ0bWtyNldoWUUtN0d4Q2ZSWng1TmY0ejZwbmQ2a0VMWWxRb3MzVUl5a1QyZkJZcXpKWUZndzlIaHNjaks2TGVYTDdzZkdJUnBoaTE1Q0dHUnQ0SFpPamxEZ1c1T3JsV2Qw0gG0AUFVX3lxTE80Z1ZYOUtoRnBCOTFESXhnQVFmeG5jQTRRMzFlNnNuZnh2cEtvMVZIRzNNQWpfSUdIQU5tYUFOVEhLU21CLVZvYUgyaDlEb0VtYmNSblotRWwxajI0R3VJaUI5VS1GN0RRNGdRM3dqX0JLZVdXVC04N0txZWtmSnlINk1nY3FIQ0R1dFdxVlg3WkdCdkVNTHdQVzJTSEhkbjR3ckpCRXdxUEIwMVIwd1hGNUtHUw?oc=5",
-      "titulo": "Financiamento de veículos cresce 10,9% no 1º semestre de 2026 - Jornal do Brasil",
-      "data": "Tue, 28 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Financiamento de veículos cresce 10,9% no 1º semestre de 2026 &nbsp;&nbsp; Jornal do Brasil",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQX2hEaVZ3YzRsMzR1Tndhc1lTclhaS3dGdDI3cnUzRWtpX3Z1MUZ4ZzJKTnZMTzdJcHV1X3Z3NFcwclk3cGtWVWVFOWhBMHFCbl9ibjlPV21DaEs0QXMtNlZVOHdoNGFwWXotemlxOXltWlMzTmJZVVQwZ3ZwUlpKVkl6THd5N2szRkdrZlVOOExNU3V4V0tVSU1nRXlrME1ESjBOalY4YngzeG16?oc=5",
-      "titulo": "CMN eleva para R$ 200 mil teto para financiar carro de aplicativo - Poder360",
-      "data": "Thu, 27 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos",
-        "Regras Gerais / Bacen"
-      ],
-      "revisar": [
-        "teto",
-        "eleva"
-      ],
-      "descricao": "CMN eleva para R$ 200 mil teto para financiar carro de aplicativo &nbsp;&nbsp; Poder360",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQaWdNUC1Nek1xRWVrX0FxS0todGpmSHJsZVF2RlphWXZVMmc4YTR2MU5RRDFBeHNWV0ZhWHp1RW1BdnVjdEdIcjEzcGhnVlpGSWlnVDAzV2dkbGFhMVVPNVM0NkZFU3ltbzRhZGRmYWpBV3VvRnJOWlRmLW9FbGVOWUlUTERCcUM2Qkx5SVBHczlaOFJUdU1kcUphNXh6aTlxNU9WeExxRUFVZnZERWNnTk9WQzVNd2VTYUd3NE9nRElJT3hWb0h2VkNzNA?oc=5",
-      "titulo": "Financiamento de veículos cresce 10,9% no primeiro semestre e registra melhor resultado desde 2008 - Jornal GGN",
-      "data": "Tue, 28 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Financiamento de veículos cresce 10,9% no primeiro semestre e registra melhor resultado desde 2008 &nbsp;&nbsp; Jornal GGN",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxNMEttQjZEX0h3RnIyVUk0a2hGTmNCeXFZUmNjUVYyNU1JR3hfa2cxbGRRbExZeUlJMUtGTGRwQWhaVm1SWmtZRE1ibmVHaHRpdncxT0lfN2NOcEhKN0VYWl81QWNuSzRtdld3YWpYYjJBWk9WM05JQThWUldsNEVZeVd5Uk5aTVJuUzM0bE9LMkp3SlVtM2Y1YTJpR042Nmd3c0N2ZTl6UUYtcnVvRU1zOWFxVHhJa3Yxd0Y1VGxpdWxtUHloTWlhbUs5LTc4MnpBZ0ZxcG43UFpNSWVmYmswZVU3QVdLd03SAfYBQVVfeXFMTnVWSHBGMVpUM0tMT0NLY2NJY1NjY2pfZDA3WHY0c0FXVkdtMVYyXzMtSzh4LU9oWEtJYmMwemxzVkQ0ZDJpNlBaMXFocHN4VGxBQkRJcG9XWEp2NGdFUktWZmJVYmpnR2VVQlBzVVZVaGFZeGRMV19rbmljMVZ0aVR6MTV4YWotaDdmb0RvZzhDME5hVFYxX3cyaEFYV1VKM2MyRDlNY0xkZWN5YUNYb3dsczc5TmVVVnRJVTl4YTltb24tbU1KbE9HcGRyejk1RjNGTnRxZVIwSkxGQnRaWmdibWV2WGtxby1zaGNDeTNsZk9BdnhR?oc=5",
-      "titulo": "Move Aplicativos: crédito para motoristas de app e taxistas supera R$ 1 bilhão em financiamentos - G1",
-      "data": "Tue, 14 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Move Aplicativos: crédito para motoristas de app e taxistas supera R$ 1 bilhão em financiamentos &nbsp;&nbsp; G1",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxQekk4TWtlaVlKTm9Ia2lMbV9tUVB2SzVhNXF1RWU2LTBuSEZVbUR4M1d5U2ZJWld0c0JiRUNNbUFwak01NlBoamVtTHlxaVdmWk9CV3VoLXhva0hpMDZ0YzJ5Y2taUjVidmQzQ1hFem9pNUV6ZndobU5HTHNhMkpUaXJnMHpzYWFNajh4UUxEMjRiQnM5aUQ1YkVlUE45SHNJN2ExUnZ4YnBPWnU0QUdYS1dHZU1DcUJ3NmVHVTVGWDdlOGVqU1JQQ3pJNUc0eXVmRmFmOTMzSmloSjdfNV9LSEFCRzc5UdIB9AFBVV95cUxPWEx1WVU1MXpEdjVmYVllNW0zYW1rVHd5QVVweG12VURYMVJCRGlkSm5ldG94a0JZVlgzTEJVVzE2c0xqM1E5TVFCUkw1ZC1LMFJQMHR1cldqZjVVTzZfeXNxQ2pxMXA0UERKQ01OVTBOT2VLTUtFS3I4d0tqNThBb0E1NVBiRUFhbUVjYzJrMEFfMjFEOWJZMDhPN3ozTkxDeEZaY2wyRlJXZ0dudndDSnVqYzlfTzFOVldodlBFai1IU2V6aElqV0NoZnYxZ19TM3NQZ2Z0cUtUOGRLUjg2UjRRUmlaOEUxZm1vMWFhU3laV3My?oc=5",
-      "titulo": "Move Brasil: veja quais carros será possível comprar com a elevação do teto de crédito para R$ 200 mil - Extra online",
-      "data": "Fri, 21 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [
-        "teto",
-        "eleva"
-      ],
-      "descricao": "Move Brasil: veja quais carros será possível comprar com a elevação do teto de crédito para R$ 200 mil &nbsp;&nbsp; Extra online",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMiiAJBVV95cUxPNnZqUE04VHFmRTlZR0tKb2V4REsxa3ZtZnctNy1UbjlIU1RWcGtyZ1R6UGswMzRtckpGLVZVM20tZDBVRVEtVGs0LUUteFF1cnZDdjlvYWRZVFdRbk5GYlhOWFJvajZhbVl3SUlaejNPWW9oODRCZFJJUEJxTldmeWhaWDBDZk53SWpHZ04yWHZqdEtWamd4ZmtVcjBPY0JFeVl3OUVBT21DRHNEUzRPcnZubHVKdjhsd3VnaW95am1GekVhS3hXQi1mb2ZVUGlrZkRmLVY0eEItekhYQkhMTlNJcWwxMnYtMDlkS2FuLVRQaG9LQ201T0NrcTlKU0Q4bV9KMUR2alHSAZcCQVVfeXFMTmpfUk1USnNwdmhJZENEZWxBY2I5OXQ5MGp1WG5DZXRia2NQNTZDdlJWamdDVzdHa3BCZzlYUW8yT3BBSmQwWmVHNkNtSDZhTEczZVpsZVRQbDNPeno1UDhVLUJQblZPUWFSZjhMWHIxZEdhc1o0YUZlOGpjbkF4RmdwU0tRTlV0OENJZW8wUTRPVGtDRGo4cVJOS1FqUmlGMHdjV3g5WHRuOW9YdDREUFVWVFFxM2JyVE9VNzFzYlRBV1FKcHF3RzlQTnpHcm1Pcm5TOU1zOXktNGNlX1pKWG9FUkVQcTRzS1hjRTJzNTRaSW51Y19BeG12bUlqM0VHbFJsb2NXMXZwZnVpdGticWJ1UGZTdFFj?oc=5",
-      "titulo": "Trabalhador morreu após cair de 10 metros com desabamento de estrutura metálica na Ponte do Futuro, diz consórcio da obra - G1",
-      "data": "Mon, 21 Sep 2026 21:20:07 GMT",
-      "fonte": "Google News: consórcio",
-      "tipo": "google",
-      "grupos": [
-        "Consórcio"
-      ],
-      "revisar": [],
-      "descricao": "Trabalhador morreu após cair de 10 metros com desabamento de estrutura metálica na Ponte do Futuro, diz consórcio da obra &nbsp;&nbsp; G1",
-      "detectado_em": "2026-09-21T18:45:25"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxNVUZqWTFSSlprZ1FhZmxxUGdFbjRLRm9pbDhGZGtfSzhCMTJQd0R5WDhBSnZJdUIyVnNoM19wUmJOdjFFZEpUWDh5VHk2dlFiMDZubWFQOHBMWWVRNmo2eG9la0hqYlB6UEVPeEpSOHhMUTJfZHJmb0hLdUYwSUYzc2FHdGI4cU95b3NycU13VlNjV1lZZWdMcTdaN29kZkVYZWlYSGVQOVFnU2hNcGVKRVdYcTdtbVp1X0V4TEFwemJFcTFrNUIwV1YxYmw3aV9kWjFuaHZ6d1kxNldQZnJrQUZpOGNYSnc?oc=5",
-      "titulo": "Consórcio apura acidente em estrutura provisória da Ponte do Futuro e presta assistência à família da vítima - polemicaparaiba.com.br",
-      "data": "Mon, 21 Sep 2026 19:33:05 GMT",
-      "fonte": "Google News: consórcio",
-      "tipo": "google",
-      "grupos": [
-        "Consórcio"
-      ],
-      "revisar": [],
-      "descricao": "Consórcio apura acidente em estrutura provisória da Ponte do Futuro e presta assistência à família da vítima &nbsp;&nbsp; polemicaparaiba.com.br",
-      "detectado_em": "2026-09-21T18:45:25"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi3AFBVV95cUxPUTE2VkJwZDV1V0dYczZWN21vZjVrcEIwU3lZSG9tQW9JdmEtNGNOU0FkYlBvRzRkLWVoZGtLSDQwS2szN043Nm5FQjlEM21RcDliNHBtb2otUFdCVkVVLV9oUGhjNjdvc1RzTEFHb0tDUXE5NjloaG5aNkdKeGxGcUJ6dDdtMU1fTzVGWkQ2OV9QdjNMUGthY1FBYldQUWZ6enNtblV1MFczVmJ4RnJDcTFaZG9jZkxQbjZKVTFqSF9Fa0xPdXViMVZtLXNNREU5SlMwcUFPVjU0Q1hI0gHiAUFVX3lxTE5ZMXZ3a3dSVHYxaFU0N0xhSDV6MDMxeU82bFViUE1Ic2VNSWhlOVYzOGhTdmNlWUwzU19Bd0JEWDA5S2R0eGJ1YTFudUxqSmxiNUFyMl9UUXk3ZjliUC1OMXVLWmFydURCR1V0VF9QZXhqV29VSWtKdEJkTXNVX2V2em8tSFVGX0JDbVJ3clNnaTVGbDJUOHptZ0Y0MXJXS29XVTZvbUJLVGFDQ0dpdTFCYThHOXdITHR6YUs3YnJTSi1hSmJ3VlJ0dVFISnJMdVZTd0MwcGYzdmRWQUc4U09JU1E?oc=5",
-      "titulo": "Rodobens fecha parceria com Banco PAN e amplia distribuição de consórcios pelo País - Estadão",
-      "data": "Mon, 21 Sep 2026 16:00:02 GMT",
-      "fonte": "Google News: consórcio",
-      "tipo": "google",
-      "grupos": [
-        "Consórcio"
-      ],
-      "revisar": [],
-      "descricao": "Rodobens fecha parceria com Banco PAN e amplia distribuição de consórcios pelo País &nbsp;&nbsp; Estadão",
-      "detectado_em": "2026-09-21T18:45:25"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMilAFBVV95cUxOUVBKcnljNXFZRXpyOHpBYzMtNU5nekFxUTFWcXdEakp1RGJhdGZUdmJrNEtRUjlDQ3dkcmV5NE9qQUhWM3RicVQ3MjMwUmNUbkROZldqbkYzMUlac0tkRTBsT2JuVU4yZ1Noei1DY3ZYMXl6MVR3aTdTb3VkbnNzU1RPNjkzRUI3cEQ2V0JLMm5PX2Ni?oc=5",
-      "titulo": "Três consórcios disputam edital de R$ 2,2 bilhões da VIAMAR - Informe Blumenau",
-      "data": "Mon, 21 Sep 2026 21:19:11 GMT",
-      "fonte": "Google News: consórcio",
-      "tipo": "google",
-      "grupos": [
-        "Consórcio"
-      ],
-      "revisar": [],
-      "descricao": "Três consórcios disputam edital de R$ 2,2 bilhões da VIAMAR &nbsp;&nbsp; Informe Blumenau",
-      "detectado_em": "2026-09-21T18:45:25"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMimwFBVV95cUxPVWJGdTUtOE1QMXQ5RUtjZU1Pd3l5QWJESExXeDJiZUpxWjBSU0hKTU82eWV0OFV2Q2dkekpsVlk0RmM2NjlVWGktVUc3ZXM2bFNhN3c5aXJKTHI3c1lTcFNNd1JUQ1RqVW95aVZkQ1BSdVRFTTIyZDFzSmZUblFXZ0dadm1qUERWbjExWlRXbk5uak1STGtYZTVMZw?oc=5",
-      "titulo": "Três consórcios disputam edital de R$ 2,2 bilhões da VIaMar - DIARINHO",
-      "data": "Mon, 21 Sep 2026 21:05:45 GMT",
-      "fonte": "Google News: consórcio",
-      "tipo": "google",
-      "grupos": [
-        "Consórcio"
-      ],
-      "revisar": [],
-      "descricao": "Três consórcios disputam edital de R$ 2,2 bilhões da VIaMar &nbsp;&nbsp; DIARINHO",
-      "detectado_em": "2026-09-21T18:45:25"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMivwFBVV95cUxNMHVwNHRDUVQ3U0xjU3hPaU9KYTJhZElYblRfRFRUaEhLQkxzWTYtUHNyaEdPalRqTmthbW1qM20xclFFeG9iWWg3Mmx5X2pmSTF2RDZYX1k5NHZJVUY3cGFlSmZzNlk3U2xZdUE4Z0ZqTEpHS3h4TEhIX05WU1VHTUFGMjdFMWx2Rk5DSzFEeUVDTXlkSzB4TEpMemVNel9XOE8wbUY0blJwRzJWMnZySE50VDVQcV9vc2thZGF3QQ?oc=5",
-      "titulo": "Brasileiro terá de decidir se quer manter consórcio Lula-STF no poder - Gazeta do Povo",
-      "data": "Thu, 17 Sep 2026 14:33:00 GMT",
-      "fonte": "Google News: consórcio",
-      "tipo": "google",
-      "grupos": [
-        "Consórcio"
-      ],
-      "revisar": [],
-      "descricao": "Brasileiro terá de decidir se quer manter consórcio Lula-STF no poder &nbsp;&nbsp; Gazeta do Povo",
-      "detectado_em": "2026-09-21T18:45:25"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMiggFBVV95cUxORXhSRW9VcFlhOTdkWXh6emh5VlBoRXEwODJpSEt2VE4xYzJFVF9Vb2hTcG5vcThpYmlPdTJCXzR6VlltZ1Q2NlJIY1dZMzY1YWFLOFl1dC1iUnVKZmRHM2xFNkl5ZDVya2JIa3VJVGRtcnh5N00teTF1YmduZFFxWHlR?oc=5",
-      "titulo": "INSS muda regras do crédito consignado - portalviu.com.br",
-      "data": "Sun, 23 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: portabilidade consignado",
+      "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOamgwVjhrMk9jeFFsc3JWYVBVVmhKdW5WSFdyQ0dsUDZpZTRlV21mRHJlSVhPTEtHOHF6M3U0NDVEZjJSckhyYkJWdVU2TUxUOEg0UzU3NHZ3elMzcXdfNUFJeV83UFdFOW13aHFYVmFtbHpOWTlnQWE4WFE3RUpLWFBfUk9fM3ExSjltVUpVU0RnaDFQbURRMU9iNlBaOTd6RUxZSm54T0ZfY3FvX1k3UnR6RkpOeERzWVlKcA?oc=5",
+      "titulo": "Projeto extingue margem de cartão de crédito em empréstimo consignado do INSS - Portal da Câmara dos Deputados",
+      "data": "Thu, 01 Oct 2026 14:26:02 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [],
-      "descricao": "INSS muda regras do crédito consignado &nbsp;&nbsp; portalviu.com.br",
-      "detectado_em": "2026-09-21T18:45:26"
+      "descricao": "Projeto extingue margem de cartão de crédito em empréstimo consignado do INSS &nbsp;&nbsp; Portal da Câmara dos Deputados",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxPMUFiOWw5czRPcGFKVG9PVzZqVW9WakJLbWM2OUF4amo4YmhMWlZhbGxUcG5oa1JSUXZ2aGRzSWRNU0ZoQXFaRXRDTFVzVEN3VTN6dGpwQnI0UUNZYXNTWDUtSHRmcDlNWlNtNHk0eGlnd3B2YU5jdjhFak9QOFR6MThOUWlwNllKZHpLcXI0ZVBnanZGcU5tbmFXVXcxRkVQdzk5RA?oc=5",
-      "titulo": "INSS libera consignado sem biometria facial para aposentados - CartaCapital",
-      "data": "Sun, 23 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: portabilidade consignado",
+      "link": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxQbnpmV2VFNzVTZkhycjRFbG1HYTB2TzhSN2piSm9nTXFibGJxcjdFVW5tTjNOb0J4eDYyZFQ5eFZja2J4aFRpYVkzWS1BVktKbnF2anotMjFLR3pDRTF6bEJGZENOcHZ2WXVMbVJEUDhqejBjYXpoeG85Ty1iOGxqd1E0Q1czc2s2bDNFdmJ2aWtqUXF4UTcxQURVbEVCeUg0MDcyUVAyb2U0SkwxZWNSS0R0V0NXRFU0aVRF?oc=5",
+      "titulo": "INSS não pode limitar oferta de crédito consignado a uma única instituição - Consultor Jurídico",
+      "data": "Mon, 28 Sep 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [],
-      "descricao": "INSS libera consignado sem biometria facial para aposentados &nbsp;&nbsp; CartaCapital",
-      "detectado_em": "2026-09-21T18:45:26"
+      "descricao": "INSS não pode limitar oferta de crédito consignado a uma única instituição &nbsp;&nbsp; Consultor Jurídico",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMisAFBVV95cUxNSVAxWGxYVVVFYUV1TGRpcFJhTVJEVWNhYW9yTVpjcUd2OWxOa3Vwd0pvMjIwc0ZtOUUtTmcwa1FjdlBzR0JCbm5sLUpnT1lXU1dUX3lLZzFLbi15ZmJ3MUVpcTV2UjcxYndmOXZib0MwSWdFMk10TDZMYTdleS04Vlc0U1ZrUnBFTFIwOGJzU2JtNVpZOC1GYjBlU0dJQTZaV3Z3endNMUF0VEJTLU1SZA?oc=5",
-      "titulo": "INSS libera consignado sem biometria facial para aposentados - Jornal de Brasília",
+      "link": "https://news.google.com/rss/articles/CBMiugFBVV95cUxPUEhyZDFST001MWZiRGgxS2FDeVNPTlVNRjc1MkZjX2FBMmdMREtDY0E5ZjNTWHFtbklFNjVqcFV0bXpOQkVsc1VSRkw1ejJJXzlJdzAwN3FmN2NoWEhEOHpFRDlIc0FaUDRXOUJfcnFfMi1PSDRqTWxOY3UyVjdFX3pEd0w3NS1wRHdiZ0VKZEZyVTFfOVhUc2U1bGxGX3BaYVpqZnBpcGtpeTNFb08wVVJYaE1idjMyWkE?oc=5",
+      "titulo": "INSS libera consignado sem biometria facial para aposentados - Agência Brasil",
       "data": "Sun, 23 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: portabilidade consignado",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS"
       ],
       "revisar": [],
-      "descricao": "INSS libera consignado sem biometria facial para aposentados &nbsp;&nbsp; Jornal de Brasília",
-      "detectado_em": "2026-09-21T18:45:26"
+      "descricao": "INSS libera consignado sem biometria facial para aposentados &nbsp;&nbsp; Agência Brasil",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMijgFBVV95cUxOZE5nckM5RWY3VHB0VFhQaEFGbl9MUFBNMDM4VFBBcnF1T2xQVk41SmJMNl9ZY0xnWEZRNTVReDZqdm80b3FvbEtJaGd2V0JqcWpmaEloOGpzbVpxd0ZwOEg1UzVjUDlObGpaX0ZlVU9kQlp2UTBvMENfb2JLOERaNjl1RENaWWF1OUEtNTNR?oc=5",
-      "titulo": "Calendário da portabilidade do consignado CLT - Serasa",
-      "data": "Tue, 24 Jun 2025 07:00:00 GMT",
-      "fonte": "Google News: portabilidade consignado",
+      "link": "https://news.google.com/rss/articles/CBMilAFBVV95cUxPQzFCZ29IbktGQ29lUjZtNWhFSFQwdW1ZWHlZVTItVUZnMEwyZE4zMUgxTWw1YzlXeU1fdHZVU3NGWFdwdlgtQ0VENC1XclZYY3MwNUdCX1VNNlhBLVhzYXRLWS1GU2NITWZ2UC1nWkdySFRHTTJMRnlHWldIYUJqUWpKbHdwQldGX3l0ZU5FU3RMRTJx?oc=5",
+      "titulo": "Justiça manda cancelar empréstimos consignados do INSS - Portal Tempo Novo",
+      "data": "Wed, 14 Oct 2026 20:20:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Justiça manda cancelar empréstimos consignados do INSS &nbsp;&nbsp; Portal Tempo Novo",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMijgFBVV95cUxQT2JQaEREUnJOMlVsa29oMnBEbjd5Z1oyWUxzYzZaY0RmODlTRGRtNlExWVdPS01TS01Yc1YyYzBoZWljV0tEQ3hIZjhSQ1I0TnUybUFBVWQ1eElHdkpBeXVtZnAwV1I0MFFpUHJRcGcyR0l4aHZDWjA1S1FFdE1CcEhROU90ekFxWFZfYzVn?oc=5",
+      "titulo": "INSS pode estabelecer teto de juros do consignado de aposentados, decide STF - Consultor Jurídico",
+      "data": "Mon, 31 Aug 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "teto de juros"
+      ],
+      "descricao": "INSS pode estabelecer teto de juros do consignado de aposentados, decide STF &nbsp;&nbsp; Consultor Jurídico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQRkNoTTlZanhzUUxQVFBrYTR4MW1RVXFhR0szUm5Mb0xvVHdVN3JaWnNsR24wQ0lnbVlPczZsSmQyV0c5R3ZOQ2lfcWxhS0VDaEw1RVQtUVNMTXJjOGExNU1KQmJqblNRVmlUaGJ0M2tMem81YWpuWXB4X1ZULXM0WFlDSVFtWkd5X3k5MXJta0xnaE5vVUtfakhSMkF5dHNYS2tzY0RmQkxDMWZmV3U5N3F5cmNBWndncHQtX1JKQWloZWVk?oc=5",
+      "titulo": "Ministro do TCU libera novos consignados do INSS após recurso da AGU - Agência Brasil",
+      "data": "Fri, 08 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Ministro do TCU libera novos consignados do INSS após recurso da AGU &nbsp;&nbsp; Agência Brasil",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi9gFBVV95cUxPZzFwLThTT3l1V2JKTzdwM3c4M0NwSVNCVmNFcFBZUnRqMnBZb05rWkhRY2RkR2Jpa2Q1ZlpCZzE4eU45OERIVlB0RWM5WjNPa2NVUkNLVW5PQjV4YlFVV28wWEJOUWh4Y2VUeHU4T1pqcnhnS0hxRXQtaGg4VUVUbEYweHlZaENCVUR5YVR1MXd0WVhrLUd1a2F0dzZYWFJqYXNBSWZrdWw5eEpVTVlHZm9TX2laTW5FTThURk5pczNCcDFub2FfZXhyVEZVb1dhRWZYNmQxM0VOZlpYNHp3cHhIN2JmcTFPWE9HSFVuaXM2Z051ZUHSAYQCQVVfeXFMT20xT3gweDI0MjhlcC1BUnpCRXlKMERwYkdNUy1oYkFqWUwzTEVKb25CUUtNeHpGOUdUdmh0T2dVblp5ckxBdWJoOWVJVHk0b1l6RUFINkFNLTRPS1lhV1pHU2I4YVptdWtOLXdDNmZPY05VUHBMcUdLY0k5NWpRSkNRT3JuNXh5THI5WEU1bWpMYVh4ZkxlMVdLVlBsZmlxZXBBZkx2ak1raGU3VERaLTdaMnlDbmVVY1lmU3lZZUppU25CanFlczRoMjBKYkJIMHhmRUpRQlMxNUhuM1g1Ti1YUktaVEVNQWRQeFNJV3JoVTIzcU1yN1VTMldJTHBfOU1hNVE?oc=5",
+      "titulo": "Teto de juros do consignado do INSS não será mais atrelado à Selic, como avaliava o ministro da Previdência Social - Extra online",
+      "data": "Tue, 22 Sep 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "teto de juros"
+      ],
+      "descricao": "Teto de juros do consignado do INSS não será mais atrelado à Selic, como avaliava o ministro da Previdência Social &nbsp;&nbsp; Extra online",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMixAFBVV95cUxQeFVRcFpOUVJrTTluN2ozRFk0aXprNFpzbmlpWGY1OVRnTzdSeEcwb1F6bnM3TzBFeGdvanpyVjdZMHJTWkZnUW41RzhZYmh2dXI5dmNwU0pUZW5TeXd4X25XcnV4NFVld3F2WHgzb213MHpSOTd5SzNWVDBoRTduc1Q3VnJRbTJieGxyQlFLQnhWWml1UDVVX3RnLXlTSkttdWg5M2VMa2lfRTFBODdFZFduVkZwTkN4X1J0S3NDWWxSVmhP?oc=5",
+      "titulo": "INSS suspende novos empréstimos consignados do C6 Consig a aposentados - Agência Brasil",
+      "data": "Tue, 17 Mar 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "INSS suspende novos empréstimos consignados do C6 Consig a aposentados &nbsp;&nbsp; Agência Brasil",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxOaDA4S3J5dnFFUXVMemNVYWlUSDlTWEFHajdTbldPcWNqOHRleEpUMzR4bjRaY0k5TDNhemtDa2d4clRhVXhIOTJQY2VDTzZLRU5FRk1jUlhxSUJqOHpDdzVZNGNOU1F3cTBXSDdlS09xLUpXMnRFQ3dCQVBuZjA4MXRmeUhSQVhmV08yUkNZMTFIcE9NckJ5ZzQ1ODhDVFhMbnd0YjRsM3ZSbGRmUF85SERJOXNWbFpBd1UwVw?oc=5",
+      "titulo": "Consignados: INSS passa a exigir biometria facial a partir desta terça - Agência Brasil",
+      "data": "Tue, 19 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Consignados: INSS passa a exigir biometria facial a partir desta terça &nbsp;&nbsp; Agência Brasil",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi2AFBVV95cUxOV055NTJXaE80LWJkakZnMVFyVkRkaTFKRF9ueTJYVXZiSXVJSWhwa2JRUzl6RVNydUI4alozSnByUXdpaHpXOURqMmlCcjJHcGNZOHU4RlJSeVZsa1J5dEFTX0V1NE02TG1tTVFTRjVjdV9fc3p3a1Q2VkRoMmdwcXQyUllxUjI1S2hjOUU5Y04xN2hiNkwxbkp6dzNYdHJxRV8wRnhKY2daN0JEUmdzRDhTY0tSTGFyVHNyajMxRmVWd3U1cU1meW5jeEdya0lybnRDRzRENXU?oc=5",
+      "titulo": "INSS: novas regras do consignado para aposentados estão em vigor - Agência Brasil",
+      "data": "Tue, 19 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "novas regras"
+      ],
+      "descricao": "INSS: novas regras do consignado para aposentados estão em vigor &nbsp;&nbsp; Agência Brasil",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMiggJBVV95cUxPM0M4SndScGF4a1B6S01jekpHaHpKQzMyOG1UdW54QzIwUmVrM0pLVGtSOFpyMzQwTGgzeFktVGNqY19zXzZPNHpVZE00VUpmQlJjQ3NKalpmWGNJLW1UNkQxVGZYV085QmFlSVpwLTRwbnptNWN0NmhfeFZKeUYtejNpNmlIRGk5MHhtRXpCLWxNVlh5TWZFWHExSXFmWjB4NnkyazVGTHg1LVczYVB1QnkyQnVaOTdTVVFUcWs3cG93U3RaZXQ0bWZyelE2NlZ3V1JkSmdjcEx3ZUZraWJYclpFY0k5Q1UxUWYzekRZNzlaVTVsX0tFR2NINGNjNThOZGc?oc=5",
+      "titulo": "Visita não solicitada a idosos para oferecer empréstimo consignado é assédio de consumo - Superior Tribunal de Justiça",
+      "data": "Fri, 24 Jul 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Visita não solicitada a idosos para oferecer empréstimo consignado é assédio de consumo &nbsp;&nbsp; Superior Tribunal de Justiça",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxNVklTbjByaTlWME0ydDBqZEVHaEk5YUpIU0NmNDNiaHB4ck14T2QxYUxybnc0R2JaajRMRnRuNGppVFdNZU9hd0tsZ2ZIcUxEU3prb0NidUdCV0pRSkNfTml5c0xFeEhHUzF6dVF6SDM4NXJORkk0UTBVM21wOW1LbE5jZWMxNVdqLXpJa0dLOHJqOHdnSmFwcWpiNGRtazJzQ2p2OHdCNmlUT053WGZZam1oa3Q0bGo5TEVQNQ?oc=5",
+      "titulo": "STF analisa competência do INSS para fixar teto de juros no crédito consignado - Jurinews",
+      "data": "Tue, 25 Aug 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "teto de juros"
+      ],
+      "descricao": "STF analisa competência do INSS para fixar teto de juros no crédito consignado &nbsp;&nbsp; Jurinews",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMiwwFBVV95cUxNWjJBYTdaNUdWRXpKV1F2NVByaEd1cS1USk54cHYzRDBnaWxrMlByOG5MdFl3RDRUT1RwcUk4cGphbmNSYkMzV0ZFSGVmMjNIaWUzNC0wN0V0TW45b2hYanlENlFBYXRwN3M3bnhMV1luSExqVW91TWs2b21oZWZsNlB2NTFfWTNEeVYtd0thOWZuaE9EOG96UlpVR3JmMEE0T19xN05UazZwbjQ5bGwzZmNqWXRGMHhUMG9oMTNMazRiejQ?oc=5",
+      "titulo": "DPEMT alerta para endividamento após novas regras para empréstimos consignados - Defensoria MT",
+      "data": "Wed, 26 Aug 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "novas regras"
+      ],
+      "descricao": "DPEMT alerta para endividamento após novas regras para empréstimos consignados &nbsp;&nbsp; Defensoria MT",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxOODFvRWRhZWNzbU9kckQxbVp2djRfb24zV2tadFBVR3IzM1N5YmtfQzVPQ0s2dy05NUhCdmk1WFEwMEFvYXRjV0V4OUxsbXY3TXdXR1JvRzhnUWxybURUdlcyQktIU1FSXzI5T3VUOS1rWXFaYUpFbDJYamgzUjM4VUwzLVp6V0MwWHBkbzdjdTRjbW00US13eVNPRHBnVWJZYjkxSjFnMHI4VGt4dGdpVTRCX2ozMXpZcG1PZDR6SUprdEZ6M3ZsOGFSMU9SSGIzU3ZMUWJOVWhkLXl3OXhCakVsS1J3aE3SAfYBQVVfeXFMTmFHcXlaWS1Ra1dXdDkxbm5zelk0NUlfMFFQQTZRVWsyREp0bkV2ZDJCWkpsdDREM29mZDFwWkRjSjJiRlF5QzFzaDcyVy1nWXI0UGdteTMzTzllMFFfUFp4clNPd3FxNUN5S1NrM3VMNEh1eExkUGZ4R3liV2NoUnVWZmYyRW42cWM4YVdveWdOY25pX3p1Tl84engwR2F4M0duMU1zbEl0b05PY1F2UHI4Tl9idXRIc0hlQzNhWWFpWVhzMzQ1amxQSFBjOVpGakRsXzhFS1U5QVBYemNMOE13LXdqcGdaQ1lNSThtZWtKY0ItVjVn?oc=5",
+      "titulo": "TCU manda INSS suspender concessão de novos empréstimos pessoais consignados até ajustes internos - G1",
+      "data": "Wed, 29 Apr 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "TCU manda INSS suspender concessão de novos empréstimos pessoais consignados até ajustes internos &nbsp;&nbsp; G1",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi0AFBVV95cUxQbWpScGhBQTJBYlJWV2VXVFZxcFFwYzhyOHFFclFxNmJlZlZJNVJ6TzVKcTcyQlZCU2syZzhsalpPRmIyODNQQV9EWE4telJOdlUtYl82VGdnQ2lpc0xWT1lTUGZ1Z0dEc1BLWDJfb0ZYVjBGMlNOVjJlR2VCeUJsbndrLTFEQnRhSEJzS1RUcFdvellCS3pXTDBjS3g2OGRWVGJEMG5JQXhubEVMU0pLRnNjQk4wVXhyWVp2RlZucTNocnBHUVdPT29Ob2x1a2Jj?oc=5",
+      "titulo": "Presidente do INSS apresenta à CPMI balanço sobre ressarcimento e proteção no crédito consignado - Governo Federal",
+      "data": "Fri, 06 Feb 2026 08:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Presidente do INSS apresenta à CPMI balanço sobre ressarcimento e proteção no crédito consignado &nbsp;&nbsp; Governo Federal",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMizAFBVV95cUxPZkllOWc3eVBsZVh2b0ZfUldXejNid2xqTXdoOEFMY1RLdUEyREE5d1pxYTdGbTRQdHZBeURTSXgyS2hVZTRucVd0R2o1Yi0wVElLOEVsNTdReTNaLTY5ZlJ6YTJ2eEp2MHFnUVNEOHd0bC15eEEyRkp0ZHhZRmpTMVI5ak9TVlZmRkVSS3Zza2RzMXhwME5qdVY5eVFBN1VOaWd2eDlhVHFWakFYMzhFYTdLZVl1cmR4YmpOT0JybmFkZDhJM3hfejktRkg?oc=5",
+      "titulo": "Justiça cancela empréstimos consignados do INSS e bancos terão que devolver parcelas descontadas de aposentados - Portal Tempo Novo",
+      "data": "Fri, 09 Oct 2026 19:51:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Justiça cancela empréstimos consignados do INSS e bancos terão que devolver parcelas descontadas de aposentados &nbsp;&nbsp; Portal Tempo Novo",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxQZndpQjVzTXl2SjIxek9HRVlpOGVCdWZGS0FCSWZHMldnclpQWThHdk1mZ0JxTmdUdERYSDIzc2VKRi00UWJFQmY0ekFkOEZ5V2lRa1d5VE02YlZYYW9UdnR1ckVraDRJWUx4eHBJNTdXRk9HNFVETHNSaXZ4djhiTlg4ZS10dFlCZk1UT1I2QmlFcTRkS2R0R0NFaGtaRDA1NmdjSG1CYXpWUHdCa3RGLWc1NFF5MXM?oc=5",
+      "titulo": "INSS cancela autorização de crédito consignado para 8 instituições - Portal da Câmara dos Deputados",
+      "data": "Fri, 24 Jul 2026 16:34:46 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "INSS cancela autorização de crédito consignado para 8 instituições &nbsp;&nbsp; Portal da Câmara dos Deputados",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi1gFBVV95cUxNbXJDZlRGS3hiOC15U1ZLT21TbENJT0VHeHpsYmNQT3JhOXRhTFRJU3Q3XzQxVTFvMHBCbHdaX05nWXBHZU5aZVVzWHkyeU5sZk9fQmpOcldUaGNIRXpvWGtxR1VhWGY0dXBKalViLXRWSnVuWjJwMDlxMm83YzRkNjJHeXV5WE83cHEwMXpQMHdMeHVhc3B3c1pPa3FXcmRTbUk4QUpBSFpQWUNmNW5pSHNGeXpmSmloZVpLWDJ2UE1YT3ZBXzZhZWRLZkxhWUNObm81SHZB?oc=5",
+      "titulo": "Na CPMI do INSS, diretor do C6 Consignado nega irregularidades e ação de venda casada - Senado Federal",
+      "data": "Thu, 19 Mar 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Na CPMI do INSS, diretor do C6 Consignado nega irregularidades e ação de venda casada &nbsp;&nbsp; Senado Federal",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxOeHZQT3c3a3BhQ3R2bGxZTmJiN3d1VHQ5YUZFRmhwNDRHQ2gxRE41QWdqc250UVBtRWFGSFFaUFQyenNDUkJDcUJ1OWUwODdyaXQzdEhQdUtfUTQ1R0M0ZktsSkEzTmlSU0JjdHdmRDhMcS1tTHIwcmoyWkRSUGdSb2dYRlNTdl9tTFI1djVSR2N2SE15TnZZR29kVU9DdWhHQWhMdlZ0NDBrWVRfazNHc3EwN01YYU5tV1ZyZjlqR3BhWUFOTExSRDQ0UdIB2gFBVV95cUxQT2ptY0NPaUhGOUJaOFFGQXlpUktsdUlMVWNBSnhXX0Q2UFRZMm4zaW92TTlOTHVXcU55czB6MG96NE1NNmxqX3hHUkdrUXEyT3p2VnRuWVdjQ25sb1R1dEZuS1N6WEdzWEJwZmxfNUt0bnBCTEx4UW43bmtSZTJjZEtRY1JiY2FvM1VVNDVveGxTemdBUDVsV290Q3R6ZFVMbE9hd1Q1d1Z4Sy10VHc0SWpXTklLYXVza1BTcEpFS2c3alM2Vk42MlBCdVR1RXpyZHNsZ2sxT05jdw?oc=5",
+      "titulo": "Ministro do TCU libera novos consignados do INSS até análise final de recurso do governo - G1",
+      "data": "Fri, 08 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Ministro do TCU libera novos consignados do INSS até análise final de recurso do governo &nbsp;&nbsp; G1",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMi6wFBVV95cUxQTGJteno5QzF6aVVoRVlkb1VlQWpaMFljdGtoWWpKRld0cHdEd1M3TElqb0JydnlvQW1oTVRMQ3d2aVJFOVB0Y0VmS3RMRzJtZ05ONnBpcEM5b25RZjN1VHFkZTBLZFZUa0FQV0tXWE9mT1JoNmotUDNyTTFGU09FM1dEWjQwWUQwRlhsOWF3QzVIQnpKMGRRcl9HRWFTQmlnNE9jU1Q1WENGNkF3LXRlODVPaE5KVjA5bHZLZzFtUjJORGR5MDU0TG1NZ19jakpwQVFsc0NONnd1MW9fc1Jobnpvb1dmS0l6MDd30gH6AUFVX3lxTFBPeVJ5dlljSTV3MGhheVRTUGZ2TFFyanh0X2p1V0tJNEFZUGJaTFJuUzR3RVNjbGZCcDdCaUYtTzhlUXpTSmlyT1pOaTM5QXk1X2J4RHpOMmJYRGhVNzB1TS16S3J3NDJvcS12cG5CTUZOTDRGTFlEU3hfYzh1UFdiXzFvZmpQUGY0T3g5YlIxZ0hoZVBOVDVBal9MTEpyWTFqNFljTUhQeDgzY0E5UlZBbEZ6NzJDRGN1eGtqN2dSWXA4N1RzTzJfTktlRC1VRzVTdXc3VWt6V2d4TE1vU2lWVVJhWm13bzRGOEx3eC1Day1TV3JVbDlRMUE?oc=5",
+      "titulo": "Exclusivo: INSS vai editar novas regras para evitar fraudes no crédito consignado e prepara ‘leilão’ - Valor Econômico",
+      "data": "Tue, 03 Mar 2026 08:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [
+        "novas regras"
+      ],
+      "descricao": "Exclusivo: INSS vai editar novas regras para evitar fraudes no crédito consignado e prepara ‘leilão’ &nbsp;&nbsp; Valor Econômico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMinwFBVV95cUxOUTIta25zb2Nrb0pYd3FHMjlfcm9vSm5ZaTljbHRmT3lCM1NkTjlxaG82MnJneS1kY09sZ3pKN0ZScERaTGNkTXZHVjNjSmJ5dlRCOC1UcnRDQ0syUVFHUlF6dFdxWERXLS1SODVtUTVfaEl2cWpYQ1lhTmZRNDNuNkFwa09QQ1gyVVBDWHlFZ0RZUmtfeHVvUDk3NVJNWFXSAaQBQVVfeXFMUGNmNDUza3hfWF9jVGJZaG9GQi1ickEtd1EzSUgtbzNlc0NCTy1TZHd6MjBQMEFzaHFETHZDdTY4cEhYaWN5VVpGZmtJTjRhSUlHY0NMbEoxaGRkeTFBNDRDVGdQQlN5Z2U1cUlnUkx1TGlqOWg3cWxUZ1VkYjVyVzdQOV9pUElZemJ2Y2lMQnBpTmYyWmNBemcyYVlHZ2FNNl8zTzU?oc=5",
+      "titulo": "INSS: vai pedir um empréstimo consignado? veja como conferir as taxas de juros - Estadão",
+      "data": "Thu, 14 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
         "Consignado INSS",
-        "Portabilidade",
         "Regras Gerais / Bacen"
       ],
       "revisar": [],
-      "descricao": "Calendário da portabilidade do consignado CLT &nbsp;&nbsp; Serasa",
-      "detectado_em": "2026-09-21T18:45:26"
+      "descricao": "INSS: vai pedir um empréstimo consignado? veja como conferir as taxas de juros &nbsp;&nbsp; Estadão",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMikgFBVV95cUxNOXIxWndfclJwT21INGlCYW5IUkZWbklFbnE0TDhNUUxYVHV6ZnEzTHd0VVpYRTVwOExodHh2RXc2cTFTNWdOSzI0aEd1V1FLOHFkWXVJQmRSZFV2MkxCSHhoTnZVdjJHd09Fa00wMWpyYnFKWnQ4aEpBTGVtY0hnMXRlWU1XTm9fNHNxUkVDblo5UQ?oc=5",
-      "titulo": "Queda da Selic aumenta busca por financiamento de veículos - O Hoje",
-      "data": "Sat, 19 Sep 2026 12:00:28 GMT",
-      "fonte": "Google News: financiamento de veículos",
+      "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxPMHpoMk9ScEZUT2FNZE56YldOdWlEdU9BWlJPd2pja2poc0NJM0hyVEd5VGJsVWtla3Y0X0Z3NXJtdndocnlpNXo3OVV6WnVReXVRMmhBTUFXb2ZxY0g2ZlI4QkcwLWVFLV81azN2RnljRVNlUXl3S3VBQi02M19TYlBnbjV5TVA5amF3Tm1KOTF0YnFzbnlRZU5WZUJLVHMwZXd0cA?oc=5",
+      "titulo": "INSS responde por fraude ao não verificar autorização de consignado - Consultor Jurídico",
+      "data": "Mon, 16 Feb 2026 08:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
-        "Financiamento de Veículos"
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "INSS responde por fraude ao não verificar autorização de consignado &nbsp;&nbsp; Consultor Jurídico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxOY1dEUktnN2oyazFVUzdudkx3M29LNGw3QVFnaWpXdHFZbDFkd1ExSVFEcUlEV2VteVdraFljSHRDMEpOVWM3THMxczI0eXpNNkVIdm5fZmxaeWlmYXU2elYzZWFlQVNpamZkRjFxYUI2QkFselVpTi1TVUZFME1wcHpMR0ZmeGV2VzUxbVZXcmdYRGpxcm5xdVB3YklfTGE3cHBXRA?oc=5",
+      "titulo": "Ministro do TCU atende pedido do INSS e volta a liberar consignados - Consultor Jurídico",
+      "data": "Sat, 09 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Ministro do TCU atende pedido do INSS e volta a liberar consignados &nbsp;&nbsp; Consultor Jurídico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMisgFBVV95cUxPcEcwblNjUDhleW16YzVDZTZocGhrQzJ3eS1xVTZzb0VCNVpkMGFiVFJXYnJvZ0VjbG5VZ21TdG02TWJvT0g1Ui1zUlpOUmRxbVlpQ1dacUZDSU90d3lUd3VKdkkzQlQ0bE9MVUhPR3RfQXF2Q1Jwa0pQc1J3Ni1VQTJnWEtGVV9tdDVOc1IxUUtCMGtxSmpuS0Vnb1hUakszOXFhNktBNHVlellWeFo2YzVB?oc=5",
+      "titulo": "Por que o consignado do INSS foi suspenso? Entenda a decisão do TCU - InvesTalk",
+      "data": "Thu, 30 Apr 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
       ],
       "revisar": [
-        "aumenta"
+        "decisão do tcu"
       ],
-      "descricao": "Queda da Selic aumenta busca por financiamento de veículos &nbsp;&nbsp; O Hoje",
-      "detectado_em": "2026-09-21T18:45:20"
+      "descricao": "Por que o consignado do INSS foi suspenso? Entenda a decisão do TCU &nbsp;&nbsp; InvesTalk",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMivgFBVV95cUxONjRRSU1UWjJPMUdhbVNpMDNNR21FbnFKdW9wdjlOVmhGaTNVVzJGYTNEQzc4c2V1MHpwX0pidktZckxuREliVnpkNUFHdUViYWt6Qi1vMHNTOXh6QThyTmVmTkdBZFlNLUE5VlJrZU9WNjBxczZjNFI5WkpmeWlRNm94QkRncjN1RDN1RG95MEt1Q1VTWU5tTnd4MFE0ZHhMTGVTSHh2b0E0YWZUa0ZNMDFNTFdIaWpyZEgySjVR0gHDAUFVX3lxTE5rVk1HYTNPSnczb1EzRHRJTHVlZEZ3Nk1pdXRxT2dvNXZkUENkQWtxajlDaFd0ZUE1ZnBkX3NoN1doWHNmeXR0TFRVWW1TWDllVEM5d3E1TkFKOURBNWlUX2RXYTRlUUl3dUdoX2ZZQjk1TENESE90QzNmMGNCX3VUcDZjZWFoV05kUGpiTFFMUEFUQ2FnMWJSeGZCVDlzTVhkWkNpU05YbFpkR3N3ZkxZd0xEajI1NUkySU9LdTk4V0wybw?oc=5",
-      "titulo": "Senado aprova MP para financiar veículos de motoristas de aplicativos - Portal Piauí Hoje",
-      "data": "Wed, 02 Sep 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
+      "link": "https://news.google.com/rss/articles/CBMirgFBVV95cUxNZjk5OU5pVG1CYVNPaTN0bHlPOVRkNFc0eGVDNFVEanFZWFM5eXFfOUJCOTM0YzhXbVJLWWI5Y3RrMmQtVmpNMDlwV2R4NE1tSmdnU0NyTXdkWG5jaGhtcEJrMm5NSG00dE10MlVaYkYwVmU2WlNDc0haVUEwZHBuSTd0T3djNWFEWjJ2ZE5SMXdUOUdRNHJhOHZGdExZdVRtYi1yNFB0LTJyQlc1YUE?oc=5",
+      "titulo": "Churning nos consignados do INSS: Prática abusiva e fraude sistêmica - Migalhas",
+      "data": "Fri, 24 Apr 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
-        "Financiamento de Veículos"
+        "Consignado INSS"
       ],
       "revisar": [],
-      "descricao": "Senado aprova MP para financiar veículos de motoristas de aplicativos &nbsp;&nbsp; Portal Piauí Hoje",
-      "detectado_em": "2026-09-21T18:45:20"
+      "descricao": "Churning nos consignados do INSS: Prática abusiva e fraude sistêmica &nbsp;&nbsp; Migalhas",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMi9AFBVV95cUxNOFB6WEJFLVl2MFF0c3R4NldkLTVvZnB5WFN2MXhkWDduZS0wS0lsQlptWVBNSW5GWGJheGpIT184UHBrU2ZqeG9ncTNNanY2NFJCSHRzMUtTa2R6VDVYYkt4T3ZiWjNmLUJaeFZJTVNCRUI2NTY4UllYTDlKYXFkOGNOVXRoNzlQc2ZoakdJNzM1UGt0Z1VOeGNMTXhYY2FoaHU4ZEZ0cXg4NXNLQ09veXdLeGZXd1RPMXpNWGotUFE4QjlkWV81ZGdsN0daUTg4cUllM1VyR05DU0pVWHo2czU3RS1OMWlSN0xyblhSY2I0c3d6?oc=5",
-      "titulo": "Programa Move Brasil reduz exigência para motoristas de app e abre financiamento de até 84 meses para C3, Basalt e Aircross - noticiasautomotivas.com.br",
-      "data": "Sat, 19 Sep 2026 00:57:28 GMT",
-      "fonte": "Google News: financiamento de veículos",
+      "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNVVBuUlVpOW4waTF2UVpzcGludk9pWko3a3BrRzlfSkpGTllrcUhoT2c5LWctSUpzQldYWm5RUGZXcHptRFRRdmxzaE5CWi1wVk95SlUtTDcwUHNmanMyXzFqd0NwZXAxTkZDSGpGS2tENVdWbEI2R0NoVnlSXzZxd2k2ZWVFRWdNemgxY2lzMVhENnJNdFl4RDd5NGdiM0xDeFRXM2VzUm92WGZSVjZPRWtRS1VJS2dLQzVwbnJVUkRCY3JqNHfSAdQBQVVfeXFMTTBLODd2S0V1N1pndXNrNlllb3lGTk9vVEZlZVNrc0x3ZzcxeFdldjV2RGhFbHV1UGFzaVdqc0J1SWpCdEx3RXF5OXhKSkZZX3d0XzlBU1BGcTBUdkZfX0NHZEcySlFsTl9sOVVoSG9XZXpGVkhQWDQtZ204dFpBVFBhYXZ4amdEbHNLcWlFdTVqVjV4R1RhYnpqOGRUeHJGdXJuZmJIeS12dEowQUJJZXJxRVV6SlhKQTRlVC1mazVISFpFcnl1dGNlUkxhNGlCbWtfNi0?oc=5",
+      "titulo": "Governo recorre de decisão do TCU e tenta liberar consignado do INSS - O GLOBO",
+      "data": "Wed, 06 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
-        "Financiamento de Veículos"
+        "Consignado INSS"
       ],
       "revisar": [
-        "reduz"
+        "decisão do tcu"
       ],
-      "descricao": "Programa Move Brasil reduz exigência para motoristas de app e abre financiamento de até 84 meses para C3, Basalt e Aircross &nbsp;&nbsp; noticiasautomotivas.com.br",
-      "detectado_em": "2026-09-21T18:45:20"
+      "descricao": "Governo recorre de decisão do TCU e tenta liberar consignado do INSS &nbsp;&nbsp; O GLOBO",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMi6AFBVV95cUxOOTVxakRrbVVud2ViU2RZR0syTmkyd1UzSnVkaWRDSHlONlhRdGhFQ0g2dlhiQXk3M0lwZG5VUjhIcFpSa0hWcVRMRmtyb3ZZVmdST0dHNzBMQmhUVHFHNnZQZ1VGekZzQzVtcEFaTktVa3Z0NnptV0k0R3BSNXZVWFFxM0JrbDBySGszTzBJdGhZNGphMFNBU09TV2tPOWdLSmQyM1IzQzBBMzduTkwyTWxVSUhPUUpmUVBtWmkzMlpxVU1pdG13QkdTWTliVXh4MjZsUi14YS1KTDhvczVkMHVUQks1MHZN?oc=5",
-      "titulo": "Aproveite o último dia da Quinzena do Automóvel em Panambi para garantir seu carro novo - Sicredi",
-      "data": "Fri, 31 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
+      "link": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxOb2QzMUFfS2lrWnJzdzVCbGQ0WVlsMDMxR2Z2ajVTd2VOYUVackowSjBVVUtQWE41V0dmT1BWT1AxOU85SE1iZlh2VVpHVDE3MTdVZ09WSGNKeXotNlJ1dEZXSENXdFRyQ29HYXV0S3pIQzlQdzBNNTNDeG1yUXZpNTBkUDAybGQzR0FTN3UtbUFpNEJSM0JfNVRXcmRDWWhaQnNTWEdTT1ZFRXBYNWV2MldGbHkxRVAy?oc=5",
+      "titulo": "Prazo do Consignado INSS sobe para 108x e traz oportunidades de contratação - meutudo",
+      "data": "Tue, 26 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Aproveite o último dia da Quinzena do Automóvel em Panambi para garantir seu carro novo &nbsp;&nbsp; Sicredi",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMipAFBVV95cUxQclZNMEtrTGxvaThvLW5CcW1ucmpCdVRFQ21QaWU0R000T3ZkSXVodlNkeHJJZ3ctaFNuOVM5MjcwVW52Z2RJaUhXOEc5MzJpWm9OMHZhbS1lSnBVUGhtWkhlRjc1UTcxdVVTeFVacDVENnRhSVZiejhFS19RempVWTBrazFhVjJJMFNjanR1b2lVNlpIT3lwLTR4b1N5QjZLUHZ0ag?oc=5",
-      "titulo": "Conquiste seu carro novo com o Sicredi - Sicredi",
-      "data": "Mon, 27 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
+        "Consignado INSS"
       ],
       "revisar": [],
-      "descricao": "Conquiste seu carro novo com o Sicredi &nbsp;&nbsp; Sicredi",
-      "detectado_em": "2026-09-21T18:45:20"
+      "descricao": "Prazo do Consignado INSS sobe para 108x e traz oportunidades de contratação &nbsp;&nbsp; meutudo",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNcnpLVnJuN09STGk3NDRXbElYY0ZWOGlQN0JzN2xzdFdpVWthMGc4WDlJZTJKcVE2b29rX0VQUzlkRDN0c043Vk92UzM0NVZ0bWtyNldoWUUtN0d4Q2ZSWng1TmY0ejZwbmQ2a0VMWWxRb3MzVUl5a1QyZkJZcXpKWUZndzlIaHNjaks2TGVYTDdzZkdJUnBoaTE1Q0dHUnQ0SFpPamxEZ1c1T3JsV2Qw0gG0AUFVX3lxTE80Z1ZYOUtoRnBCOTFESXhnQVFmeG5jQTRRMzFlNnNuZnh2cEtvMVZIRzNNQWpfSUdIQU5tYUFOVEhLU21CLVZvYUgyaDlEb0VtYmNSblotRWwxajI0R3VJaUI5VS1GN0RRNGdRM3dqX0JLZVdXVC04N0txZWtmSnlINk1nY3FIQ0R1dFdxVlg3WkdCdkVNTHdQVzJTSEhkbjR3ckpCRXdxUEIwMVIwd1hGNUtHUw?oc=5",
-      "titulo": "Financiamento de veículos cresce 10,9% no 1º semestre de 2026 - Jornal do Brasil",
-      "data": "Tue, 28 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
+      "link": "https://news.google.com/rss/articles/CBMivAFBVV95cUxObDBsZ3Q5RkI3QWhZb2g2Q2lWemJjZ25CZjdpVlM3bjRwQnI2OGxpaThRdWZ3cEh6cTZMUi1ndUtmN1lvcURIR3IxaGRoX05LUzhyeHAxa0hlVHpFUlZKRjRuaV9fUDIta05INFRVRG41MGZQY3ZuTVAxYTdWT0U3NjVDczhtdkQ3aUVGUUNQVzBFc1pia0lYQzJXTmxMQ1BuZ3N4MWlqY0Q0QjNBVDQ5YXJHRUYxVVFoVXlRTQ?oc=5",
+      "titulo": "Justiça anula norma do INSS que restringia crédito consignado a um único banco - Jurinews",
+      "data": "Tue, 29 Sep 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
-        "Financiamento de Veículos"
+        "Consignado INSS"
       ],
       "revisar": [],
-      "descricao": "Financiamento de veículos cresce 10,9% no 1º semestre de 2026 &nbsp;&nbsp; Jornal do Brasil",
-      "detectado_em": "2026-09-21T18:45:20"
+      "descricao": "Justiça anula norma do INSS que restringia crédito consignado a um único banco &nbsp;&nbsp; Jurinews",
+      "detectado_em": "2026-10-15T10:05:57"
     },
     {
-      "link": "https://news.google.com/rss/articles/CBMirAFBVV95cUxQX2hEaVZ3YzRsMzR1Tndhc1lTclhaS3dGdDI3cnUzRWtpX3Z1MUZ4ZzJKTnZMTzdJcHV1X3Z3NFcwclk3cGtWVWVFOWhBMHFCbl9ibjlPV21DaEs0QXMtNlZVOHdoNGFwWXotemlxOXltWlMzTmJZVVQwZ3ZwUlpKVkl6THd5N2szRkdrZlVOOExNU3V4V0tVSU1nRXlrME1ESjBOalY4YngzeG16?oc=5",
-      "titulo": "CMN eleva para R$ 200 mil teto para financiar carro de aplicativo - Poder360",
-      "data": "Thu, 27 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
+      "link": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOZjZfQmFRc1lQbEk3RTBzTnFWLWp2X0l2a1NNXzlXZDhDUVRjLXlrRGdqYnc3S2NZcEYxRDV4cVpuZTBubWdrdzJxVUJMZEJTQ2R4aXJTV3EwQVVxUHhGdF9MZUYyblhjSGd5ZGZuWXZ4ZDN2X2lPUkh4ZUNQVVlNeWE0eGhFMjdzZER4OUstSWoxLU8zdWxjbkdSUGZLcHdJUlNWbGdkSjdvQzVVRWo1dHVQUzN4SlHSAcYBQVVfeXFMUDJ6b1ZuOThsMjc3Mkx2R0lBZEQweEl3NVVpcE4ySEExWHAtazlEb2g4NEVzMW44RjJVNDRkMVpIbXBlTHpLSWRzRzBYREFmc2VYOUpIdE8yY0ZLZExXSmNwUHoyVTk0eERHWTdUaU55bUNUOXVfNnptZDNHSjFCVE96eXdod0RkeXhnN1RTY0tNNEZLLUJSdHlDbmh1Tmd5M2RFb2NKXzYtTm5zeFloMGh6VU00VGNVcjlNYnJZZU1vbXltQTNB?oc=5",
+      "titulo": "Mudanças no consignado do INSS entram em vigor nesta terça-feira; confira - Valor Econômico",
+      "data": "Mon, 18 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
       "tipo": "google",
       "grupos": [
-        "Financiamento de Veículos",
-        "Regras Gerais / Bacen"
+        "Consignado INSS"
+      ],
+      "revisar": [],
+      "descricao": "Mudanças no consignado do INSS entram em vigor nesta terça-feira; confira &nbsp;&nbsp; Valor Econômico",
+      "detectado_em": "2026-10-15T10:05:57"
+    },
+    {
+      "link": "https://news.google.com/rss/articles/CBMixgFBVV95cUxNdWNXZFJXa3g0SkRJNzA5UmpiR1VWWFBFQkN5QkVzNnBQTTAzOWxuZzV5LUpyQXVQeVBjUGtpY3d5azA2Y2Zjb3d2eVFkd3RYQ2Y3MjcxMUpFU2x6VW44c00wam0yZ1N3T0Zub0tTeEE3MFlfXzFDcGthZlg3QV91ZHhHRk43NS1TYks4ZGpaQkRnTWNBcVc3UlJDNlRwRURqSDlwT3lrSUZJWXBVVmZOVUlsU2hYdTBvN3Y4MlE2Q0oxUEM3VVHSAdQBQVVfeXFMTWM3cnUxMzBjSy04TG5Nb2dZbTZkQ2Q3UzZlRVdXN0swOS04NklybmxaVnRhNjNOZ2JEOXFwQ09UVndoQUFXNk1fRVd3U3psNldUR09NUEx2cllGYWwtNXF5NVBLTDE1MERHd1QtcWJFMXctWkxpMmFwbkZNWUdHWGRyNDFFd2pQdGZmV0k0SGY4X2tCa3VOWGkxbTlOZng2TmZFVVp4SFNBdjRqWEZHQzlOcnN2UFlheVZZY3liWkVFbXRONmV2UmZYRF9STlZvcDR5N2c?oc=5",
+      "titulo": "Bancos elogiam decisão do TCU que reverteu suspensão do consignado INSS - Valor Econômico",
+      "data": "Fri, 08 May 2026 07:00:00 GMT",
+      "fonte": "Google News: consignado INSS",
+      "tipo": "google",
+      "grupos": [
+        "Consignado INSS"
       ],
       "revisar": [
-        "teto",
-        "eleva"
+        "decisão do tcu"
       ],
-      "descricao": "CMN eleva para R$ 200 mil teto para financiar carro de aplicativo &nbsp;&nbsp; Poder360",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMiywFBVV95cUxQaWdNUC1Nek1xRWVrX0FxS0todGpmSHJsZVF2RlphWXZVMmc4YTR2MU5RRDFBeHNWV0ZhWHp1RW1BdnVjdEdIcjEzcGhnVlpGSWlnVDAzV2dkbGFhMVVPNVM0NkZFU3ltbzRhZGRmYWpBV3VvRnJOWlRmLW9FbGVOWUlUTERCcUM2Qkx5SVBHczlaOFJUdU1kcUphNXh6aTlxNU9WeExxRUFVZnZERWNnTk9WQzVNd2VTYUd3NE9nRElJT3hWb0h2VkNzNA?oc=5",
-      "titulo": "Financiamento de veículos cresce 10,9% no primeiro semestre e registra melhor resultado desde 2008 - Jornal GGN",
-      "data": "Tue, 28 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Financiamento de veículos cresce 10,9% no primeiro semestre e registra melhor resultado desde 2008 &nbsp;&nbsp; Jornal GGN",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi5wFBVV95cUxNMEttQjZEX0h3RnIyVUk0a2hGTmNCeXFZUmNjUVYyNU1JR3hfa2cxbGRRbExZeUlJMUtGTGRwQWhaVm1SWmtZRE1ibmVHaHRpdncxT0lfN2NOcEhKN0VYWl81QWNuSzRtdld3YWpYYjJBWk9WM05JQThWUldsNEVZeVd5Uk5aTVJuUzM0bE9LMkp3SlVtM2Y1YTJpR042Nmd3c0N2ZTl6UUYtcnVvRU1zOWFxVHhJa3Yxd0Y1VGxpdWxtUHloTWlhbUs5LTc4MnpBZ0ZxcG43UFpNSWVmYmswZVU3QVdLd03SAfYBQVVfeXFMTnVWSHBGMVpUM0tMT0NLY2NJY1NjY2pfZDA3WHY0c0FXVkdtMVYyXzMtSzh4LU9oWEtJYmMwemxzVkQ0ZDJpNlBaMXFocHN4VGxBQkRJcG9XWEp2NGdFUktWZmJVYmpnR2VVQlBzVVZVaGFZeGRMV19rbmljMVZ0aVR6MTV4YWotaDdmb0RvZzhDME5hVFYxX3cyaEFYV1VKM2MyRDlNY0xkZWN5YUNYb3dsczc5TmVVVnRJVTl4YTltb24tbU1KbE9HcGRyejk1RjNGTnRxZVIwSkxGQnRaWmdibWV2WGtxby1zaGNDeTNsZk9BdnhR?oc=5",
-      "titulo": "Move Aplicativos: crédito para motoristas de app e taxistas supera R$ 1 bilhão em financiamentos - G1",
-      "data": "Tue, 14 Jul 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [],
-      "descricao": "Move Aplicativos: crédito para motoristas de app e taxistas supera R$ 1 bilhão em financiamentos &nbsp;&nbsp; G1",
-      "detectado_em": "2026-09-21T18:45:20"
-    },
-    {
-      "link": "https://news.google.com/rss/articles/CBMi5gFBVV95cUxQekk4TWtlaVlKTm9Ia2lMbV9tUVB2SzVhNXF1RWU2LTBuSEZVbUR4M1d5U2ZJWld0c0JiRUNNbUFwak01NlBoamVtTHlxaVdmWk9CV3VoLXhva0hpMDZ0YzJ5Y2taUjVidmQzQ1hFem9pNUV6ZndobU5HTHNhMkpUaXJnMHpzYWFNajh4UUxEMjRiQnM5aUQ1YkVlUE45SHNJN2ExUnZ4YnBPWnU0QUdYS1dHZU1DcUJ3NmVHVTVGWDdlOGVqU1JQQ3pJNUc0eXVmRmFmOTMzSmloSjdfNV9LSEFCRzc5UdIB9AFBVV95cUxPWEx1WVU1MXpEdjVmYVllNW0zYW1rVHd5QVVweG12VURYMVJCRGlkSm5ldG94a0JZVlgzTEJVVzE2c0xqM1E5TVFCUkw1ZC1LMFJQMHR1cldqZjVVTzZfeXNxQ2pxMXA0UERKQ01OVTBOT2VLTUtFS3I4d0tqNThBb0E1NVBiRUFhbUVjYzJrMEFfMjFEOWJZMDhPN3ozTkxDeEZaY2wyRlJXZ0dudndDSnVqYzlfTzFOVldodlBFai1IU2V6aElqV0NoZnYxZ19TM3NQZ2Z0cUtUOGRLUjg2UjRRUmlaOEUxZm1vMWFhU3laV3My?oc=5",
-      "titulo": "Move Brasil: veja quais carros será possível comprar com a elevação do teto de crédito para R$ 200 mil - Extra online",
-      "data": "Fri, 21 Aug 2026 07:00:00 GMT",
-      "fonte": "Google News: financiamento de veículos",
-      "tipo": "google",
-      "grupos": [
-        "Financiamento de Veículos"
-      ],
-      "revisar": [
-        "teto",
-        "eleva"
-      ],
-      "descricao": "Move Brasil: veja quais carros será possível comprar com a elevação do teto de crédito para R$ 200 mil &nbsp;&nbsp; Extra online",
-      "detectado_em": "2026-09-21T18:45:20"
+      "descricao": "Bancos elogiam decisão do TCU que reverteu suspensão do consignado INSS &nbsp;&nbsp; Valor Econômico",
+      "detectado_em": "2026-10-15T10:05:57"
     }
   ],
   "erros_fontes": []

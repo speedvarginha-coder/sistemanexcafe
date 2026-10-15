@@ -9,7 +9,7 @@ window.DADOS_DIRETORIOS = {
     "pendentes": 22,
     "score": 18.2
   },
-  "gerado_em": "2026-09-21T14:25:33",
+  "gerado_em": "2026-10-15T10:05:00",
   "registros": [
     {
       "secao": "Descobertas",
