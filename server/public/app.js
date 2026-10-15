@@ -3987,6 +3987,16 @@ $("#marketingTabs")?.addEventListener("click", event => {
   $("#marketingFrame").setAttribute("src", btn.dataset.mk);
   $("#marketingOpenTab").setAttribute("href", btn.dataset.mk);
 });
+$("#marketingSync")?.addEventListener("click", async event => {
+  const btn = event.currentTarget; btn.disabled = true; btn.textContent = "Sincronizando...";
+  try {
+    const { result } = await api("/api/marketing/sync", {});
+    const frame = $("#marketingFrame");
+    if (result.copied.length && !frame.hidden) frame.setAttribute("src", frame.getAttribute("src"));
+    toast(result.errors.length ? `Sincronizado com ${result.errors.length} erro(s): ${result.errors[0]}` : result.copied.length ? `Marketing atualizado: ${result.copied.length} arquivo(s).` : "Marketing já estava em dia.");
+  } catch (cause) { toast(cause.message); }
+  finally { btn.disabled = false; btn.textContent = "Sincronizar"; }
+});
 
 // ---- Resultado real do marketing: vendas por campanha e por origem do cliente ----
 async function loadMarketingResults() {

@@ -18,6 +18,8 @@
   <!-- Estilos Customizados -->
   <link rel="stylesheet" href="css/custom.css">
   <link rel="stylesheet" href="css/compat-tw3.css">
+  <!-- Dentro do Nexcafe o título já aparece na moldura: esconde o cabeçalho próprio do painel. -->
+  <script>if (window.self !== window.top) document.documentElement.classList.add('embutido');</script>
 </head>
 <body class="min-h-screen flex flex-col dashboard-body">
 
@@ -36,13 +38,6 @@
       </div>
 
       <div class="flex items-center space-x-3 text-xs shrink-0">
-        <span class="hidden md:inline-flex items-center gap-1.5 bg-green-900/40 border border-white/10 px-3 py-1 rounded-full whitespace-nowrap">
-          <span class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
-          <span>Operação Local Ativa</span>
-        </span>
-        <button onclick="exportarBackupDashboard()" title="Fazer Backup dos Dados (.json)" class="hidden sm:flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white font-bold px-2.5 py-1.5 rounded-lg border border-white/20 transition shadow-sm whitespace-nowrap">
-          <i class="fas fa-download"></i><span>Backup</span>
-        </button>
         <a href="https://wa.me/553530675017" target="_blank" rel="noopener noreferrer" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold px-3 py-1.5 rounded-lg transition shadow flex items-center gap-1.5 whitespace-nowrap">
           <i class="fab fa-whatsapp"></i><span>(35) 3067-5017</span>
         </a>
@@ -52,7 +47,7 @@
 
   <!-- BARRA DE NAVEGAÇÃO DE ABAS (FIXADA NO TOPO AO ROLAR) -->
   <div class="sticky-tabs-bar bg-white border-b border-gray-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2 overflow-x-auto whitespace-nowrap" role="tablist" aria-label="Seções do dashboard">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-1.5 sm:py-2 flex items-center gap-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap whitespace-nowrap" role="tablist" aria-label="Seções do dashboard">
       <button id="tab-button-overview" type="button" role="tab" aria-selected="true" aria-controls="tab-overview" data-tab="overview" class="nav-tab-btn active">
         <i class="fas fa-chart-pie"></i>
         <span>Visão Geral</span>
@@ -472,10 +467,17 @@
                 <select id="artMode" class="art-input mt-1"><option value="single">Imagem única</option><option value="carousel">Carrossel</option></select>
               </label>
               <label class="text-xs font-semibold text-gray-700">Tamanho
-                <select id="artFormat" class="art-input mt-1"><option value="portrait">Retrato 1080 × 1350</option><option value="square">Quadrado 1080 × 1080</option></select>
+                <select id="artFormat" class="art-input mt-1"><option value="portrait">Feed retrato 1080 × 1350</option><option value="square">Feed quadrado 1080 × 1080</option><option value="story">Stories / Status 1080 × 1920</option></select>
               </label>
-              <label class="text-xs font-semibold text-gray-700 sm:col-span-2">Paleta da marca
+              <label class="text-xs font-semibold text-gray-700">Marca
+                <select id="artBrand" class="art-input mt-1"><option value="financeira">Speed Financeira</option><option value="loja">Speed Serviços Digitais (gráfica e serviços)</option></select>
+              </label>
+              <label class="text-xs font-semibold text-gray-700">Paleta da marca
                 <select id="artTemplate" class="art-input mt-1"><option value="brand">Verde Speed</option><option value="offer">Amarelo em destaque</option><option value="clean">Claro editorial</option></select>
+              </label>
+              <label class="sm:col-span-2 flex items-start gap-2 text-xs font-semibold text-gray-700">
+                <input id="artLegal" type="checkbox" class="mt-0.5" checked>
+                <span>Aviso legal no rodapé <span class="font-normal text-gray-500">(correspondente bancário, sem cobrança antecipada, sujeito a análise). Recomendado: a arte pode circular sem a legenda.</span></span>
               </label>
             </div>
             <button id="artFromPost" type="button" class="w-full px-3 py-2 rounded-lg border border-green-200 bg-green-50 text-green-800 text-xs font-bold hover:bg-green-100">Recarregar texto do post selecionado</button>
@@ -484,17 +486,17 @@
           <div class="card-premium p-4 space-y-3 bg-green-50/50 border border-green-200">
             <div class="flex items-center justify-between">
               <h4 class="text-xs font-bold text-gray-900 flex items-center gap-1.5">
-                <i class="fas fa-print text-green-700"></i> Modelos Prontos de Gráfica & Loja
+                <i class="fas fa-print text-green-700"></i> Modelos prontos de gráfica e serviços
               </h4>
-              <span class="text-[10px] bg-green-200 text-green-900 font-bold px-1.5 py-0.5 rounded">1 clique</span>
             </div>
+            <p class="text-[11px] text-gray-600">Ao escolher um modelo, a arte passa para o logo da Speed Serviços Digitais e Financeira.</p>
             <div class="grid grid-cols-2 gap-2 text-[11px]" id="artStorePresets">
-              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="curriculo">📄 Currículo Profissional</button>
-              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="foto3x4">🪪 Foto 3x4 na Hora</button>
-              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="segundavia">📑 2ª Via Contas & CPF</button>
-              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="plastificacao">📦 Plastificação & Cópias</button>
-              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="internet">💻 Internet & Digitação</button>
-              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="scan">📨 Digitalização & PDF</button>
+              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="curriculo"><i class="fas fa-file-alt text-green-700 w-4" aria-hidden="true"></i> Currículo</button>
+              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="foto3x4"><i class="fas fa-id-badge text-green-700 w-4" aria-hidden="true"></i> Foto 3x4</button>
+              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="segundavia"><i class="fas fa-receipt text-green-700 w-4" aria-hidden="true"></i> 2ª via e certidões</button>
+              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="plastificacao"><i class="fas fa-book text-green-700 w-4" aria-hidden="true"></i> Plastificação</button>
+              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="internet"><i class="fas fa-desktop text-green-700 w-4" aria-hidden="true"></i> Internet e digitação</button>
+              <button type="button" class="p-2 bg-white hover:bg-green-100 border border-gray-200 hover:border-green-400 rounded-lg text-left font-semibold text-gray-800 transition" data-preset="scan"><i class="fas fa-file-pdf text-green-700 w-4" aria-hidden="true"></i> Digitalização</button>
             </div>
           </div>
 
@@ -520,6 +522,9 @@
               </select>
             </label>
             <p id="artCompositionHint" class="text-[11px] text-gray-500"></p>
+            <label class="block text-xs font-semibold text-gray-700">Selo acima do título <span class="font-normal text-gray-500">(vazio usa o padrão)</span>
+              <input id="artEyebrow" class="art-input mt-1" maxlength="40">
+            </label>
             <label class="block text-xs font-semibold text-gray-700">Título
               <textarea id="artTitle" class="art-input mt-1" rows="2" maxlength="140" placeholder="Título principal"></textarea>
             </label>
@@ -549,10 +554,20 @@
             <button id="artRemovePhoto" type="button" class="text-xs font-semibold text-red-700 hover:underline">Remover imagem deste slide</button>
             <p class="text-[11px] text-gray-500">A foto do casal é ilustrativa, não representa clientes reais. Use fotos próprias com autorização. Arquivos enviados ficam só nesta sessão; texto, composição e escolha da imagem ilustrativa ficam no rascunho local.</p>
           </div>
+
+          <div class="card-premium p-5 art-ai-prompt">
+            <h4 class="font-bold text-gray-900">Alternativa no ChatGPT Imagem</h4>
+            <p class="text-xs text-gray-600 mt-1">Se não gostar da arte, gere um comando com o conteúdo deste slide. Revise o resultado antes de publicar.</p>
+            <textarea id="artImagePrompt" class="art-input mt-3" rows="8" aria-label="Comando para ChatGPT Imagem" placeholder="Clique em Gerar comando para criar uma instrução editável."></textarea>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <button id="artGeneratePrompt" type="button" class="px-3 py-2 rounded-lg border border-green-700 text-green-800 text-xs font-bold hover:bg-green-50">Gerar comando</button>
+              <button id="artCopyPrompt" type="button" class="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-bold hover:bg-black">Copiar comando</button>
+            </div>
+          </div>
         </div>
 
         <div class="lg:col-span-7">
-          <div class="card-premium p-4 sm:p-5 lg:sticky lg:top-32">
+          <div class="card-premium p-4 sm:p-5 art-preview-card">
             <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
               <h3 class="font-bold text-gray-900">Prévia do slide</h3>
               <span id="artPreviewSize" class="text-xs font-semibold text-gray-500">1080 × 1350 px</span>
@@ -562,15 +577,6 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
               <button id="artDownloadSlide" type="button" class="px-4 py-2.5 rounded-lg border border-green-700 text-green-800 text-xs font-bold hover:bg-green-50">Baixar slide em PNG</button>
               <button id="artDownloadAll" type="button" class="px-4 py-2.5 rounded-lg bg-green-700 text-white text-xs font-bold hover:bg-green-800">Baixar carrossel em ZIP</button>
-            </div>
-            <div class="art-ai-prompt mt-5">
-              <h4 class="font-bold text-gray-900">Alternativa no ChatGPT Imagem</h4>
-              <p class="text-xs text-gray-600 mt-1">Se não gostar da arte, gere um comando com o conteúdo deste slide. Revise o resultado antes de publicar.</p>
-              <textarea id="artImagePrompt" class="art-input mt-3" rows="8" aria-label="Comando para ChatGPT Imagem" placeholder="Clique em Gerar comando para criar uma instrução editável."></textarea>
-              <div class="flex flex-wrap gap-2 mt-2">
-                <button id="artGeneratePrompt" type="button" class="px-3 py-2 rounded-lg border border-green-700 text-green-800 text-xs font-bold hover:bg-green-50">Gerar comando</button>
-                <button id="artCopyPrompt" type="button" class="px-3 py-2 rounded-lg bg-gray-900 text-white text-xs font-bold hover:bg-black">Copiar comando</button>
-              </div>
             </div>
           </div>
         </div>
@@ -582,7 +588,7 @@
     <!-- ======================================================== -->
     <section id="tab-marketing" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-marketing">
       <div class="mb-6">
-        <h2 class="text-xl font-bold text-gray-900 mb-1">Central de Marketing & Disparos WhatsApp</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Marketing da loja & mensagens prontas para WhatsApp</h2>
         <p class="text-xs text-gray-500">Mensagens testadas e validadas para prospecção, atendimento balcão e solicitação de avaliações 5 estrelas.</p>
       </div>
 
@@ -596,10 +602,10 @@
         </div>
         <p class="text-xs text-gray-500 mb-4">Crie links para colocar na bio do Instagram, panfletos ou anúncios, sabendo exatamente de onde vieram os clientes.</p>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
           <div>
-            <label class="block text-[11px] font-bold text-gray-700 uppercase mb-1">Produto Promovido:</label>
-            <select id="utmProduto" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white">
+            <label for="utmProduto" class="block text-[11px] font-bold text-gray-700 uppercase mb-1">Produto Promovido:</label>
+            <select id="utmProduto" onchange="gerarLinkUtmCustomizado()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white">
               <option value="fgts">Antecipação FGTS Pix</option>
               <option value="inss">Consignado INSS / Aposentados</option>
               <option value="portabilidade">Portabilidade com Troco</option>
@@ -610,8 +616,8 @@
           </div>
 
           <div>
-            <label class="block text-[11px] font-bold text-gray-700 uppercase mb-1">Canal de Origem (Source):</label>
-            <select id="utmCanal" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white">
+            <label for="utmCanal" class="block text-[11px] font-bold text-gray-700 uppercase mb-1">Onde o link vai ser usado:</label>
+            <select id="utmCanal" onchange="gerarLinkUtmCustomizado()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white">
               <option value="instagram_bio">Instagram (Link da Bio)</option>
               <option value="instagram_stories">Instagram Stories / Direct</option>
               <option value="facebook_post">Facebook (Post / Página)</option>
@@ -620,16 +626,10 @@
               <option value="google_meu_negocio">Google Meu Negócio (Ficha)</option>
             </select>
           </div>
-
-          <div class="flex items-end">
-            <button onclick="gerarLinkUtmCustomizado()" class="w-full bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 px-4 rounded-lg transition shadow-sm">
-              <i class="fas fa-magic mr-1"></i> Gerar Link Rastreável
-            </button>
-          </div>
         </div>
 
         <div class="flex items-center gap-2">
-          <input type="text" id="utmResultado" aria-label="Link UTM gerado" readonly value="https://speedfinanceira.com.br/?utm_source=instagram_bio&amp;utm_medium=social_dashboard&amp;utm_campaign=fgts_varginha#simular" class="flex-grow min-w-0 bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono text-gray-700">
+          <input type="text" id="utmResultado" aria-label="Link rastreável" aria-live="polite" readonly value="https://speedfinanceira.com.br/?utm_source=instagram&amp;utm_medium=social&amp;utm_campaign=fgts_varginha&amp;utm_content=bio#simular" class="flex-grow min-w-0 bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono text-gray-700">
           <button onclick="copiarTextoDoId('utmResultado')" class="bg-gray-900 hover:bg-black text-white font-bold text-xs px-4 py-2 rounded-lg transition shrink-0">
             <i class="fas fa-copy mr-1"></i> Copiar Link
           </button>
@@ -785,7 +785,7 @@
       <!-- Grade de Copys WhatsApp -->
       <div class="mb-8">
         <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <i class="fab fa-whatsapp text-green-600"></i> Banco de Copys para Disparo WhatsApp
+          <i class="fab fa-whatsapp text-green-600"></i> Mensagens prontas para WhatsApp
         </h3>
         <div id="marketingCopysContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
       </div>

@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderGoogleAds();
   renderMetaAds();
   renderMarketingCopys();
+  gerarLinkUtmCustomizado();
   calcularROI();
   // Módulo GMB: inicializa renderização
   if (typeof initGMB === 'function') initGMB();
@@ -86,16 +87,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (abaSolicitada && document.getElementById(`tab-${abaSolicitada}`)) switchTab(abaSolicitada);
 });
 
+// Posts salvos (com as edições) prevalecem; posts novos do posts_fila.js entram no topo pelo id.
+function mesclarPostsFila(salvos, fila) {
+  const ids = new Set(salvos.map(post => post.id));
+  const novos = fila.filter(post => post && post.id && !ids.has(post.id));
+  return [...JSON.parse(JSON.stringify(novos)), ...salvos];
+}
+
 // Carrega os dados de posts do arquivo posts_fila.js ou localStorage
 function initData() {
   const localSaved = lerJsonStorage('speed_posts_custom', null);
-  if (Array.isArray(localSaved)) {
-    AppState.posts = localSaved;
-  } else if (window.POSTS_FILA && Array.isArray(window.POSTS_FILA)) {
-    AppState.posts = JSON.parse(JSON.stringify(window.POSTS_FILA));
-  } else {
-    AppState.posts = [];
-  }
+  const fila = Array.isArray(window.POSTS_FILA) ? window.POSTS_FILA : [];
+  AppState.posts = mesclarPostsFila(Array.isArray(localSaved) ? localSaved : [], fila);
 
   if (AppState.posts.length > 0 && !AppState.selectedPost) {
     AppState.selectedPost = AppState.posts[0];
@@ -650,22 +653,23 @@ function dispararWhatsappComTexto(elementId) {
   window.open(`https://wa.me/553530675017?text=${texto}`, '_blank', 'noopener,noreferrer');
 }
 
+// Origem e meio no padrão do Google Analytics 4; valores fora do padrão caem em "Não atribuído".
+const UTM_CANAIS = {
+  instagram_bio: { utm_source: 'instagram', utm_medium: 'social', utm_content: 'bio' },
+  instagram_stories: { utm_source: 'instagram', utm_medium: 'social', utm_content: 'stories' },
+  facebook_post: { utm_source: 'facebook', utm_medium: 'social', utm_content: 'post' },
+  whatsapp_status: { utm_source: 'whatsapp', utm_medium: 'social', utm_content: 'status' },
+  panfleto_rua: { utm_source: 'panfleto', utm_medium: 'qrcode', utm_content: 'rua' },
+  google_meu_negocio: { utm_source: 'google', utm_medium: 'organic', utm_content: 'perfil_empresa' }
+};
+
+// Chamado ao abrir o painel e a cada troca de produto ou canal.
 function gerarLinkUtmCustomizado() {
   const produto = document.getElementById('utmProduto').value;
-  const canal = document.getElementById('utmCanal').value;
-  const base = "https://speedfinanceira.com.br/";
-  
-  let anchor = "#simular";
-  if (produto === 'inss' || produto === 'veiculos') anchor = "#servicos";
-  
-  const parametros = new URLSearchParams({
-    utm_source: canal,
-    utm_medium: 'social_dashboard',
-    utm_campaign: `${produto}_varginha`
-  });
-  const finalUrl = `${base}?${parametros.toString()}${anchor}`;
-  document.getElementById('utmResultado').value = finalUrl;
-  mostrarToast('Link rastreável gerado com sucesso!');
+  const { utm_content, ...origem } = UTM_CANAIS[document.getElementById('utmCanal').value] || UTM_CANAIS.instagram_bio;
+  const anchor = produto === 'inss' || produto === 'veiculos' ? '#servicos' : '#simular';
+  const parametros = new URLSearchParams({ ...origem, utm_campaign: `${produto}_varginha`, utm_content });
+  document.getElementById('utmResultado').value = `https://speedfinanceira.com.br/?${parametros}${anchor}`;
 }
 
 // -------------------------------------------------------------

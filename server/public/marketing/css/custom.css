@@ -54,11 +54,16 @@ body {
 }
 
 /* Tabs de navegação */
+/* Dentro do Nexcafe (iframe) a moldura já mostra o título do módulo. */
+.embutido .header-speed {
+  display: none;
+}
+
 .nav-tab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.65rem 1.1rem;
+  gap: 0.5rem;
+  padding: 0.55rem 0.9rem;
   border-radius: 0.75rem;
   font-size: 0.875rem;
   font-weight: 600;
@@ -133,10 +138,20 @@ textarea:focus-visible {
   background: #e2e8f0;
 }
 
+/* A prévia acompanha a rolagem do formulário e sempre cabe inteira na tela, em qualquer formato. */
+@media (min-width: 1024px) {
+  .art-preview-card {
+    position: sticky;
+    top: 4.5rem;
+  }
+}
+
 #artCanvas {
   display: block;
-  width: min(100%, 380px);
+  width: auto;
   height: auto;
+  max-width: min(100%, 380px);
+  max-height: calc(100vh - 17rem);
   box-shadow: 0 15px 35px rgba(15, 23, 42, 0.25);
 }
 

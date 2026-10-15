@@ -9,6 +9,7 @@ const { buildZip } = require("./installer-package");
 const { readBill, analyzeText, extractText, parseBankCsv } = require("./pdf-conta");
 const { readProducts } = require("./importar-produtos");
 const { suggestActions, METRICS, actionEffect, goalProgress, TEMPLATES } = require("./plano-acao");
+const { syncMarketing, DEFAULT_MARKETING_SOURCE, TASK_NAME: MARKETING_SYNC_TASK, RESULT_FILE: MARKETING_SYNC_RESULT } = require("./marketing-sync");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -196,8 +197,9 @@ function defaultOcrRunner(file) {
   });
 }
 
-function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner } = {}) {
+function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing") } = {}) {
   const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
+  const mkSource = marketingSource !== undefined ? marketingSource : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? (process.env.NEXCAFE_MARKETING_SRC || DEFAULT_MARKETING_SOURCE) : "");
   const dbPath = path.join(dataDir, "db.json");
   const vaultKeyFile = path.join(dataDir, "cofre.chave");
   fs.mkdirSync(dataDir, { recursive: true });
@@ -2691,6 +2693,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       db.marketing = { store, updatedAt: now() }; save();
       return send(res, 200, { ok: true });
     }
+    if (p === "/api/marketing/sync" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, configured: !!mkSource, running: !!mkSync.running, last: readMarketingSync() }); }
+    if (p === "/api/marketing/sync" && req.method === "POST") { admin(user); return send(res, 200, { ok: true, result: await runMarketingSync() }); }
     throw err(404, "API nao encontrada");
   }
 
@@ -2699,7 +2703,31 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (!fs.existsSync(vaultKeyFile)) { fs.mkdirSync(dataDir, { recursive: true }); fs.writeFileSync(vaultKeyFile, crypto.randomBytes(32).toString("hex")); }
     return Buffer.from(fs.readFileSync(vaultKeyFile, "utf8").trim(), "hex");
   }
-  const marketingDir = path.join(__dirname, "public", "marketing");
+  // Sincronizacao do marketing: traz dados, posts e pesquisas da pasta ativa da Speed.
+  // O SpeedGeo vem do Google Drive (L:), que so existe na sessao do usuario; este servidor roda como SISTEMA.
+  // Por isso o botao dispara a tarefa Nexcafe-Marketing-Sync (sessao do usuario, tambem de hora em hora) e espera o
+  // resultado que ela grava. Sem a tarefa, sincroniza aqui mesmo (o SpeedGeo fica de fora).
+  const mkSync = { running: null };
+  const mkResultFile = path.join(dataDir, MARKETING_SYNC_RESULT);
+  const readMarketingSync = () => { try { return JSON.parse(fs.readFileSync(mkResultFile, "utf8")); } catch { return null; } };
+  async function marketingSyncViaTask() {
+    if (process.platform !== "win32") return null;
+    const startedAt = new Date().toISOString();
+    const started = await new Promise(resolve => execFile("schtasks", ["/Run", "/TN", MARKETING_SYNC_TASK], { windowsHide: true }, error => resolve(!error)));
+    for (let i = 0; started && i < 60; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const last = readMarketingSync();
+      if (last && last.at >= startedAt) return last;
+    }
+    return null;
+  }
+  function runMarketingSync() {
+    if (!mkSource) return Promise.reject(err(400, "Origem do marketing nao configurada"));
+    mkSync.running ||= marketingSyncViaTask()
+      .then(result => result || syncMarketing({ source: mkSource, dest: marketingDir }))
+      .finally(() => { mkSync.running = null; });
+    return mkSync.running;
+  }
   const MARKETING_TYPES = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json", ".csv": "text/csv; charset=utf-8", ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".pdf": "application/pdf", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation" };
   // Biblioteca de pesquisas do marketing: lista as pastas em /marketing/arquivos/.
   function marketingLibrary(dir, relative) {

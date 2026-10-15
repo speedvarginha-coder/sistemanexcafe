@@ -5,11 +5,17 @@
   const STORAGE_KEY = 'speed_artes_rascunho_v1';
   const MAX_SLIDES = 10;
   const LOGO_BASE = 'assets/img/';
+  // Mesmo texto das legendas aprovadas: a arte pode circular sem a legenda (Status, anúncio, repasse).
+  const LEGAL_TEXT = 'Correspondente bancário (Res. CMN 4.935/2021). Sem cobrança antecipada. Sujeito à análise e aprovação.';
+  // Formatos: Stories/Status usa o layout do retrato centralizado, longe das áreas cobertas pela interface.
+  const FORMATS = { portrait: { height: 1350, label: '1080 × 1350 px' }, square: { height: 1080, label: '1080 × 1080 px' }, story: { height: 1920, label: '1080 × 1920 px' } };
   const state = {
     postId: null,
     mode: 'single',
     format: 'portrait',
     template: 'brand',
+    brand: 'financeira',
+    legal: true,
     selected: 0,
     slides: [{ ...newSlide('Crédito com orientação clara', 'Compare condições, taxas e CET antes de contratar.', 'Fale com a Speed Financeira'), composition: 'portrait', imageSource: 'sample' }]
   };
@@ -21,8 +27,8 @@
     return state.postId ? `${STORAGE_KEY}_post_${encodeURIComponent(state.postId)}` : STORAGE_KEY;
   }
 
-  function newSlide(title = '', body = '', cta = '') {
-    return { title, body, cta, composition: 'editorial', imageSource: 'none', photoFocus: 'center', photo: null };
+  function newSlide(title = '', body = '', cta = '', eyebrow = '') {
+    return { title, body, cta, eyebrow, composition: 'editorial', imageSource: 'none', photoFocus: 'center', photo: null };
   }
 
   function loadDraft() {
@@ -30,10 +36,12 @@
       const saved = JSON.parse(localStorage.getItem(draftKey()) || 'null');
       if (!saved || !Array.isArray(saved.slides) || !saved.slides.length) return false;
       state.mode = saved.mode === 'carousel' ? 'carousel' : 'single';
-      state.format = saved.format === 'square' ? 'square' : 'portrait';
+      state.format = FORMATS[saved.format] ? saved.format : 'portrait';
       state.template = ['brand', 'offer', 'clean'].includes(saved.template) ? saved.template : 'brand';
+      state.brand = saved.brand === 'loja' ? 'loja' : 'financeira';
+      state.legal = saved.legal !== false;
       state.slides = saved.slides.slice(0, MAX_SLIDES).map(slide => ({
-        ...newSlide(String(slide.title || '').slice(0, 140), String(slide.body || '').slice(0, 400), String(slide.cta || '').slice(0, 90)),
+        ...newSlide(String(slide.title || '').slice(0, 140), String(slide.body || '').slice(0, 400), String(slide.cta || '').slice(0, 90), String(slide.eyebrow || '').slice(0, 40)),
         composition: ['editorial', 'portrait', 'scene'].includes(slide.composition) ? slide.composition : (slide.photoLayout === 'person' ? 'portrait' : 'editorial'),
         imageSource: ['sample', 'custom'].includes(slide.imageSource) ? slide.imageSource : 'none',
         photoFocus: ['left', 'right'].includes(slide.photoFocus) ? slide.photoFocus : 'center'
@@ -52,8 +60,10 @@
         mode: state.mode,
         format: state.format,
         template: state.template,
+        brand: state.brand,
+        legal: state.legal,
         selected: state.selected,
-        slides: state.slides.map(({ title, body, cta, composition, imageSource, photoFocus }) => ({ title, body, cta, composition, imageSource, photoFocus }))
+        slides: state.slides.map(({ title, body, cta, eyebrow, composition, imageSource, photoFocus }) => ({ title, body, cta, eyebrow, composition, imageSource, photoFocus }))
       }));
     } catch (error) {
       setStatus('Não foi possível salvar o rascunho neste navegador. Exporte as artes antes de sair.');
@@ -79,16 +89,18 @@
       portrait: 'Fotografia editorial realista de uma pessoa brasileira adulta em contexto profissional ou cotidiano plausível, com expressão natural. Divida a composição entre retrato e mensagem, preservando o rosto e uma área clara para a manchete. A pessoa é ilustrativa, não um cliente real.',
       scene: 'Cena ou objeto concreto que traduza a ideia do post, com fotografia ou ilustração refinada e área separada para o texto.'
     }[slide.composition] || 'Composição editorial clara.';
-    const palette = {
-      brand: 'Verde profundo e amarelo da identidade Speed, com branco para contraste.',
-      offer: 'Verde Speed, amarelo mais presente e branco; contraste forte sem excesso de efeitos.',
-      clean: 'Base clara, verde Speed e pequenos acentos amarelos; aparência editorial sóbria.'
+    const loja = state.brand === 'loja';
+    const marca = loja ? 'Speed Serviços Digitais e Financeira (gráfica rápida e serviços)' : 'Speed Financeira';
+    const palette = loja ? 'Verde oficial #019652 com logo e acentos em amarelo #f8db1f e texto branco.' : {
+      brand: 'Verde oficial #019652 (com um tom mais escuro para contraste) e amarelo #f8db1f, texto branco.',
+      offer: 'Amarelo oficial #f8db1f em destaque com verde #019652 e texto em verde escuro; contraste forte sem excesso de efeitos.',
+      clean: 'Base branca #fffeff, verde oficial #019652 e pequenos acentos em amarelo #f8db1f; aparência editorial sóbria.'
     }[state.template];
-    const size = state.format === 'square' ? 'quadrado 1080 × 1080 px' : 'vertical 1080 × 1350 px';
+    const size = { square: 'quadrado 1080 × 1080 px', story: 'vertical de Stories 1080 × 1920 px, com o texto longe das faixas de 250 px do topo e da base', portrait: 'vertical 1080 × 1350 px' }[state.format];
     const sequence = state.mode === 'carousel'
       ? `Este é o slide ${state.selected + 1} de ${visibleSlides().length}. Sequência planejada: ${visibleSlides().map((item, index) => `${index + 1}) ${item.title || 'título pendente'}`).join(' | ')}. Mantenha a mesma linguagem visual e, se houver personagem recorrente, sua aparência consistente; varie enquadramento e organização dos elementos para que os slides não sejam cópias uns dos outros.`
       : 'Peça única: deve comunicar a ideia sem depender de outros slides.';
-    return `Crie uma arte publicitária original e refinada para Instagram da Speed Financeira, em formato ${size}.\n\nTÍTULO EXATO: ${slide.title || 'Crédito com orientação clara'}\nTEXTO DE APOIO EXATO: ${slide.body || 'Compare condições antes de decidir.'}\nCHAMADA EXATA: ${slide.cta || 'Fale com a Speed Financeira'}\n\nDIREÇÃO DE ARTE: ${composition} ${palette} Aparência de campanha profissional, fotografia natural, título dominante legível em miniatura, contraste alto, poucos textos e respiro. Pode usar pequenos cartões com ícones simples quando eles ajudarem a explicar a ideia; não acrescente informações novas. Use detalhes gráficos discretos em verde e amarelo para conectar a série, com ritmo visual entre foto, tipografia e blocos de informação. ${sequence}\n\nINTEGRIDADE: use apenas as afirmações fornecidas acima. Não invente vantagens, taxas, prazos, aprovação, depoimentos ou resultados; não represente pessoas geradas como clientes ou funcionários reais. Reserve uma área discreta para o logotipo oficial e dados de contato serem inseridos depois. Não gere logo, uniforme, crachá, telefone ou endereço. Não copie peças de concorrentes. Se algum texto não puder ser reproduzido corretamente, entregue a composição sem esse texto e preserve espaço para acrescentá-lo manualmente. Não use moldura de celular, interface do Instagram ou marca d'água.`;
+    return `Crie uma arte publicitária original e refinada para Instagram da ${marca}, em formato ${size}.\n\nTÍTULO EXATO: ${slide.title || 'Crédito com orientação clara'}\nTEXTO DE APOIO EXATO: ${slide.body || 'Compare condições antes de decidir.'}\nCHAMADA EXATA: ${slide.cta || 'Fale com a Speed Financeira'}\n\nDIREÇÃO DE ARTE: ${composition} ${palette} Aparência de campanha profissional, fotografia natural, título dominante legível em miniatura, contraste alto, poucos textos e respiro. Pode usar pequenos cartões com ícones simples quando eles ajudarem a explicar a ideia; não acrescente informações novas. Use detalhes gráficos discretos em verde e amarelo para conectar a série, com ritmo visual entre foto, tipografia e blocos de informação. ${sequence}\n\nINTEGRIDADE: use apenas as afirmações fornecidas acima. Não invente vantagens, taxas, prazos, aprovação, depoimentos ou resultados; não represente pessoas geradas como clientes ou funcionários reais. Reserve uma área discreta para o logotipo oficial e dados de contato serem inseridos depois. Não gere logo, uniforme, crachá, telefone ou endereço. Não copie peças de concorrentes. Se algum texto não puder ser reproduzido corretamente, entregue a composição sem esse texto e preserve espaço para acrescentá-lo manualmente. Não use moldura de celular, interface do Instagram ou marca d'água.`;
   }
 
   function openForPost(post) {
@@ -100,8 +112,10 @@
       state.mode = /carrossel/i.test(post.formato || '') ? 'carousel' : 'single';
       state.format = 'portrait';
       state.template = 'brand';
+      state.brand = 'financeira';
+      state.legal = true;
       state.selected = 0;
-      state.slides = [newSlide(post.manchete || post.titulo || '', post.sub || '', post.cta || 'Fale com a Speed')];
+      state.slides = [newSlide(post.manchete || post.titulo || '', post.sub || '', post.cta || 'Fale com a Speed', String(post.linha || '').slice(0, 40))];
       if (state.mode === 'carousel') state.slides.push(newSlide('Entenda a ideia', 'Explique um ponto por slide.', 'Continue lendo'));
       loadDraft();
     }
@@ -117,9 +131,16 @@
     ui.mode.value = state.mode;
     ui.format.value = state.format;
     ui.template.value = state.template;
+    ui.brand.value = state.brand;
+    ui.legal.checked = state.legal;
+    // Serviços Digitais usa só o visual verde (logo amarelo) e não leva o aviso de correspondente bancário.
+    ui.template.disabled = state.brand === 'loja';
+    ui.legal.disabled = state.brand === 'loja';
     ui.title.value = slide.title;
     ui.body.value = slide.body;
     ui.cta.value = slide.cta;
+    ui.eyebrow.value = slide.eyebrow;
+    ui.eyebrow.placeholder = defaultEyebrow(slide.composition);
     ui.composition.value = slide.composition;
     ui.imageSource.value = slide.imageSource;
     ui.photoFocus.value = slide.photoFocus;
@@ -139,7 +160,7 @@
     ui.count.textContent = `(${visibleSlides().length}/${MAX_SLIDES})`;
     ui.current.textContent = String(state.selected + 1);
     ui.downloadAll.textContent = state.mode === 'single' ? 'Baixar pacote em ZIP' : 'Baixar carrossel em ZIP';
-    ui.size.textContent = state.format === 'square' ? '1080 × 1080 px' : '1080 × 1350 px';
+    ui.size.textContent = FORMATS[state.format].label;
     renderSlideList();
     renderPreview();
   }
@@ -173,9 +194,14 @@
     });
   }
 
+  function defaultEyebrow(composition) {
+    if (state.brand === 'loja') return 'SERVIÇOS DIGITAIS';
+    return { portrait: 'CRÉDITO COM CLAREZA', scene: 'SPEED FINANCEIRA' }[composition] || 'CONTEÚDO SPEED';
+  }
+
   function getLogo(kind) {
     if (!logos[kind]) {
-      const file = kind === 'light' ? 'logo-branca.png' : 'logo-verde.png';
+      const file = { light: 'logo-branca.png', dark: 'logo-verde.png', loja: 'logo-servicos.png' }[kind];
       logos[kind] = loadImage(LOGO_BASE + file).catch(() => null);
     }
     return logos[kind];
@@ -274,24 +300,38 @@
 
   async function drawArt(canvas, slide, index, total) {
     const width = 1080;
-    const height = state.format === 'square' ? 1080 : 1350;
+    const canvasHeight = FORMATS[state.format].height;
+    // Stories: o layout do retrato (1350) fica no meio da tela e os fundos vão de ponta a ponta,
+    // deixando as faixas do topo e da base (onde fica a interface do Stories/Status) só com fundo.
+    const height = state.format === 'story' ? 1350 : canvasHeight;
+    const offsetY = (canvasHeight - height) / 2;
+    const top = -offsetY;
+    const bottom = height + offsetY;
     const square = height === 1080;
     const margin = 76;
     const contentWidth = width - margin * 2;
-    const green = '#063f2d';
-    const deepGreen = '#082e23';
-    const yellow = '#ffe143';
+    const loja = state.brand === 'loja';
+    // Paleta oficial (materiais/logos/LOGO LOJA/Paleta Loja.txt): verde #019652, amarelo #f8db1f, branco #fffeff.
+    // green é um tom escuro do verde oficial, só para texto e faixas que precisam de contraste.
+    const brandGreen = '#019652';
+    const green = '#014b29';
+    const deepGreen = '#014b29';
+    const yellow = '#f8db1f';
+    const legal = !loja && state.legal;
+    const shift = legal ? 30 : 0;
     const composition = ['portrait', 'scene'].includes(slide.composition) ? slide.composition : 'editorial';
     const image = await getSlideImage(slide);
     const missingImage = composition !== 'editorial' && !image;
     const titleText = slide.title?.trim() || 'Seu título aqui';
     const bodyText = slide.body?.trim() || 'Texto de apoio da arte.';
-    const ctaText = slide.cta?.trim() || 'Fale com a Speed Financeira';
-    const offer = state.template === 'offer';
-    const clean = state.template === 'clean';
+    const ctaText = slide.cta?.trim() || (loja ? 'Fale com a Speed' : 'Fale com a Speed Financeira');
+    const eyebrowText = (slide.eyebrow?.trim() || defaultEyebrow(composition)).toUpperCase();
+    const offer = !loja && state.template === 'offer';
+    const clean = !loja && state.template === 'clean';
     canvas.width = width;
-    canvas.height = height;
+    canvas.height = canvasHeight;
     const ctx = canvas.getContext('2d');
+    ctx.translate(0, offsetY);
     let ink = '#ffffff';
     let logoKind = 'light';
     let buttonFill = yellow;
@@ -299,43 +339,40 @@
     let footerInk = '#ffffff';
     let titleResult = { truncated: false };
     let bodyResult = { truncated: false };
+    let eyebrowResult = { truncated: false };
 
     if (composition === 'editorial') {
-      if (offer) {
-        ctx.fillStyle = yellow;
-        ctx.fillRect(0, 0, width, height);
-        ink = green;
-      } else if (clean) {
-        ctx.fillStyle = '#f6f7f1';
-        ctx.fillRect(0, 0, width, height);
+      if (offer || clean) {
+        ctx.fillStyle = offer ? yellow : '#fffeff';
+        ctx.fillRect(0, top, width, bottom - top);
         ink = green;
       } else {
-        const gradient = ctx.createLinearGradient(0, 0, width, height);
-        gradient.addColorStop(0, '#073d2c');
-        gradient.addColorStop(1, '#05784b');
+        const gradient = ctx.createLinearGradient(0, top, width, bottom);
+        gradient.addColorStop(0, brandGreen);
+        gradient.addColorStop(1, deepGreen);
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, width, height);
+        ctx.fillRect(0, top, width, bottom - top);
       }
-      logoKind = ink === '#ffffff' ? 'light' : 'dark';
+      logoKind = loja ? 'loja' : ink === '#ffffff' ? 'light' : 'dark';
       footerInk = ink;
-      buttonFill = ink === '#ffffff' ? yellow : green;
+      buttonFill = ink === '#ffffff' ? yellow : brandGreen;
       buttonInk = ink === '#ffffff' ? green : '#ffffff';
-      ctx.fillStyle = offer ? 'rgba(6, 63, 45, 0.10)' : clean ? 'rgba(6, 63, 45, 0.07)' : 'rgba(255, 225, 67, 0.12)';
+      ctx.fillStyle = offer ? 'rgba(1, 75, 41, 0.10)' : clean ? 'rgba(1, 150, 82, 0.07)' : 'rgba(255, 255, 255, 0.07)';
       ctx.beginPath(); ctx.arc(1125, square ? 525 : 620, 410, 0, Math.PI * 2); ctx.fill();
-      drawPattern(ctx, width, height, ink === '#ffffff' ? 'rgba(255, 255, 255, 0.14)' : 'rgba(6, 63, 45, 0.12)');
-      ctx.fillStyle = ink === '#ffffff' ? 'rgba(255, 225, 67, 0.95)' : 'rgba(6, 63, 45, 0.92)';
+      drawPattern(ctx, width, height, ink === '#ffffff' ? 'rgba(255, 255, 255, 0.14)' : 'rgba(1, 75, 41, 0.12)');
+      ctx.fillStyle = ink === '#ffffff' ? yellow : brandGreen;
       ctx.beginPath();
       ctx.moveTo(width - 260, height - 345);
       ctx.lineTo(width, height - 500);
       ctx.lineTo(width, height - 315);
       ctx.closePath(); ctx.fill();
     } else if (composition === 'portrait') {
-      ctx.fillStyle = offer ? '#ffe760' : clean ? '#ffffff' : '#f2f6ef';
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillStyle = offer ? '#fae86d' : clean ? '#fffeff' : '#f0f9f5';
+      ctx.fillRect(0, top, width, bottom - top);
       const photoX = square ? 535 : 520;
       const photoY = square ? 192 : 230;
       const photoWidth = width - photoX;
-      const photoHeight = square ? 612 : 698;
+      const photoHeight = (square ? 612 : 698) - (square ? shift : 0);
       ctx.fillStyle = yellow;
       roundedRect(ctx, photoX - 18, photoY - 18, photoWidth + 18, photoHeight + 18, 46);
       ctx.fill();
@@ -350,41 +387,41 @@
       }
       ctx.restore();
       ctx.fillStyle = deepGreen;
-      ctx.fillRect(0, height - 254, width, 254);
+      ctx.fillRect(0, height - 254 - shift, width, bottom - (height - 254 - shift));
       ink = green;
-      logoKind = 'dark';
+      logoKind = loja ? 'loja' : 'dark';
       footerInk = '#ffffff';
       if (slide.imageSource === 'sample' && image) {
-        ctx.fillStyle = 'rgba(8, 46, 35, 0.76)';
+        ctx.fillStyle = 'rgba(1, 60, 33, 0.78)';
         roundedRect(ctx, photoX + 22, photoY + photoHeight - 62, 300, 39, 12);
         ctx.fill();
         ctx.fillStyle = '#ffffff'; ctx.font = '600 22px Inter, Arial, sans-serif';
         ctx.fillText('IMAGEM ILUSTRATIVA', photoX + 40, photoY + photoHeight - 36);
       }
     } else {
-      const panelTop = square ? 550 : 708;
-      if (image) drawCoverRect(ctx, image, 0, 0, width, panelTop + 110, slide.photoFocus);
+      const panelTop = (square ? 550 : 708) - shift;
+      if (image) drawCoverRect(ctx, image, 0, top, width, panelTop + 110 - top, slide.photoFocus);
       else {
-        ctx.fillStyle = '#dbe8dd'; ctx.fillRect(0, 0, width, panelTop + 110);
+        ctx.fillStyle = '#dbe8dd'; ctx.fillRect(0, top, width, panelTop + 110 - top);
         ctx.fillStyle = green; ctx.font = '700 42px Inter, Arial, sans-serif';
         ctx.fillText('ADICIONE UMA IMAGEM', margin, panelTop / 2);
       }
-      const topShade = ctx.createLinearGradient(0, 0, 0, 225);
-      topShade.addColorStop(0, 'rgba(4, 36, 26, 0.82)');
-      topShade.addColorStop(1, 'rgba(4, 36, 26, 0)');
+      const topShade = ctx.createLinearGradient(0, top, 0, 225);
+      topShade.addColorStop(0, 'rgba(1, 45, 25, 0.82)');
+      topShade.addColorStop(1, 'rgba(1, 45, 25, 0)');
       ctx.fillStyle = topShade;
-      ctx.fillRect(0, 0, width, 225);
-      ctx.fillStyle = offer ? yellow : clean ? '#f7f8f2' : deepGreen;
+      ctx.fillRect(0, top, width, 225 - top);
+      ctx.fillStyle = offer ? yellow : clean ? '#fffeff' : deepGreen;
       ctx.beginPath();
       ctx.moveTo(0, panelTop + 34); ctx.lineTo(width, panelTop - 44);
-      ctx.lineTo(width, height); ctx.lineTo(0, height); ctx.closePath(); ctx.fill();
+      ctx.lineTo(width, bottom); ctx.lineTo(0, bottom); ctx.closePath(); ctx.fill();
       ink = offer || clean ? green : '#ffffff';
-      logoKind = 'light';
+      logoKind = loja ? 'loja' : 'light';
       footerInk = ink;
-      buttonFill = ink === '#ffffff' ? yellow : green;
+      buttonFill = ink === '#ffffff' ? yellow : brandGreen;
       buttonInk = ink === '#ffffff' ? green : '#ffffff';
       if (slide.imageSource === 'sample' && image) {
-        ctx.fillStyle = 'rgba(8, 46, 35, 0.75)';
+        ctx.fillStyle = 'rgba(1, 60, 33, 0.78)';
         roundedRect(ctx, margin, panelTop - 92, 294, 39, 12); ctx.fill();
         ctx.fillStyle = '#ffffff'; ctx.font = '600 22px Inter, Arial, sans-serif';
         ctx.fillText('IMAGEM ILUSTRATIVA', margin + 16, panelTop - 66);
@@ -393,25 +430,37 @@
 
     const logo = await getLogo(logoKind);
     if (logo) {
-      const logoWidth = 398;
-      ctx.drawImage(logo, margin, 58, logoWidth, logoWidth * logo.height / logo.width);
+      // Nunca amplia o arquivo mais que 25%: logo em baixa resolução sai menor em vez de borrado.
+      const logoWidth = Math.min(398, logo.width * 1.25);
+      const logoHeight = logoWidth * logo.height / logo.width;
+      // O logo de Serviços Digitais é amarelo: fora do fundo verde ganha um selo verde atrás.
+      if (loja && composition !== 'editorial') {
+        ctx.fillStyle = brandGreen;
+        roundedRect(ctx, margin - 18, 44, logoWidth + 36, logoHeight + 28, 24); ctx.fill();
+      }
+      ctx.drawImage(logo, margin, 58, logoWidth, logoHeight);
     } else {
       ctx.fillStyle = composition === 'scene' ? '#ffffff' : ink;
       ctx.font = '700 46px Inter, Arial, sans-serif';
-      ctx.fillText('SPEED FINANCEIRA', margin, 118);
+      ctx.fillText(loja ? 'SPEED SERVIÇOS DIGITAIS' : 'SPEED FINANCEIRA', margin, 118);
     }
-    ctx.fillStyle = composition === 'scene' ? 'rgba(8, 46, 35, 0.62)' : (ink === '#ffffff' ? 'rgba(255, 255, 255, 0.18)' : 'rgba(6, 63, 45, 0.12)');
-    roundedRect(ctx, width - 212, 74, 136, 60, 30); ctx.fill();
-    ctx.fillStyle = composition === 'scene' ? '#ffffff' : ink;
-    ctx.font = '700 29px Inter, Arial, sans-serif';
-    ctx.textAlign = 'right'; ctx.fillText((index + 1) + ' / ' + total, width - 105, 114); ctx.textAlign = 'left';
+    // Contador só faz sentido em carrossel.
+    if (total > 1) {
+      ctx.fillStyle = composition === 'scene' ? 'rgba(1, 60, 33, 0.62)' : (ink === '#ffffff' ? 'rgba(255, 255, 255, 0.18)' : 'rgba(1, 75, 41, 0.12)');
+      roundedRect(ctx, width - 212, 74, 136, 60, 30); ctx.fill();
+      ctx.fillStyle = composition === 'scene' ? '#ffffff' : ink;
+      ctx.font = '700 29px Inter, Arial, sans-serif';
+      ctx.textAlign = 'right'; ctx.fillText((index + 1) + ' / ' + total, width - 105, 114); ctx.textAlign = 'left';
+    }
 
     if (composition === 'editorial') {
-      const accent = ink === '#ffffff' ? yellow : green;
+      const accent = ink === '#ffffff' ? yellow : brandGreen;
       ctx.fillStyle = accent;
       roundedRect(ctx, margin, square ? 242 : 296, 96, 10, 5); ctx.fill();
+      // Texto do selo em fundo claro usa o verde escuro: o verde oficial sobre amarelo fica sem contraste.
+      ctx.fillStyle = ink === '#ffffff' ? yellow : green;
       ctx.font = '700 27px Inter, Arial, sans-serif';
-      ctx.fillText('CONTEÚDO SPEED', margin, square ? 292 : 346);
+      eyebrowResult = drawTextBlock(ctx, eyebrowText, margin, square ? 292 : 346, contentWidth, 1, 30);
       const maxLines = square ? 3 : 4;
       const titleSize = fitText(ctx, titleText, contentWidth, maxLines, square ? 91 : 104, 68, 700);
       const titleLineHeight = Math.round(titleSize * 1.05);
@@ -420,7 +469,7 @@
       const bodyLines = Math.min(wrapLines(ctx, bodyText, contentWidth - 80).length, 2);
       const groupHeight = titleLines * titleLineHeight + 25 + bodyLines * (square ? 51 : 56);
       const groupStart = square ? 342 : 403;
-      const groupEnd = height - 296;
+      const groupEnd = height - 296 - shift;
       const titleY = groupStart + Math.max(0, (groupEnd - groupStart - groupHeight) / 2);
       ctx.fillStyle = ink;
       ctx.font = '700 ' + titleSize + 'px "Space Grotesk", Inter, Arial, sans-serif';
@@ -432,10 +481,11 @@
       bodyResult = drawTextBlock(ctx, bodyText, margin, titleResult.nextY + 61, contentWidth - 70, 2, square ? 51 : 56);
     } else if (composition === 'portrait') {
       const titleWidth = 430;
-      ctx.fillStyle = green;
+      ctx.fillStyle = brandGreen;
       roundedRect(ctx, margin, square ? 230 : 288, 76, 9, 5); ctx.fill();
+      ctx.fillStyle = green;
       ctx.font = '700 25px Inter, Arial, sans-serif';
-      ctx.fillText('CRÉDITO COM CLAREZA', margin, square ? 278 : 337);
+      eyebrowResult = drawTextBlock(ctx, eyebrowText, margin, square ? 278 : 337, titleWidth, 1, 28);
       const titleSize = fitText(ctx, titleText, titleWidth, 4, square ? 69 : 78, 54, 700);
       ctx.fillStyle = green;
       ctx.font = '700 ' + titleSize + 'px "Space Grotesk", Inter, Arial, sans-serif';
@@ -443,44 +493,52 @@
       ctx.font = (square ? '500 32px' : '500 36px') + ' Inter, Arial, sans-serif';
       bodyResult = drawTextBlock(ctx, bodyText, margin, titleResult.nextY + 15, titleWidth, 2, square ? 44 : 48);
     } else {
-      const panelTop = square ? 550 : 708;
+      const panelTop = (square ? 550 : 708) - shift;
       const maxLines = square ? 2 : 3;
       ctx.fillStyle = ink === '#ffffff' ? yellow : green;
       roundedRect(ctx, margin, panelTop + 44, 80, 9, 4); ctx.fill();
       ctx.font = '700 25px Inter, Arial, sans-serif';
-      ctx.fillText('SPEED FINANCEIRA', margin, panelTop + 87);
+      eyebrowResult = drawTextBlock(ctx, eyebrowText, margin, panelTop + 87, contentWidth, 1, 28);
       const titleSize = fitText(ctx, titleText, contentWidth, maxLines, square ? 64 : 70, 55, 700);
       ctx.fillStyle = ink;
       ctx.font = '700 ' + titleSize + 'px "Space Grotesk", Inter, Arial, sans-serif';
-      titleResult = drawTextBlock(ctx, titleText, margin, panelTop + (square ? 120 : 130), contentWidth, maxLines, Math.round(titleSize * 1.06));
+      // A linha de base do título fica uma altura de letra abaixo do selo, sem encostar nele.
+      titleResult = drawTextBlock(ctx, titleText, margin, panelTop + (square ? 145 : 160), contentWidth, maxLines, Math.round(titleSize * 1.06));
       ctx.font = (square ? '500 31px' : '500 35px') + ' Inter, Arial, sans-serif';
       const bodyMax = wrapLines(ctx, titleText, contentWidth).length >= maxLines ? 1 : 2;
       bodyResult = drawTextBlock(ctx, bodyText, margin, titleResult.nextY + 18, contentWidth - 30, bodyMax, square ? 42 : 47);
     }
 
-    const ctaY = height - (composition === 'editorial' ? 232 : 210);
+    // A imagem não é clicável: a chamada é um selo de texto, sem seta de botão; o contato fica no rodapé.
+    const ctaY = height - (composition === 'editorial' ? 232 : 210) - shift;
     ctx.font = '700 38px Inter, Arial, sans-serif';
-    const buttonWidth = Math.min(contentWidth, Math.max(430, ctx.measureText(ctaText).width + 158));
+    const buttonWidth = Math.min(contentWidth, Math.max(320, ctx.measureText(ctaText).width + 84));
     ctx.fillStyle = buttonFill;
     roundedRect(ctx, margin, ctaY, buttonWidth, 90, 45); ctx.fill();
     ctx.fillStyle = buttonInk;
-    const ctaTruncated = wrapLines(ctx, ctaText, buttonWidth - 146).length > 1;
-    drawTextBlock(ctx, ctaText, margin + 34, ctaY + 59, buttonWidth - 146, 1, 42);
-    ctx.beginPath(); ctx.arc(margin + buttonWidth - 53, ctaY + 45, 29, 0, Math.PI * 2);
-    ctx.fillStyle = buttonInk === '#ffffff' ? 'rgba(255,255,255,0.18)' : 'rgba(6,63,45,0.12)'; ctx.fill();
-    ctx.fillStyle = buttonInk;
-    ctx.textAlign = 'center'; ctx.font = '700 43px Inter, Arial, sans-serif';
-    ctx.fillText('→', margin + buttonWidth - 53, ctaY + 59); ctx.textAlign = 'left';
-    ctx.strokeStyle = footerInk === '#ffffff' ? 'rgba(255,255,255,0.35)' : 'rgba(6,63,45,0.25)';
-    ctx.beginPath(); ctx.moveTo(margin, height - 94); ctx.lineTo(width - margin, height - 94); ctx.stroke();
+    const ctaTruncated = wrapLines(ctx, ctaText, buttonWidth - 84).length > 1;
+    drawTextBlock(ctx, ctaText, margin + 42, ctaY + 59, buttonWidth - 84, 1, 42);
+    const footerY = height - 44 - shift;
+    ctx.strokeStyle = footerInk === '#ffffff' ? 'rgba(255,255,255,0.35)' : 'rgba(1,75,41,0.25)';
+    ctx.beginPath(); ctx.moveTo(margin, footerY - 50); ctx.lineTo(width - margin, footerY - 50); ctx.stroke();
     ctx.fillStyle = footerInk;
+    ctx.font = '700 27px Inter, Arial, sans-serif';
+    ctx.fillText('WhatsApp (35) 3067-5017', margin, footerY);
     ctx.font = '600 27px Inter, Arial, sans-serif';
-    ctx.fillText('Varginha, MG', margin, height - 44);
-    ctx.textAlign = 'right'; ctx.fillText('(35) 3067-5017', width - margin, height - 44); ctx.textAlign = 'left';
-    return { truncated: titleResult.truncated || bodyResult.truncated || ctaTruncated, missingImage };
+    ctx.textAlign = 'right'; ctx.fillText('Centro · Varginha/MG', width - margin, footerY); ctx.textAlign = 'left';
+    if (legal) {
+      let size = 20;
+      do ctx.font = `500 ${size}px Inter, Arial, sans-serif`;
+      while (ctx.measureText(LEGAL_TEXT).width > contentWidth && --size >= 14);
+      ctx.globalAlpha = 0.85;
+      ctx.fillText(LEGAL_TEXT, margin, height - 26);
+      ctx.globalAlpha = 1;
+    }
+    return { truncated: titleResult.truncated || bodyResult.truncated || eyebrowResult.truncated || ctaTruncated, missingImage };
   }
 
   let previewToken = 0;
+  let previewTruncated = false;
   async function renderPreview() {
     const token = ++previewToken;
     try {
@@ -500,12 +558,13 @@
           }
         }
       }
-      ui.downloadSlide.disabled = result.missingImage;
-      ui.downloadAll.disabled = visibleSlides().some(needsImage);
+      previewTruncated = result.truncated;
+      ui.downloadSlide.disabled = result.missingImage || result.truncated;
+      ui.downloadAll.disabled = visibleSlides().some(needsImage) || result.truncated;
       setStatus(result.missingImage
         ? 'Esta composição precisa de imagem. Escolha a foto ilustrativa ou envie uma foto própria.'
         : result.truncated
-          ? 'Parte do texto foi abreviada na arte. Reduza o conteúdo para exibi-lo por completo.'
+          ? 'O texto não coube e seria cortado com "…". Encurte o título, o texto, o selo ou a chamada para liberar o download.'
           : 'Prévia atualizada. Revise texto, taxas e condições antes de publicar.');
     } catch (error) {
       if (token !== previewToken) return;
@@ -608,6 +667,8 @@
         const canvas = document.createElement('canvas');
         const result = await drawArt(canvas, slide, index, visibleSlides().length);
         if (result.missingImage) throw new Error('missing-image');
+        // Arte com texto cortado não sai: um "…" no título publicado passa despercebido na revisão.
+        if (result.truncated) throw Object.assign(new Error('truncated'), { slide: index + 1 });
         const blob = await canvasBlob(canvas);
         files.push({ name: `speed_arte_${String(index + 1).padStart(2, '0')}.png`, bytes: new Uint8Array(await blob.arrayBuffer()), blob });
       }
@@ -615,13 +676,15 @@
       else downloadBlob(files[0].blob, files[0].name);
       setStatus(`${files.length} ${files.length === 1 ? 'arte gerada' : 'artes geradas'} com sucesso.`);
     } catch (error) {
-      console.error(error);
+      if (error.message !== 'truncated') console.error(error);
       setStatus(error.message === 'missing-image'
         ? 'Há um slide sem imagem. Escolha uma foto antes de exportar.'
-        : 'Não foi possível exportar. Confira a foto enviada e tente novamente.');
+        : error.message === 'truncated'
+          ? `O texto do slide ${error.slide} não coube na arte. Encurte o conteúdo antes de exportar.`
+          : 'Não foi possível exportar. Confira a foto enviada e tente novamente.');
     } finally {
-      ui.downloadSlide.disabled = needsImage(currentSlide());
-      ui.downloadAll.disabled = visibleSlides().some(needsImage);
+      ui.downloadSlide.disabled = needsImage(currentSlide()) || previewTruncated;
+      ui.downloadAll.disabled = visibleSlides().some(needsImage) || previewTruncated;
     }
   }
 
@@ -650,6 +713,9 @@
       size: document.getElementById('artPreviewSize'), status: document.getElementById('artStatus'),
       downloadSlide: document.getElementById('artDownloadSlide'), downloadAll: document.getElementById('artDownloadAll')
     };
+    ui.brand = document.getElementById('artBrand');
+    ui.legal = document.getElementById('artLegal');
+    ui.eyebrow = document.getElementById('artEyebrow');
     ui.prompt = document.getElementById('artImagePrompt');
     ui.generatePrompt = document.getElementById('artGeneratePrompt');
     ui.copyPrompt = document.getElementById('artCopyPrompt');
@@ -665,13 +731,15 @@
     });
     ui.format.addEventListener('change', () => { state.format = ui.format.value; saveDraft(); syncForm(); });
     ui.template.addEventListener('change', () => { state.template = ui.template.value; saveDraft(); syncForm(); });
+    ui.brand.addEventListener('change', () => { state.brand = ui.brand.value; saveDraft(); syncForm(); });
+    ui.legal.addEventListener('change', () => { state.legal = ui.legal.checked; saveDraft(); renderPreview(); });
     ui.composition.addEventListener('change', () => { currentSlide().composition = ui.composition.value; saveDraft(); syncForm(); });
     ui.imageSource.addEventListener('change', () => {
       currentSlide().imageSource = ui.imageSource.value;
       saveDraft(); syncForm();
     });
     ui.photoFocus.addEventListener('change', () => { currentSlide().photoFocus = ui.photoFocus.value; saveDraft(); renderPreview(); });
-    for (const [field, element] of [['title', ui.title], ['body', ui.body], ['cta', ui.cta]]) {
+    for (const [field, element] of [['title', ui.title], ['body', ui.body], ['cta', ui.cta], ['eyebrow', ui.eyebrow]]) {
       element.addEventListener('input', () => {
         currentSlide()[field] = element.value;
         ui.prompt.value = '';
@@ -707,6 +775,8 @@
       slide.title = String(post.manchete || post.titulo || '').slice(0, 140);
       slide.body = String(post.sub || '').slice(0, 400);
       slide.cta = String(post.cta || '').slice(0, 90);
+      slide.eyebrow = String(post.linha || '').slice(0, 40);
+      state.brand = 'financeira';
       saveDraft(); syncForm();
       setStatus('Texto do post selecionado importado. Revise antes de exportar.');
     });
@@ -754,63 +824,24 @@
         setStatus('Selecionei o comando. Copie com Ctrl+C para usar no ChatGPT Imagem.');
       }
     });
+    // Modelos de gráfica e serviços: textos curtos para caber em 2 linhas; a arte troca para a marca Serviços Digitais.
     const STORE_PRESETS = {
-      curriculo: {
-        title: 'Precisa Imprimir seu Currículo?',
-        body: 'Impressão a laser nítida e rápida em papel de qualidade. Se precisar, ajudamos na formatação e digitação para você não perder oportunidades!',
-        cta: 'Venha imprimir ou mande no WhatsApp',
-        composition: 'editorial',
-        template: 'brand'
-      },
-      foto3x4: {
-        title: 'Foto 3x4 Pronta em Minutos',
-        body: 'Fotos com padrão oficial para Carteira de Trabalho, Passaporte, CNH, RG e matrículas escolares. Fundo branco impecável e corte profissional.',
-        cta: 'Tire sua foto 3x4 hoje',
-        composition: 'editorial',
-        template: 'offer'
-      },
-      segundavia: {
-        title: 'Tiramos sua 2ª Via sem Fila',
-        body: 'Água (COPASA), luz (CEMIG), telefone, IPTU, certidões negativas, situação cadastral do CPF e antecedentes criminais impressos na hora.',
-        cta: 'Resolva seus documentos aqui',
-        composition: 'editorial',
-        template: 'brand'
-      },
-      plastificacao: {
-        title: 'Plastificação & Encadernação',
-        body: 'Proteja seus documentos importantes contra umidade, rasgos e desgaste. Também fazemos encadernação de apostilas, manuais e trabalhos.',
-        cta: 'Proteja seus documentos agora',
-        composition: 'editorial',
-        template: 'clean'
-      },
-      internet: {
-        title: 'Lan House com Internet Rápida',
-        body: 'Computadores modernos para estudo, concursos, emissão de guias do GOV.BR, agendamentos, digitação de contratos e pesquisas.',
-        cta: 'Estações climatizadas e prontas',
-        composition: 'editorial',
-        template: 'brand'
-      },
-      scan: {
-        title: 'Digitalização & Envio de Arquivos',
-        body: 'Transforme fotos e papéis físicos em PDF de alta qualidade. Enviamos direto para seu e-mail ou WhatsApp com agilidade e sigilo.',
-        cta: 'Digitalize seus arquivos aqui',
-        composition: 'editorial',
-        template: 'clean'
-      }
+      curriculo: { eyebrow: 'Impressão na hora', title: 'Precisa imprimir seu currículo?', body: 'Impressão a laser na hora. Ajudamos na formatação e na digitação.', cta: 'Imprima hoje na loja' },
+      foto3x4: { eyebrow: 'Sem agendamento', title: 'Foto 3x4 pronta em minutos', body: 'Para carteira de trabalho, RG, CNH e matrícula escolar.', cta: 'Tire sua foto hoje' },
+      segundavia: { eyebrow: 'Documentos sem fila', title: 'Sua 2ª via sem fila', body: 'Contas, IPTU, certidões e situação do CPF impressos na hora.', cta: 'Resolva aqui na loja' },
+      plastificacao: { eyebrow: 'Proteja seus documentos', title: 'Plastificação e encadernação', body: 'Documentos protegidos; apostilas, manuais e trabalhos encadernados.', cta: 'Traga seus documentos' },
+      internet: { eyebrow: 'Estações prontas', title: 'Lan house com internet rápida', body: 'Computadores para estudo, concursos, GOV.BR e digitação.', cta: 'Venha usar hoje' },
+      scan: { eyebrow: 'Digitalização', title: 'Digitalização e envio de arquivos', body: 'Papéis e fotos em PDF, enviados para seu e-mail ou WhatsApp.', cta: 'Digitalize aqui' }
     };
     document.querySelectorAll('#artStorePresets [data-preset]').forEach(btn => {
       btn.addEventListener('click', () => {
         const p = STORE_PRESETS[btn.dataset.preset];
         if (!p) return;
-        const target = currentSlide();
-        target.title = p.title;
-        target.body = p.body;
-        target.cta = p.cta;
-        target.composition = p.composition;
-        state.template = p.template;
+        Object.assign(currentSlide(), p, { composition: 'editorial' });
+        state.brand = 'loja';
         saveDraft();
         syncForm();
-        setStatus(`Modelo "${btn.textContent.trim()}" carregado com sucesso!`);
+        setStatus(`Modelo "${btn.textContent.trim()}" carregado com a marca Speed Serviços Digitais.`);
       });
     });
     document.addEventListener('speed:edit-art', event => {
