@@ -480,7 +480,7 @@
       ctx.font = (square ? '500 38px' : '500 42px') + ' Inter, Arial, sans-serif';
       bodyResult = drawTextBlock(ctx, bodyText, margin, titleResult.nextY + 61, contentWidth - 70, 2, square ? 51 : 56);
     } else if (composition === 'portrait') {
-      const titleWidth = 430;
+      const titleWidth = 410; // termina antes da moldura amarela da foto (x = 502)
       ctx.fillStyle = brandGreen;
       roundedRect(ctx, margin, square ? 230 : 288, 76, 9, 5); ctx.fill();
       ctx.fillStyle = green;
