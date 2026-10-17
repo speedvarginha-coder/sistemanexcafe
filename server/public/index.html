@@ -563,11 +563,7 @@
 
                 <!-- Banner Inteligente de Oportunidades & Cross-Sell -->
                 <div id="posCrossSellBanner" class="posCrossSellBanner" hidden>
-                  <div class="crossSellIcon"></div>
-                  <div class="crossSellContent">
-                    <strong id="posCrossSellTitle">Oportunidade Comercial</strong>
-                    <p id="posCrossSellDesc">Ofereça serviços de alto valor</p>
-                  </div>
+                  <div id="posCrossSellList" class="crossSellList"></div>
                 </div>
 
                 <!-- Corpo do Cupom -->
@@ -709,6 +705,7 @@
             </div>
             <button id="addProductButton" class="primary">Cadastrar produto</button>
             <button id="importProductsButton" type="button" class="secondaryBtn" data-admin-only>Importar nota, Excel, PDF ou foto</button>
+            <button id="normalizeProductsButton" type="button" class="secondaryBtn" data-admin-only>Revisar duplicados</button>
             <input type="file" id="importProductsInput" accept=".xml,.xlsx,.csv,.pdf,image/*" hidden>
           </div>
           <div id="stockAlerts" class="stockAlerts" hidden></div>
@@ -744,6 +741,20 @@
             <label><span>Impressão colorida por página (R$)</span><input name="printColor" type="number" min="0.01" step="0.01" required></label>
             <label class="checkboxLabel fullWidth"><input name="autoRestoreOnTimeEnd" type="checkbox"><span>Limpar a máquina automaticamente quando o tempo acabar</span></label>
             <div class="fullWidth"><button type="submit" class="primary">Salvar preços</button></div>
+          </form>
+
+          <div class="sectionHead spaced">
+            <div>
+              <h2>Faixas da impressão P&amp;B e avisos de combo</h2>
+              <p>Preço por página conforme o total de páginas P&amp;B do pedido no balcão. Xerox e preço digitado na venda não mudam.</p>
+            </div>
+          </div>
+          <form id="printTiersForm" class="settingsForm modernFormCard">
+            <label class="fullWidth"><span>Faixas (a partir de quantas páginas = preço por página)</span><input name="tiers" type="text" placeholder="1=1,00; 11=0,70; 51=0,50; 151=0,40" required></label>
+            <p id="printTiersExample" class="muted fullWidth"></p>
+            <label class="checkboxLabel fullWidth"><input name="enabled" type="checkbox"><span>Cobrar pela faixa no caixa</span></label>
+            <label class="checkboxLabel fullWidth"><input name="comboHints" type="checkbox"><span>Mostrar avisos de combo no caixa (envelope, comprovante, recebimento, crédito)</span></label>
+            <div class="fullWidth"><button type="submit" class="primary">Salvar faixas</button></div>
           </form>
 
           <div class="sectionHead spaced">
@@ -803,6 +814,7 @@
             <button type="button" class="reportTabBtn" data-report-tab="clientes">Clientes e fiado</button>
             <button type="button" class="reportTabBtn" data-report-tab="estoque">Estoque</button>
             <button type="button" class="reportTabBtn" data-report-tab="maquinas">Máquinas e equipe</button>
+            <button type="button" class="reportTabBtn" data-report-tab="plano">Plano de 7 dias</button>
           </div>
 
           <!-- Visao geral -->
@@ -1018,6 +1030,24 @@
           <div id="tab-report-maquinas" class="reportTabContent" hidden>
             <div class="rpCard"><h3>Uso e faturamento por máquina</h3><div id="reportMachines" class="tableWrap"></div></div>
             <div class="rpCard spacedTop"><h3>Recebimentos por atendente</h3><div id="reportOperators" class="tableWrap"></div></div>
+          </div>
+
+          <!-- Plano de 7 dias: indicadores diarios contra a media dos 60 dias anteriores -->
+          <div id="tab-report-plano" class="reportTabContent" hidden>
+            <div class="rpCard">
+              <div class="rpCardHead">
+                <h3>Indicadores do plano de 7 dias</h3>
+                <div class="rpActions">
+                  <input id="planStart" type="date" title="Data inicial">
+                  <span>até</span>
+                  <input id="planEnd" type="date" title="Data final">
+                  <button type="button" id="planApplyBtn" class="secondaryBtn">Atualizar</button>
+                </div>
+              </div>
+              <p class="muted">Base = média por dia aberto dos 60 dias antes da data inicial. Atendimento = venda de balcão ou sessão de máquina (tempo e impressão da mesma sessão contam uma vez). Recarga de crédito do cliente não entra.</p>
+              <div id="planIndicators" class="tableWrap"></div>
+            </div>
+            <div class="rpCard spacedTop"><h3>Receita por serviço padronizado no período</h3><div id="planGroups" class="tableWrap"></div></div>
           </div>
         </section>
 

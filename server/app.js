@@ -10,6 +10,8 @@ const { readBill, analyzeText, extractText, parseBankCsv } = require("./pdf-cont
 const { readProducts } = require("./importar-produtos");
 const { suggestActions, METRICS, actionEffect, goalProgress, TEMPLATES } = require("./plano-acao");
 const { syncMarketing, DEFAULT_MARKETING_SOURCE, TASK_NAME: MARKETING_SYNC_TASK, RESULT_FILE: MARKETING_SYNC_RESULT } = require("./marketing-sync");
+const { groupOf, PB_GROUP, DEFAULT_PRINT_TIERS, tierUnitCents, parsePrintTiers, normalizationPlan, applyNormalization, revertNormalization } = require("./grupos");
+const { buildIndicators } = require("./indicadores");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -125,7 +127,7 @@ function verifyPassword(password, user) {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 function defaults() {
-  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }] }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, vault: { salt: null, check: null, items: [], updatedAt: null } };
+  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, vault: { salt: null, check: null, items: [], updatedAt: null } };
 }
 function normalize(db) {
   const empty = defaults();
@@ -134,6 +136,8 @@ function normalize(db) {
   db.printerShares ||= [];
   db.settings = { ...empty.settings, ...(db.settings || {}) };
   if (!Array.isArray(db.settings.timeTable) || !db.settings.timeTable.length) db.settings.timeTable = empty.settings.timeTable.map(row => ({ ...row }));
+  // Faixas da impressao P&B comecam desligadas (o dono ativa em Tarifas); avisos de combo comecam ligados.
+  if (!Array.isArray(db.settings.printTiers) || !db.settings.printTiers.length) db.settings.printTiers = DEFAULT_PRINT_TIERS.map(row => ({ ...row }));
   db.machines ||= {};
   db.waitList ||= [];
   for (const machine of Object.values(db.machines)) {
@@ -532,7 +536,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       machines: Object.values(db.machines).map(publicMachine),
       events: db.events.slice(0, 60),
       clients: db.clients.map(publicClient),
-      products: db.products,
+      products: db.products.map(item => ({ ...item, group: groupOf(item) })),
       charges: db.charges.slice(0, 200),
       openCharges,
       payments: db.payments.slice(0, 150),
@@ -594,6 +598,17 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       try { extra.push(...(JSON.parse(fs.readFileSync(path.join(dataDir, name), "utf8"))[key] || [])); } catch { }
     }
     return extra.length ? rows.concat(extra) : rows;
+  }
+
+  // Quantidade e receita de cada produto em todo o historico (decide qual cadastro duplicado fica).
+  function soldByProduct() {
+    const sold = new Map();
+    for (const c of historyRecords("charges")) for (const it of c.items || []) {
+      if (!it.productId) continue;
+      const row = sold.get(it.productId) || { quantity: 0, revenueCents: 0 };
+      row.quantity += it.quantity || 0; row.revenueCents += it.totalCents || 0; sold.set(it.productId, row);
+    }
+    return sold;
   }
 
   function report(inputDate) {
@@ -1452,6 +1467,44 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         end: url.searchParams.get("end") || null
       }));
     }
+    // Indicadores do plano de 7 dias, dia a dia, com a media dos 60 dias anteriores como base de comparacao.
+    if (p === "/api/reports/indicators" && req.method === "GET") {
+      const day = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? value : null;
+      const end = day(url.searchParams.get("end")) || localDay(Date.now());
+      const start = day(url.searchParams.get("start")) || shiftDay(end, -13);
+      if (start > end) throw err(400, "Data inicial depois da final");
+      const charges = historyRecords("charges"), incomes = db.incomes || [], products = db.products;
+      const current = buildIndicators({ charges, incomes, products, start, end });
+      const base = buildIndicators({ charges, incomes, products, start: shiftDay(start, -60), end: shiftDay(start, -1) });
+      return send(res, 200, { ok: true, ...current, base: { start: base.start, end: base.end, openDays: base.openDays, average: base.average } });
+    }
+    if (p === "/api/products/normalization" && req.method === "GET") {
+      admin(user);
+      const plan = normalizationPlan(db.products, soldByProduct());
+      return send(res, 200, { ok: true, ...plan, applied: db.products.filter(item => item.normalization).length });
+    }
+    if (p === "/api/products/normalization/apply" && req.method === "POST") {
+      admin(user);
+      fs.copyFileSync(dbPath, `${dbPath}.antes-normalizacao-${Date.now()}.bak`);
+      const result = applyNormalization(db.products, normalizationPlan(db.products, soldByProduct()), now(), user.name);
+      event("produtos", "Cadastro normalizado", `${result.retired} duplicado(s) inativado(s), ${result.recategorized} produto(s) com categoria unificada`, user.name); save();
+      return send(res, 200, { ok: true, ...result });
+    }
+    if (p === "/api/products/normalization/revert" && req.method === "POST") {
+      admin(user);
+      const reverted = revertNormalization(db.products);
+      event("produtos", "Normalizacao desfeita", `${reverted} produto(s) voltaram ao cadastro anterior`, user.name); save();
+      return send(res, 200, { ok: true, reverted });
+    }
+    if (p === "/api/settings/print-tiers" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      if ("tiers" in input) db.settings.printTiers = parsePrintTiers(input.tiers);
+      if ("enabled" in input) db.settings.printTiersEnabled = input.enabled === true;
+      if ("comboHints" in input) db.settings.comboHintsEnabled = input.comboHints !== false;
+      const text = db.settings.printTiers.map(row => `${row.min}+ pág: R$ ${(row.cents / 100).toFixed(2)}`).join(", ");
+      event("sistema", "Faixas da impressao P&B", `${db.settings.printTiersEnabled ? "ativas" : "desligadas"}: ${text}`, user.name); save();
+      return send(res, 200, { ok: true, printTiers: db.settings.printTiers, printTiersEnabled: db.settings.printTiersEnabled, comboHintsEnabled: db.settings.comboHintsEnabled });
+    }
     if (p === "/api/machines/register" && req.method === "POST") {
       admin(user); const input = await readBody(req); const id = machineId(input.id);
       if (db.machines[id]) throw err(409, "ID ja cadastrado");
@@ -1838,6 +1891,22 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         }
       }
 
+      // Faixas da impressao P&B: o preco da faixa (pelo total de paginas P&B do pedido) vale para todas as paginas.
+      // Preco digitado na venda e xerox (copia de papel) ficam como estao.
+      if (db.settings.printTiersEnabled) {
+        const typed = row => row.unitPriceCents !== undefined && row.unitPriceCents !== null && row.unitPriceCents !== "";
+        const tierRows = items.map((row, i) => ({ row, product: row.productId ? db.products.find(item => item.id === row.productId) : null, typed: typed(input.items[i]) }))
+          .filter(({ product, typed }) => product && !typed && groupOf(product) === PB_GROUP && !/xerox/i.test(product.name));
+        const pages = tierRows.reduce((sum, { row }) => sum + row.quantity, 0);
+        if (pages) {
+          const unit = tierUnitCents(pages, db.settings.printTiers);
+          for (const { row, product } of tierRows) {
+            amountCents += row.quantity * unit - row.totalCents;
+            row.unitPriceCents = unit; row.totalCents = row.quantity * unit; row.priceTier = true;
+            if (unit !== product.priceCents) row.listPriceCents = product.priceCents; else delete row.listPriceCents;
+          }
+        }
+      }
       const discountCents = Math.min(amountCents, Math.max(0, Number.isInteger(input.discountCents) ? input.discountCents : 0));
       const finalTotalCents = amountCents - discountCents;
       if (!Number.isSafeInteger(finalTotalCents) || finalTotalCents > 10000000) throw err(400, "Total da venda acima do limite");

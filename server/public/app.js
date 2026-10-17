@@ -879,38 +879,46 @@ let posActiveMethod = "cash";
 let posWantReceipt = false, lastReceiptData = null; // recibo so quando pedir (Ctrl+Enter ou botao)
 let posAuditTab = "due";
 
-const CROSS_SELL_RULES = [
-  {
-    test: (items) => items.some(it => /detran|crlv|ipva|multa|veícul|cnh/i.test(it.name)),
-    title: "Oportunidade: Proteção & Débitos Veiculares",
-    desc: "Ofereça parcelamento de IPVA/multas no cartão em até 12x ou cotação de seguro/rastreador veicular."
-  },
-  {
-    test: (items) => items.some(it => /inss|cnis|aposent|benefício|extrato inss/i.test(it.name)),
-    title: "Oportunidade: Crédito Consignado & Cartão Benefício",
-    desc: "Cliente aposentado/pensionista? Ofereça desbloqueio de empréstimo ou portabilidade com saque em dinheiro."
-  },
-  {
-    test: (items) => items.some(it => /mei|das mei|abertura de mei|empresa/i.test(it.name)),
-    title: "Oportunidade: Gestão Empresarial & Regularização PJ",
-    desc: "Lembre o empreendedor da Declaração Anual (DASN) e emissão de Certidão Negativa de Débitos."
-  },
-  {
-    test: (items) => items.some(it => /curr[ií]culo/i.test(it.name)),
-    title: "Kit Entrevista Profissional Completo",
-    desc: "Sugira adicionar cópias extras coloridas, envelope pardo A4 e fotos 3x4 profissionais."
-  },
-  {
-    test: (items) => items.some(it => /impress[aã]o|xerox|c[oó]pia/i.test(it.name)) && !items.some(it => /plastifica|encaderna/i.test(it.name)),
-    title: "Acabamento & Durabilidade de Documentos",
-    desc: "Ofereça plastificação rígida ou encadernação em espiral para proteger certidões e contratos."
-  },
-  {
-    test: (items) => items.some(it => it.type === "machine_time" && (it.minutes >= 60 || it.open)),
-    title: "Combo Conveniência Lan House",
-    desc: "Cliente com sessão longa: ofereça água mineral, refrigerante gelado ou snacks bomboniere."
-  }
+// Avisos de combo no caixa, tirados das vendas de mai-out/2026 (docs/analise-gerencial-2026-10-17).
+// Ate 2 por venda, na ordem abaixo; "add" e o produto que o botao inclui no carrinho.
+const COMBO_MAX = 2;
+const normName = text => String(text || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+const comboProduct = name => state?.products?.find(p => p.active && normName(p.name) === normName(name));
+function comboContext(items) {
+  const groups = new Set(items.map(it => it.group).filter(Boolean));
+  const names = items.map(it => normName(it.name));
+  const pbPages = items.filter(it => it.group === PB_GROUP).reduce((sum, it) => sum + it.quantity, 0);
+  const total = items.reduce((sum, it) => sum + it.priceCents * it.quantity, 0);
+  const has = group => groups.has(group);
+  const named = re => names.some(n => re.test(n));
+  return { has, named, pbPages, total, items, publicService: items.some(it => ["Serviços Públicos", "Serviços Financeiros"].includes(it.category)) };
+}
+const COMBO_RULES = [
+  { when: c => c.has("INSS (Meu INSS)"), title: "Speed Financeira: simulação de consignado", desc: "Pergunte se o cliente quer uma simulação gratuita de margem consignável. Anote o contato só com autorização." },
+  { when: c => c.has("Consulta SPC/crédito"), title: "Speed Financeira: crédito ou renegociação", desc: "Ofereça simulação de crédito ou de renegociação da dívida, com autorização do cliente." },
+  { when: c => c.named(/\bmei\b|nota fiscal/), title: "Pacote MEI", desc: "Ofereça cuidar do DAS todo mês e da declaração anual (DASN-SIMEI)." },
+  { when: c => c.publicService && !c.has(PB_GROUP), title: "Imprimir o comprovante?", desc: "Só 2% das vendas de INSS e 10% das de Detran saem com comprovante impresso.", add: "Impressão P/B Balcão" },
+  { when: c => c.pbPages >= 50, title: "Cliente de volume", desc: "Identifique o cliente e ofereça o pacote mensal de impressão (500 ou 1.000 páginas)." },
+  { when: c => (c.has(PB_GROUP) || c.has("Impressão Colorida") || c.has("Currículo")) && !c.has("Envelope"), title: "Envelope para não amassar?", desc: "Envelope sai em 1 de cada 5 vendas com impressão.", add: "Envelope Pardo" },
+  { when: c => c.items.some(it => it.group === PB_GROUP && !/xerox/i.test(it.name)) && !c.has("Recebimento de Arquivos") && !c.has("Scanner"), title: "O cliente mandou o arquivo?", desc: "Se veio por WhatsApp ou e-mail, inclua o Recebimento de Arquivos.", add: "Recebimento de Arquivos" },
+  { when: c => c.has("Scanner") && !c.has("Envio de arquivos"), title: "Enviar o arquivo digitalizado?", desc: "77% das digitalizações saem com envio do arquivo.", add: "Envio de arquivos" },
+  { when: c => c.has("Currículo") && !c.has("Foto 3x4"), title: "Kit entrevista", desc: "Ofereça foto 3x4 junto com o currículo.", add: "Revelação de Foto 3x4 6 fotos" },
+  { when: c => c.items.some(it => it.type === "machine_time" && (it.minutes >= 60 || it.open)) && !c.has("Bomboniere e bebidas"), title: "Sessão longa", desc: "Ofereça água ou refrigerante gelado.", add: "Agua sem Gás 500ml" },
+  { when: c => c.total <= 1000 && !c.has("Bomboniere e bebidas"), title: "Água gelada ou pé de moleque?", desc: "Venda pequena: um item de conveniência aumenta o ticket.", add: "Agua sem Gás 500ml" }
 ];
+function comboHints(items) {
+  if (state?.settings?.comboHintsEnabled === false || !items.length) return [];
+  const context = comboContext(items);
+  const hints = [];
+  for (const rule of COMBO_RULES) {
+    if (hints.length >= COMBO_MAX) break;
+    if (!rule.when(context)) continue;
+    const product = rule.add ? comboProduct(rule.add) : null;
+    if (rule.add && !product) continue; // produto da sugestao nao existe neste cadastro
+    hints.push({ title: rule.title, desc: rule.desc, product });
+  }
+  return hints;
+}
 
 const OFFICIAL_CATEGORIES = {
   "Gráfica Rápida": { name: "Gráfica Rápida", color: "#0284c7", badgeClass: "badgeCatGrafica", short: "Gráfica" },
@@ -949,7 +957,29 @@ let posDiscountRaw = "";
 let posSplitMode = false;
 let posSplitPayments = [];
 
+// Faixas da impressao P&B (quando ativas em Tarifas): o preco da faixa, pelo total de paginas P&B
+// do pedido, vale para todas as paginas. Preco digitado na venda e xerox ficam como estao (igual ao servidor).
+const PB_GROUP = "Impressão P&B";
+const isTierEntry = entry => entry.group === PB_GROUP && !entry.priceEdited && !/xerox/i.test(entry.name);
+function printTierUnit(pages) {
+  let unit = null;
+  for (const tier of state?.settings?.printTiers || []) if (pages >= tier.min) unit = tier.cents;
+  return unit;
+}
+function tierPagesInCart() { return [...posCart.values()].filter(isTierEntry).reduce((sum, entry) => sum + entry.quantity, 0); }
+function applyPrintTiers() {
+  const pages = tierPagesInCart();
+  const unit = state?.settings?.printTiersEnabled && pages ? printTierUnit(pages) : null;
+  for (const entry of posCart.values()) {
+    if (!isTierEntry(entry)) continue;
+    entry.listPriceCents ??= entry.priceCents;
+    entry.priceCents = unit ?? entry.listPriceCents;
+    entry.tierApplied = unit !== null && unit !== entry.listPriceCents;
+  }
+}
+
 function getPOSTotals() {
+  applyPrintTiers();
   let subtotalCents = 0;
   let totalQty = 0;
   for (const [_, entry] of posCart) {
@@ -1249,7 +1279,7 @@ function renderPOSTicket() {
             <button type="button" class="posQtyBtn" data-cart-action="inc" data-key="${html(key)}" ${entry.maxStock && entry.quantity >= entry.maxStock ? "disabled" : ""}>+</button>
           </div>
         </td>
-        <td class="money">${currency(entry.priceCents)}</td>
+        <td class="money">${currency(entry.priceCents)}${entry.tierApplied ? `<small class="tierNote" title="Faixa da impressão P&B pelo total de páginas do pedido">faixa · tabela ${currency(entry.listPriceCents)}</small>` : ""}</td>
         <td class="money"><strong>${currency(itemTotal)}</strong></td>
         <td class="actionCol">
           <button type="button" class="posRemoveBtn" data-cart-action="del" data-key="${html(key)}" title="Remover item (Del)">×</button>
@@ -1265,18 +1295,12 @@ function renderPOSTicket() {
   if (totalValEl) totalValEl.textContent = currency(totals.totalCents);
   if (submitBtn) submitBtn.disabled = !state.cashShift && posDestination === "counter";
 
-  // Verificação de Oportunidades Comerciais (Cross-Sell)
+  // Avisos de combo: ate 2 sugestoes, com botao para incluir o item.
   if (crossBanner) {
-    const matchedRule = CROSS_SELL_RULES.find(rule => rule.test(cartItemList));
-    if (matchedRule) {
-      crossBanner.hidden = false;
-      const titleEl = $("#posCrossSellTitle");
-      const descEl = $("#posCrossSellDesc");
-      if (titleEl) titleEl.textContent = matchedRule.title;
-      if (descEl) descEl.textContent = matchedRule.desc;
-    } else {
-      crossBanner.hidden = true;
-    }
+    const hints = comboHints(cartItemList);
+    crossBanner.hidden = !hints.length;
+    // Compacto: titulo + botao na mesma linha; o porque da sugestao fica no texto ao passar o mouse.
+    setHtml("#posCrossSellList", hints.map(hint => `<div class="crossSellItem" title="${html(hint.desc)}"><strong class="crossSellTitle">${html(hint.title)}</strong>${hint.product ? `<button type="button" class="crossSellAdd" data-combo-add="${html(hint.product.id)}" title="Incluir ${html(hint.product.name)}">+ ${currency(hint.product.priceCents)}</button>` : `<small class="crossSellNote">${html(hint.desc)}</small>`}</div>`).join(""));
   }
 }
 
@@ -1327,6 +1351,8 @@ function renderPosFavorites() {
 document.addEventListener("click", event => {
   const fav = event.target.closest("[data-fav-product]");
   if (fav) { addPosProduct(fav.dataset.favProduct); return; }
+  const combo = event.target.closest("[data-combo-add]");
+  if (combo) { addPosProduct(combo.dataset.comboAdd, 1); $("#posSearchInput")?.focus(); return; }
   const basketBtn = event.target.closest("[data-fav-basket]");
   if (!basketBtn) return;
   const basket = $("#posFavBaskets")?._baskets?.[Number(basketBtn.dataset.favBasket)]; if (!basket) return;
@@ -1334,7 +1360,7 @@ document.addEventListener("click", event => {
   $("#posSearchInput")?.focus();
 });
 // Pop-up de quantidade para servicos (impressao, xerox, scanner...): botoes prontos ou digitar + Enter.
-function askPosQty(name, unitCents, onPick) {
+function askPosQty(name, unitCents, onPick, tiered = false) {
   const presets = [1, 2, 3, 5, 10, 20, 50];
   openModal(`Quantidade · ${name}`,
     `<label class="qtyStepper"><span>Quantidade</span><div><button type="button" data-qty-step="-1" aria-label="Diminuir">−</button><input name="qty" type="number" value="1" min="1" max="9999" inputmode="numeric" required><button type="button" data-qty-step="1" aria-label="Aumentar">+</button></div></label>` +
@@ -1347,10 +1373,17 @@ function askPosQty(name, unitCents, onPick) {
   qty.select();
   // Preco desta venda (padrao: o do cadastro). Valor invalido volta para o do cadastro.
   const priceOf = () => { const v = Math.round(Number(String(price.value).replace(/\./g, "").replace(",", ".")) * 100); return v >= 1 ? v : unitCents; };
-  const showTotal = () => { const n = Math.max(0, parseInt(qty.value, 10) || 0), u = priceOf(); setHtml("#qtyTotal", `${currency(u)} cada${u !== unitCents ? ` <small>(cadastro ${currency(unitCents)})</small>` : ""} · total <strong>${currency(u * n)}</strong>`); };
+  const showTotal = () => {
+    const n = Math.max(0, parseInt(qty.value, 10) || 0), typed = priceOf();
+    // Com faixas ativas, mostra o preco da faixa pelo total de paginas P&B que o pedido vai ter.
+    const tier = tiered && typed === unitCents && state?.settings?.printTiersEnabled ? printTierUnit(n + tierPagesInCart()) : null;
+    const u = tier ?? typed;
+    setHtml("#qtyTotal", `${currency(u)} cada${tier !== null && tier !== unitCents ? ` <small>(faixa; tabela ${currency(unitCents)})</small>` : typed !== unitCents ? ` <small>(cadastro ${currency(unitCents)})</small>` : ""} · total <strong>${currency(u * n)}</strong>`);
+  };
   qty.addEventListener("input", showTotal);
   price.addEventListener("input", showTotal);
   price.addEventListener("focus", () => price.select());
+  showTotal();
   form.querySelectorAll("[data-qty-step]").forEach(b => b.addEventListener("click", () => { qty.value = Math.max(1, (parseInt(qty.value, 10) || 0) + Number(b.dataset.qtyStep)); showTotal(); qty.focus(); qty.select(); }));
   form.querySelectorAll("[data-qty-preset]").forEach(b => b.addEventListener("click", () => { qty.value = b.dataset.qtyPreset; form.requestSubmit(); }));
 }
@@ -1362,7 +1395,7 @@ function addPosProduct(id, quantity, priceCents) {
     const pending = takePendingQty();
     // Como no sistema anterior: escolher o item abre o pop-up de quantidade (Enter confirma 1).
     if (pending) quantity = pending;
-    else return askPosQty(p.name, p.priceCents, (q, price) => addPosProduct(id, q, price));
+    else return askPosQty(p.name, p.priceCents, (q, price) => addPosProduct(id, q, price), isTierEntry({ group: p.group, name: p.name }));
   }
   const key = edited ? `${id}@${priceCents}` : id; // preco diferente vira outra linha no carrinho
   const current = posCart.get(key);
@@ -1376,6 +1409,7 @@ function addPosProduct(id, quantity, priceCents) {
       name: p.name,
       code: p.code,
       category: p.category,
+      group: p.group,
       priceCents: edited ? priceCents : p.priceCents,
       priceEdited: edited,
       quantity: qtyToAdd,
@@ -2537,9 +2571,36 @@ function renderSettings() {
   form.elements.autoRestoreOnTimeEnd.checked = state.settings.autoRestoreOnTimeEnd;
   if (form.elements.timeTable) form.elements.timeTable.value = (state.settings.timeTable || []).map(row => `${row.minutes}=${(row.cents / 100).toFixed(2)}`).join("; ");
   if (form.elements.timeRound) form.elements.timeRound.value = String(Number.isInteger(state.settings.timeRoundCents) ? state.settings.timeRoundCents : 50);
+  const tiersForm = $("#printTiersForm");
+  if (tiersForm && !tiersForm.contains(document.activeElement)) {
+    tiersForm.elements.tiers.value = tiersText(state.settings.printTiers || []);
+    tiersForm.elements.enabled.checked = !!state.settings.printTiersEnabled;
+    tiersForm.elements.comboHints.checked = state.settings.comboHintsEnabled !== false;
+    renderTierExamples();
+  }
   const printersForm = $("#printersForm");
   if (!printersForm.contains(document.activeElement)) printersForm.elements.printerShare.value = (state.printers || []).join(", ");
 }
+const tiersText = tiers => tiers.map(row => `${row.min}=${(row.cents / 100).toFixed(2).replace(".", ",")}`).join("; ");
+// Mostra quanto o cliente paga nos limites de cada faixa (ex.: 10 e 11 paginas) para o dono conferir o degrau.
+function renderTierExamples() {
+  const form = $("#printTiersForm"); if (!form) return;
+  const tiers = String(form.elements.tiers.value).split(/[;\n]+/).map(row => row.trim().match(/^(\d+)\s*[=:]\s*(\d+(?:[.,]\d{1,2})?)$/)).filter(Boolean)
+    .map(match => ({ min: Number(match[1]), cents: Math.round(Number(match[2].replace(",", ".")) * 100) })).sort((a, b) => a.min - b.min);
+  const unit = pages => tiers.reduce((u, tier) => pages >= tier.min ? tier.cents : u, tiers[0]?.cents || 0);
+  const pages = [...new Set(tiers.flatMap(tier => [tier.min - 1, tier.min]).filter(n => n >= 1))].sort((a, b) => a - b);
+  setHtml("#printTiersExample", tiers.length ? `Quanto o cliente paga: ${pages.map(n => `${n} pág. = <strong>${currency(n * unit(n))}</strong>`).join(" · ")}` : "");
+}
+$("#printTiersForm")?.addEventListener("input", renderTierExamples);
+$("#printTiersForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  try {
+    await api("/api/settings/print-tiers", { tiers: form.elements.tiers.value, enabled: form.elements.enabled.checked, comboHints: form.elements.comboHints.checked });
+    toast(form.elements.enabled.checked ? "Faixas da impressão P&B ativas no caixa." : "Faixas salvas (desligadas no caixa).");
+    await loadState();
+  } catch (cause) { toast(cause.message); }
+});
 
 function renderUsers() {
   $("#userList").innerHTML = table(["Usuário", "Perfil", "Status", "Ação"], state.users.map(item => `<tr><td>${html(item.name)}</td><td>${item.role === "admin" ? "Administrador" : "Atendente"}</td><td>${item.active ? "Ativo" : "Inativo"}</td><td><button data-action="userPassword" data-id="${item.id}">Alterar senha</button></td></tr>`), "Nenhum usuário.");
@@ -3365,7 +3426,9 @@ function setupReportListeners() {
   document.querySelectorAll(".reportTabBtn").forEach(btn => btn.addEventListener("click", () => {
     document.querySelectorAll(".reportTabBtn").forEach(b => b.classList.toggle("active", b === btn));
     document.querySelectorAll(".reportTabContent").forEach(content => { content.hidden = content.id !== `tab-report-${btn.dataset.reportTab}`; });
+    if (btn.dataset.reportTab === "plano") loadPlanIndicators();
   }));
+  $("#planApplyBtn")?.addEventListener("click", () => loadPlanIndicators());
   $("#reportDate")?.addEventListener("change", () => loadReport());
   $("#rpChargeSearch")?.addEventListener("input", () => renderReport());
   $("#btnChartRev")?.addEventListener("click", () => { chartMode = "rev"; $("#btnChartRev").classList.add("active"); $("#btnChartVol").classList.remove("active"); renderExecChart(); });
@@ -4350,6 +4413,53 @@ function view(name) {
       if (s) { s.focus(); s.select(); }
     }, 50);
   }
+}
+
+// Normalizacao do cadastro: mostra a proposta e so aplica com confirmacao. Nada e apagado:
+// o duplicado fica inativo apontando para o principal e a categoria antiga fica guardada (pode desfazer).
+$("#normalizeProductsButton")?.addEventListener("click", async () => {
+  try {
+    const plan = await api("/api/products/normalization");
+    const productCell = item => `${html(item.name)}${item.code ? ` <small>#${html(item.code)}</small>` : ""}<br><small>${currency(item.priceCents)} · ${html(item.category || "")} · ${item.active ? "ativo" : "inativo"} · vendido ${currency(item.sold.revenueCents)}</small>`;
+    const dupRows = plan.duplicates.map(dup => `<tr><td>${productCell(dup.keep)}</td><td>${dup.retire.map(productCell).join("<hr>")}</td><td>${dup.divergentPrice ? "<strong>Preços diferentes:</strong> decidir o preço antes (não será alterado)" : "Inativar e apontar para o principal"}</td></tr>`);
+    const catRows = plan.categories.map(row => `<tr><td>${html(row.from)}</td><td>${html(row.to)}</td><td>${row.products}</td></tr>`);
+    const pending = plan.duplicates.some(dup => !dup.divergentPrice) || plan.categories.length;
+    openModal("Revisar duplicados do cadastro",
+      `<p class="muted">Nenhum produto é apagado. O duplicado fica inativo e aponta para o principal; vendas antigas continuam com o nome original. Antes de aplicar é feita uma cópia do banco.</p>` +
+      `<h4>Mesmo produto cadastrado mais de uma vez</h4>${table(["Fica (principal)", "Duplicado", "O que acontece"], dupRows, "Nenhum duplicado encontrado.")}` +
+      `<h4>Categorias unificadas</h4>${table(["Categoria atual", "Passa a ser", "Produtos"], catRows, "Nenhuma categoria para unificar.")}` +
+      (plan.applied ? `<p class="muted">${plan.applied} produto(s) já normalizado(s). <button type="button" id="normalizeRevertBtn" class="secondaryBtn">Desfazer normalização</button></p>` : ""),
+      async () => {
+        if (!pending) return;
+        const result = await api("/api/products/normalization/apply", {});
+        toast(`${result.retired} duplicado(s) inativado(s) e ${result.recategorized} produto(s) com categoria unificada.`);
+      }, pending ? "Aplicar" : "Fechar");
+    $("#formDialog").classList.add("wide");
+    $("#normalizeRevertBtn")?.addEventListener("click", async () => {
+      if (!confirm("Voltar todos os produtos normalizados ao cadastro anterior?")) return;
+      try { const result = await api("/api/products/normalization/revert", {}); toast(`${result.reverted} produto(s) voltaram ao cadastro anterior.`); $("#formDialog").close(); await loadState(); } catch (cause) { toast(cause.message); }
+    });
+  } catch (cause) { toast(cause.message); }
+});
+
+// Aba "Plano de 7 dias": indicadores por dia contra a media dos 60 dias anteriores.
+async function loadPlanIndicators() {
+  const start = $("#planStart"), end = $("#planEnd");
+  try {
+    const query = start.value && end.value ? `?start=${encodeURIComponent(start.value)}&end=${encodeURIComponent(end.value)}` : "";
+    const data = await api(`/api/reports/indicators${query}`);
+    start.value = data.start; end.value = data.end;
+    const pct = value => value === null || value === undefined ? "-" : `${String(value).replace(".", ",")}%`;
+    const num = value => Number(value || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+    const weekday = date => new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+    const row = (label, d, cls = "") => `<tr class="${cls}"><td>${label}</td><td class="money">${currency(d.revenueCents)}</td><td>${num(d.visits)}</td><td class="money">${currency(d.ticketCents)}</td><td>${pct(d.envelopePct)}</td><td>${pct(d.receivePct)}</td><td>${num(d.highValueUnits)}</td><td>${num(d.volumePages)}</td><td class="money">${currency(d.leftoverCents)}</td></tr>`;
+    const short = date => date.slice(8, 10) + "/" + date.slice(5, 7);
+    const rows = [row(`<strong>Base</strong> <small>${short(data.base.start)} a ${short(data.base.end)}</small>`, data.base.average, "planBaseRow"), ...data.days.map(d => row(html(weekday(d.date)), d)), row(`<strong>Média do período</strong> <small>${data.openDays} dia(s)</small>`, data.average, "planAvgRow")];
+    setHtml("#planIndicators", table(["Dia", "Receita", "Atendimentos", "Ticket", "P&B com envelope", "P&B com recebimento", "Serviços de maior valor (un.)", "Páginas em pedidos de 50+", "Sobra de caixa"], rows));
+    const groups = Object.entries(data.total.byGroup).sort((a, b) => b[1].revenueCents - a[1].revenueCents);
+    const totalCents = data.total.revenueCents || 1;
+    setHtml("#planGroups", table(["Serviço", "Quantidade", "Receita", "% da receita", "Por dia aberto"], groups.map(([name, g]) => `<tr><td>${html(name)}</td><td>${num(g.quantity)}</td><td class="money">${currency(g.revenueCents)}</td><td>${(100 * g.revenueCents / totalCents).toFixed(1).replace(".", ",")}%</td><td class="money">${currency(Math.round(g.revenueCents / (data.openDays || 1)))}</td></tr>`), "Sem vendas no período."));
+  } catch (cause) { toast(cause.message); }
 }
 
 async function loadReport(period = null, customStart = null, customEnd = null) {
