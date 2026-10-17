@@ -154,3 +154,81 @@ test("caixa: faixas P&B so com a opcao ativa, xerox e preco digitado nao mudam",
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("indicadores: caixa, receita realizada, contribuicao e categorias sem repetir", () => {
+  const products = [{ id: "pb", name: "Impressão P/B Balcão", category: "Gráfica Rápida" }, { id: "env", name: "Envelope Pardo", category: "Gráfica Rápida" }, { id: "inss", name: "MEU INSS Recuperação Senha", category: "Serviços Públicos" }, { id: "agua", name: "Agua 500ml", category: "Bebidas & Bomboniere" }];
+  const at = "2026-10-19T14:00:00.000Z";
+  const charges = [
+    { id: "1", at, kind: "sale", amountCents: 1200, items: [{ productId: "pb", quantity: 10, totalCents: 1000 }, { productId: "env", quantity: 1, totalCents: 200 }] },
+    { id: "2", at, kind: "sale", amountCents: 3300, items: [{ productId: "inss", quantity: 1, totalCents: 3000 }, { productId: "agua", quantity: 1, totalCents: 300 }] },
+    { id: "3", at, kind: "package", amountCents: 25000, pages: 500 },
+    { id: "4", at, kind: "sale", amountCents: 5000, packageDelivery: true, items: [{ productId: "pb", quantity: 100, totalCents: 5000 }] },
+    { id: "5", at, kind: "credit", amountCents: 1000 }
+  ];
+  const payments = [{ at, chargeId: "1", amountCents: 1200 }, { at, chargeId: "2", amountCents: 3300 }, { at, chargeId: "3", amountCents: 25000 }, { at, chargeId: "5", amountCents: 1000 }];
+  const day = buildIndicators({ charges, payments, products, start: "2026-10-19", end: "2026-10-19" }).days[0];
+  assert.equal(day.revenueCents, 9500, "pacote e recarga nao sao receita; a entrega e");
+  assert.equal(day.cashCents, 30500, "caixa tem tudo que entrou");
+  assert.equal(day.cashPackageCents, 25000);
+  assert.equal(day.cashTimeCreditCents, 1000);
+  assert.equal(day.pbPages, 110);
+  assert.equal(day.packageDeliveredPages, 100);
+  assert.equal(day.envelopes, 1);
+  // custo: 110 pag P&B x 14 + 1 envelope x 43,2 = 1583,2; receita com custo: 1000 + 200 + 5000 = 6200
+  assert.equal(day.costedRevenueCents, 6200);
+  assert.equal(day.contributionCents, Math.round(6200 - 1583.2));
+  assert.equal(day.uncostedRevenueCents, 3300, "INSS e bomboniere ficam sem custo apurado (nada de 100% de margem)");
+  assert.equal(day.byCategory["Bomboniere & Bebidas"].sales, 1, "categoria antiga cai na oficial");
+  assert.equal(day.byCategory["Gráfica Rápida"].sales, 2, "um atendimento conta uma vez por categoria");
+});
+
+test("pacote pre-pago: caixa na venda, receita so na entrega e soma exata", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-pacote-"));
+  const server = createApp({ dataDir, backupDir: path.join(dataDir, "bk") });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    return { status: response.status, payload: await response.json(), cookie: response.headers.get("set-cookie") };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    cookie = (await request("/api/login", { name: "admin", password: "senha-teste-123" })).cookie.split(";")[0];
+    await request("/api/products", { name: "Impressão P/B Balcão", category: "Gráfica Rápida", type: "service", price: 1 });
+    const client = (await request("/api/clients", { name: "Contabilidade Teste", phone: "35999990000" })).payload.client;
+    assert.equal((await request(`/api/clients/${client.id}/packages`, { pages: 500, amount: 250, paymentMethod: "pix" })).status, 409, "precisa de caixa aberto");
+    await request("/api/cash/open", { opening: 0 });
+    const sold = await request(`/api/clients/${client.id}/packages`, { pages: 500, amount: 250, paymentMethod: "pix" });
+    assert.equal(sold.status, 201);
+    const pack = sold.payload.package;
+    let state = (await request("/api/state")).payload;
+    const paymentsBefore = state.payments.length;
+    let report = (await request("/api/reports?period=today")).payload;
+    assert.equal(report.salesCents, 0, "venda de pacote nao e faturamento");
+
+    assert.equal((await request(`/api/clients/${client.id}/packages/${pack.id}/deliver`, { pages: 600 })).status, 400, "nao entrega mais que o saldo");
+    assert.equal((await request(`/api/clients/${client.id}/packages/${pack.id}/deliver`, { pages: 333 })).payload.charge.amountCents, 16650);
+    const last = await request(`/api/clients/${client.id}/packages/${pack.id}/deliver`, { pages: 167 });
+    assert.equal(last.payload.charge.amountCents, 25000 - 16650, "ultima entrega fecha o valor exato");
+    assert.equal((await request(`/api/clients/${client.id}/packages/${pack.id}/deliver`, { pages: 1 })).status, 409);
+
+    state = (await request("/api/state")).payload;
+    assert.equal(state.payments.length, paymentsBefore, "entrega nao gera recebimento no caixa");
+    assert.equal(state.openCharges.length, 0, "entrega nao vira pendencia");
+    report = (await request("/api/reports?period=today")).payload;
+    assert.equal(report.salesCents, 25000, "receita reconhecida = valor do pacote, depois de entregue");
+    const ind = (await request(`/api/reports/indicators?start=2000-01-01&end=2100-01-01`)).payload;
+    assert.equal(ind.total.revenueCents, 25000);
+    assert.equal(ind.total.cashPackageCents, 25000);
+    assert.equal(ind.total.packageDeliveredPages, 500);
+    assert.equal(ind.packages.pages, 0);
+    assert.deepEqual(ind.goals, [35000, 37500, 40000]);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+    fs.rmSync(dataDir, { recursive: true, force: true });
+  }
+});

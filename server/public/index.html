@@ -1044,10 +1044,15 @@
                   <button type="button" id="planApplyBtn" class="secondaryBtn">Atualizar</button>
                 </div>
               </div>
-              <p class="muted">Base = média por dia aberto dos 60 dias antes da data inicial. Atendimento = venda de balcão ou sessão de máquina (tempo e impressão da mesma sessão contam uma vez). Recarga de crédito do cliente não entra.</p>
-              <div id="planIndicators" class="tableWrap"></div>
+              <p class="muted"><strong>Receita realizada</strong> = serviços e produtos entregues no dia (inclui a entrega de páginas de pacote). <strong>Caixa recebido</strong> = dinheiro que entrou no dia (inclui venda de pacote e recarga de tempo, que ainda não são receita). <strong>Contribuição</strong> = receita menos custo direto, só nos itens com custo comprovado ou cenário identificado. Base = média por dia aberto dos 60 dias antes da data inicial.</p>
+              <div id="planCards" class="rpGrid rpGrid4"></div>
             </div>
+            <div class="rpCard spacedTop"><h3>Realizado contra as metas de R$ 350, R$ 375 e R$ 400 por dia</h3><div id="planDaily" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Evolução diária</h3><div id="planIndicators" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Vendas por categoria (atendimentos, sem repetir nomes diferentes do mesmo serviço)</h3><div id="planCategories" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Pacotes pré-pagos a entregar (obrigação com o cliente)</h3><div id="planPackages" class="tableWrap"></div></div>
             <div class="rpCard spacedTop"><h3>Receita por serviço padronizado no período</h3><div id="planGroups" class="tableWrap"></div></div>
+            <div class="rpCard spacedTop"><h3>Custos usados na contribuição</h3><div id="planCostNotes" class="tableWrap"></div></div>
           </div>
         </section>
 

@@ -11,7 +11,7 @@ const { readProducts } = require("./importar-produtos");
 const { suggestActions, METRICS, actionEffect, goalProgress, TEMPLATES } = require("./plano-acao");
 const { syncMarketing, DEFAULT_MARKETING_SOURCE, TASK_NAME: MARKETING_SYNC_TASK, RESULT_FILE: MARKETING_SYNC_RESULT } = require("./marketing-sync");
 const { groupOf, PB_GROUP, DEFAULT_PRINT_TIERS, tierUnitCents, parsePrintTiers, normalizationPlan, applyNormalization, revertNormalization } = require("./grupos");
-const { buildIndicators } = require("./indicadores");
+const { buildIndicators, packagesOutstanding } = require("./indicadores");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -378,7 +378,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const cost = sessionCost(item);
     return { ...safe, status: status(item), valueCents: cost.totalCents, timeCents: cost.timeCents, printCents: cost.printCents, extrasCents: cost.extrasCents, summary: sessionSummary(item), remainingMs: item.session ? Math.max(0, Date.parse(item.session.endsAt) - sessionNow(item.session)) : 0 };
   }
-  const publicClient = client => ({ id: client.id, name: client.name, phone: client.phone, active: client.active, createdAt: client.createdAt, login: client.login || "", creditSeconds: client.creditSeconds || 0, origin: client.origin || "" });
+  const publicClient = client => ({ id: client.id, name: client.name, phone: client.phone, active: client.active, createdAt: client.createdAt, login: client.login || "", creditSeconds: client.creditSeconds || 0, origin: client.origin || "", printPackages: client.printPackages || [] });
   // Marketing: de onde o cliente veio e qual campanha trouxe a venda.
   const ORIGINS = ["Passou na frente", "Indicação", "Google", "Instagram", "Facebook", "WhatsApp", "Cliente antigo", "Outro"];
   const pickOrigin = value => ORIGINS.includes(value) ? value : "";
@@ -628,7 +628,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       return perPage ? pages * perPage : 0;
     };
 
-    const allCharges = historyRecords("charges");
+    // Pacote pre-pago e dinheiro recebido antes de prestar o servico: entra no caixa (pagamentos),
+    // mas so vira venda quando as paginas sao entregues (cobranca "Entrega do pacote").
+    const allCharges = historyRecords("charges").filter(item => item.kind !== "package");
     const allPayments = historyRecords("payments");
     const charges = allCharges.filter(item => onDate(item.at)).sort((a, b) => String(b.at).localeCompare(String(a.at)));
     const payments = allPayments.filter(item => onDate(item.at));
@@ -1470,13 +1472,17 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     // Indicadores do plano de 7 dias, dia a dia, com a media dos 60 dias anteriores como base de comparacao.
     if (p === "/api/reports/indicators" && req.method === "GET") {
       const day = value => /^\d{4}-\d{2}-\d{2}$/.test(String(value || "")) ? value : null;
-      const end = day(url.searchParams.get("end")) || localDay(Date.now());
-      const start = day(url.searchParams.get("start")) || shiftDay(end, -13);
+      // Padrao: a semana atual de segunda a sabado (o plano roda por semana).
+      const today = localDay(Date.now());
+      const weekday = new Date(`${today}T12:00:00Z`).getUTCDay();
+      const monday = shiftDay(today, weekday === 0 ? -6 : 1 - weekday);
+      const start = day(url.searchParams.get("start")) || monday;
+      const end = day(url.searchParams.get("end")) || shiftDay(start, 5);
       if (start > end) throw err(400, "Data inicial depois da final");
-      const charges = historyRecords("charges"), incomes = db.incomes || [], products = db.products;
-      const current = buildIndicators({ charges, incomes, products, start, end });
-      const base = buildIndicators({ charges, incomes, products, start: shiftDay(start, -60), end: shiftDay(start, -1) });
-      return send(res, 200, { ok: true, ...current, base: { start: base.start, end: base.end, openDays: base.openDays, average: base.average } });
+      const charges = historyRecords("charges"), payments = historyRecords("payments"), incomes = db.incomes || [], products = db.products;
+      const current = buildIndicators({ charges, payments, incomes, products, start, end });
+      const base = buildIndicators({ charges, payments, incomes, products, start: shiftDay(start, -60), end: shiftDay(start, -1) });
+      return send(res, 200, { ok: true, ...current, goals: [35000, 37500, 40000], packages: packagesOutstanding(db.clients), base: { start: base.start, end: base.end, openDays: base.openDays, average: base.average } });
     }
     if (p === "/api/products/normalization" && req.method === "GET") {
       admin(user);
@@ -1784,6 +1790,45 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       client.creditSeconds = (client.creditSeconds || 0) + seconds;
       event("clientes", "Recarga de tempo", `${client.name}: +${Math.round(seconds / 60)} min`, user.name);
       save(); return send(res, 201, { ok: true, client: publicClient(client), secondsAdded: seconds });
+    }
+    // Pacote de impressao pre-pago: o dinheiro entra no caixa agora, mas e obrigacao de entregar paginas.
+    // A receita so e reconhecida em cada entrega (pelo preco por pagina do pacote).
+    const clientPackage = p.match(/^\/api\/clients\/([^/]+)\/packages$/);
+    if (clientPackage && req.method === "POST") {
+      const client = db.clients.find(item => item.id === clientPackage[1]); if (!client) throw err(404, "Cliente nao encontrado");
+      const input = await readBody(req);
+      const pages = number(input.pages, 1, 100000, "Paginas do pacote");
+      const amountCents = money(input.amount, "Valor do pacote");
+      if (amountCents < 1) throw err(400, "Informe o valor do pacote");
+      if (!currentShift()) throw err(409, "Abra o caixa antes de vender o pacote");
+      if (!METHODS.includes(input.paymentMethod)) throw err(400, "Escolha a forma de pagamento");
+      const validDays = number(input.validDays ?? 60, 1, 365, "Validade");
+      const pack = { id: uuid(), soldAt: now(), pages, delivered: 0, amountCents, recognizedCents: 0, validUntil: shiftDay(localDay(Date.now()), validDays), soldBy: user.name };
+      const sale = charge("package", `Pacote ${pages} pág. P&B ${client.name} (a entregar)`, amountCents, { clientId: client.id, packageId: pack.id, pages });
+      pay(sale, amountCents, input.paymentMethod, user.name);
+      client.printPackages = [...(client.printPackages || []), pack];
+      event("clientes", "Pacote de impressao vendido", `${client.name}: ${pages} pág. por R$ ${(amountCents / 100).toFixed(2)} (receita conforme entrega)`, user.name); save();
+      return send(res, 201, { ok: true, client: publicClient(client), package: pack });
+    }
+    const packageDeliver = p.match(/^\/api\/clients\/([^/]+)\/packages\/([^/]+)\/deliver$/);
+    if (packageDeliver && req.method === "POST") {
+      const client = db.clients.find(item => item.id === packageDeliver[1]); if (!client) throw err(404, "Cliente nao encontrado");
+      const pack = (client.printPackages || []).find(item => item.id === packageDeliver[2]); if (!pack) throw err(404, "Pacote nao encontrado");
+      const input = await readBody(req);
+      const remaining = pack.pages - pack.delivered;
+      if (!remaining) throw err(409, "Pacote ja foi todo entregue");
+      const pages = number(input.pages, 1, remaining, "Paginas entregues");
+      // Ultima entrega leva o que falta do valor, para a receita somar exatamente o preco do pacote.
+      const cents = pages === remaining ? pack.amountCents - pack.recognizedCents : Math.round(pack.amountCents * pages / pack.pages);
+      const product = db.products.find(item => item.active && groupOf(item) === PB_GROUP && !/xerox/i.test(item.name));
+      const sale = charge("sale", `Entrega do pacote ${client.name}: ${pages} pág. P&B`, cents, {
+        items: [{ productId: product?.id || null, name: "Impressão P&B (pacote pré-pago)", category: "Gráfica Rápida", quantity: pages, unitPriceCents: Math.round(cents / pages), totalCents: cents }],
+        clientId: client.id, packageId: pack.id, packageDelivery: true, discountCents: 0, originalTotalCents: cents
+      });
+      sale.paidCents = cents; // pago na venda do pacote; nao gera novo recebimento no caixa
+      pack.delivered += pages; pack.recognizedCents += cents;
+      event("clientes", "Entrega de pacote", `${client.name}: ${pages} pág. (faltam ${pack.pages - pack.delivered})`, user.name); save();
+      return send(res, 201, { ok: true, client: publicClient(client), package: pack, charge: sale });
     }
     // Divida do cliente (fiado): fica como pendencia no nome dele; pode ter prints da conversa como prova.
     const clientDebt = p.match(/^\/api\/clients\/([^/]+)\/debt$/);

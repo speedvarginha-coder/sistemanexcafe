@@ -2477,12 +2477,17 @@ function setupPOSListeners() {
 setupPOSListeners();
 setupReportListeners();
 
+// Pacote de impressao pre-pago: vender e, se houver saldo de paginas, registrar a entrega.
+function packageButtons(client) {
+  const pending = (client.printPackages || []).reduce((sum, p) => sum + p.pages - p.delivered, 0);
+  return `<button data-action="sellPackage" data-id="${client.id}">Pacote</button>${pending ? `<button data-action="deliverPackage" data-id="${client.id}">Entregar páginas (${pending})</button>` : ""}`;
+}
 function renderClients() {
   const term = $("#clientSearch").value.trim().toLowerCase();
   const items = state.clients.filter(item => !term || `${item.name} ${item.phone} ${item.login || ""}`.toLowerCase().includes(term));
   const dueOf = id => (state.openCharges || []).filter(c => c.clientId === id).reduce((s, c) => s + c.amountCents - c.paidCents, 0);
   // Saldo aparece sempre; sem login o cliente usa o saldo pelo balcao (modalidade "Usar saldo").
-  $("#clientList").innerHTML = table(["Nome", "Login da estação", "Saldo de tempo", "Deve", "Telefone", "Status", "Ação"], items.map(item => { const due = dueOf(item.id); return `<tr><td>${html(item.name)}</td><td>${item.login ? html(item.login) : '<span class="muted">sem login</span>'}</td><td>${item.creditSeconds ? `<strong>${formatCredit(item.creditSeconds)}</strong>` : '<span class="muted">0min</span>'}${item.creditSeconds && !item.login ? '<br><small class="muted">crie o login em Editar para usar na estação</small>' : ""}</td><td>${due ? `<strong class="bad">${currency(due)}</strong>` : '<span class="muted">-</span>'}</td><td>${html(item.phone || "-")}</td><td>${item.active ? "Ativo" : "Inativo"}</td><td class="actionsCell"><button data-action="editClient" data-id="${item.id}">Editar</button><button data-action="rechargeClient" data-id="${item.id}">Recarregar</button><button data-action="debtClient" data-id="${item.id}">Fiado</button>${due ? `<button data-action="debtsView" data-id="${item.id}">Ver dívidas</button>` : ""}</td></tr>`; }), "Nenhum cliente cadastrado.");
+  $("#clientList").innerHTML = table(["Nome", "Login da estação", "Saldo de tempo", "Deve", "Telefone", "Status", "Ação"], items.map(item => { const due = dueOf(item.id); return `<tr><td>${html(item.name)}</td><td>${item.login ? html(item.login) : '<span class="muted">sem login</span>'}</td><td>${item.creditSeconds ? `<strong>${formatCredit(item.creditSeconds)}</strong>` : '<span class="muted">0min</span>'}${item.creditSeconds && !item.login ? '<br><small class="muted">crie o login em Editar para usar na estação</small>' : ""}</td><td>${due ? `<strong class="bad">${currency(due)}</strong>` : '<span class="muted">-</span>'}</td><td>${html(item.phone || "-")}</td><td>${item.active ? "Ativo" : "Inativo"}</td><td class="actionsCell"><button data-action="editClient" data-id="${item.id}">Editar</button><button data-action="rechargeClient" data-id="${item.id}">Recarregar</button><button data-action="debtClient" data-id="${item.id}">Fiado</button>${packageButtons(item)}${due ? `<button data-action="debtsView" data-id="${item.id}">Ver dívidas</button>` : ""}</td></tr>`; }), "Nenhum cliente cadastrado.");
 }
 
 // ---- Fiado / dividas de clientes, com print da conversa como prova ----
@@ -4449,16 +4454,39 @@ async function loadPlanIndicators() {
     const query = start.value && end.value ? `?start=${encodeURIComponent(start.value)}&end=${encodeURIComponent(end.value)}` : "";
     const data = await api(`/api/reports/indicators${query}`);
     start.value = data.start; end.value = data.end;
+    const money = cents => currency(Math.round(cents || 0));
     const pct = value => value === null || value === undefined ? "-" : `${String(value).replace(".", ",")}%`;
     const num = value => Number(value || 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
-    const weekday = date => new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
-    const row = (label, d, cls = "") => `<tr class="${cls}"><td>${label}</td><td class="money">${currency(d.revenueCents)}</td><td>${num(d.visits)}</td><td class="money">${currency(d.ticketCents)}</td><td>${pct(d.envelopePct)}</td><td>${pct(d.receivePct)}</td><td>${num(d.highValueUnits)}</td><td>${num(d.volumePages)}</td><td class="money">${currency(d.leftoverCents)}</td></tr>`;
     const short = date => date.slice(8, 10) + "/" + date.slice(5, 7);
-    const rows = [row(`<strong>Base</strong> <small>${short(data.base.start)} a ${short(data.base.end)}</small>`, data.base.average, "planBaseRow"), ...data.days.map(d => row(html(weekday(d.date)), d)), row(`<strong>Média do período</strong> <small>${data.openDays} dia(s)</small>`, data.average, "planAvgRow")];
-    setHtml("#planIndicators", table(["Dia", "Receita", "Atendimentos", "Ticket", "P&B com envelope", "P&B com recebimento", "Serviços de maior valor (un.)", "Páginas em pedidos de 50+", "Sobra de caixa"], rows));
-    const groups = Object.entries(data.total.byGroup).sort((a, b) => b[1].revenueCents - a[1].revenueCents);
-    const totalCents = data.total.revenueCents || 1;
-    setHtml("#planGroups", table(["Serviço", "Quantidade", "Receita", "% da receita", "Por dia aberto"], groups.map(([name, g]) => `<tr><td>${html(name)}</td><td>${num(g.quantity)}</td><td class="money">${currency(g.revenueCents)}</td><td>${(100 * g.revenueCents / totalCents).toFixed(1).replace(".", ",")}%</td><td class="money">${currency(Math.round(g.revenueCents / (data.openDays || 1)))}</td></tr>`), "Sem vendas no período."));
+    const weekday = date => new Date(`${date}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" });
+    const t = data.total, a = data.average, b = data.base.average, goals = data.goals || [35000, 37500, 40000];
+    const diff = (value, goal) => { const d = Math.round(value - goal); return `<span class="${d >= 0 ? "planOk" : "planGap"}">${d >= 0 ? "+" : "−"}${currency(Math.abs(d))}</span>`; };
+    // Cartoes: receita realizada, caixa, contribuicao e obrigacao de pacotes.
+    setHtml("#planCards",
+      kpi("Receita realizada", money(t.revenueCents), `${data.openDays} dia(s) · média ${money(a.revenueCents)}/dia (base ${money(b.revenueCents)})`) +
+      kpi("Caixa recebido", money(t.cashCents), `inclui ${money(t.cashPackageCents)} de pacote e ${money(t.cashTimeCreditCents)} de recarga, que ainda não são receita`) +
+      kpi("Contribuição estimada", money(t.contributionCents), `margem ${pct(t.marginPct)} sobre ${money(t.costedRevenueCents)} com custo · ${money(t.uncostedRevenueCents)} sem custo apurado`, t.contributionCents >= 0 ? "good" : "bad") +
+      kpi("Pacotes a entregar", money(data.packages.cents), `${num(data.packages.pages)} página(s) já pagas e ainda não entregues`));
+    // Realizado x metas.
+    const goalRow = (label, d, cls = "") => `<tr class="${cls}"><td>${label}</td><td class="money"><strong>${money(d.revenueCents)}</strong></td><td class="money">${money(d.cashCents)}</td><td class="money">${money(d.contributionCents)}</td><td>${pct(d.marginPct)}</td>${goals.map(g => `<td class="money">${diff(d.revenueCents, g)}</td>`).join("")}</tr>`;
+    setHtml("#planDaily", table(["Dia", "Receita realizada", "Caixa recebido", "Contribuição estimada", "Margem (itens com custo)", ...goals.map(g => `Diferença p/ ${currency(g)}`)],
+      [goalRow(`<strong>Base</strong> <small>${short(data.base.start)} a ${short(data.base.end)}</small>`, b, "planBaseRow"), ...data.days.map(d => goalRow(html(weekday(d.date)), d)), goalRow(`<strong>Média do período</strong> <small>${data.openDays} dia(s)</small>`, a, "planAvgRow")]));
+    // Evolucao diaria.
+    const evo = (label, d, cls = "") => `<tr class="${cls}"><td>${label}</td><td>${num(d.pbPages)}</td><td>${num(d.colorPages)}</td><td>${num(d.envelopes)}</td><td>${num(d.highValueUnits)}</td><td class="money">${money(d.revenueCents)}</td><td>${num(d.visits)}</td><td class="money">${money(d.ticketCents)}</td><td>${pct(d.envelopePct)}</td><td>${pct(d.receivePct)}</td><td>${num(d.packageDeliveredPages)}</td><td class="money">${money(d.leftoverCents)}</td></tr>`;
+    setHtml("#planIndicators", table(["Dia", "Páginas P&B", "Páginas coloridas", "Envelopes", "Serviços de maior valor", "Faturamento total", "Atendimentos", "Ticket", "P&B com envelope", "P&B com recebimento", "Páginas de pacote entregues", "Sobra de caixa"],
+      [evo(`<strong>Base</strong> <small>por dia</small>`, b, "planBaseRow"), ...data.days.map(d => evo(html(weekday(d.date)), d)), evo(`<strong>Média do período</strong>`, a, "planAvgRow")]));
+    // Categorias: atendimentos com a categoria (um por atendimento), unidades e receita; media por dia contra a base.
+    const cats = ["Gráfica Rápida", "Lan House & Serviços Digitais", "Serviços Públicos", "Bomboniere & Bebidas", "Serviços Financeiros", "Informática & Celular", "Eletrônicos & Acessórios"];
+    const cv = (obj, cat, key) => obj.byCategory?.[cat]?.[key] || 0;
+    setHtml("#planCategories", table(["Categoria", "Atendimentos no período", "Unidades", "Receita", "Atendimentos/dia", "Base/dia", "Receita/dia", "Base/dia"],
+      cats.map(cat => `<tr><td>${html(cat)}</td><td>${num(cv(t, cat, "sales"))}</td><td>${num(cv(t, cat, "units"))}</td><td class="money">${money(cv(t, cat, "revenueCents"))}</td><td>${num(cv(a, cat, "sales"))}</td><td>${num(cv(b, cat, "sales"))}</td><td class="money">${money(cv(a, cat, "revenueCents"))}</td><td class="money">${money(cv(b, cat, "revenueCents"))}</td></tr>`)));
+    setHtml("#planPackages", table(["Cliente", "Vendido em", "Validade", "Páginas a entregar", "Valor a reconhecer"],
+      data.packages.rows.map(r => `<tr><td>${html(r.client)}</td><td>${html(new Date(r.soldAt).toLocaleDateString("pt-BR"))}</td><td>${html(r.validUntil.split("-").reverse().join("/"))}</td><td>${num(r.pages)}</td><td class="money">${money(r.cents)}</td></tr>`), "Nenhum pacote pendente. Venda e entregas ficam em Clientes > Pacote."));
+    const groups = Object.entries(t.byGroup).sort((x, y) => y[1].revenueCents - x[1].revenueCents);
+    const totalCents = t.revenueCents || 1;
+    setHtml("#planGroups", table(["Serviço", "Quantidade", "Receita", "% da receita", "Por dia aberto"], groups.map(([name, g]) => `<tr><td>${html(name)}</td><td>${num(g.quantity)}</td><td class="money">${money(g.revenueCents)}</td><td>${(100 * g.revenueCents / totalCents).toFixed(1).replace(".", ",")}%</td><td class="money">${money(g.revenueCents / (data.openDays || 1))}</td></tr>`), "Sem vendas no período."));
+    setHtml("#planCostNotes", table(["Item", "Custo por unidade", "Origem"], (data.costNotes || []).map(c => `<tr><td>${html(c.label)}</td><td class="money">R$ ${(c.cents / 100).toFixed(3).replace(".", ",")}</td><td>${html(c.source)}</td></tr>`)) +
+      `<p class="muted">Sem custo apurado (fica fora da contribuição): serviços digitais e públicos, papel especial, plastificação, foto 3x4, bomboniere e demais itens. Taxas de cartão não estão descontadas.</p>`);
   } catch (cause) { toast(cause.message); }
 }
 
@@ -5421,6 +5449,24 @@ document.addEventListener("click", async event => {
       const client = state.clients.find(item => item.id === id); if (!client) return;
       const ref = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       openModal(`Recarregar Saldo · ${client.name}`, field("amount", "Valor da Recarga (R$)", "number", "", 'min="0.01" step="0.01" required') + paymentField(), values => api(`/api/clients/${id}/recharge`, { ...values, ref }), "Confirmar Recarga");
+    } else if (action === "sellPackage") {
+      // Pacote pre-pago: o dinheiro entra no caixa, a receita entra conforme as paginas forem entregues.
+      const client = state.clients.find(item => item.id === id); if (!client) return;
+      openModal(`Vender pacote de impressão P&B · ${client.name}`,
+        field("pages", "Páginas do pacote", "number", "500", 'min="1" step="1" required') +
+        field("amount", "Valor do pacote (R$)", "number", "250.00", 'min="0.01" step="0.01" required') +
+        field("validDays", "Validade (dias)", "number", "60", 'min="1" max="365" required') + paymentField() +
+        '<p class="muted">O valor entra no caixa agora, mas só vira receita conforme as páginas forem entregues (botão Entregar páginas).</p>',
+        values => api(`/api/clients/${id}/packages`, values), "Vender pacote");
+    } else if (action === "deliverPackage") {
+      const client = state.clients.find(item => item.id === id); if (!client) return;
+      const open = (client.printPackages || []).filter(p => p.pages > p.delivered);
+      if (!open.length) return toast("Este cliente não tem pacote com páginas a entregar.");
+      openModal(`Entregar páginas do pacote · ${client.name}`,
+        select("packageId", "Pacote", open.map(p => [p.id, `${p.pages - p.delivered} de ${p.pages} pág. · vence ${p.validUntil.split("-").reverse().join("/")}`]), open[0].id) +
+        field("pages", "Páginas entregues agora", "number", "", 'min="1" step="1" required') +
+        '<p class="muted">Não passa no caixa (já foi pago). Entra como receita de impressão P&B pelo preço por página do pacote.</p>',
+        values => api(`/api/clients/${id}/packages/${encodeURIComponent(values.packageId)}/deliver`, { pages: values.pages }), "Registrar entrega");
     } else if (action === "editProduct") {
       const product = state.products.find(item => item.id === id); if (!product) return;
       openModal("Editar Item do Catálogo", field("name", "Descrição do Produto", "text", product.name, "required") + field("code", "Código / EAN", "text", product.code) + field("category", "Categoria", "text", product.category) + field("price", "Preço Unitário (R$)", "number", (product.priceCents / 100).toFixed(2), 'min="0" step="0.01" required') + field("cost", "Preço de Custo (R$) — vazio = não cadastrado", "number", Number.isInteger(product.costCents) ? (product.costCents / 100).toFixed(2) : "", 'min="0" step="0.01"') + field("minStock", "Estoque Mínimo", "number", product.minStock || 0, 'min="0" required') + select("active", "Status", [["true", "Ativo"], ["false", "Inativo"]], String(product.active)), values => api(`/api/products/${id}/update`, { ...values, active: values.active === "true" }));

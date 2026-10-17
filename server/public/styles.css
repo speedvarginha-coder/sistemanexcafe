@@ -2657,7 +2657,7 @@ dialog form, .pairContent {
 .crossSellAdd:hover { background: #1d4ed8; color: #ffffff; }
 #tab-report-plano .rpActions { align-items: center; }
 #tab-report-plano .rpActions input[type="date"] { width: auto; }
-#planIndicators td:first-child { white-space: nowrap; }
+#planIndicators td:first-child, #planDaily td:first-child { white-space: nowrap; }
 .planBaseRow td, .planAvgRow td { background: var(--bg-subtle, #f8fafc); }
 .planBaseRow small, .planAvgRow small { color: var(--text-secondary, #64748b); font-weight: 500; }
 .tierNote { display: block; font-size: 10px; font-weight: 600; color: #047857; white-space: nowrap; }
@@ -4800,3 +4800,7 @@ tr.mutedRow td { color: var(--text-muted); }
 /* Pop-up de quantidade: preco desta venda */
 .qtyPrice { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; font-size: 13px; font-weight: 600; }
 .qtyPrice input { width: 130px; text-align: right; font-size: 16px; font-weight: 700; }
+
+/* Painel do plano: diferenca para a meta */
+.planOk { color: #047857; font-weight: 700; }
+.planGap { color: #b91c1c; font-weight: 700; }
