@@ -232,3 +232,36 @@ test("pacote pre-pago: caixa na venda, receita so na entrega e soma exata", asyn
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("queda de energia: db.json ilegivel sobe com o backup valido mais recente sem estragar os backups", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-queda-"));
+  const bk = path.join(dataDir, "bk");
+  fs.mkdirSync(bk);
+  const put = (file, text, ageMinutes) => { fs.writeFileSync(file, text); const t = new Date(Date.now() - ageMinutes * 60000); fs.utimesSync(file, t, t); };
+  const zeros = "\0".repeat(64);
+  put(path.join(dataDir, "db.json"), `{"version":2,"settings":{${zeros}`, 0);
+  put(path.join(bk, "db-2026-10-02.json"), `{"version":2,${zeros}`, 10); // mais recente, mas tambem ilegivel
+  put(path.join(dataDir, "db.json.2026-10-02.bak"), JSON.stringify({ version: 2, settings: { defaultMinutes: 44 } }), 20);
+  put(path.join(bk, "db-2026-10-01.json"), JSON.stringify({ version: 2, settings: { defaultMinutes: 33 } }), 30);
+  const server = createApp({ dataDir, backupDir: bk });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  try {
+    const db = JSON.parse(fs.readFileSync(path.join(dataDir, "db.json"), "utf8"));
+    assert.equal(db.settings.defaultMinutes, 44, "pulou o backup ilegivel e pegou o valido mais recente");
+    assert.ok(db.events.some(e => e.title === "Banco restaurado de backup"));
+    const kept = fs.readdirSync(dataDir).find(name => name.startsWith("db.json.corrompido-"));
+    assert.match(fs.readFileSync(path.join(dataDir, kept), "utf8"), /\0/, "arquivo ilegivel guardado");
+    assert.equal(JSON.parse(fs.readFileSync(path.join(bk, "db-2026-10-01.json"), "utf8")).settings.defaultMinutes, 33);
+    const today = new Date().toISOString().slice(0, 10);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(bk, `db-${today}.json`), "utf8")).settings.defaultMinutes, 44, "copia externa do dia nao recebe o arquivo ilegivel");
+    assert.equal(fs.readdirSync(dataDir).some(name => name.endsWith(".tmp")), false);
+  } finally {
+    await new Promise(resolve => server.close(resolve));
+  }
+  // Inclui o backup diario que o servidor acabou de gravar: sobra dele faria a carga dar certo.
+  fs.readdirSync(dataDir).filter(name => /^db\.json\.\d{4}-\d{2}-\d{2}\.bak$/.test(name)).forEach(name => fs.rmSync(path.join(dataDir, name)));
+  fs.readdirSync(bk).forEach(name => fs.rmSync(path.join(bk, name)));
+  put(path.join(dataDir, "db.json"), `{"version":2,${zeros}`, 0);
+  assert.throws(() => createApp({ dataDir, backupDir: bk }), /nenhum backup valido/);
+  fs.rmSync(dataDir, { recursive: true, force: true });
+});

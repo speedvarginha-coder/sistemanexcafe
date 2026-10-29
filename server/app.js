@@ -192,6 +192,13 @@ const EXPENSE_CATEGORIES = ["Aluguel", "Energia", "Água", "Internet", "Salário
 const DEFAULT_OFFSITE_DIR = process.env.LHM_BACKUP_DIR || (process.platform === "win32" ? "C:\\LanHouseManager-Backup" : "");
 const OFFSITE_KEEP_DAYS = 30;
 
+// Forca o disco (fsync) antes de trocar o arquivo: queda de energia nao deixa o banco com o final zerado.
+function writeDurable(file, text) {
+  const fd = fs.openSync(`${file}.tmp`, "w");
+  try { fs.writeFileSync(fd, text, "utf8"); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+  fs.renameSync(`${file}.tmp`, file);
+}
+
 function defaultOcrRunner(file) {
   return new Promise(resolve => {
     execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", path.join(__dirname, "ocr.ps1"), "-Path", file], { timeout: 90000, maxBuffer: 8 * 1024 * 1024, windowsHide: true, encoding: "utf8" }, (error, stdout, stderr) => {
@@ -222,10 +229,40 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     } catch { return { mtime: 0, text: "", hash: "" }; }
   }
   let db;
+  let restored = null;
+  // Banco ilegivel (ex.: queda de energia): guarda a copia e sobe com o backup diario/externo valido mais recente.
+  function loadDb() {
+    try { return JSON.parse(fs.readFileSync(dbPath, "utf8")); }
+    catch (cause) {
+      const kept = `${dbPath}.corrompido-${Date.now()}`;
+      fs.copyFileSync(dbPath, kept);
+      const candidates = [];
+      for (const dir of [dataDir, offsiteDir]) {
+        if (!dir || !fs.existsSync(dir)) continue;
+        for (const name of fs.readdirSync(dir)) {
+          if (!/^db\.json\.\d{4}-\d{2}-\d{2}\.bak$|^db-\d{4}-\d{2}-\d{2}\.json$/.test(name)) continue;
+          const file = path.join(dir, name);
+          candidates.push({ file, mtime: fs.statSync(file).mtimeMs });
+        }
+      }
+      for (const { file } of candidates.sort((a, b) => b.mtime - a.mtime)) {
+        try {
+          const data = JSON.parse(fs.readFileSync(file, "utf8"));
+          // Antes do primeiro save(): senao a copia diaria/externa do dia receberia o arquivo ilegivel.
+          fs.copyFileSync(file, dbPath);
+          restored = { file, kept, reason: cause.message };
+          console.error(`db.json ilegivel (${cause.message}); restaurado de ${file}, copia guardada em ${kept}`);
+          return data;
+        } catch { /* backup tambem ilegivel: tenta o proximo */ }
+      }
+      throw new Error(`db.json ilegivel (${cause.message}) e nenhum backup valido; copia guardada em ${kept}`);
+    }
+  }
   if (fs.existsSync(dbPath)) {
-    db = JSON.parse(fs.readFileSync(dbPath, "utf8"));
+    db = loadDb();
     if (db.version !== 2) fs.copyFileSync(dbPath, `${dbPath}.antes-v2-${Date.now()}.bak`);
     normalize(db);
+    if (restored) event("sistema", "Banco restaurado de backup", `${path.basename(restored.file)}; ilegivel: ${path.basename(restored.kept)}`);
   } else db = defaults();
   let backupDay = "";
   let lastMaintenance = 0;
@@ -274,8 +311,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         const merged = (existing[key] || []).concat(bucket[key]);
         existing[key] = [...new Map(merged.map(item => [item.id, item])).values()];
       }
-      fs.writeFileSync(`${file}.tmp`, JSON.stringify(existing), "utf8");
-      fs.renameSync(`${file}.tmp`, file);
+      writeDurable(file, JSON.stringify(existing));
     }
     // So agora (arquivos mensais gravados) os registros saem do banco.
     for (const [key, keep] of Object.entries(keeps)) db[key] = keep;
@@ -319,15 +355,14 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       lastMaintenance = Date.now();
       if (archiveOldData()) pruneBackups();
     }
-    fs.writeFileSync(`${dbPath}.tmp`, JSON.stringify(db), "utf8");
-    fs.renameSync(`${dbPath}.tmp`, dbPath);
+    const text = JSON.stringify(db);
+    writeDurable(dbPath, text);
     // Copia externa do banco JA gravado a cada 15 min: o arquivo do dia guarda o estado mais recente daquele dia.
     if (offsiteDir && Date.now() - lastOffsite > 15 * 60000) {
       lastOffsite = Date.now();
       try {
         fs.mkdirSync(offsiteDir, { recursive: true });
-        fs.copyFileSync(dbPath, path.join(offsiteDir, `db-${day}.json.tmp`));
-        fs.renameSync(path.join(offsiteDir, `db-${day}.json.tmp`), path.join(offsiteDir, `db-${day}.json`));
+        writeDurable(path.join(offsiteDir, `db-${day}.json`), text);
       } catch (cause) { console.error(`Backup externo do banco falhou: ${cause.message}`); }
     }
   }
