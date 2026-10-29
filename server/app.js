@@ -12,6 +12,7 @@ const { suggestActions, METRICS, actionEffect, goalProgress, TEMPLATES } = requi
 const { syncMarketing, DEFAULT_MARKETING_SOURCE, TASK_NAME: MARKETING_SYNC_TASK, RESULT_FILE: MARKETING_SYNC_RESULT } = require("./marketing-sync");
 const { groupOf, PB_GROUP, DEFAULT_PRINT_TIERS, tierUnitCents, parsePrintTiers, normalizationPlan, applyNormalization, revertNormalization } = require("./grupos");
 const { buildIndicators, packagesOutstanding } = require("./indicadores");
+const { measureGeogrid, findPlaces, DEFAULT_TERMS: GEOGRID_TERMS, GRID_SIZE: GEOGRID_SIZE, SPACING_KM: GEOGRID_SPACING_KM } = require("./geogrid");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -127,7 +128,7 @@ function verifyPassword(password, user) {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 function defaults() {
-  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, vault: { salt: null, check: null, items: [], updatedAt: null } };
+  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, vault: { salt: null, check: null, items: [], updatedAt: null } };
 }
 function normalize(db) {
   const empty = defaults();
@@ -155,6 +156,8 @@ function normalize(db) {
   }
   for (const key of ["events", "users", "loginSessions", "clients", "products", "charges", "payments", "sessionHistory", "stockMovements", "cashShifts", "cashAdjustments", "printJobs", "expenses", "incomes"]) db[key] ||= [];
   db.marketing ||= { store: {}, updatedAt: null };
+  db.geogrid ||= { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null };
+  db.geogrid.runs ||= [];
   db.vault ||= { salt: null, check: null, items: [], updatedAt: null };
   db.vault.banks ||= [];
   // Despesa do sistema anterior veio com categoria generica: aluguel volta para Aluguel.
@@ -208,7 +211,7 @@ function defaultOcrRunner(file) {
   });
 }
 
-function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing") } = {}) {
+function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing"), placesFetch = globalThis.fetch } = {}) {
   const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
   const mkSource = marketingSource !== undefined ? marketingSource : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? (process.env.NEXCAFE_MARKETING_SRC || DEFAULT_MARKETING_SOURCE) : "");
   const dbPath = path.join(dataDir, "db.json");
@@ -2844,6 +2847,27 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     }
     if (p === "/api/marketing/sync" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, configured: !!mkSource, running: !!mkSync.running, last: readMarketingSync() }); }
     if (p === "/api/marketing/sync" && req.method === "POST") { admin(user); return send(res, 200, { ok: true, result: await runMarketingSync() }); }
+    if (p === "/api/marketing/geogrid" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, geogrid: geogridView() }); }
+    if (p === "/api/marketing/geogrid/config" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      if (input.remove) { db.geogrid.key = ""; db.geogrid.placeId = ""; db.geogrid.placeName = ""; db.geogrid.placeAddress = ""; db.geogrid.lastError = null; save(); return send(res, 200, { ok: true, geogrid: geogridView() }); }
+      const key = String(input.key || db.geogrid.key || "").trim();
+      if (!/^[\w-]{20,200}$/.test(key)) throw err(400, "Chave da API invalida");
+      // Confere a chave buscando a ficha: so salva se o Google responder.
+      const places = await findPlaces({ key, query: "Speed Financeira Varginha", fetchImpl: placesFetch });
+      const chosen = input.placeId ? places.find(place => place.id === input.placeId) : places.find(place => /speed financeira/i.test(place.name));
+      if (!chosen) return send(res, 404, { ok: false, error: "Ficha da Speed Financeira nao encontrada na busca", candidates: places.slice(0, 10) });
+      Object.assign(db.geogrid, { key, placeId: chosen.id, placeName: chosen.name, placeAddress: chosen.address, lastError: null });
+      event("sistema", "GeoGrid configurado", `${chosen.name} - ${chosen.address}`, user.name);
+      save();
+      return send(res, 200, { ok: true, geogrid: geogridView() });
+    }
+    if (p === "/api/marketing/geogrid/run" && req.method === "POST") {
+      admin(user);
+      if (!db.geogrid.key || !db.geogrid.placeId) throw err(400, "Configure a chave da API antes de medir");
+      await runGeogrid("manual");
+      return send(res, 200, { ok: true, geogrid: geogridView() });
+    }
     throw err(404, "API nao encontrada");
   }
 
@@ -2876,6 +2900,41 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       .then(result => result || syncMarketing({ source: mkSource, dest: marketingDir }))
       .finally(() => { mkSync.running = null; });
     return mkSync.running;
+  }
+  // GeoGrid da ficha no Google: medicao manual pelo painel e automatica a cada 30 dias.
+  const geo = { running: null, lastCheck: 0 };
+  function geogridView() {
+    const g = db.geogrid;
+    return {
+      configured: !!(g.key && g.placeId), keyHint: g.key ? `...${g.key.slice(-4)}` : "", placeId: g.placeId, placeName: g.placeName, placeAddress: g.placeAddress,
+      terms: GEOGRID_TERMS, size: GEOGRID_SIZE, spacingKm: GEOGRID_SPACING_KM, running: !!geo.running, lastError: g.lastError, runs: g.runs.slice(-12)
+    };
+  }
+  function runGeogrid(trigger) {
+    geo.running ||= measureGeogrid({ key: db.geogrid.key, placeId: db.geogrid.placeId, fetchImpl: placesFetch })
+      .then(run => {
+        db.geogrid.runs.push({ ...run, trigger });
+        db.geogrid.runs = db.geogrid.runs.slice(-24);
+        db.geogrid.lastError = null;
+        event("sistema", "GeoGrid medido", run.terms.map(item => `${item.term}: media ${item.average}, top 3 em ${item.top3}`).join("; "));
+        save();
+        return run;
+      }, cause => {
+        db.geogrid.lastError = { at: now(), message: label(cause.message, 300), trigger };
+        save();
+        throw cause;
+      })
+      .finally(() => { geo.running = null; });
+    return geo.running;
+  }
+  function geogridDue() {
+    const g = db.geogrid;
+    if (!g.key || !g.placeId || geo.running || Date.now() - geo.lastCheck < 3600_000) return;
+    geo.lastCheck = Date.now();
+    const last = g.runs.at(-1);
+    // Erro recente (chave invalida, faturamento desligado): espera um dia antes de tentar de novo sozinho.
+    if (g.lastError && Date.now() - Date.parse(g.lastError.at) < 86400_000) return;
+    if (!last || Date.now() - Date.parse(last.at) >= 30 * 86400_000) runGeogrid("automatica").catch(cause => console.error(`GeoGrid automatico falhou: ${cause.message}`));
   }
   const MARKETING_TYPES = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json", ".csv": "text/csv; charset=utf-8", ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".pdf": "application/pdf", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation" };
   // Biblioteca de pesquisas do marketing: lista as pastas em /marketing/arquivos/.
@@ -2971,6 +3030,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const nowMs = Date.now();
     for (const [ip, attempt] of attempts) if (attempt.until < nowMs) attempts.delete(ip);
     for (const [ip, attempt] of enrollAttempts) if (attempt.until < nowMs) enrollAttempts.delete(ip);
+    geogridDue();
   }, 15_000);
   server.on("close", () => clearInterval(sweeper));
   // O .NET das estacoes reaproveita conexao ociosa por ate 100 s; o padrao do Node fecha em 5 s.

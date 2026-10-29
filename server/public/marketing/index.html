@@ -1024,23 +1024,12 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
-        <div class="card-premium p-5 lg:col-span-2">
+        <div class="card-premium p-5 lg:col-span-2" id="geogridPainel">
           <div class="flex items-start justify-between gap-3 mb-4">
-            <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-map-marked-alt text-blue-600 mr-2"></i>Posicionamento geográfico</h3><p class="text-[11px] text-gray-500 mt-1">Situação atual e caminho para o monitoramento por grade no Google Maps.</p></div>
-            <span class="text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 px-2 py-1 rounded-full whitespace-nowrap">GeoGrid a configurar</span>
+            <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-map-marked-alt text-green-700 mr-2"></i>Posicionamento geográfico (GeoGrid)</h3><p class="text-[11px] text-gray-500 mt-1">Posição da ficha em 25 pontos de Varginha, com 1 km entre eles, medida pela Places API do Google, sem a personalização da conta logada.</p></div>
+            <span id="geogridStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
           </div>
-          <div class="raiox-map-placeholder rounded-2xl border border-blue-100 p-5 min-h-[280px] flex flex-col justify-between">
-            <div class="grid grid-cols-5 gap-2 max-w-md mx-auto w-full" aria-label="Grade ilustrativa sem dados de posição">
-              <span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span class="loja" title="Speed Financeira"></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span>
-              <span></span><span></span><span></span><span></span><span></span>
-            </div>
-            <div class="bg-white/90 border border-gray-200 rounded-xl p-3 text-xs text-gray-600 mt-4">
-              <strong class="text-gray-900">Sem posições inventadas:</strong> o projeto ainda não coleta ranking ponto a ponto do Google Maps. A grade fica pronta para receber latitude, longitude, palavra-chave e posição quando essa coleta for conectada.
-            </div>
-          </div>
+          <div id="geogridConteudo"></div>
         </div>
 
         <div class="card-premium p-5">
@@ -1485,6 +1474,7 @@
   <script src="js/calendario.js"></script>
   <script src="js/simulador.js"></script>
   <script src="js/raiox.js"></script>
+  <script src="js/geogrid.js"></script>
   <script src="js/app.js"></script>
   <script src="js/resultados.js"></script>
   <script src="js/criador_artes.js"></script>
