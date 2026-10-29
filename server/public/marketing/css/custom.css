@@ -567,3 +567,25 @@ input[type="range"] {
 .results-record button:last-child { color: #b91c1c; }
 @media (max-width: 850px) { .results-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } .results-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .results-heading { display: block; } .results-heading label { display: block; margin-top: .8rem; } .results-form-grid { grid-template-columns: 1fr; } .results-record { align-items: start; flex-direction: column; } }
+
+/* Rotina e métricas da ficha no Google (js/gmb_plano.js) */
+.gmb-rotina-item { border: 1px solid #e5e7eb; border-radius: .8rem; padding: .85rem; background: #fff; min-width: 0; }
+.gmb-rotina-atrasada { border-color: #fca5a5; background: #fffafa; }
+.gmb-rotina-acoes { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-top: .65rem; }
+.gmb-rotina-outra { display: inline-flex; align-items: center; gap: .35rem; font-size: .7rem; font-weight: 700; color: #64748b; }
+.gmb-rotina-outra .art-input { width: auto; padding: .3rem .45rem; font-size: .72rem; }
+.gmb-btn-primario { border-radius: .55rem; padding: .4rem .75rem; font-size: .72rem; font-weight: 800; background: #047857; color: #fff; }
+.gmb-btn-primario:hover { background: #065f46; }
+.gmb-btn-link { font-size: .72rem; font-weight: 700; color: #047857; margin-right: .6rem; }
+.gmb-btn-perigo { color: #b91c1c; }
+.gmb-termos-grid { margin-top: .5rem; }
+.gmb-obs-grid { grid-template-columns: 1fr; }
+.gmb-link-busca { font-weight: 600; color: #2563eb; margin-left: .25rem; }
+.gmb-var { font-size: .68rem; font-weight: 700; color: #64748b; margin-left: .2rem; }
+.gmb-var-alta { color: #047857; }
+.gmb-var-baixa { color: #b45309; }
+.gmb-var-queda { color: #b91c1c; }
+.gmb-pos { font-weight: 800; color: #334155; }
+.gmb-pos-top { color: #047857; }
+.gmb-pos-fora { color: #b91c1c; }
+.results-table td.gmb-obs { white-space: normal; text-align: left; min-width: 12rem; color: #475569; }

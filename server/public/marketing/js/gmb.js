@@ -3,6 +3,7 @@
 
 // ─── INICIALIZAÇÃO DO MÓDULO GMB ────────────────────────────────────────────
 function initGMB() {
+  if (typeof renderGmbPlano === 'function') renderGmbPlano();
   renderGmbScore();
   renderGmbChecklist();
   renderGmbPosts();

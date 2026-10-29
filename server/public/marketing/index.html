@@ -1118,6 +1118,44 @@
         </div>
       </div>
 
+      <!-- PLANO DO PERFIL: ROTINA RECORRENTE E MÉTRICAS MENSAIS (js/gmb_plano.js) -->
+      <div class="card-premium p-5 mb-6">
+        <div class="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2"><i class="fas fa-calendar-check text-green-700"></i> Rotina da ficha no Google</h3>
+            <p class="text-[11px] text-gray-500 mt-1">Tarefas que se repetem. Marque quando fizer: a próxima data é calculada sozinha e o que venceu sobe para o topo.</p>
+          </div>
+          <span id="gmbRotinaResumo" class="status-badge bg-gray-100 text-gray-700 text-[10px]">—</span>
+        </div>
+        <div id="gmbRotinaContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
+      </div>
+
+      <div class="card-premium p-5 mb-6">
+        <div class="mb-3">
+          <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2"><i class="fas fa-chart-line text-green-700"></i> Métricas da ficha mês a mês</h3>
+          <p class="text-[11px] text-gray-500 mt-1">Números do Perfil da Empresa (Desempenho, escolha o mês já fechado) e a posição da ficha no Google Maps em cada termo. Pesquise de fora da loja, de preferência no celular com o Wi-Fi desligado: dentro da loja a ficha aparece melhor do que para o cliente.</p>
+        </div>
+        <details id="gmbMetricasEntrada" class="results-entry">
+          <summary>Registrar mês</summary>
+          <form id="gmbMetricasForm" novalidate>
+            <div class="results-form-grid">
+              <label>Mês<input name="mes" class="art-input" type="month" required></label>
+              <label>Visualizações do perfil<input name="visualizacoes" class="art-input" type="number" min="0" step="1"></label>
+              <label>Ligações<input name="ligacoes" class="art-input" type="number" min="0" step="1"></label>
+              <label>Pedidos de rota<input name="rotas" class="art-input" type="number" min="0" step="1"></label>
+              <label>Cliques no site<input name="cliques_site" class="art-input" type="number" min="0" step="1"></label>
+              <label>Total de avaliações na ficha<input name="avaliacoes_total" class="art-input" type="number" min="0" step="1"></label>
+              <label>Nota média<input name="nota" class="art-input" type="number" min="1" max="5" step="0.1"></label>
+            </div>
+            <p class="text-xs font-bold text-gray-700 mt-4">Posição no Google Maps</p>
+            <div id="gmbMetricasTermos" class="results-form-grid gmb-termos-grid"></div>
+            <div class="results-form-grid gmb-obs-grid"><label>O que mudou no mês (opcional)<input name="obs" class="art-input" maxlength="200" placeholder="Ex.: nome da ficha alterado, nova categoria, 8 avaliações novas"></label></div>
+            <div class="results-form-actions"><button type="submit">Salvar mês</button></div>
+          </form>
+        </details>
+        <div id="gmbMetricasContainer" class="mt-4"></div>
+      </div>
+
       <!-- PAINEL DE SCORE E SAÚDE DA FICHA (3 CARDS COM ALTURAS EQUILIBRADAS) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-6 items-stretch">
         <!-- Score Circular -->
@@ -1441,6 +1479,7 @@
   <script src="js/data_calendario.js"></script>
   <script src="js/data_nap_erros.js"></script>
   <script src="js/gmb.js"></script>
+  <script src="js/gmb_plano.js"></script>
   <script src="js/calendario.js"></script>
   <script src="js/simulador.js"></script>
   <script src="js/raiox.js"></script>
