@@ -6,7 +6,6 @@ function initGMB() {
   if (typeof renderGmbPlano === 'function') renderGmbPlano();
   renderGmbScore();
   renderGmbChecklist();
-  renderGmbPosts();
   renderGmbAvaliacoes();
   renderGmbQA();
   renderGmbFotos();
@@ -131,63 +130,6 @@ function loadGmbChecklistFromStorage() {
   if (!window.SPEED_GMB_DATA) return;
   window.SPEED_GMB_DATA.checklist_ficha.forEach(item => {
     if (saved[item.id] !== undefined) item.status = saved[item.id];
-  });
-}
-
-// ─── POSTS DO GOOGLE MEU NEGÓCIO ────────────────────────────────────────────
-function renderGmbPosts() {
-  const container = document.getElementById('gmbPostsContainer');
-  if (!container || !window.SPEED_GMB_DATA) return;
-
-  container.innerHTML = '';
-  const posts = window.SPEED_GMB_DATA.posts_gmb;
-
-  posts.forEach(post => {
-    const badgeColor = {
-      oferta: 'bg-orange-100 text-orange-800',
-      atualizacao: 'bg-blue-100 text-blue-800',
-      evento: 'bg-purple-100 text-purple-800'
-    }[post.tipo] || 'bg-gray-100 text-gray-700';
-
-    const tipoIcon = {
-      oferta: 'fa-tag',
-      atualizacao: 'fa-bell',
-      evento: 'fa-calendar-star'
-    }[post.tipo] || 'fa-file-alt';
-
-    const card = document.createElement('div');
-    card.className = 'card-premium p-5 flex flex-col justify-between';
-    card.innerHTML = `
-      <div>
-        <div class="flex items-center justify-between gap-2 mb-2">
-          <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full ${badgeColor} flex items-center gap-1">
-            <i class="fas ${tipoIcon}"></i> ${post.tipo.charAt(0).toUpperCase() + post.tipo.slice(1)}
-          </span>
-          <span class="text-[11px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded font-semibold">${post.categoria_produto}</span>
-        </div>
-
-        <h4 class="text-sm font-bold text-gray-900 mb-2 leading-snug">${post.titulo}</h4>
-
-        <div class="bg-gray-50 border border-gray-200 rounded-xl p-3 text-xs text-gray-700 whitespace-pre-line leading-relaxed mb-3 max-h-44 overflow-y-auto" id="gmb-post-${post.id}">
-${post.corpo}
-        </div>
-
-        <div class="bg-blue-50 border border-blue-100 rounded-lg p-2 text-[11px] text-blue-800 flex items-start gap-1.5">
-          <i class="fas fa-lightbulb text-blue-500 mt-0.5 shrink-0"></i>
-          <span>${post.dica}</span>
-        </div>
-      </div>
-
-      <div class="mt-4 pt-3 border-t border-gray-100 flex items-center gap-2">
-        <button onclick="copiarTextoDoId('gmb-post-${post.id}')" class="flex-1 bg-green-700 hover:bg-green-800 text-white font-bold text-xs py-2 rounded-lg transition flex items-center justify-center gap-1.5 shadow-sm">
-          <i class="fas fa-copy"></i> Copiar Texto do Post
-        </button>
-        <a href="https://business.google.com/posts" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1" title="Abrir Painel GMB">
-          <i class="fab fa-google text-red-500"></i> Publicar
-        </a>
-      </div>
-    `;
-    container.appendChild(card);
   });
 }
 

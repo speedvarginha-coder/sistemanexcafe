@@ -9,7 +9,7 @@ const GMB_FICHA_URL = 'https://share.google/jQz1bj2r5fsU15FM8';
 const GMB_ROTINA = [
   { id: 'responder_avaliacoes', titulo: 'Responder avaliações novas', dias: 2, dica: 'Responda todas, boas e ruins, sem citar dados do cliente, valores ou contrato. Em reclamação, peça para chamar no (35) 3067-5017.' },
   { id: 'pedir_avaliacoes', titulo: 'Pedir avaliação a clientes atendidos', dias: 7, dica: 'Envie o link da ficha pelo WhatsApp depois de um atendimento concluído. Não ofereça desconto, brinde ou sorteio em troca: o Google proíbe.' },
-  { id: 'post', titulo: 'Publicar um post na ficha', dias: 7, dica: 'Serviço ou aviso real da loja, com foto própria. Alterne crédito, lan house e gráfica. Nada de "aprovação garantida".' },
+  { id: 'post', titulo: 'Publicar o post programado na ficha', dias: 3, freq: '3 por semana', dica: 'Siga o planejamento de posts mais abaixo, só com serviços financeiros. Marcar um post como publicado registra esta tarefa.' },
   { id: 'nome_categorias', titulo: 'Conferir nome e categorias', dias: 30, dica: 'Nome igual ao da fachada, sem serviços nem cidade acrescentados (em 29/10 estava "Speed Financeira – Empréstimo Consignado e Financiamento em Varginha"). Anote a categoria principal e confira se as adicionais cobrem o que a loja faz de verdade: crédito, lan house, impressão e cópias. Veja se o Google aplicou alguma edição sugerida.' },
   { id: 'dados_contato', titulo: 'Conferir endereço, telefone, site e horário', dias: 30, dica: 'Rua Santa Cruz, 696 - Centro, CEP 37002-090, (35) 3067-5017, speedfinanceira.com.br. Horário igual ao praticado na porta.' },
   { id: 'horario_especial', titulo: 'Lançar horário especial dos próximos feriados', dias: 30, dica: 'Antes de cada feriado, informe se a loja abre, fecha ou muda o horário. Ficha "aberta" com a porta fechada gera reclamação.' },
@@ -88,7 +88,7 @@ function renderGmbRotina() {
       </div>
       <p class="text-[11px] text-gray-600 leading-relaxed mb-2">${escaparHtml(t.dica)}</p>
       <div class="flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
-        <span class="font-semibold">${gmbFrequencia(t.dias)}</span>
+        <span class="font-semibold">${t.freq || gmbFrequencia(t.dias)}</span>
         <span>•</span>
         <span>${datas.length ? `Feito em ${gmbDataCurta(datas[0])} • próxima ${gmbDataCurta(s.proxima)}` : 'Sem registro'}</span>
       </div>
@@ -265,9 +265,105 @@ function setupGmbMetricas() {
   });
 }
 
+// ─── PLANEJAMENTO DE POSTS DA FICHA (js/data_gmb_posts.js) ──────────────────
+const GMB_POSTS_KEY = 'speed_gmb_posts_v1';
+const GMB_DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+
+function lerGmbPostsFeitos() { const v = lerJsonStorage(GMB_POSTS_KEY, {}); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
+function gmbDiaSemana(iso) { return GMB_DIAS_SEMANA[new Date(gmbDiaNumero(iso) * 864e5).getUTCDay()]; }
+function gmbSegunda(iso) { const dia = new Date(gmbDiaNumero(iso) * 864e5).getUTCDay(); return gmbSomarDias(iso, dia === 0 ? -6 : 1 - dia); }
+
+function renderGmbPostsPlano() {
+  const container = document.getElementById('gmbPostsContainer');
+  const posts = window.SPEED_GMB_POSTS_PLANO;
+  if (!container || !Array.isArray(posts)) return;
+  const feitos = lerGmbPostsFeitos();
+  const hoje = gmbHoje();
+  const ocultar = document.getElementById('gmbPostsOcultar')?.checked;
+  const semanas = new Map();
+  posts.filter(post => !(ocultar && feitos[post.id])).forEach(post => {
+    const chave = gmbSegunda(post.data);
+    if (!semanas.has(chave)) semanas.set(chave, []);
+    semanas.get(chave).push(post);
+  });
+
+  container.innerHTML = [...semanas].map(([segunda, lista]) => `
+    <div class="gmb-posts-semana">
+      <p class="gmb-posts-semana-titulo">Semana de ${gmbDataCurta(segunda)} a ${gmbDataCurta(gmbSomarDias(segunda, 4))}</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        ${lista.map(post => {
+          const feito = feitos[post.id];
+          const atrasado = !feito && post.data < hoje;
+          const situacao = feito ? ['bg-green-100 text-green-800', `Publicado em ${gmbDataCurta(feito)}`]
+            : post.data === hoje ? ['bg-yellow-100 text-yellow-800', 'Publicar hoje']
+            : atrasado ? ['bg-red-100 text-red-700', 'Atrasado']
+            : ['bg-gray-100 text-gray-700', 'Programado'];
+          return `<div class="gmb-post-card ${atrasado ? 'gmb-rotina-atrasada' : ''} ${post.data === hoje && !feito ? 'gmb-post-hoje' : ''} ${feito ? 'gmb-post-feito' : ''}">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <p class="text-sm font-black text-gray-900">${gmbDiaSemana(post.data)} ${gmbDataCurta(post.data)}</p>
+              <span class="status-badge ${situacao[0]} text-[10px]">${situacao[1]}</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <span class="gmb-post-tema">${escaparHtml(post.tema)}</span>
+              <span class="gmb-post-termo" title="Busca que o post reforça">busca: ${escaparHtml(post.termo)}</span>
+            </div>
+            <div class="gmb-post-texto">${escaparHtml(post.texto)}</div>
+            <p class="text-[11px] text-gray-600 mt-2"><strong>Foto:</strong> ${escaparHtml(post.foto)}</p>
+            <p class="text-[11px] text-gray-600"><strong>Botão:</strong> ${escaparHtml(post.botao)}${post.link ? ` (${escaparHtml(post.link)})` : ''}</p>
+            <div class="gmb-rotina-acoes">
+              <button type="button" data-gmb-post-copiar="${post.id}" class="gmb-btn-primario">Copiar texto</button>
+              ${feito
+                ? `<button type="button" data-gmb-post-desfazer="${post.id}" class="gmb-btn-link">Desfazer publicado</button>`
+                : `<button type="button" data-gmb-post-feito="${post.id}" class="gmb-btn-link">Marcar publicado</button>`}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`).join('') || '<p class="results-empty">Todos os posts do período foram publicados.</p>';
+
+  const total = posts.length;
+  const publicados = posts.filter(post => feitos[post.id]).length;
+  const atrasados = posts.filter(post => !feitos[post.id] && post.data < hoje).length;
+  const proximo = posts.find(post => !feitos[post.id] && post.data >= hoje);
+  const resumo = document.getElementById('gmbPostsResumo');
+  if (resumo) {
+    resumo.textContent = `${publicados} de ${total} publicados${atrasados ? ` • ${atrasados} atrasado${atrasados > 1 ? 's' : ''}` : ''}${proximo ? ` • próximo: ${gmbDiaSemana(proximo.data)} ${gmbDataCurta(proximo.data)}` : ''}`;
+    resumo.className = `status-badge text-[10px] ${atrasados ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-800'}`;
+  }
+}
+
+function setupGmbPostsPlano() {
+  const container = document.getElementById('gmbPostsContainer');
+  if (!container || container.dataset.pronto) return;
+  container.dataset.pronto = '1';
+  document.getElementById('gmbPostsOcultar')?.addEventListener('change', renderGmbPostsPlano);
+  container.addEventListener('click', ev => {
+    const botao = ev.target.closest('[data-gmb-post-copiar], [data-gmb-post-feito], [data-gmb-post-desfazer]');
+    if (!botao) return;
+    const id = botao.dataset.gmbPostCopiar || botao.dataset.gmbPostFeito || botao.dataset.gmbPostDesfazer;
+    const post = (window.SPEED_GMB_POSTS_PLANO || []).find(item => item.id === id);
+    if (!post) return;
+    if (botao.dataset.gmbPostCopiar) { copiarTexto(post.texto, 'Texto do post copiado. Cole em Adicionar atualização na ficha.'); return; }
+    const feitos = lerGmbPostsFeitos();
+    if (botao.dataset.gmbPostFeito) {
+      feitos[id] = gmbHoje();
+      registrarGmbTarefa('post', gmbHoje());
+      mostrarToast(`Post de ${gmbDataCurta(post.data)} marcado como publicado.`);
+    } else {
+      delete feitos[id];
+      mostrarToast('Marcação desfeita.');
+    }
+    localStorage.setItem(GMB_POSTS_KEY, JSON.stringify(feitos));
+    renderGmbPostsPlano();
+    renderGmbRotina();
+  });
+}
+
 function renderGmbPlano() {
   setupGmbRotina();
   setupGmbMetricas();
+  setupGmbPostsPlano();
   renderGmbRotina();
   renderGmbMetricas();
+  renderGmbPostsPlano();
 }

@@ -1313,21 +1313,22 @@
         <div id="gmbChecklistContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
       </div>
 
-      <!-- SEÇÃO 2: MODELOS DE POSTS SEMANAIS PARA O GMB -->
+      <!-- SEÇÃO 2: PLANEJAMENTO DE POSTS DA FICHA (js/data_gmb_posts.js + js/gmb_plano.js) -->
       <div class="card-premium p-6 mb-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
           <div>
             <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-              <i class="fas fa-bullhorn text-yellow-500"></i> Posts Semanais para o Google Meu Negócio (GMB)
+              <i class="fas fa-bullhorn text-yellow-500"></i> Planejamento de posts da ficha: novembro e dezembro
             </h3>
-             <p class="text-xs text-gray-500">Use publicações para informar ofertas e serviços reais. A frequência de posts, isoladamente, não garante prioridade no Google Maps.</p>
+            <p class="text-xs text-gray-500">3 posts por semana, só serviços financeiros. Na ficha, use Adicionar atualização, cole o texto, suba uma foto própria e escolha o botão indicado. O texto não leva telefone: o contato vai no botão.</p>
           </div>
-          <a href="https://business.google.com/posts" target="_blank" rel="noopener noreferrer" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs py-1.5 px-3 rounded-lg transition flex items-center gap-1 shadow-sm">
-            <i class="fab fa-google"></i> Criar Post no Google
-          </a>
+          <div class="flex flex-col items-start sm:items-end gap-2 shrink-0">
+            <span id="gmbPostsResumo" class="status-badge bg-gray-100 text-gray-700 text-[10px]">—</span>
+            <label class="text-[11px] font-semibold text-gray-600 flex items-center gap-1.5"><input type="checkbox" id="gmbPostsOcultar"> Ocultar publicados</label>
+          </div>
         </div>
 
-        <div id="gmbPostsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+        <div id="gmbPostsContainer"></div>
       </div>
 
       <!-- SEÇÃO 3: CENTRAL DE RESPOSTA A AVALIAÇÕES (REVIEWS) -->
@@ -1478,6 +1479,7 @@
   <script src="js/data_gmb.js"></script>
   <script src="js/data_calendario.js"></script>
   <script src="js/data_nap_erros.js"></script>
+  <script src="js/data_gmb_posts.js"></script>
   <script src="js/gmb.js"></script>
   <script src="js/gmb_plano.js"></script>
   <script src="js/calendario.js"></script>
