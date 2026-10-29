@@ -13,12 +13,12 @@ window.SPEED_GMB_DATA = {
     whatsapp: "https://wa.me/553530675017",
     site: "https://speedfinanceira.com.br",
     horario: [
-      { dia: "Segunda-feira", abre: "09:00", fecha: "18:00" },
-      { dia: "Terça-feira",   abre: "09:00", fecha: "18:00" },
-      { dia: "Quarta-feira",  abre: "09:00", fecha: "18:00" },
-      { dia: "Quinta-feira",  abre: "09:00", fecha: "18:00" },
-      { dia: "Sexta-feira",   abre: "09:00", fecha: "18:00" },
-      { dia: "Sábado",        abre: null,    fecha: null,    fechado: true },
+      { dia: "Segunda-feira", abre: "08:00", fecha: "18:00" },
+      { dia: "Terça-feira",   abre: "08:00", fecha: "18:00" },
+      { dia: "Quarta-feira",  abre: "08:00", fecha: "18:00" },
+      { dia: "Quinta-feira",  abre: "08:00", fecha: "18:00" },
+      { dia: "Sexta-feira",   abre: "08:00", fecha: "18:00" },
+      { dia: "Sábado",        abre: "09:00", fecha: "12:30" },
       { dia: "Domingo",       abre: null,    fecha: null,    fechado: true }
     ],
     links_diretos: {
@@ -162,7 +162,7 @@ Speed Financeira | Correspondente bancário autorizado — CMN 4.935/2021`
     },
     {
       pergunta: "Qual o horário de funcionamento?",
-      resposta: "Funcionamos de Segunda a Sexta-feira, das 09h às 18h. Sábados, Domingos e Feriados estamos fechados presencialmente, mas você pode entrar em contato pelo WhatsApp (35) 3067-5017 e deixar sua mensagem que retornamos no próximo dia útil."
+      resposta: "Funcionamos de segunda a sexta-feira, das 8h às 18h, e aos sábados, das 9h às 12h30. Domingos e feriados estamos fechados presencialmente, mas você pode entrar em contato pelo WhatsApp (35) 3067-5017 e deixar sua mensagem que retornamos no próximo dia útil."
     },
     {
       pergunta: "Como funciona a portabilidade de consignado?",

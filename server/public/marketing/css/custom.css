@@ -630,3 +630,5 @@ input[type="range"] {
 .geogrid-piorou { color: #b91c1c !important; }
 .geogrid-lideres { font-size: .74rem; color: #334155; line-height: 1.6; padding-left: 1rem; list-style: disc; }
 @media (max-width: 850px) { .geogrid-corpo { grid-template-columns: 1fr; } .geogrid-numeros { grid-template-columns: 1fr 1fr; } }
+.gmb-post-arte { display: block; margin-bottom: .6rem; border-radius: .6rem; overflow: hidden; border: 1px solid #e5e7eb; }
+.gmb-post-arte img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }

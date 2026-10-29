@@ -307,11 +307,13 @@ function renderGmbPostsPlano() {
               <span class="gmb-post-tema">${escaparHtml(post.tema)}</span>
               <span class="gmb-post-termo" title="Busca que o post reforça">busca: ${escaparHtml(post.termo)}</span>
             </div>
+            ${post.arte ? `<a href="${escaparHtml(post.arte.arquivo)}" target="_blank" rel="noopener" class="gmb-post-arte" title="Abrir a arte em tamanho real"><img src="${escaparHtml(post.arte.arquivo)}" alt="Arte do post de ${gmbDataCurta(post.data)}: ${escaparHtml(post.arte.titulo.replace(/\*/g, ''))}" loading="lazy"></a>` : ''}
             <div class="gmb-post-texto">${escaparHtml(post.texto)}</div>
             <p class="text-[11px] text-gray-600 mt-2"><strong>Foto:</strong> ${escaparHtml(post.foto)}</p>
             <p class="text-[11px] text-gray-600"><strong>Botão:</strong> ${escaparHtml(post.botao)}${post.link ? ` (${escaparHtml(post.link)})` : ''}</p>
             <div class="gmb-rotina-acoes">
               <button type="button" data-gmb-post-copiar="${post.id}" class="gmb-btn-primario">Copiar texto</button>
+              ${post.arte ? `<a href="${escaparHtml(post.arte.arquivo)}" download="speed-${post.data}.png" class="gmb-btn-link">Baixar arte</a>` : ''}
               ${feito
                 ? `<button type="button" data-gmb-post-desfazer="${post.id}" class="gmb-btn-link">Desfazer publicado</button>`
                 : `<button type="button" data-gmb-post-feito="${post.id}" class="gmb-btn-link">Marcar publicado</button>`}
