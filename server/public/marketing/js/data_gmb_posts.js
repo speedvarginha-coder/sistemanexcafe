@@ -38,7 +38,9 @@ window.SPEED_GMB_POSTS_ARTES = {
 
 window.SPEED_GMB_POSTS_PLANO = (function () {
   const RODAPE = 'Crédito sujeito a análise. A Speed Financeira é correspondente bancário e não cobra nenhum valor antecipado.';
-  const SITE = 'https://speedfinanceira.com.br';
+  // Botão Saiba mais abre o WhatsApp oficial (35) 3067-5017 com a data do post na mensagem: a loja quase não atende telefone.
+  const WHATSAPP = 'https://wa.me/553530675017?text=';
+  const whatsapp = data => WHATSAPP + encodeURIComponent(`Olá! Vi o post da Speed Financeira no Google (${data.slice(8, 10)}/${data.slice(5, 7)}) e quero fazer uma simulação.`);
   // Os 25 posts foram programados na ficha (Programar esta postagem, 9h) em 30/10/2026.
   const PROGRAMADO_EM = '2026-10-30';
   const arte = data => {
@@ -50,8 +52,8 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
     const layout = Math.floor(i / 2) % 2 ? 'b' : 'a';
     return a ? { titulo: a[0], selo: a[1], foto: a[2], variacao, layout, arquivo: `gmb-artes/post-${data}${variacao === 2 ? '-v2' : ''}.png` } : null;
   };
-  const p = (data, tema, termo, texto, foto, botao = 'Ligar agora', rodape = true) =>
-    ({ id: `post-${data}`, data, tema, termo, texto: rodape ? `${texto}\n\n${RODAPE}` : texto, foto, botao, link: botao === 'Saiba mais' ? SITE : '', arte: arte(data), programadoEm: PROGRAMADO_EM });
+  const p = (data, tema, termo, texto, foto, rodape = true) =>
+    ({ id: `post-${data}`, data, tema, termo, texto: rodape ? `${texto}\n\n${RODAPE}` : texto, foto, botao: 'Saiba mais', link: whatsapp(data), arte: arte(data), programadoEm: PROGRAMADO_EM });
 
   return [
     // Semana 1
@@ -63,7 +65,7 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
       'Atendente mostrando a simulação na tela, sem dados do cliente.'),
     p('2026-11-06', 'Segurança', 'empréstimo para negativado',
       'Empréstimo para negativado "liberado na hora" que pede depósito antes é golpe. Em Varginha e região, desconfie de quem cobra taxa, Pix ou "seguro" para liberar o dinheiro: correspondente bancário sério não cobra nada antecipado.\n\nNa Speed Financeira o atendimento é presencial, na Rua Santa Cruz, 696, no Centro de Varginha, e o contrato é sempre do banco, em seu nome. Na dúvida, venha conferir pessoalmente antes de pagar qualquer coisa.',
-      'Fachada da loja com o número 696 visível.', 'Saiba mais', false),
+      'Fachada da loja com o número 696 visível.', false),
 
     // Semana 2
     p('2026-11-09', 'Consignado CLT', 'empréstimo clt varginha',
@@ -74,7 +76,7 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
       'Mãos segurando um extrato genérico, sem dados legíveis.'),
     p('2026-11-13', 'Atendimento', 'empréstimo varginha',
       'Vai fazer um empréstimo em Varginha? Veja o que trazer para simular na Speed Financeira:\n\n- documento com foto (RG ou CNH);\n- CPF;\n- comprovante de endereço;\n- aposentado ou pensionista: extrato do benefício (a gente ajuda a tirar);\n- carteira assinada: último holerite.\n\nAtendimento presencial na Rua Santa Cruz, 696, Centro de Varginha.',
-      'Balcão de atendimento organizado.', 'Ligar agora', false),
+      'Balcão de atendimento organizado.', false),
 
     // Semana 3 (20/11 é feriado da Consciência Negra)
     p('2026-11-16', 'Garantia de veículo', 'empréstimo com garantia de veículo varginha',
@@ -93,7 +95,7 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
       'Fachada da loja de manhã.'),
     p('2026-11-25', 'Educação financeira', 'empréstimo varginha',
       'Antes de contratar um empréstimo em Varginha, olhe o CET, o custo efetivo total. Ele soma juros, tarifas, seguros e impostos e mostra quanto o crédito custa de verdade.\n\nParcela menor nem sempre é mais barata: às vezes o prazo é tão longo que o total pago fica muito maior. Na Speed Financeira, no Centro, toda simulação mostra o CET e o total a pagar.',
-      'Atendente apontando para uma simulação na tela.', 'Saiba mais'),
+      'Atendente apontando para uma simulação na tela.'),
     p('2026-11-27', 'Educação financeira', 'empréstimo pessoal varginha',
       'Black Friday em Varginha: se a fatura do cartão pesar, um empréstimo pessoal com parcela fixa costuma sair mais barato que o rotativo, que tem os juros mais altos do mercado.\n\nAntes de parcelar, confira se as compras cabem no orçamento dos próximos meses. Se a dívida do cartão já virou uma bola de neve, venha conversar na Speed Financeira, no Centro: a gente compara empréstimo pessoal e consignado e mostra o custo total.',
       'Fachada da loja.'),
@@ -107,7 +109,7 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
       'Equipe no balcão.'),
     p('2026-12-04', 'Avaliações', 'financeira em varginha',
       'Financeira em Varginha com mais de 200 avaliações no Google e nota 4,8: obrigado a cada cliente que contou como foi o atendimento na Speed Financeira.\n\nJá foi atendido por aqui? Sua avaliação ajuda outras pessoas da cidade a escolher com segurança onde fazer o empréstimo. Conte qual serviço você fez e como foi.',
-      'Equipe reunida na frente da loja (com autorização).', 'Ligar agora', false),
+      'Equipe reunida na frente da loja (com autorização).', false),
 
     // Semana 6
     p('2026-12-07', 'Consórcio', 'consórcio varginha',
@@ -126,10 +128,10 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
       'Mesa de atendimento.'),
     p('2026-12-16', 'Educação financeira', 'financeira varginha',
       'A segunda parcela do 13º deve ser paga até 20 de dezembro, e a Speed Financeira, em Varginha, recomenda separar uma parte para as contas de janeiro: IPVA, IPTU, matrícula e material escolar.\n\nPlanejar agora evita entrar no cheque especial no começo do ano. Precisa organizar as dívidas? Venha ao Centro e a gente ajuda você a fazer as contas.',
-      'Fachada da loja.', 'Saiba mais'),
+      'Fachada da loja.'),
     p('2026-12-18', 'Segurança', 'empréstimo varginha',
       'Fim de ano é época de golpe do falso empréstimo em Varginha e em todo o país: nunca faça depósito ou Pix para liberar crédito e não passe senha nem código recebido por SMS.\n\nA Speed Financeira não cobra nenhum valor antecipado e atende presencialmente na Rua Santa Cruz, 696, no Centro. Antes das festas, confira nesta ficha o horário de Natal e Ano Novo.',
-      'Fachada da loja.', 'Saiba mais', false),
+      'Fachada da loja.', false),
 
     // Semana 8 (25/12 é Natal)
     p('2026-12-21', 'Crédito pessoal', 'empréstimo pessoal varginha',
@@ -137,7 +139,7 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
       'Atendente no balcão.'),
     p('2026-12-23', 'Avaliações', 'financeira varginha',
       'A Speed Financeira agradece a confiança de cada cliente de Varginha e região em 2026. Desejamos um Natal com saúde e um ano novo com as contas em dia.\n\nConfira nesta ficha o horário de atendimento de Natal e Ano Novo.',
-      'Equipe reunida na loja (com autorização).', 'Ligar agora', false),
+      'Equipe reunida na loja (com autorização).', false),
 
     // Semana 9
     p('2026-12-28', 'Educação financeira', 'empréstimo varginha',
