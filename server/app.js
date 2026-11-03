@@ -13,6 +13,7 @@ const { syncMarketing, DEFAULT_MARKETING_SOURCE, TASK_NAME: MARKETING_SYNC_TASK,
 const { groupOf, PB_GROUP, DEFAULT_PRINT_TIERS, tierUnitCents, parsePrintTiers, normalizationPlan, applyNormalization, revertNormalization } = require("./grupos");
 const { buildIndicators, packagesOutstanding } = require("./indicadores");
 const { measureGeogrid, findPlaces, DEFAULT_TERMS: GEOGRID_TERMS, GRID_SIZE: GEOGRID_SIZE, SPACING_KM: GEOGRID_SPACING_KM } = require("./geogrid");
+const gmbApi = require("./gmb-api");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -34,6 +35,8 @@ function expensePaymentDate(value, fallback = now()) {
 const uuid = () => crypto.randomUUID();
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
 const label = (value, max = 100) => String(value ?? "").trim().slice(0, max);
+// Conexao do servidor com o Perfil da Empresa no Google (server/gmb-api.js).
+const emptyGmbApi = () => ({ clientId: "", clientSecret: "", refreshToken: "", accountName: "", locationName: "", title: "", address: "", connectedAt: null, lastError: null });
 const publicUser = user => ({ id: user.id, name: user.name, role: user.role, active: user.active });
 const price = (minutes, rate) => Math.round(minutes * rate / 60);
 // Valor do tempo arredondado para cima (padrao R$ 0,50) para facilitar o troco; 0 desliga.
@@ -128,7 +131,7 @@ function verifyPassword(password, user) {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 function defaults() {
-  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, vault: { salt: null, check: null, items: [], updatedAt: null } };
+  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, gmbApi: emptyGmbApi(), vault: { salt: null, check: null, items: [], updatedAt: null } };
 }
 function normalize(db) {
   const empty = defaults();
@@ -158,6 +161,7 @@ function normalize(db) {
   db.marketing ||= { store: {}, updatedAt: null };
   db.geogrid ||= { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null };
   db.geogrid.runs ||= [];
+  db.gmbApi ||= emptyGmbApi();
   db.vault ||= { salt: null, check: null, items: [], updatedAt: null };
   db.vault.banks ||= [];
   // Despesa do sistema anterior veio com categoria generica: aluguel volta para Aluguel.
@@ -211,7 +215,7 @@ function defaultOcrRunner(file) {
   });
 }
 
-function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing"), placesFetch = globalThis.fetch } = {}) {
+function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing"), placesFetch = globalThis.fetch, gmbFetch = globalThis.fetch } = {}) {
   const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
   const mkSource = marketingSource !== undefined ? marketingSource : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? (process.env.NEXCAFE_MARKETING_SRC || DEFAULT_MARKETING_SOURCE) : "");
   const dbPath = path.join(dataDir, "db.json");
@@ -1484,6 +1488,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (!script.text) throw err(404, "Script do agente indisponivel no servidor");
       return send(res, 200, { ok: true, hash: script.hash, script: script.text });
     }
+
+    // Volta do OAuth do Perfil da Empresa: o navegador chega do Google sem o cookie do painel (SameSite=Strict);
+    // quem confere e o state de uso unico criado em /api/marketing/gmb-api/connect.
+    if (p === "/api/marketing/gmb-api/callback" && req.method === "GET") return gmbCallback(res, url);
 
     origin(req);
     const user = operator(req);
@@ -2868,6 +2876,41 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       await runGeogrid("manual");
       return send(res, 200, { ok: true, geogrid: geogridView() });
     }
+    if (p === "/api/marketing/gmb-api" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, gmb: gmbView() }); }
+    if (p === "/api/marketing/gmb-api/config" && req.method === "POST") {
+      admin(user); const input = await readBody(req);
+      if (input.remove) {
+        db.gmbApi = emptyGmbApi();
+        gmbAccess.token = null; event("sistema", "Perfil da Empresa desconectado", "", user.name); save();
+        return send(res, 200, { ok: true, gmb: gmbView() });
+      }
+      const clientId = String(input.clientId || "").trim();
+      const clientSecret = String(input.clientSecret || "").trim() || (clientId === db.gmbApi.clientId ? db.gmbApi.clientSecret : "");
+      if (!/^[\w-]{10,120}\.apps\.googleusercontent\.com$/.test(clientId)) throw err(400, "ID do cliente OAuth invalido");
+      if (!/^[\w-]{10,120}$/.test(clientSecret)) throw err(400, "Chave secreta do cliente invalida");
+      // Cliente novo invalida a conexao antiga: o refresh token pertence ao cliente que o gerou.
+      if (clientId !== db.gmbApi.clientId) Object.assign(db.gmbApi, { refreshToken: "", accountName: "", locationName: "", title: "", address: "", connectedAt: null });
+      Object.assign(db.gmbApi, { clientId, clientSecret, lastError: null });
+      gmbAccess.token = null; event("sistema", "Cliente OAuth do Perfil da Empresa salvo", "", user.name); save();
+      return send(res, 200, { ok: true, gmb: gmbView() });
+    }
+    if (p === "/api/marketing/gmb-api/connect" && req.method === "POST") {
+      admin(user);
+      if (!db.gmbApi.clientId || !db.gmbApi.clientSecret) throw err(400, "Salve o ID e a chave secreta do cliente antes de conectar");
+      const state = gmbApi.newState();
+      for (const [key, at] of gmbStates) if (Date.now() - at > 600_000) gmbStates.delete(key);
+      gmbStates.set(state, Date.now());
+      return send(res, 200, { ok: true, url: gmbApi.authUrl({ clientId: db.gmbApi.clientId, redirectUri: gmbRedirect(), state }) });
+    }
+    if (p === "/api/marketing/gmb-api/check" && req.method === "POST") {
+      admin(user);
+      if (!db.gmbApi.refreshToken || !db.gmbApi.locationName) throw err(400, "Conecte a ficha antes de testar");
+      try {
+        const posts = await gmbApi.listPosts({ accessToken: await gmbToken(), accountName: db.gmbApi.accountName, locationName: db.gmbApi.locationName, fetchImpl: gmbFetch });
+        db.gmbApi.lastError = null; save();
+        return send(res, 200, { ok: true, gmb: gmbView(), posts });
+      } catch (cause) { db.gmbApi.lastError = { at: now(), message: label(cause.message, 300) }; save(); throw cause; }
+    }
     throw err(404, "API nao encontrada");
   }
 
@@ -2900,6 +2943,48 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       .then(result => result || syncMarketing({ source: mkSource, dest: marketingDir }))
       .finally(() => { mkSync.running = null; });
     return mkSync.running;
+  }
+  // Perfil da Empresa (Business Profile API): cliente OAuth, conexao com a ficha e token de acesso em memoria.
+  const gmbStates = new Map(), gmbAccess = { token: null, expiresAt: 0 };
+  const gmbRedirect = () => `http://localhost:${port}/api/marketing/gmb-api/callback`;
+  function gmbView() {
+    const g = db.gmbApi;
+    return {
+      clientConfigured: !!(g.clientId && g.clientSecret), clientIdHint: g.clientId ? `${g.clientId.slice(0, 12)}...` : "",
+      connected: !!(g.refreshToken && g.locationName), title: g.title, address: g.address, connectedAt: g.connectedAt,
+      redirectUri: gmbRedirect(), scope: gmbApi.SCOPE, lastError: g.lastError
+    };
+  }
+  async function gmbToken() {
+    if (gmbAccess.token && gmbAccess.expiresAt - Date.now() > 60_000) return gmbAccess.token;
+    const fresh = await gmbApi.refreshAccess({ clientId: db.gmbApi.clientId, clientSecret: db.gmbApi.clientSecret, refreshToken: db.gmbApi.refreshToken, fetchImpl: gmbFetch });
+    Object.assign(gmbAccess, { token: fresh.accessToken, expiresAt: fresh.expiresAt });
+    return gmbAccess.token;
+  }
+  async function gmbCallback(res, url) {
+    const page = (ok, message) => {
+      const text = String(message).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+      res.writeHead(ok ? 200 : 400, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+      res.end(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Perfil da Empresa</title>
+<style>body{font-family:system-ui,Segoe UI,Arial,sans-serif;background:#f4f7f5;color:#1f2d24;margin:0;padding:40px 16px}main{max-width:560px;margin:auto;background:#fff;border-radius:12px;padding:24px;box-shadow:0 1px 3px rgba(0,0,0,.08)}h1{font-size:20px;color:${ok ? "#047857" : "#b91c1c"}}a{color:#047857;font-weight:700}</style></head>
+<body><main><h1>${ok ? "Ficha conectada" : "Não foi possível conectar"}</h1><p>${text}</p><p><a href="/marketing/">Voltar ao painel de marketing</a></p></main></body></html>`);
+    };
+    const state = url.searchParams.get("state") || "";
+    if (!gmbStates.has(state) || Date.now() - gmbStates.get(state) > 600_000) return page(false, "Pedido de conexão expirado ou desconhecido. Volte ao painel e clique em Conectar de novo.");
+    gmbStates.delete(state);
+    if (url.searchParams.get("error")) return page(false, `O Google recusou a autorização (${label(url.searchParams.get("error"), 60)}).`);
+    try {
+      const tokens = await gmbApi.exchangeCode({ clientId: db.gmbApi.clientId, clientSecret: db.gmbApi.clientSecret, code: String(url.searchParams.get("code") || ""), redirectUri: gmbRedirect(), fetchImpl: gmbFetch });
+      const location = await gmbApi.findLocation({ accessToken: tokens.accessToken, fetchImpl: gmbFetch });
+      Object.assign(db.gmbApi, { refreshToken: tokens.refreshToken, ...location, connectedAt: now(), lastError: null });
+      Object.assign(gmbAccess, { token: tokens.accessToken, expiresAt: tokens.expiresAt });
+      event("sistema", "Perfil da Empresa conectado", `${location.title} - ${location.address}`);
+      save();
+      return page(true, `${location.title} (${location.address}) está ligada ao Nexcafe. Os outros perfis da conta não foram usados.`);
+    } catch (cause) {
+      db.gmbApi.lastError = { at: now(), message: label(cause.message, 300) }; save();
+      return page(false, cause.message);
+    }
   }
   // GeoGrid da ficha no Google: medicao manual pelo painel e automatica a cada 30 dias.
   const geo = { running: null, lastCheck: 0 };
