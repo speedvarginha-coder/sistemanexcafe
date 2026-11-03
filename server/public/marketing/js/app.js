@@ -339,6 +339,9 @@ function renderOverview() {
     elGmb.innerText = score + '%';
   }
 
+  // Andamento da esteira de posts da ficha no Google (js/gmb_plano.js)
+  if (typeof renderGmbCicloResumo === 'function') renderGmbCicloResumo();
+
   // Renderiza o banner dinâmico da Pauta de Hoje na Visão Geral
   if (typeof renderPautaDeHoje === 'function') renderPautaDeHoje();
 

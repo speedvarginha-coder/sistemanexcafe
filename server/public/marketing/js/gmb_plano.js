@@ -9,7 +9,7 @@ const GMB_FICHA_URL = 'https://share.google/jQz1bj2r5fsU15FM8';
 const GMB_ROTINA = [
   { id: 'responder_avaliacoes', titulo: 'Responder avaliações novas', dias: 2, dica: 'Responda todas, boas e ruins, sem citar dados do cliente, valores ou contrato. Em reclamação, peça para chamar no (35) 3067-5017.' },
   { id: 'pedir_avaliacoes', titulo: 'Pedir avaliação a clientes atendidos', dias: 7, dica: 'Envie o link da ficha pelo WhatsApp depois de um atendimento concluído. Não ofereça desconto, brinde ou sorteio em troca: o Google proíbe.' },
-  { id: 'post', titulo: 'Publicar o post programado na ficha', dias: 3, freq: '3 por semana', dica: 'Siga o planejamento de posts mais abaixo, só com serviços financeiros. Marcar um post como publicado registra esta tarefa.' },
+  { id: 'post', titulo: 'Conferir os posts publicados na ficha', dias: 7, freq: 'toda segunda', dica: 'Os posts já ficam programados na ficha. Abra Suas postagens e veja se algum foi recusado ou não saiu; se foi, marque "Google recusou" no post da esteira, mais abaixo.' },
   { id: 'nome_categorias', titulo: 'Conferir nome e categorias', dias: 30, dica: 'Nome igual ao da fachada, sem serviços nem cidade acrescentados (em 29/10 estava "Speed Financeira – Empréstimo Consignado e Financiamento em Varginha"). Anote a categoria principal e confira se as adicionais cobrem o que a loja faz de verdade: crédito, lan house, impressão e cópias. Veja se o Google aplicou alguma edição sugerida.' },
   { id: 'dados_contato', titulo: 'Conferir endereço, telefone, site e horário', dias: 30, dica: 'Rua Santa Cruz, 696 - Centro, CEP 37002-090, (35) 3067-5017, speedfinanceira.com.br. Horário igual ao praticado na porta.' },
   { id: 'horario_especial', titulo: 'Lançar horário especial dos próximos feriados', dias: 30, dica: 'Antes de cada feriado, informe se a loja abre, fecha ou muda o horário. Ficha "aberta" com a porta fechada gera reclamação.' },
@@ -265,72 +265,209 @@ function setupGmbMetricas() {
   });
 }
 
-// ─── PLANEJAMENTO DE POSTS DA FICHA (js/data_gmb_posts.js) ──────────────────
-const GMB_POSTS_KEY = 'speed_gmb_posts_v1';
+// ─── ESTEIRA DE POSTS DA FICHA (js/data_gmb_posts.js) ───────────────────────
+// Ciclo mensal: pauta (dia 20), textos (22), artes (24), aprovação e programação na ficha (25),
+// conferência dos publicados toda segunda. Aprovado, programado e recusado ficam em GMB_ETAPAS_KEY.
+const GMB_POSTS_KEY = 'speed_gmb_posts_v1'; // legado: { id: data em que foi marcado publicado }
+const GMB_ETAPAS_KEY = 'speed_gmb_posts_etapas_v1';
 const GMB_DIAS_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+const GMB_HORA_POST = 9;
+
+const GMB_ETAPAS = [
+  { id: 'pauta', titulo: 'Pauta', prazo: 20, dica: 'Temas e datas pela planilha de palavras-chave e pelo GeoGrid' },
+  { id: 'texto', titulo: 'Textos', prazo: 22, dica: 'Palavra-chave e Varginha nos primeiros 150 caracteres' },
+  { id: 'arte', titulo: 'Artes', prazo: 24, dica: 'Layout do Google, variações intercaladas' },
+  { id: 'aprovado', titulo: 'Aprovação', prazo: 25, dica: 'Conferir texto, arte e botão' },
+  { id: 'programado', titulo: 'Programado na ficha', prazo: 25, dica: 'Programar esta postagem, às 9h' },
+  { id: 'publicado', titulo: 'Publicado', prazo: null, dica: 'Conferir toda segunda se o Google não recusou' }
+];
+const GMB_ETAPA_INDICE = Object.fromEntries(GMB_ETAPAS.map((e, i) => [e.id, i]));
 
 function lerGmbPostsFeitos() { const v = lerJsonStorage(GMB_POSTS_KEY, {}); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
+function lerGmbEtapas() { const v = lerJsonStorage(GMB_ETAPAS_KEY, {}); return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
+function salvarGmbEtapas(etapas) { localStorage.setItem(GMB_ETAPAS_KEY, JSON.stringify(etapas)); }
 function gmbDiaSemana(iso) { return GMB_DIAS_SEMANA[new Date(gmbDiaNumero(iso) * 864e5).getUTCDay()]; }
 function gmbSegunda(iso) { const dia = new Date(gmbDiaNumero(iso) * 864e5).getUTCDay(); return gmbSomarDias(iso, dia === 0 ? -6 : 1 - dia); }
+function gmbSemAcento(texto) { return String(texto).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/-/g, ' '); }
+
+// Etapa em que o post está agora. "publicado" é deduzido: programado e a data (9h) já passou.
+function gmbEtapaPost(post, reg, legado, hoje, hora) {
+  if (reg?.recusado) return { id: 'recusado', indice: GMB_ETAPA_INDICE.aprovado };
+  if (legado) return { id: 'publicado', indice: GMB_ETAPA_INDICE.publicado, data: legado };
+  if (reg?.programado || post.programadoEm) {
+    const saiu = post.data < hoje || (post.data === hoje && hora >= GMB_HORA_POST);
+    return saiu ? { id: 'publicado', indice: GMB_ETAPA_INDICE.publicado, data: post.data } : { id: 'programado', indice: GMB_ETAPA_INDICE.programado };
+  }
+  if (reg?.aprovado) return { id: 'aprovado', indice: GMB_ETAPA_INDICE.aprovado };
+  if (post.arte && post.texto) return { id: 'arte', indice: GMB_ETAPA_INDICE.arte };
+  if (post.texto) return { id: 'texto', indice: GMB_ETAPA_INDICE.texto };
+  return { id: 'pauta', indice: GMB_ETAPA_INDICE.pauta };
+}
+
+function gmbEtapaRotulo(etapa, post) {
+  return {
+    pauta: ['bg-gray-100 text-gray-700', 'Falta o texto'],
+    texto: ['bg-yellow-100 text-yellow-800', 'Falta a arte'],
+    arte: ['bg-yellow-100 text-yellow-800', 'Falta aprovar'],
+    aprovado: ['bg-blue-100 text-blue-800', 'Falta programar na ficha'],
+    programado: ['bg-gray-100 text-gray-700', `Programado para ${gmbDataCurta(post.data)} ${GMB_HORA_POST}h`],
+    publicado: ['bg-green-100 text-green-800', `Publicado em ${gmbDataCurta(etapa.data || post.data)}`],
+    recusado: ['bg-red-100 text-red-700', 'Recusado pelo Google']
+  }[etapa.id];
+}
+
+// SEO local: palavra-chave e Varginha nos 150 caracteres que o Google mostra antes do "Mais".
+function gmbSeoPost(post) {
+  const inicio = gmbSemAcento((post.texto || '').slice(0, 150));
+  const chave = gmbSemAcento(post.termo || '').replace(/ varginha$/, '').replace(/^financeira em$/, 'financeira');
+  return { chave: !!chave && inicio.includes(chave), cidade: inicio.includes('varginha'), tamanho: (post.texto || '').length };
+}
+
+// Próximo ciclo: mês seguinte ao último post planejado, com os prazos no mês anterior a ele.
+function gmbProximoCiclo(posts, hoje) {
+  const ultimo = posts.reduce((m, p) => (p.data > m ? p.data : m), hoje);
+  const [ano, mes] = ultimo.split('-').map(Number);
+  const alvo = mes === 12 ? `${ano + 1}-01` : `${ano}-${gmbPad(mes + 1)}`;
+  const prazos = {};
+  GMB_ETAPAS.filter(e => e.prazo).forEach(e => {
+    const data = `${ultimo.slice(0, 7)}-${gmbPad(e.prazo)}`;
+    const falta = gmbDiaNumero(data) - gmbDiaNumero(hoje);
+    prazos[e.id] = { data, falta, texto: falta < 0 ? 'atrasado' : falta === 0 ? 'hoje' : `em ${falta} dia${falta === 1 ? '' : 's'}` };
+  });
+  return { mes: alvo, prazos };
+}
+
+function gmbEstadoPosts() {
+  const posts = Array.isArray(window.SPEED_GMB_POSTS_PLANO) ? window.SPEED_GMB_POSTS_PLANO : [];
+  const etapas = lerGmbEtapas();
+  const legado = lerGmbPostsFeitos();
+  const hoje = gmbHoje();
+  const hora = new Date().getHours();
+  const itens = posts.map(post => ({ post, reg: etapas[post.id] || {}, etapa: gmbEtapaPost(post, etapas[post.id], legado[post.id], hoje, hora) }));
+  const contar = id => itens.filter(x => x.etapa.id === id).length;
+  return {
+    posts, itens, hoje,
+    total: posts.length,
+    publicados: contar('publicado'),
+    programados: contar('programado'),
+    recusados: contar('recusado'),
+    pendentes: itens.filter(x => x.etapa.indice < GMB_ETAPA_INDICE.programado && x.etapa.id !== 'recusado').length,
+    concluidas: GMB_ETAPAS.map((e, i) => itens.filter(x => x.etapa.indice >= i).length),
+    ciclo: gmbProximoCiclo(posts, hoje)
+  };
+}
+
+function gmbBarraEtapas(indice, recusado) {
+  return `<div class="gmb-etapa-segmentos ${recusado ? 'gmb-etapa-recusado' : ''}" aria-hidden="true">${GMB_ETAPAS.map((e, i) => `<span class="${i <= indice ? 'gmb-seg-ok' : ''}" title="${escaparHtml(e.titulo)}"></span>`).join('')}</div>`;
+}
+
+function renderGmbEtapas(estado) {
+  const caixa = document.getElementById('gmbPostsEtapas');
+  if (!caixa) return;
+  const { total, concluidas, ciclo, recusados } = estado;
+  caixa.innerHTML = `
+    <p class="gmb-ciclo-linha">Próximo ciclo: <strong>${gmbMesNome(ciclo.mes)}</strong> • pauta até ${gmbDataCurta(ciclo.prazos.pauta.data)} (${ciclo.prazos.pauta.texto})${recusados ? ` • <span class="text-red-700 font-bold">${recusados} recusado${recusados > 1 ? 's' : ''} pelo Google</span>` : ''}</p>
+    <div class="gmb-etapas">${GMB_ETAPAS.map((e, i) => {
+      const pct = total ? Math.round((concluidas[i] / total) * 100) : 0;
+      const prazo = ciclo.prazos[e.id];
+      return `<div class="gmb-etapa ${total && concluidas[i] === total ? 'gmb-etapa-completa' : ''}">
+        <p class="gmb-etapa-num">${i + 1}. ${escaparHtml(e.titulo)}</p>
+        <p class="gmb-etapa-conta"><strong>${concluidas[i]}</strong>/${total}</p>
+        <div class="gmb-etapa-barra"><span style="width:${pct}%"></span></div>
+        <p class="gmb-etapa-prazo">${prazo ? `${gmbMesNome(ciclo.mes)}: até ${gmbDataCurta(prazo.data)} <span class="${prazo.falta < 0 ? 'text-red-700' : ''}">(${prazo.texto})</span>` : 'Conferir toda segunda'}</p>
+        <p class="gmb-etapa-dica">${escaparHtml(e.dica)}</p>
+      </div>`;
+    }).join('')}</div>`;
+}
+
+// Bloco da Visão Geral (index.html, #gmbCicloResumo).
+function renderGmbCicloResumo() {
+  const caixa = document.getElementById('gmbCicloResumo');
+  if (!caixa || !Array.isArray(window.SPEED_GMB_POSTS_PLANO)) return;
+  const estado = gmbEstadoPosts();
+  const { total, concluidas, ciclo, recusados } = estado;
+  caixa.innerHTML = `
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
+      <p class="text-sm font-bold text-gray-900"><i class="fab fa-google text-red-600 mr-1"></i> Esteira de posts da ficha no Google</p>
+      <p class="text-[11px] text-gray-500">Próximo ciclo ${gmbMesNome(ciclo.mes)}: pauta até ${gmbDataCurta(ciclo.prazos.pauta.data)} (${ciclo.prazos.pauta.texto})${recusados ? ` • <span class="text-red-700 font-bold">${recusados} recusado${recusados > 1 ? 's' : ''}</span>` : ''}</p>
+    </div>
+    <div class="gmb-etapas gmb-etapas-compacto">${GMB_ETAPAS.map((e, i) => `
+      <div class="gmb-etapa ${total && concluidas[i] === total ? 'gmb-etapa-completa' : ''}">
+        <p class="gmb-etapa-num">${i + 1}. ${escaparHtml(e.titulo)}</p>
+        <p class="gmb-etapa-conta"><strong>${concluidas[i]}</strong>/${total}</p>
+        <div class="gmb-etapa-barra"><span style="width:${total ? Math.round((concluidas[i] / total) * 100) : 0}%"></span></div>
+      </div>`).join('')}</div>`;
+}
 
 function renderGmbPostsPlano() {
   const container = document.getElementById('gmbPostsContainer');
-  const posts = window.SPEED_GMB_POSTS_PLANO;
-  if (!container || !Array.isArray(posts)) return;
-  const feitos = lerGmbPostsFeitos();
-  const hoje = gmbHoje();
-  const ocultar = document.getElementById('gmbPostsOcultar')?.checked;
+  if (!container || !Array.isArray(window.SPEED_GMB_POSTS_PLANO)) return;
+  const estado = gmbEstadoPosts();
+  const { itens, hoje } = estado;
+  const filtro = document.getElementById('gmbPostsFiltro')?.value || 'todos';
+  const passa = ({ etapa }) => filtro === 'todos'
+    || (filtro === 'pendentes' && etapa.indice < GMB_ETAPA_INDICE.programado && etapa.id !== 'recusado')
+    || etapa.id === filtro;
   const semanas = new Map();
-  posts.filter(post => !(ocultar && feitos[post.id])).forEach(post => {
-    const chave = gmbSegunda(post.data);
+  itens.filter(passa).forEach(item => {
+    const chave = gmbSegunda(item.post.data);
     if (!semanas.has(chave)) semanas.set(chave, []);
-    semanas.get(chave).push(post);
+    semanas.get(chave).push(item);
   });
 
   container.innerHTML = [...semanas].map(([segunda, lista]) => `
     <div class="gmb-posts-semana">
       <p class="gmb-posts-semana-titulo">Semana de ${gmbDataCurta(segunda)} a ${gmbDataCurta(gmbSomarDias(segunda, 4))}</p>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        ${lista.map(post => {
-          const feito = feitos[post.id];
-          const atrasado = !feito && post.data < hoje;
-          const situacao = feito ? ['bg-green-100 text-green-800', `Publicado em ${gmbDataCurta(feito)}`]
-            : post.data === hoje ? ['bg-yellow-100 text-yellow-800', 'Publicar hoje']
-            : atrasado ? ['bg-red-100 text-red-700', 'Atrasado']
-            : ['bg-gray-100 text-gray-700', 'Programado'];
-          return `<div class="gmb-post-card ${atrasado ? 'gmb-rotina-atrasada' : ''} ${post.data === hoje && !feito ? 'gmb-post-hoje' : ''} ${feito ? 'gmb-post-feito' : ''}">
+        ${lista.map(({ post, reg, etapa }) => {
+          const rotulo = gmbEtapaRotulo(etapa, post);
+          const seo = gmbSeoPost(post);
+          const publicado = etapa.id === 'publicado';
+          const hojeClasse = post.data === hoje && !publicado ? 'gmb-post-hoje' : '';
+          const acoes = [];
+          if (etapa.id === 'arte') acoes.push(`<button type="button" data-gmb-post-acao="aprovar" data-id="${post.id}" class="gmb-btn-primario">Aprovar</button>`);
+          if (etapa.id === 'aprovado') {
+            acoes.push(`<button type="button" data-gmb-post-acao="programar" data-id="${post.id}" class="gmb-btn-primario">Marcar programado na ficha</button>`);
+            acoes.push(`<button type="button" data-gmb-post-acao="desaprovar" data-id="${post.id}" class="gmb-btn-link">Desfazer aprovação</button>`);
+          }
+          if (etapa.id === 'programado' || publicado) acoes.push(`<button type="button" data-gmb-post-acao="recusar" data-id="${post.id}" class="gmb-btn-link gmb-btn-perigo">Google recusou</button>`);
+          if (etapa.id === 'programado' && reg.programado) acoes.push(`<button type="button" data-gmb-post-acao="desprogramar" data-id="${post.id}" class="gmb-btn-link">Desfazer programado</button>`);
+          if (etapa.id === 'recusado') acoes.push(`<button type="button" data-gmb-post-acao="reprogramar" data-id="${post.id}" class="gmb-btn-primario">Reprogramado</button>`);
+          return `<div class="gmb-post-card ${etapa.id === 'recusado' ? 'gmb-rotina-atrasada' : ''} ${hojeClasse} ${publicado ? 'gmb-post-feito' : ''}">
             <div class="flex items-center justify-between gap-2 mb-2">
               <p class="text-sm font-black text-gray-900">${gmbDiaSemana(post.data)} ${gmbDataCurta(post.data)}</p>
-              <span class="status-badge ${situacao[0]} text-[10px]">${situacao[1]}</span>
+              <span class="status-badge ${rotulo[0]} text-[10px]">${rotulo[1]}</span>
             </div>
+            ${gmbBarraEtapas(etapa.indice, etapa.id === 'recusado')}
             <div class="flex flex-wrap gap-1.5 mb-2">
               <span class="gmb-post-tema">${escaparHtml(post.tema)}</span>
               <span class="gmb-post-termo" title="Busca que o post reforça">busca: ${escaparHtml(post.termo)}</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <span class="gmb-seo ${seo.chave ? 'gmb-seo-ok' : 'gmb-seo-falha'}" title="A palavra-chave aparece nos 150 primeiros caracteres">${seo.chave ? '✓' : '✗'} busca no início</span>
+              <span class="gmb-seo ${seo.cidade ? 'gmb-seo-ok' : 'gmb-seo-falha'}" title="Varginha aparece nos 150 primeiros caracteres">${seo.cidade ? '✓' : '✗'} Varginha no início</span>
+              <span class="gmb-seo ${seo.tamanho <= 1500 ? 'gmb-seo-ok' : 'gmb-seo-falha'}" title="O Google aceita até 1.500 caracteres">${seo.tamanho}/1.500</span>
             </div>
             ${post.arte ? `<a href="${escaparHtml(post.arte.arquivo)}" target="_blank" rel="noopener" class="gmb-post-arte" title="Abrir a arte em tamanho real"><img src="${escaparHtml(post.arte.arquivo)}" alt="Arte do post de ${gmbDataCurta(post.data)}: ${escaparHtml(post.arte.titulo.replace(/\*/g, ''))}" loading="lazy"></a>` : ''}
             <div class="gmb-post-texto">${escaparHtml(post.texto)}</div>
             <p class="text-[11px] text-gray-600 mt-2"><strong>Foto:</strong> ${escaparHtml(post.foto)}</p>
             <p class="text-[11px] text-gray-600"><strong>Botão:</strong> ${escaparHtml(post.botao)}${post.link ? ` (${escaparHtml(post.link)})` : ''}</p>
             <div class="gmb-rotina-acoes">
-              <button type="button" data-gmb-post-copiar="${post.id}" class="gmb-btn-primario">Copiar texto</button>
+              ${acoes.join('')}
+              <button type="button" data-gmb-post-copiar="${post.id}" class="gmb-btn-link">Copiar texto</button>
               ${post.arte ? `<a href="${escaparHtml(post.arte.arquivo)}" download="speed-${post.data}.png" class="gmb-btn-link">Baixar arte</a>` : ''}
-              ${feito
-                ? `<button type="button" data-gmb-post-desfazer="${post.id}" class="gmb-btn-link">Desfazer publicado</button>`
-                : `<button type="button" data-gmb-post-feito="${post.id}" class="gmb-btn-link">Marcar publicado</button>`}
             </div>
           </div>`;
         }).join('')}
       </div>
-    </div>`).join('') || '<p class="results-empty">Todos os posts do período foram publicados.</p>';
+    </div>`).join('') || '<p class="results-empty">Nenhum post nesta etapa.</p>';
 
-  const total = posts.length;
-  const publicados = posts.filter(post => feitos[post.id]).length;
-  const atrasados = posts.filter(post => !feitos[post.id] && post.data < hoje).length;
-  const proximo = posts.find(post => !feitos[post.id] && post.data >= hoje);
+  renderGmbEtapas(estado);
+  renderGmbCicloResumo();
   const resumo = document.getElementById('gmbPostsResumo');
   if (resumo) {
-    resumo.textContent = `${publicados} de ${total} publicados${atrasados ? ` • ${atrasados} atrasado${atrasados > 1 ? 's' : ''}` : ''}${proximo ? ` • próximo: ${gmbDiaSemana(proximo.data)} ${gmbDataCurta(proximo.data)}` : ''}`;
-    resumo.className = `status-badge text-[10px] ${atrasados ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-800'}`;
+    resumo.textContent = `${estado.publicados} publicados • ${estado.programados} programados • ${estado.pendentes} pendentes • ${estado.recusados} recusados`;
+    resumo.className = `status-badge text-[10px] ${estado.recusados ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-800'}`;
   }
 }
 
@@ -338,26 +475,38 @@ function setupGmbPostsPlano() {
   const container = document.getElementById('gmbPostsContainer');
   if (!container || container.dataset.pronto) return;
   container.dataset.pronto = '1';
-  document.getElementById('gmbPostsOcultar')?.addEventListener('change', renderGmbPostsPlano);
+  document.getElementById('gmbPostsFiltro')?.addEventListener('change', renderGmbPostsPlano);
   container.addEventListener('click', ev => {
-    const botao = ev.target.closest('[data-gmb-post-copiar], [data-gmb-post-feito], [data-gmb-post-desfazer]');
-    if (!botao) return;
-    const id = botao.dataset.gmbPostCopiar || botao.dataset.gmbPostFeito || botao.dataset.gmbPostDesfazer;
-    const post = (window.SPEED_GMB_POSTS_PLANO || []).find(item => item.id === id);
-    if (!post) return;
-    if (botao.dataset.gmbPostCopiar) { copiarTexto(post.texto, 'Texto do post copiado. Cole em Adicionar atualização na ficha.'); return; }
-    const feitos = lerGmbPostsFeitos();
-    if (botao.dataset.gmbPostFeito) {
-      feitos[id] = gmbHoje();
-      registrarGmbTarefa('post', gmbHoje());
-      mostrarToast(`Post de ${gmbDataCurta(post.data)} marcado como publicado.`);
-    } else {
-      delete feitos[id];
-      mostrarToast('Marcação desfeita.');
+    const copiar = ev.target.closest('[data-gmb-post-copiar]');
+    if (copiar) {
+      const post = (window.SPEED_GMB_POSTS_PLANO || []).find(item => item.id === copiar.dataset.gmbPostCopiar);
+      if (post) copiarTexto(post.texto, 'Texto do post copiado. Cole em Adicionar atualização na ficha.');
+      return;
     }
-    localStorage.setItem(GMB_POSTS_KEY, JSON.stringify(feitos));
+    const botao = ev.target.closest('[data-gmb-post-acao]');
+    if (!botao) return;
+    const post = (window.SPEED_GMB_POSTS_PLANO || []).find(item => item.id === botao.dataset.id);
+    if (!post) return;
+    const etapas = lerGmbEtapas();
+    const reg = { ...(etapas[post.id] || {}) };
+    const hoje = gmbHoje();
+    const dia = gmbDataCurta(post.data);
+    const mensagens = {
+      aprovar: () => { reg.aprovado = hoje; return `Post de ${dia} aprovado.`; },
+      desaprovar: () => { delete reg.aprovado; return 'Aprovação desfeita.'; },
+      programar: () => { reg.programado = hoje; return `Post de ${dia} marcado como programado na ficha.`; },
+      desprogramar: () => { delete reg.programado; return 'Programação desfeita.'; },
+      recusar: () => { reg.recusado = hoje; registrarGmbTarefa('post', hoje); return `Post de ${dia} marcado como recusado. Corrija e programe de novo na ficha.`; },
+      reprogramar: () => { delete reg.recusado; reg.programado = hoje; return `Post de ${dia} programado de novo.`; }
+    };
+    const acao = mensagens[botao.dataset.gmbPostAcao];
+    if (!acao) return;
+    const msg = acao();
+    if (Object.keys(reg).length) etapas[post.id] = reg; else delete etapas[post.id];
+    salvarGmbEtapas(etapas);
     renderGmbPostsPlano();
     renderGmbRotina();
+    mostrarToast(msg);
   });
 }
 

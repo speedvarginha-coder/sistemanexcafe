@@ -632,3 +632,26 @@ input[type="range"] {
 @media (max-width: 850px) { .geogrid-corpo { grid-template-columns: 1fr; } .geogrid-numeros { grid-template-columns: 1fr 1fr; } }
 .gmb-post-arte { display: block; margin-bottom: .6rem; border-radius: .6rem; overflow: hidden; border: 1px solid #e5e7eb; }
 .gmb-post-arte img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
+/* Esteira de posts da ficha no Google: etapas do ciclo mensal (js/gmb_plano.js) */
+.gmb-ciclo-linha { font-size: .75rem; color: #475569; margin-bottom: .6rem; }
+.gmb-etapas { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: .6rem; }
+.gmb-etapa { border: 1px solid #e5e7eb; border-radius: .8rem; padding: .7rem; background: #fff; min-width: 0; }
+.gmb-etapa-completa { border-color: #a7d7bf; background: #f6fbf8; }
+.gmb-etapa-num { font-size: .68rem; font-weight: 800; color: #014b29; text-transform: uppercase; letter-spacing: .03em; }
+.gmb-etapa-conta { font-size: .78rem; color: #64748b; margin: .15rem 0 .35rem; }
+.gmb-etapa-conta strong { font-size: 1.25rem; font-weight: 900; color: #0f172a; }
+.gmb-etapa-barra { height: .35rem; border-radius: 9999px; background: #e5e7eb; overflow: hidden; }
+.gmb-etapa-barra span { display: block; height: 100%; background: #047857; border-radius: 9999px; }
+.gmb-etapa-prazo { font-size: .66rem; font-weight: 700; color: #334155; margin-top: .45rem; }
+.gmb-etapa-dica { font-size: .64rem; color: #64748b; line-height: 1.4; margin-top: .2rem; }
+.gmb-etapas-compacto .gmb-etapa { padding: .55rem .6rem; }
+.gmb-etapa-segmentos { display: grid; grid-template-columns: repeat(6, 1fr); gap: .2rem; margin-bottom: .6rem; }
+.gmb-etapa-segmentos span { height: .3rem; border-radius: 9999px; background: #e5e7eb; }
+.gmb-etapa-segmentos .gmb-seg-ok { background: #047857; }
+.gmb-etapa-recusado .gmb-seg-ok { background: #dc2626; }
+.gmb-seo { font-size: .64rem; font-weight: 700; border-radius: 9999px; padding: .12rem .5rem; }
+.gmb-seo-ok { color: #065f46; background: #ecfdf5; }
+.gmb-seo-falha { color: #b91c1c; background: #fef2f2; }
+.gmb-filtro { width: auto; padding: .3rem .45rem; font-size: .72rem; }
+@media (max-width: 1024px) { .gmb-etapas { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .gmb-etapas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

@@ -39,6 +39,8 @@ window.SPEED_GMB_POSTS_ARTES = {
 window.SPEED_GMB_POSTS_PLANO = (function () {
   const RODAPE = 'Crédito sujeito a análise. A Speed Financeira é correspondente bancário e não cobra nenhum valor antecipado.';
   const SITE = 'https://speedfinanceira.com.br';
+  // Os 25 posts foram programados na ficha (Programar esta postagem, 9h) em 30/10/2026.
+  const PROGRAMADO_EM = '2026-10-30';
   const arte = data => {
     const a = window.SPEED_GMB_POSTS_ARTES[data];
     // Variações intercaladas: 1 (faixa verde com diagonal) e 2 (fundo claro com faixa de contato).
@@ -49,7 +51,7 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
     return a ? { titulo: a[0], selo: a[1], foto: a[2], variacao, layout, arquivo: `gmb-artes/post-${data}${variacao === 2 ? '-v2' : ''}.png` } : null;
   };
   const p = (data, tema, termo, texto, foto, botao = 'Ligar agora', rodape = true) =>
-    ({ id: `post-${data}`, data, tema, termo, texto: rodape ? `${texto}\n\n${RODAPE}` : texto, foto, botao, link: botao === 'Saiba mais' ? SITE : '', arte: arte(data) });
+    ({ id: `post-${data}`, data, tema, termo, texto: rodape ? `${texto}\n\n${RODAPE}` : texto, foto, botao, link: botao === 'Saiba mais' ? SITE : '', arte: arte(data), programadoEm: PROGRAMADO_EM });
 
   return [
     // Semana 1
