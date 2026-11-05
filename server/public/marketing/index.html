@@ -1008,6 +1008,21 @@
     <!-- ABA 5: GOOGLE & RAIO-X LOCAL                             -->
     <!-- ======================================================== -->
     <section id="tab-gmb" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-gmb">
+      <!-- MENU DA ABA: atalhos para cada parte (a aba tem muitos cartões) -->
+      <nav class="gmb-menu" aria-label="Partes da aba Google">
+        <span class="gmb-menu-titulo">Ir para:</span>
+        <a href="#geogridPainel">Posição no Maps</a>
+        <a href="#gmbApiPainel">Conexão</a>
+        <a href="#fichaSaudePainel">Saúde da ficha</a>
+        <a href="#scPainel">Buscas do site</a>
+        <a href="#gmbSecPosts">Posts da ficha</a>
+        <a href="#gmbSecAvaliacoes">Avaliações</a>
+        <a href="#gmbSecRotina">Rotina e métricas</a>
+        <a href="#centralCorrecaoNap">Diretórios (NAP)</a>
+        <a href="#gmbSecChecklist">Checklist</a>
+        <a href="#gmbSecFotos">Fotos e perguntas</a>
+      </nav>
+
       <div class="card-premium p-5 sm:p-6 mb-6 bg-gradient-to-r from-white via-blue-50/30 to-green-50/30">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -1111,7 +1126,7 @@
       </div>
 
       <!-- PLANO DO PERFIL: ROTINA RECORRENTE E MÉTRICAS MENSAIS (js/gmb_plano.js) -->
-      <div class="card-premium p-5 mb-6">
+      <div class="card-premium id="gmbSecRotina" p-5 mb-6">
         <div class="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
           <div>
             <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2"><i class="fas fa-calendar-check text-green-700"></i> Rotina da ficha no Google</h3>
@@ -1149,7 +1164,7 @@
       </div>
 
       <!-- PAINEL DE SCORE E SAÚDE DA FICHA (3 CARDS COM ALTURAS EQUILIBRADAS) -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-6 items-stretch">
+      <div id="gmbSecScore" class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-6 items-stretch">
         <!-- Score Circular -->
         <div class="card-premium p-5 flex flex-col justify-between items-center text-center">
           <div class="w-full flex items-center justify-between pb-2 border-b border-gray-100 mb-2">
@@ -1267,7 +1282,7 @@
       </div>
 
       <!-- SEÇÃO 1: CHECKLIST INTERNO ORIENTADO PELA PESQUISA WHITESPARK 2026 -->
-      <div class="card-premium p-5 sm:p-6 mb-8">
+      <div class="card-premium id="gmbSecChecklist" p-5 sm:p-6 mb-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-gray-100 gap-2 mb-4">
           <div>
             <div class="flex items-center gap-2">
@@ -1323,8 +1338,17 @@
         <div id="fichaSaudeConteudo"></div>
       </div>
 
+      <!-- BUSCAS DO SITE NO GOOGLE: SEARCH CONSOLE (js/search_console.js) -->
+      <div class="card-premium p-5 mb-8" id="scPainel">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-magnifying-glass-chart text-green-700 mr-2"></i>Buscas do site no Google (Search Console)</h3><p class="text-[11px] text-gray-500 mt-1">Quantas vezes cada página do site apareceu na busca, quantos cliques recebeu, em que posição e por quais buscas. Últimos 28 dias, lidos pelo servidor uma vez por dia.</p></div>
+          <span id="scStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
+        </div>
+        <div id="scConteudo"></div>
+      </div>
+
       <!-- SEÇÃO 2: ESTEIRA DE POSTS DA FICHA (js/data_gmb_posts.js + js/gmb_plano.js) -->
-      <div class="card-premium p-6 mb-8">
+      <div class="card-premium id="gmbSecPosts" p-6 mb-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
           <div>
             <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -1344,7 +1368,7 @@
       </div>
 
       <!-- SEÇÃO 3: CENTRAL DE RESPOSTA A AVALIAÇÕES (REVIEWS) -->
-      <div class="card-premium p-6 mb-8">
+      <div class="card-premium id="gmbSecAvaliacoes" p-6 mb-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
           <div>
             <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -1361,7 +1385,7 @@
       </div>
 
       <!-- SEÇÃO 4 & 5: Q&A E FOTOS -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div id="gmbSecFotos" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Q&A do Google -->
         <div class="card-premium p-6">
           <div class="pb-3 border-b border-gray-100 mb-4">
@@ -1501,6 +1525,7 @@
   <script src="js/geogrid.js"></script>
   <script src="js/gmb_api.js"></script>
   <script src="js/ficha_saude.js"></script>
+  <script src="js/search_console.js"></script>
   <script src="js/app.js"></script>
   <script src="js/resultados.js"></script>
   <script src="js/criador_artes.js"></script>

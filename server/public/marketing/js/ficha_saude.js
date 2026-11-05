@@ -52,6 +52,18 @@ function fichaPotencial(d) {
     <p class="text-[10px] text-gray-500 mt-1">Estimativa, não promessa: se todos os pontos fora do top 3 entrassem no top 3, pela participação de cliques do pacote local (BrightLocal, 2018) aplicada às ações da própria ficha.</p>` : '<p class="text-[11px] text-gray-500">Meça o GeoGrid para ver o potencial por termo.</p>'}`;
 }
 
+// Mensagem para pedir avaliação: só pede a opinião, sem brinde nem desconto (o Google proíbe incentivo).
+function fichaAvaliacao(d) {
+  if (!d.reviewUrl) return '<p class="text-[11px] text-gray-500">Configure o GeoGrid (ID da ficha no Maps) para gerar o link de avaliação.</p>';
+  const texto = `Olá! Aqui é da Speed Financeira, em Varginha. Obrigado por ser atendido com a gente! Se puder, conte como foi o seu atendimento no Google. Leva menos de 1 minuto e ajuda outras pessoas da cidade a escolher com segurança: ${d.reviewUrl}`;
+  const zap = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  return `<p class="text-[11px] text-gray-600 mb-2">Mande para todo cliente atendido, no mesmo dia. Não ofereça brinde, desconto ou sorteio em troca: o Google proíbe e pode apagar as avaliações.</p>
+    <div class="ficha-aviso" style="color:#1f2937;background:#f8fafc;border-color:#e5e7eb;"><p class="text-[12px] whitespace-pre-line">${escaparHtml(texto)}</p></div>
+    <div class="flex flex-wrap gap-2"><button type="button" data-ficha-copiar="${escaparHtml(texto)}" class="gmb-btn-primario">Copiar mensagem</button>
+    <a href="${escaparHtml(zap)}" target="_blank" rel="noopener noreferrer" class="gmb-btn-link">Enviar pelo WhatsApp</a>
+    <a href="${escaparHtml(d.reviewUrl)}" target="_blank" rel="noopener noreferrer" class="gmb-btn-link">Testar o link</a></div>`;
+}
+
 function fichaNap(d) {
   const nap = d.nap;
   const botao = `<button type="button" data-ficha="nap" class="gmb-btn-primario" ${FichaState.ocupado || !d.health ? 'disabled' : ''}>${FichaState.ocupado === 'nap' ? 'Conferindo diretórios...' : 'Conferir diretórios agora'}</button>`;
@@ -102,6 +114,7 @@ function renderFicha() {
     ${falhas.length ? `<p class="ficha-subtitulo">A corrigir (${falhas.length})</p><ul class="ficha-lista">${falhas.map(fichaItem).join('')}</ul>` : '<p class="ficha-subtitulo text-green-800">Nenhum item a corrigir.</p>'}
     ${naoLidos.length ? `<p class="ficha-subtitulo">Não lidos (${naoLidos.length}), fora da nota</p><ul class="ficha-lista">${naoLidos.map(fichaItem).join('')}</ul>` : ''}
     <details class="mt-2"><summary class="ficha-subtitulo cursor-pointer">Itens certos (${certos.length})</summary><ul class="ficha-lista">${certos.map(fichaItem).join('')}</ul></details>
+    <p class="ficha-subtitulo mt-4">Pedir avaliação aos clientes</p>${fichaAvaliacao(d)}
     <p class="ficha-subtitulo mt-4">Potencial de crescimento no Maps</p>${fichaPotencial(d)}
     <p class="ficha-subtitulo mt-4">Nome, endereço e telefone nos diretórios</p>${fichaNap(d)}
     ${d.changes.some(c => c.seen) ? `<details class="mt-3"><summary class="ficha-subtitulo cursor-pointer">Alterações anteriores</summary><ul class="text-[11px] text-gray-600 space-y-1 mt-1">${d.changes.filter(c => c.seen).map(c => `<li>${fichaData(c.at)} • <strong>${escaparHtml(c.label)}</strong>: ${escaparHtml(c.before)} → ${escaparHtml(c.after)}</li>`).join('')}</ul></details>` : ''}`;
@@ -132,6 +145,8 @@ function setupFicha() {
   if (!painel || painel.dataset.pronto) return;
   painel.dataset.pronto = '1';
   painel.addEventListener('click', ev => {
+    const copiar = ev.target.closest('[data-ficha-copiar]');
+    if (copiar) { navigator.clipboard?.writeText(copiar.dataset.fichaCopiar).then(() => mostrarToast('Mensagem copiada.'), () => mostrarToast('Não deu para copiar; selecione o texto.')); return; }
     const botao = ev.target.closest('[data-ficha]');
     if (!botao || FichaState.ocupado) return;
     const acao = botao.dataset.ficha;

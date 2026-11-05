@@ -81,12 +81,26 @@ function geogridNumeros(run, item, anterior) {
   return `
     <div class="geogrid-numeros">
       <div><span>Posição média</span><strong>${item.average.toLocaleString('pt-BR')}º</strong>${variacao}</div>
-      <div><span>No top 3 (mapa da busca)</span><strong>${item.top3} de ${total}</strong></div>
+      <div><span>Visibilidade (top 3)</span><strong>${Math.round(item.top3 / total * 100)}%</strong><small>${item.top3} de ${total} pontos</small></div>
       <div><span>Aparece entre os 20</span><strong>${item.found} de ${total}</strong></div>
     </div>
+    ${geogridConcorrentes(run, item)}
     <p class="text-xs font-bold text-gray-700 mt-3 mb-1">Quem fica em 1º onde a Speed não está</p>
     <ul class="geogrid-lideres">${lideres}</ul>
-    <p class="text-[11px] text-gray-500 mt-2">Média com "fora dos 20" contado como 21º. O cliente vê no mapa só os 3 primeiros.</p>`;
+    <p class="text-[11px] text-gray-500 mt-2">Média com "fora dos 20" contado como 21º. O cliente vê no mapa só os 3 primeiros. Visibilidade é a parte dos pontos em que a empresa aparece entre os 3.</p>`;
+}
+
+// Disputa do top 3: Speed e concorrentes lado a lado (medições a partir de 05/11/2026 trazem esses dados).
+function geogridConcorrentes(run, item) {
+  const total = item.cells.length;
+  if (!item.competitors) return '<p class="text-[11px] text-gray-500 mt-3">Meça de novo para ver a visibilidade de cada concorrente.</p>';
+  const speed = { nome: 'Speed Financeira', visibilidade: Math.round(item.top3 / total * 100), top3: item.top3, media: item.average, speed: true };
+  const linhas = [speed, ...item.competitors.map(c => ({ nome: run.names[c.id] || 'Concorrente sem nome', visibilidade: c.visibility, top3: c.top3, media: c.average }))]
+    .sort((a, b) => b.visibilidade - a.visibilidade || a.media - b.media);
+  return `<p class="text-xs font-bold text-gray-700 mt-3 mb-1">Quem divide o top 3 neste termo</p>
+    <table class="ficha-tabela"><thead><tr><th>Empresa</th><th>Visibilidade</th><th>Pontos no top 3</th><th>Posição média</th></tr></thead><tbody>
+    ${linhas.map(l => `<tr${l.speed ? ' style="background:#f0fdf4;font-weight:700"' : ''}><td>${escaparHtml(l.nome)}</td><td class="text-center">${l.visibilidade}%</td><td class="text-center">${l.top3} de ${total}</td><td class="text-center">${l.media.toLocaleString('pt-BR')}º</td></tr>`).join('')}
+    </tbody></table>`;
 }
 
 function renderGeogrid() {

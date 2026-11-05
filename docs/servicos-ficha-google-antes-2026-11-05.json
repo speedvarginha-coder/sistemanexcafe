@@ -1,0 +1,609 @@
+{
+  "title": "Speed Financeira – Empréstimo Consignado e Financiamento em Varginha",
+  "categories": {
+    "primaryCategory": {
+      "name": "categories/gcid:financial_institution",
+      "displayName": "Financial institution",
+      "serviceTypes": [
+        {
+          "serviceTypeId": "job_type_id:accounting_audit",
+          "displayName": "Accounting audits"
+        },
+        {
+          "serviceTypeId": "job_type_id:car_loans",
+          "displayName": "Car loans"
+        },
+        {
+          "serviceTypeId": "job_type_id:consortiums",
+          "displayName": "Consortiums"
+        },
+        {
+          "serviceTypeId": "job_type_id:financial_comptroller",
+          "displayName": "Financial comptroller"
+        },
+        {
+          "serviceTypeId": "job_type_id:financial_services",
+          "displayName": "Financial services"
+        },
+        {
+          "serviceTypeId": "job_type_id:financing",
+          "displayName": "Financing"
+        },
+        {
+          "serviceTypeId": "job_type_id:loan_renegotiation",
+          "displayName": "Loan renegotiation"
+        },
+        {
+          "serviceTypeId": "job_type_id:loans",
+          "displayName": "Loans"
+        },
+        {
+          "serviceTypeId": "job_type_id:online",
+          "displayName": "Online"
+        },
+        {
+          "serviceTypeId": "job_type_id:online_banking",
+          "displayName": "Online banking"
+        },
+        {
+          "serviceTypeId": "job_type_id:simulator",
+          "displayName": "Simulator"
+        },
+        {
+          "serviceTypeId": "job_type_id:tax_analysis",
+          "displayName": "Tax analysis of financial plans"
+        },
+        {
+          "serviceTypeId": "job_type_id:vehicle_acquisition",
+          "displayName": "Vehicle acquisition"
+        }
+      ],
+      "moreHoursTypes": [
+        {
+          "hoursTypeId": "BREAKFAST",
+          "displayName": "Breakfast",
+          "localizedDisplayName": "Breakfast"
+        },
+        {
+          "hoursTypeId": "DINNER",
+          "displayName": "Dinner",
+          "localizedDisplayName": "Dinner"
+        },
+        {
+          "hoursTypeId": "DRIVE_THROUGH",
+          "displayName": "Drive through",
+          "localizedDisplayName": "Drive through"
+        },
+        {
+          "hoursTypeId": "LUNCH",
+          "displayName": "Lunch",
+          "localizedDisplayName": "Lunch"
+        },
+        {
+          "hoursTypeId": "ONLINE_SERVICE_HOURS",
+          "displayName": "Online service hours",
+          "localizedDisplayName": "Online service hours"
+        },
+        {
+          "hoursTypeId": "SENIOR_HOURS",
+          "displayName": "Senior hours",
+          "localizedDisplayName": "Senior hours"
+        }
+      ]
+    },
+    "additionalCategories": [
+      {
+        "name": "categories/gcid:loan_agency",
+        "displayName": "Loan agency",
+        "serviceTypes": [
+          {
+            "serviceTypeId": "job_type_id:business_loans",
+            "displayName": "Business loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:car_loans",
+            "displayName": "Car loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:cash_for_gift_cards",
+            "displayName": "Cash for gift cards"
+          },
+          {
+            "serviceTypeId": "job_type_id:flex_loans",
+            "displayName": "Flex loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:installment_loans",
+            "displayName": "Installment loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:line_of_credit",
+            "displayName": "Line of credit"
+          },
+          {
+            "serviceTypeId": "job_type_id:loan_check",
+            "displayName": "Loan check"
+          },
+          {
+            "serviceTypeId": "job_type_id:loans_for_credit_risks",
+            "displayName": "Loans for credit risks"
+          },
+          {
+            "serviceTypeId": "job_type_id:loans_for_the_self_employed",
+            "displayName": "Loans for the self-employed"
+          },
+          {
+            "serviceTypeId": "job_type_id:machinery_loans",
+            "displayName": "Machinery loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:microloans",
+            "displayName": "Microloans"
+          },
+          {
+            "serviceTypeId": "job_type_id:online_loans",
+            "displayName": "Online loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:pay_day_loan",
+            "displayName": "Pay-day loan"
+          },
+          {
+            "serviceTypeId": "job_type_id:payday_loans",
+            "displayName": "Payday loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:property_financing",
+            "displayName": "Property financing"
+          },
+          {
+            "serviceTypeId": "job_type_id:signature_loans",
+            "displayName": "Signature loans"
+          },
+          {
+            "serviceTypeId": "job_type_id:title_loans",
+            "displayName": "Title loans"
+          }
+        ],
+        "moreHoursTypes": [
+          {
+            "hoursTypeId": "BREAKFAST",
+            "displayName": "Breakfast",
+            "localizedDisplayName": "Breakfast"
+          },
+          {
+            "hoursTypeId": "DINNER",
+            "displayName": "Dinner",
+            "localizedDisplayName": "Dinner"
+          },
+          {
+            "hoursTypeId": "DRIVE_THROUGH",
+            "displayName": "Drive through",
+            "localizedDisplayName": "Drive through"
+          },
+          {
+            "hoursTypeId": "LUNCH",
+            "displayName": "Lunch",
+            "localizedDisplayName": "Lunch"
+          },
+          {
+            "hoursTypeId": "ONLINE_SERVICE_HOURS",
+            "displayName": "Online service hours",
+            "localizedDisplayName": "Online service hours"
+          },
+          {
+            "hoursTypeId": "SENIOR_HOURS",
+            "displayName": "Senior hours",
+            "localizedDisplayName": "Senior hours"
+          }
+        ]
+      },
+      {
+        "name": "categories/gcid:financial_consultant",
+        "displayName": "Financial consultant",
+        "serviceTypes": [
+          {
+            "serviceTypeId": "job_type_id:annuities",
+            "displayName": "Insurance annuity investment advisement"
+          },
+          {
+            "serviceTypeId": "job_type_id:business_consulting",
+            "displayName": "Business consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:college_savings",
+            "displayName": "College savings-related financial consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:corporate_finance",
+            "displayName": "Corporate finance consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:corporate_trust_services",
+            "displayName": "Corporate trust-related financial consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:credit_services",
+            "displayName": "Credit-related financial consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:debt_management",
+            "displayName": "Debt management counseling"
+          },
+          {
+            "serviceTypeId": "job_type_id:divorce_planning",
+            "displayName": "Divorce planning-related financial consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:education_savings_consulting",
+            "displayName": "Education savings consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:estate_planning",
+            "displayName": "Estate planning"
+          },
+          {
+            "serviceTypeId": "job_type_id:financial_coaching",
+            "displayName": "Financial coaching"
+          },
+          {
+            "serviceTypeId": "job_type_id:financial_planning",
+            "displayName": "Financial planning"
+          },
+          {
+            "serviceTypeId": "job_type_id:home_purchasing_consulting",
+            "displayName": "Home purchasing consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:insurance_planning",
+            "displayName": "Insurance-related financial advisement"
+          },
+          {
+            "serviceTypeId": "job_type_id:insurance_purchase_consulting",
+            "displayName": "Insurance purchase consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:investment_advising",
+            "displayName": "Investment advising"
+          },
+          {
+            "serviceTypeId": "job_type_id:investment_consulting",
+            "displayName": "General investment consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:mutual_and_index_funds",
+            "displayName": "Mutual & index fund consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:net_worth_and_cash_flow_analysis",
+            "displayName": "Net worth & cash flow analysis consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:non_profit_consulting",
+            "displayName": "Non-profit financial consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:philanthropic_investing",
+            "displayName": "Philanthropic investing-related financial consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:real_estate_investment_consulting",
+            "displayName": "Real estate investment consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:retirement",
+            "displayName": "Retirement-related financial consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:retirement_savings_consulting",
+            "displayName": "Retirement savings consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:stocks_and_bonds",
+            "displayName": "Stocks & bonds consulting"
+          },
+          {
+            "serviceTypeId": "job_type_id:tax_planning",
+            "displayName": "Tax planning"
+          },
+          {
+            "serviceTypeId": "job_type_id:wealth_management",
+            "displayName": "Wealth management"
+          }
+        ],
+        "moreHoursTypes": [
+          {
+            "hoursTypeId": "BREAKFAST",
+            "displayName": "Breakfast",
+            "localizedDisplayName": "Breakfast"
+          },
+          {
+            "hoursTypeId": "DINNER",
+            "displayName": "Dinner",
+            "localizedDisplayName": "Dinner"
+          },
+          {
+            "hoursTypeId": "DRIVE_THROUGH",
+            "displayName": "Drive through",
+            "localizedDisplayName": "Drive through"
+          },
+          {
+            "hoursTypeId": "LUNCH",
+            "displayName": "Lunch",
+            "localizedDisplayName": "Lunch"
+          },
+          {
+            "hoursTypeId": "ONLINE_SERVICE_HOURS",
+            "displayName": "Online service hours",
+            "localizedDisplayName": "Online service hours"
+          },
+          {
+            "hoursTypeId": "SENIOR_HOURS",
+            "displayName": "Senior hours",
+            "localizedDisplayName": "Senior hours"
+          }
+        ]
+      }
+    ]
+  },
+  "serviceItems": [
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:vehicle_acquisition",
+        "description": "Apoio na compra de carro ou moto em Varginha: simulamos o financiamento, comparamos condições de bancos diferentes e mostramos o custo total, para você negociar com a loja com mais segurança. Crédito sujeito a análise."
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:loans",
+        "description": "Empréstimos Consignado em Varginha com rapidez e segurança. Crédito pessoal, consignado e refinanciamento para aposentados, pensionistas e trabalhadores. Atendemos todo o Sul de Minas. Solicite já sua simulação."
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:financing",
+        "description": "Financiamento em Varginha para carro, moto e imóvel. Comparamos as condições de bancos diferentes e mostramos parcela, prazo e custo total antes de você decidir. Simulação sem custo e sem compromisso. Crédito sujeito a análise."
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:car_loans",
+        "description": "Financiamento de carro novo ou usado em Varginha. Simule com a gente antes de fechar na loja de veículos: comparamos condições de bancos diferentes e mostramos parcela, prazo e custo total. Crédito sujeito a análise."
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:loan_renegotiation",
+        "description": "Renegociação de empréstimo em Varginha: reduza suas parcelas, aumente prazos e melhore suas condições financeiras. Atendemos INSS, servidores e clientes em geral. Consulte já a Speed Financeira."
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:financial_services",
+        "description": "Serviços financeiros em Varginha com soluções em crédito consignado, pessoal, portabilidade, antecipação de FGTS e financiamentos. Atendimento rápido, transparente e seguro. Venha para a Speed Financeira"
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Empréstimo Consignado em Varginha",
+          "description": "Empréstimo consignado em Varginha para aposentados, pensionistas e servidores públicos. Taxas reduzidas, parcelas fixas e liberação rápida. Atendemos toda a região do Sul de Minas. Simule já com a Speed"
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Empréstimo pessoal",
+          "description": "Empréstimo pessoal em Varginha para quem precisa de crédito sem consignado. Comparamos as opções disponíveis e mostramos parcela, prazo, CET e valor total a pagar antes de contratar. Atendemos Varginha e região. Crédito sujeito a análise. Não cobramos valor antecipado."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Empréstimo para aposentado e pensionista",
+          "description": "Para aposentados e pensionistas do INSS em Varginha. Comparamos as propostas de vários bancos num só atendimento e mostramos parcela, prazo e custo total antes de assinar. Ajudamos a tirar o extrato no Meu INSS. Crédito sujeito a análise. Não cobramos nenhum valor antecipado."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Antecipação FGTS em Varginha",
+          "description": "Para quem aderiu ao saque-aniversário. Antecipamos parcelas do FGTS e o valor cai na sua conta, sem parcela no salário: o desconto sai do próprio saldo do FGTS. Simulamos com você e explicamos a autorização no aplicativo do FGTS. Sujeito às regras em vigor e à análise."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Crédito Consignado em Varginha-MG",
+          "description": "Crédito consignado em Varginha para aposentados e pensionistas do INSS, servidores públicos e trabalhadores com carteira assinada. Comparamos as propostas de vários bancos e mostramos parcela, prazo e custo total antes de assinar. Crédito sujeito a análise. Não cobramos valor antecipado."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Financiamento Imobiliário",
+          "description": "Financiamento para comprar casa ou apartamento em Varginha. Comparamos as condições de bancos diferentes e mostramos parcela, prazo e custo total antes de você decidir. Simulação sem custo e sem compromisso. Crédito sujeito a análise."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Saque FGTS em Varginha-MG",
+          "description": "Saque FGTS em Varginha-MG | Precisa sacar seu FGTS em Varginha? A Speed Financeira oferece a melhor solução para você! Nossos especialistas estão prontos para auxiliar trabalhadores de Varginha e região no processo de saque do FGTS. Atendimento ágil, personalizado e totalmente seguro"
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Consórcio",
+          "description": "Consórcio para carro, moto ou imóvel em Varginha. Não tem juros, mas tem taxa de administração: mostramos o valor da parcela, o prazo e o custo total do plano antes de você aderir. A contemplação é por sorteio ou lance."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Financiamento de veículos em Varginha",
+          "description": "Vai comprar carro ou moto? Simule o financiamento com a gente antes de fechar na loja de veículos. Comparamos condições de bancos diferentes e mostramos o custo total, para você negociar com mais segurança. Crédito sujeito a análise."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Empréstimo com garantia de veículo",
+          "description": "Empréstimo com garantia de carro ou moto quitado, em Varginha. Como o veículo fica de garantia, os juros costumam ser menores que os do crédito pessoal, e você continua usando o veículo. Mostramos parcela, prazo e custo total antes de contratar. Crédito sujeito a análise."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Crédito pessoal em Varginha",
+          "description": "Para quem não tem acesso ao consignado. Comparamos as opções disponíveis e mostramos o custo efetivo total (CET) e o valor total a pagar antes de qualquer contratação. Crédito sujeito a análise. Não cobramos nenhum valor antecipado."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Portabilidade de Crédito em Varginha",
+          "description": "Reduza suas parcelas e melhore suas condições financeiras com a portabilidade de crédito. Na Speed Financeira em Varginha, encontramos o banco ideal para você pagar menos e ter mais tranquilidade. Simule sua portabilidade sem custo"
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Cartão Consignado em Varginha",
+          "description": "Cartão consignado com vantagens exclusivas para aposentados e pensionistas do INSS em Varginha. Sem anuidade, limite diferenciado e taxas reduzidas. Solicite o seu agora mesmo com a Speed Financeira"
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Empréstimo no Cartão de Crédito em Varginha",
+          "description": "Use o limite disponível do seu cartão de crédito para receber o dinheiro na sua conta e pagar em parcelas na fatura do cartão. Mostramos o valor de cada parcela, os juros e o custo total antes de contratar. Sujeito à análise e ao limite disponível do cartão."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Refinanciamento de Veículos em Varginha",
+          "description": "Use seu carro ou moto quitado como garantia e tenha juros menores que os do crédito pessoal. Você continua usando o veículo normalmente. Avaliamos as condições com você em Varginha e mostramos o custo total antes de contratar. Crédito sujeito a análise."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Crédito Consignado CLT em Varginha",
+          "description": "Empréstimo consignado para trabalhadores com carteira assinada em Varginha. Desconto direto em folha, aprovação ágil e condições facilitadas na Speed Financeira."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Financiamento de Energia Solar em Varginha",
+          "description": "Financiamento facilitado para instalação de sistemas de energia solar fotovoltaica residencial e empresarial em Varginha. Reduza sua conta de energia com parcelas acessíveis."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Serviços Previdenciários e Apoio ao INSS em Varginha",
+          "description": "Assessoria especializada para aposentados e pensionistas do INSS em Varginha. Auxílio em desbloqueio de benefício para crédito, consulta de margem consignável e extratos."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Cotação de Seguro Automotivo em Varginha",
+          "description": "Cotação e contratação de seguro auto em Varginha e região. Cobertura completa contra roubo, furto e colisão, com assistência 24h em parceria com as principais seguradoras."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Planos de Saúde e Odontológicos em Varginha",
+          "description": "Consultoria para contratação de planos de saúde individuais, familiares e empresariais em Varginha. Encontre a melhor cobertura médica com parcelas que cabem no bolso."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Refinanciamento de consignado em Varginha",
+          "description": "Para quem já pagou parte do consignado: dependendo do contrato, dá para refinanciar e liberar um valor novo. Mostramos o novo prazo, a parcela e o custo total antes de qualquer decisão. Atendimento presencial no Centro de Varginha. Crédito sujeito a análise."
+        }
+      }
+    },
+    {
+      "freeFormServiceItem": {
+        "category": "categories/gcid:financial_institution",
+        "label": {
+          "displayName": "Consignado para servidor público em Varginha",
+          "description": "Para servidores públicos com convênio de consignado. A parcela é descontada em folha. Conferimos sua margem, comparamos os bancos conveniados e explicamos cada detalhe do contrato antes de assinar. Atendimento no Centro de Varginha. Crédito sujeito a análise."
+        }
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:business_loans",
+        "description": "Empréstimos comerciais em Varginha MG"
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:installment_loans",
+        "description": "Empréstimos direto ao consumidor em Varginha MG"
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:online_loans",
+        "description": "Empréstimos on-line em Varginha MG"
+      }
+    },
+    {
+      "structuredServiceItem": {
+        "serviceTypeId": "job_type_id:line_of_credit",
+        "description": "Limite de crédito em Varginha MG"
+      }
+    }
+  ]
+}

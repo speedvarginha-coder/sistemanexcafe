@@ -106,3 +106,18 @@ test("geogrid: rotas do painel guardam a chave sem devolve-la, medem e registram
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("geogrid: visibilidade e posicao media dos concorrentes", () => {
+  const { rivals } = require("../server/geogrid");
+  const cells = [
+    { ids: ["credimais", "speed", "dl"] },
+    { ids: ["credimais", "dl", "outro", "speed"] },
+    { ids: ["ideal", "credimais"] },
+    { ids: [] }
+  ];
+  const r = rivals(cells, "speed");
+  assert.deepEqual(r.map(c => c.id), ["credimais", "dl", "ideal", "outro"]);
+  assert.deepEqual(r[0], { id: "credimais", top3: 3, visibility: 75, average: 6.3, found: 3 });
+  assert.equal(r.find(c => c.id === "dl").average, 11.8, "(3 + 2 + 21 + 21) / 4");
+  assert.equal(r.some(c => c.id === "speed"), false, "a propria ficha fica de fora");
+});

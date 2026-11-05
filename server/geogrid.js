@@ -78,27 +78,31 @@ async function measureGeogrid({ key, placeId, terms = DEFAULT_TERMS, center = DE
       calls++;
       const ids = (data.places || []).map(place => place.id);
       const index = ids.indexOf(placeId);
-      return { row: point.row, col: point.col, lat: point.lat, lng: point.lng, rank: index >= 0 ? index + 1 : null, leader: ids[0] || null };
+      return { row: point.row, col: point.col, lat: point.lat, lng: point.lng, rank: index >= 0 ? index + 1 : null, leader: ids[0] || null, ids };
     });
     const ranks = cells.map(cell => cell.rank || OUT);
     const leaders = {};
     for (const cell of cells) if (cell.leader && cell.leader !== placeId) leaders[cell.leader] = (leaders[cell.leader] || 0) + 1;
+    const competitors = rivals(cells, placeId);
+    for (const cell of cells) delete cell.ids; // a lista inteira por ponto pesaria no banco: fica so o resumo
     result.push({
       term,
       cells,
       average: +(ranks.reduce((sum, rank) => sum + rank, 0) / ranks.length).toFixed(1),
       top3: cells.filter(cell => cell.rank && cell.rank <= 3).length,
+      visibility: Math.round(cells.filter(cell => cell.rank && cell.rank <= 3).length / cells.length * 100),
       found: cells.filter(cell => cell.rank).length,
-      leaders: Object.entries(leaders).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, count]) => ({ id, count }))
+      leaders: Object.entries(leaders).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, count]) => ({ id, count })),
+      competitors
     });
   }
-  // Nome dos lideres que nao apareceram na busca do centro (Place Details, poucas chamadas).
-  const missing = [...new Set(result.flatMap(item => item.cells.map(cell => cell.leader)).filter(id => id && id !== placeId && !(id in names)))];
+  // Nome dos lideres e concorrentes que nao apareceram na busca do centro (Place Details, poucas chamadas).
+  const missing = [...new Set(result.flatMap(item => [...item.cells.map(cell => cell.leader), ...item.competitors.map(c => c.id)]).filter(id => id && id !== placeId && !(id in names)))];
   for (const id of missing) {
     try { names[id] = (await callPlaces(fetchImpl, key, DETAILS_URL + encodeURIComponent(id), { fields: "displayName" })).displayName?.text || ""; calls++; }
     catch { names[id] = ""; }
   }
-  const used = new Set(result.flatMap(item => [...item.cells.map(cell => cell.leader), ...item.leaders.map(l => l.id)]).filter(Boolean));
+  const used = new Set(result.flatMap(item => [...item.cells.map(cell => cell.leader), ...item.leaders.map(l => l.id), ...item.competitors.map(c => c.id)]).filter(Boolean));
   return {
     at: new Date().toISOString(),
     center, size, spacingKm, radiusM: BIAS_RADIUS_M,
@@ -108,4 +112,22 @@ async function measureGeogrid({ key, placeId, terms = DEFAULT_TERMS, center = DE
   };
 }
 
-module.exports = { measureGeogrid, findPlaces, gridPoints, DEFAULT_TERMS, DEFAULT_CENTER, GRID_SIZE, SPACING_KM };
+// Concorrentes na grade: visibilidade (parte dos pontos no top 3, como o SoLV) e posicao media (fora dos 20 conta 21).
+// So entra quem aparece no top 3 em pelo menos um ponto; no maximo 8, mais visiveis primeiro.
+function rivals(cells, placeId, limit = 8) {
+  const stats = new Map();
+  for (const cell of cells) {
+    (cell.ids || []).forEach((id, index) => {
+      if (id === placeId) return;
+      const s = stats.get(id) || { id, top3: 0, sum: 0, seen: 0 };
+      if (index < 3) s.top3++;
+      s.sum += index + 1; s.seen++;
+      stats.set(id, s);
+    });
+  }
+  return [...stats.values()].filter(s => s.top3 > 0)
+    .map(s => ({ id: s.id, top3: s.top3, visibility: Math.round(s.top3 / cells.length * 100), average: +((s.sum + (cells.length - s.seen) * OUT) / cells.length).toFixed(1), found: s.seen }))
+    .sort((a, b) => b.top3 - a.top3 || a.average - b.average).slice(0, limit);
+}
+
+module.exports = { measureGeogrid, findPlaces, gridPoints, rivals, DEFAULT_TERMS, DEFAULT_CENTER, GRID_SIZE, SPACING_KM };

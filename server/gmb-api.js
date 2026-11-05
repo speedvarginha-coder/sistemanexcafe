@@ -8,7 +8,8 @@ const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const ACCOUNTS_URL = "https://mybusinessaccountmanagement.googleapis.com/v1/accounts";
 const INFO_URL = "https://mybusinessbusinessinformation.googleapis.com/v1/";
 const V4_URL = "https://mybusiness.googleapis.com/v4/";
-const SCOPE = "https://www.googleapis.com/auth/business.manage";
+// business.manage: a ficha. webmasters.readonly: só leitura do Search Console do site (server/search-console.js).
+const SCOPE = "https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/webmasters.readonly";
 const LOCATION_TITLE = /speed financeira/i;
 
 const gmbError = (message, status = 502) => Object.assign(new Error(message), { status });

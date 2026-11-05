@@ -15,6 +15,7 @@ const { buildIndicators, packagesOutstanding } = require("./indicadores");
 const { measureGeogrid, findPlaces, DEFAULT_TERMS: GEOGRID_TERMS, GRID_SIZE: GEOGRID_SIZE, SPACING_KM: GEOGRID_SPACING_KM } = require("./geogrid");
 const gmbApi = require("./gmb-api");
 const ficha = require("./ficha-saude");
+const searchConsole = require("./search-console");
 const vm = require("node:vm");
 
 const OFFLINE_MS = 20_000;
@@ -133,7 +134,7 @@ function verifyPassword(password, user) {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 function defaults() {
-  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, gmbApi: emptyGmbApi(), fichaSaude: { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null }, gmbPosts: { publicados: {}, erros: {} }, vault: { salt: null, check: null, items: [], updatedAt: null } };
+  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, gmbApi: emptyGmbApi(), fichaSaude: { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null }, gmbPosts: { publicados: {}, erros: {} }, searchConsole: { dados: null, lastError: null }, vault: { salt: null, check: null, items: [], updatedAt: null } };
 }
 function normalize(db) {
   const empty = defaults();
@@ -166,6 +167,7 @@ function normalize(db) {
   db.gmbApi ||= emptyGmbApi();
   db.fichaSaude ||= { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null };
   db.gmbPosts ||= { publicados: {}, erros: {} };
+  db.searchConsole ||= { dados: null, lastError: null };
   db.vault ||= { salt: null, check: null, items: [], updatedAt: null };
   db.vault.banks ||= [];
   // Despesa do sistema anterior veio com categoria generica: aluguel volta para Aluguel.
@@ -2929,6 +2931,14 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       await runNap("manual");
       return send(res, 200, { ok: true, ficha: fichaView() });
     }
+    // Search Console do site: buscas, aparições, cliques e posição por página (server/search-console.js).
+    if (p === "/api/marketing/search-console" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, sc: scView() }); }
+    if (p === "/api/marketing/search-console/run" && req.method === "POST") {
+      admin(user);
+      if (!db.gmbApi.refreshToken) throw err(400, "Conecte a ficha antes de ler o Search Console");
+      await runSearchConsole("manual");
+      return send(res, 200, { ok: true, sc: scView() });
+    }
     if (p === "/api/marketing/ficha-saude/changes/seen" && req.method === "POST") {
       admin(user);
       for (const change of db.fichaSaude.changes) change.seen = true;
@@ -3181,11 +3191,42 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     })().finally(() => { postsState.running = null; });
     return postsState.running;
   }
+  // Search Console: lido uma vez por dia com o acesso OAuth da ficha.
+  const scState = { running: null, lastCheck: 0 };
+  function runSearchConsole(trigger) {
+    scState.running ||= (async () => {
+      const sc = db.searchConsole;
+      try {
+        const dados = await searchConsole.lerSite({ accessToken: await gmbToken(), fetchImpl: gmbFetch, site: sc.dados?.site });
+        sc.dados = { ...dados, at: now(), trigger };
+        sc.lastError = null;
+        save();
+      } catch (cause) {
+        sc.lastError = { at: now(), message: label(cause.message, 300), trigger };
+        save();
+        throw cause;
+      }
+    })().finally(() => { scState.running = null; });
+    return scState.running;
+  }
+  function searchConsoleDue() {
+    if (!db.gmbApi.refreshToken || scState.running || Date.now() - scState.lastCheck < 3600_000) return;
+    scState.lastCheck = Date.now();
+    const sc = db.searchConsole;
+    if (sc.lastError && Date.now() - Date.parse(sc.lastError.at) < 12 * 3600_000) return;
+    if (sc.dados && Date.now() - Date.parse(sc.dados.at) < 20 * 3600_000) return;
+    runSearchConsole("automatica").catch(cause => console.error(`Search Console automatico falhou: ${cause.message}`));
+  }
+  function scView() {
+    return { connected: !!db.gmbApi.refreshToken, running: !!scState.running, dados: db.searchConsole.dados, lastError: db.searchConsole.lastError };
+  }
   function fichaView() {
     const f = db.fichaSaude, run = db.geogrid.runs.at(-1), actions = f.health?.actions;
     // Potencial por termo: ultima medicao do GeoGrid com as acoes dos ultimos 30 dias da ficha.
     const growth = run && actions ? run.terms.map(t => ({ term: t.term, measuredAt: run.at, ...ficha.estimateGrowthPotential(t.cells.map(c => c.rank), actions.total) })) : [];
-    return { connected: !!(db.gmbApi.refreshToken && db.gmbApi.locationName), running: !!fichaState.running, napRunning: !!fichaState.napRunning, health: f.health, history: f.history.slice(-30), changes: f.changes.slice(0, 20), unseenChanges: f.changes.filter(c => !c.seen).length, googleDiff: f.googleDiff, nap: f.nap, growth, lastError: f.lastError };
+    // Link oficial para o cliente avaliar a ficha (ID do lugar no Maps, da configuração do GeoGrid).
+    const reviewUrl = db.geogrid.placeId ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(db.geogrid.placeId)}` : "";
+    return { reviewUrl, connected: !!(db.gmbApi.refreshToken && db.gmbApi.locationName), running: !!fichaState.running, napRunning: !!fichaState.napRunning, health: f.health, history: f.history.slice(-30), changes: f.changes.slice(0, 20), unseenChanges: f.changes.filter(c => !c.seen).length, googleDiff: f.googleDiff, nap: f.nap, growth, lastError: f.lastError };
   }
   const MARKETING_TYPES = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json", ".csv": "text/csv; charset=utf-8", ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".pdf": "application/pdf", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation" };
   // Biblioteca de pesquisas do marketing: lista as pastas em /marketing/arquivos/.
@@ -3284,6 +3325,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     geogridDue();
     fichaDue();
     gmbPostsDue();
+    searchConsoleDue();
   }, 15_000);
   server.on("close", () => clearInterval(sweeper));
   // O .NET das estacoes reaproveita conexao ociosa por ate 100 s; o padrao do Node fecha em 5 s.
