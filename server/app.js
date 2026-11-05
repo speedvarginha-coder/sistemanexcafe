@@ -14,6 +14,8 @@ const { groupOf, PB_GROUP, DEFAULT_PRINT_TIERS, tierUnitCents, parsePrintTiers, 
 const { buildIndicators, packagesOutstanding } = require("./indicadores");
 const { measureGeogrid, findPlaces, DEFAULT_TERMS: GEOGRID_TERMS, GRID_SIZE: GEOGRID_SIZE, SPACING_KM: GEOGRID_SPACING_KM } = require("./geogrid");
 const gmbApi = require("./gmb-api");
+const ficha = require("./ficha-saude");
+const vm = require("node:vm");
 
 const OFFLINE_MS = 20_000;
 // Limite de seguranca do tempo livre (a sessao encerra sozinha se ninguem encerrar).
@@ -162,6 +164,7 @@ function normalize(db) {
   db.geogrid ||= { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null };
   db.geogrid.runs ||= [];
   db.gmbApi ||= emptyGmbApi();
+  db.fichaSaude ||= { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null };
   db.vault ||= { salt: null, check: null, items: [], updatedAt: null };
   db.vault.banks ||= [];
   // Despesa do sistema anterior veio com categoria generica: aluguel volta para Aluguel.
@@ -215,7 +218,7 @@ function defaultOcrRunner(file) {
   });
 }
 
-function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing"), placesFetch = globalThis.fetch, gmbFetch = globalThis.fetch } = {}) {
+function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing"), placesFetch = globalThis.fetch, gmbFetch = globalThis.fetch, napFetch = globalThis.fetch } = {}) {
   const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
   const mkSource = marketingSource !== undefined ? marketingSource : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? (process.env.NEXCAFE_MARKETING_SRC || DEFAULT_MARKETING_SOURCE) : "");
   const dbPath = path.join(dataDir, "db.json");
@@ -2911,6 +2914,25 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         return send(res, 200, { ok: true, gmb: gmbView(), posts });
       } catch (cause) { db.gmbApi.lastError = { at: now(), message: label(cause.message, 300) }; save(); throw cause; }
     }
+    // Saude da ficha: nota, alteracoes no perfil, potencial de crescimento e NAP nos diretorios.
+    if (p === "/api/marketing/ficha-saude" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, ficha: fichaView() }); }
+    if (p === "/api/marketing/ficha-saude/run" && req.method === "POST") {
+      admin(user);
+      if (!db.gmbApi.refreshToken || !db.gmbApi.locationName) throw err(400, "Conecte a ficha antes de conferir");
+      await runFicha("manual");
+      return send(res, 200, { ok: true, ficha: fichaView() });
+    }
+    if (p === "/api/marketing/ficha-saude/nap" && req.method === "POST") {
+      admin(user);
+      if (!db.fichaSaude.health?.profile) throw err(400, "Confira a saúde da ficha antes, para ter o nome, endereço e telefone oficiais");
+      await runNap("manual");
+      return send(res, 200, { ok: true, ficha: fichaView() });
+    }
+    if (p === "/api/marketing/ficha-saude/changes/seen" && req.method === "POST") {
+      admin(user);
+      for (const change of db.fichaSaude.changes) change.seen = true;
+      save(); return send(res, 200, { ok: true, ficha: fichaView() });
+    }
     throw err(404, "API nao encontrada");
   }
 
@@ -3021,6 +3043,116 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     if (g.lastError && Date.now() - Date.parse(g.lastError.at) < 86400_000) return;
     if (!last || Date.now() - Date.parse(last.at) >= 30 * 86400_000) runGeogrid("automatica").catch(cause => console.error(`GeoGrid automatico falhou: ${cause.message}`));
   }
+  // Saude da ficha (server/ficha-saude.js): conferida uma vez por dia; NAP dos diretorios uma vez por semana.
+  const fichaState = { running: null, napRunning: null, lastCheck: 0 };
+  const OLD_PHONES = ["(35) 3113-0458"]; // desativado: nao pode aparecer em diretorio nenhum
+  // Fichas parecidas no Maps (Places API, chave do GeoGrid) para a checagem de duplicada.
+  async function similarPlaces(location) {
+    if (!db.geogrid.key) return null;
+    const own = location.metadata?.placeId || db.geogrid.placeId;
+    const found = new Map();
+    for (const textQuery of [`${ficha.brandName(location.title)} Varginha`, "Speed Lan House Varginha"]) {
+      let response;
+      try { response = await placesFetch("https://places.googleapis.com/v1/places:searchText", { method: "POST", headers: { "content-type": "application/json", "X-Goog-Api-Key": db.geogrid.key, "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber" }, body: JSON.stringify({ textQuery, languageCode: "pt-BR", regionCode: "BR", pageSize: 10 }) }); }
+      catch (cause) { throw new Error(`sem conexão com o Google (${cause.message})`); }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(`Places respondeu ${response.status}: ${data?.error?.message || "erro desconhecido"}`);
+      for (const place of data.places || []) if (place.id !== own) found.set(place.id, { id: place.id, name: place.displayName?.text || "", address: place.formattedAddress || "", phone: place.nationalPhoneNumber || "" });
+    }
+    return [...found.values()];
+  }
+  function runFicha(trigger) {
+    fichaState.running ||= (async () => {
+      const f = db.fichaSaude, at = now(), today = new Date();
+      try {
+        const data = await gmbApi.readFicha({ accessToken: await gmbToken(), accountName: db.gmbApi.accountName, locationName: db.gmbApi.locationName, fetchImpl: gmbFetch, now: today });
+        if (!data.location.ok) throw err(502, `Não deu para ler a ficha: ${data.location.message}`);
+        const location = data.location.value;
+        let others = null, othersError = null;
+        try { others = await similarPlaces(location); } catch (cause) { othersError = label(cause.message, 160); }
+        const keywords = data.keywords.ok ? ficha.topKeywords(data.keywords.value) : [];
+        const reviews = data.reviews.ok ? { ok: true, value: ficha.reviewSummary(data.reviews.value, today) } : data.reviews;
+        const checks = ficha.evaluateHealth({ ...data, reviews, keywords: keywords.map(k => k.term), others, othersError }, today);
+        const score = ficha.scoreOf(checks);
+        // Alteracoes: compara com a foto da ficha guardada na conferencia anterior.
+        const snapshot = ficha.snapshotOf(location);
+        const changes = ficha.diffSnapshots(f.snapshot?.fields, snapshot);
+        if (changes.length) {
+          f.changes = [...changes.map(change => ({ ...change, at, seen: false })), ...f.changes].slice(0, 50);
+          event("sistema", "Ficha do Google alterada", changes.map(change => change.label).join(", "));
+        }
+        f.snapshot = { at, fields: snapshot };
+        if (data.updated.ok) {
+          const diff = ficha.googleDiff(data.updated.value);
+          const fresh = diff.filter(item => !f.googleDiff.some(old => old.field === item.field));
+          if (fresh.length) event("sistema", "Google tem versão diferente na ficha", fresh.map(item => item.label).join(", "));
+          f.googleDiff = diff;
+        }
+        const l = location;
+        const previous = f.history.at(-1);
+        f.health = {
+          at, trigger, checks, score, keywords: keywords.slice(0, 10),
+          actions: data.actions.ok ? data.actions.value : null, actionsError: data.actions.ok ? null : data.actions.message,
+          reviews: reviews.ok ? reviews.value : null,
+          profile: { title: l.title || "", name: ficha.brandName(l.title), address: ficha.addressLine(l.storefrontAddress), phone: l.phoneNumbers?.primaryPhone || "", primaryCategory: l.categories?.primaryCategory?.displayName || "", additionalCategories: (l.categories?.additionalCategories || []).map(c => c.displayName || c.name) }
+        };
+        f.history = [...f.history, { at, percent: score.percent }].slice(-60);
+        f.lastError = null;
+        if (trigger === "manual" || previous?.percent !== score.percent) event("sistema", "Saúde da ficha conferida", `nota ${score.percent} (${score.passed} de ${score.total} itens)`);
+        save();
+      } catch (cause) {
+        f.lastError = { at, message: label(cause.message, 300), trigger }; save();
+        throw cause;
+      }
+    })().finally(() => { fichaState.running = null; });
+    return fichaState.running;
+  }
+  // Diretorios mapeados na Central de Correcao NAP (public/marketing/js/data_nap_erros.js).
+  function napDirectories() {
+    const sandbox = { window: {} };
+    vm.runInNewContext(fs.readFileSync(path.join(marketingDir, "js", "data_nap_erros.js"), "utf8"), sandbox, { timeout: 1000 });
+    return (sandbox.window.SPEED_NAP_ERROS || []).filter(item => /^https:\/\//.test(String(item.url_ficha || ""))).map(item => ({ id: String(item.id), name: String(item.diretorio), url: String(item.url_ficha) }));
+  }
+  async function fetchPage(url) {
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 15_000);
+    try {
+      const response = await napFetch(url, { headers: { "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36", "accept-language": "pt-BR,pt;q=0.9" }, redirect: "follow", signal: controller.signal });
+      if (!response.ok) return { error: `o site respondeu ${response.status}` };
+      return { html: (await response.text()).slice(0, 3_000_000) };
+    } catch (cause) { return { error: cause.name === "AbortError" ? "o site demorou mais de 15 s" : `sem conexão (${label(cause.message, 80)})` }; }
+    finally { clearTimeout(timer); }
+  }
+  function runNap(trigger) {
+    fichaState.napRunning ||= (async () => {
+      const profile = db.fichaSaude.health.profile;
+      const official = { name: profile.name, address: profile.address, phone: profile.phone };
+      const results = [];
+      for (const dir of napDirectories()) {
+        const page = await fetchPage(dir.url);
+        results.push(page.error ? { ...dir, result: "unreadable", message: page.error } : { ...dir, ...ficha.compareNap(page.html, official, OLD_PHONES) });
+      }
+      db.fichaSaude.nap = { at: now(), trigger, official, results };
+      event("sistema", "NAP dos diretórios conferido", `${results.filter(r => r.result === "match").length} certos, ${results.filter(r => r.result === "mismatch").length} com erro, ${results.filter(r => r.result !== "match" && r.result !== "mismatch").length} sem confirmação`);
+      save();
+    })().finally(() => { fichaState.napRunning = null; });
+    return fichaState.napRunning;
+  }
+  function fichaDue() {
+    if (!db.gmbApi.refreshToken || !db.gmbApi.locationName || fichaState.running || Date.now() - fichaState.lastCheck < 3600_000) return;
+    fichaState.lastCheck = Date.now();
+    const f = db.fichaSaude;
+    if (f.lastError && Date.now() - Date.parse(f.lastError.at) < 6 * 3600_000) return;
+    if (f.health && Date.now() - Date.parse(f.health.at) < 20 * 3600_000) return;
+    runFicha("automatica")
+      .then(() => (!f.nap || Date.now() - Date.parse(f.nap.at) >= 7 * 86400_000 ? runNap("automatica") : null))
+      .catch(cause => console.error(`Saude da ficha automatica falhou: ${cause.message}`));
+  }
+  function fichaView() {
+    const f = db.fichaSaude, run = db.geogrid.runs.at(-1), actions = f.health?.actions;
+    // Potencial por termo: ultima medicao do GeoGrid com as acoes dos ultimos 30 dias da ficha.
+    const growth = run && actions ? run.terms.map(t => ({ term: t.term, measuredAt: run.at, ...ficha.estimateGrowthPotential(t.cells.map(c => c.rank), actions.total) })) : [];
+    return { connected: !!(db.gmbApi.refreshToken && db.gmbApi.locationName), running: !!fichaState.running, napRunning: !!fichaState.napRunning, health: f.health, history: f.history.slice(-30), changes: f.changes.slice(0, 20), unseenChanges: f.changes.filter(c => !c.seen).length, googleDiff: f.googleDiff, nap: f.nap, growth, lastError: f.lastError };
+  }
   const MARKETING_TYPES = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml", ".webp": "image/webp", ".json": "application/json", ".csv": "text/csv; charset=utf-8", ".md": "text/plain; charset=utf-8", ".txt": "text/plain; charset=utf-8", ".pdf": "application/pdf", ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation" };
   // Biblioteca de pesquisas do marketing: lista as pastas em /marketing/arquivos/.
   function marketingLibrary(dir, relative) {
@@ -3116,6 +3248,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     for (const [ip, attempt] of attempts) if (attempt.until < nowMs) attempts.delete(ip);
     for (const [ip, attempt] of enrollAttempts) if (attempt.until < nowMs) enrollAttempts.delete(ip);
     geogridDue();
+    fichaDue();
   }, 15_000);
   server.on("close", () => clearInterval(sweeper));
   // O .NET das estacoes reaproveita conexao ociosa por ate 100 s; o padrao do Node fecha em 5 s.

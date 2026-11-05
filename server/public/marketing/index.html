@@ -1314,6 +1314,15 @@
         <div id="gmbApiConteudo"></div>
       </div>
 
+      <!-- SAÚDE DA FICHA: NOTA, ALTERAÇÕES, POTENCIAL E NAP (js/ficha_saude.js, adaptado do Local Ninja) -->
+      <div class="card-premium p-5 mb-8" id="fichaSaudePainel">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-heart-pulse text-green-700 mr-2"></i>Saúde da ficha no Google</h3><p class="text-[11px] text-gray-500 mt-1">Nota de 0 a 100 com 24 checagens, aviso quando a ficha muda, ações a mais por mês ao entrar no top 3 e conferência dos diretórios. O servidor confere sozinho todo dia; os diretórios, toda semana.</p></div>
+          <span id="fichaSaudeStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
+        </div>
+        <div id="fichaSaudeConteudo"></div>
+      </div>
+
       <!-- SEÇÃO 2: ESTEIRA DE POSTS DA FICHA (js/data_gmb_posts.js + js/gmb_plano.js) -->
       <div class="card-premium p-6 mb-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
@@ -1491,6 +1500,7 @@
   <script src="js/raiox.js"></script>
   <script src="js/geogrid.js"></script>
   <script src="js/gmb_api.js"></script>
+  <script src="js/ficha_saude.js"></script>
   <script src="js/app.js"></script>
   <script src="js/resultados.js"></script>
   <script src="js/criador_artes.js"></script>
