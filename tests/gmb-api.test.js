@@ -117,3 +117,42 @@ test("gmb-api: salva o cliente sem devolver a chave, conecta pela volta do OAuth
     fs.rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+test("gmb-api: servidor publica so os posts do dia, a partir das 9h, sem repetir", async () => {
+  const { postsDoDia, createPost } = require("../server/gmb-api");
+  const plano = [
+    { id: "post-2027-01-04", data: "2027-01-04", publicarPeloServidor: true, fotoUrl: "https://speedfinanceira.com.br/midia/posts/google-2027-01-04.png", texto: "Empréstimo CLT em Varginha", link: "https://wa.me/553530675017" },
+    { id: "post-2027-01-06", data: "2027-01-06", publicarPeloServidor: true, fotoUrl: "https://x/y.png" },
+    { id: "post-2026-12-28", data: "2027-01-04", programadoEm: "2026-10-30" }
+  ];
+  assert.deepEqual(postsDoDia(plano, {}, new Date(2027, 0, 4, 8, 59)), [], "antes das 9h nao publica");
+  assert.deepEqual(postsDoDia(plano, {}, new Date(2027, 0, 4, 9, 0)).map(p => p.id), ["post-2027-01-04"], "so o do dia e marcado para o servidor");
+  assert.deepEqual(postsDoDia(plano, { "post-2027-01-04": { at: "x" } }, new Date(2027, 0, 4, 15)), [], "nao repete");
+  assert.deepEqual(postsDoDia(plano, {}, new Date(2027, 0, 5, 10)), [], "dia que passou fica de fora");
+
+  const pedidos = [];
+  const fake = async (url, init) => { pedidos.push({ url, init }); return { ok: true, status: 200, json: async () => ({ name: "accounts/1/locations/2/localPosts/3", state: "LIVE" }) }; };
+  const criado = await createPost({ accessToken: "t", accountName: "accounts/1", locationName: "locations/2", summary: plano[0].texto, url: plano[0].link, photoUrl: plano[0].fotoUrl, fetchImpl: fake });
+  assert.equal(criado.state, "LIVE");
+  assert.equal(pedidos[0].url, "https://mybusiness.googleapis.com/v4/accounts/1/locations/2/localPosts");
+  const body = JSON.parse(pedidos[0].init.body);
+  assert.deepEqual(body.media, [{ mediaFormat: "PHOTO", sourceUrl: plano[0].fotoUrl }]);
+  assert.deepEqual(body.callToAction, { actionType: "LEARN_MORE", url: "https://wa.me/553530675017" });
+  assert.equal(pedidos[0].init.headers.authorization, "Bearer t");
+});
+
+test("gmb-api: calendario real tem texto, arte publica e botao em todo post do servidor", () => {
+  global.window = {};
+  require("../server/public/marketing/js/data_gmb_posts.js");
+  const plano = global.window.SPEED_GMB_POSTS_PLANO;
+  const servidor = plano.filter(p => p.publicarPeloServidor);
+  assert.ok(servidor.length >= 14);
+  for (const p of servidor) {
+    assert.match(p.fotoUrl, /^https:\/\/speedfinanceira\.com\.br\/midia\/posts\/google-\d{4}-\d\d-\d\d\.png$/, p.id);
+    assert.match(p.link, /^https:\/\/wa\.me\/553530675017\?text=/, p.id);
+    assert.ok(p.texto.length > 200 && p.texto.length <= 1500, p.id);
+    assert.doesNotMatch(p.texto, /\(?35\)?\s?\d{4}-?\d{4}/, `${p.id}: telefone no texto o Google recusa`);
+  }
+  assert.equal(new Set(plano.map(p => p.data)).size, plano.length, "uma data por post");
+  delete global.window;
+});

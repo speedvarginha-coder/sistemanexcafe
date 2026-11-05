@@ -11,7 +11,7 @@
 window.SPEED_GMB_POSTS_ARTES = {
   '2026-11-03': ['Aposentado, *compare* antes de assinar', 'CONSIGNADO INSS • Vários bancos', 'casal'],
   '2026-11-04': ['Seu *FGTS* pode virar dinheiro agora', 'SAQUE-ANIVERSÁRIO • Simule', 'cozinha'],
-  '2026-11-06': ['Não pague *nada* para liberar crédito', 'ALERTA DE GOLPE', 'senhora'],
+  '2026-11-06': ['Vai financiar *carro* ou moto?', 'FINANCIAMENTO DE VEÍCULO • Simule', 'homem'],
   '2026-11-09': ['Carteira assinada tem *consignado*', 'CLT • Desconto em folha', 'homem'],
   '2026-11-11': ['Sua parcela pode *diminuir*', 'PORTABILIDADE • Traga o extrato', 'senhora'],
   '2026-11-13': ['O que trazer para *simular*', 'RG, CPF, comprovante e extrato', 'balcao'],
@@ -22,9 +22,9 @@ window.SPEED_GMB_POSTS_ARTES = {
   '2026-11-25': ['Olhe o *CET*, não só a parcela', 'CUSTO EFETIVO TOTAL', 'homem'],
   '2026-11-27': ['Black Friday sem cair no *rotativo*', 'Troque dívida cara por parcela fixa', 'cozinha'],
   '2026-11-30': ['Sua *margem* ainda está livre?', 'Extrato do Meu INSS na hora', 'senhora'],
-  '2026-12-02': ['FGTS parado? *Antecipe*', 'Simule sem compromisso', 'cozinha'],
+  '2026-12-02': ['Empréstimo *consignado* em Varginha', 'INSS • CLT • SERVIDOR', 'casal'],
   '2026-12-04': ['Obrigado pelas mais de *200* avaliações', 'Conte como foi no Google', 'balcao'],
-  '2026-12-07': ['Carro ou imóvel pelo *consórcio*', 'SEM JUROS • Taxa de administração', 'casal'],
+  '2026-12-07': ['Pouco tempo de *carteira*?', 'CONSIGNADO CLT • Compare os bancos', 'balcao'],
   '2026-12-09': ['Dívida cara? *Parcela* em folha', 'CONSIGNADO CLT', 'homem'],
   '2026-12-11': ['Nome *negativado*? Veja suas opções', 'CONSIGNADO E FGTS • Sujeito a análise', 'cozinha'],
   '2026-12-14': ['Seu consignado pode ficar mais *leve*', 'PORTABILIDADE', 'senhora'],
@@ -33,7 +33,22 @@ window.SPEED_GMB_POSTS_ARTES = {
   '2026-12-21': ['Consignado ou crédito *pessoal*?', 'Mostramos o que faz sentido', 'homem'],
   '2026-12-23': ['Obrigado pela *confiança* em 2026', 'Boas festas, Varginha!', 'casal'],
   '2026-12-28': ['Comece 2027 com as *dívidas* em ordem', 'Simulação sem custo', 'senhora'],
-  '2026-12-30': ['Crédito para começar *2027* com calma', 'CONSIGNADO INSS', 'casal']
+  '2026-12-30': ['Crédito para começar *2027* com calma', 'CONSIGNADO INSS', 'casal'],
+  // Posts que o servidor publica (05/11/2026). Entram no fim da lista para não mudar a variação das artes já feitas.
+  '2026-12-22': ['No Natal, confira o *extrato* dos seus pais', 'APOSENTADOS • Meu INSS', 'casal'],
+  '2026-12-29': ['Comece 2027 sem *rotativo*', 'CONSIGNADO CLT • Desconto em folha', 'homem'],
+  '2027-01-04': ['Ano novo, dívida *mais barata*', 'CONSIGNADO CLT', 'balcao'],
+  '2027-01-06': ['Benefício reajustado, *margem* nova?', 'CONSIGNADO INSS • Consulte', 'senhora'],
+  '2027-01-08': ['IPVA, IPTU e *material escolar*', 'Compare antes de contratar', 'cozinha'],
+  '2027-01-11': ['Pediram *Pix* para liberar crédito?', 'É GOLPE • Não pague', 'senhora'],
+  '2027-01-13': ['Quanto posso pegar no *consignado CLT*?', 'Depende da sua margem', 'homem'],
+  '2027-01-15': ['Vai *financiar* em 2027?', 'Compare o CET', 'balcao'],
+  '2027-01-18': ['Já pagou parte do *consignado*?', 'REFINANCIAMENTO • A gente faz a conta', 'casal'],
+  '2027-01-20': ['Foi atendido na Speed? *Avalie*', 'Sua opinião ajuda Varginha', 'balcao'],
+  '2027-01-22': ['O que trazer para o *consignado CLT*', 'Documento, CPF e holerite', 'homem'],
+  '2027-01-25': ['Aposentado: 3 *cuidados* antes de assinar', 'CONSIGNADO INSS', 'casal'],
+  '2027-01-27': ['Quem pode fazer *crédito consignado*', 'INSS • CLT • SERVIDOR', 'senhora'],
+  '2027-01-29': ['Simulação de *consignado* sem custo', 'Compare vários bancos', 'balcao']
 };
 
 window.SPEED_GMB_POSTS_PLANO = (function () {
@@ -52,6 +67,9 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
     const layout = Math.floor(i / 2) % 2 ? 'b' : 'a';
     return a ? { titulo: a[0], selo: a[1], foto: a[2], variacao, layout, arquivo: `gmb-artes/post-${data}${variacao === 2 ? '-v2' : ''}.png` } : null;
   };
+  // Post que o servidor do Nexcafe publica sozinho no dia, às 9h (server/app.js, gmbPostsDue): a API do Google
+  // não programa post novo. A arte vai antes para speedfinanceira.com.br/midia/posts/google-AAAA-MM-DD.png.
+  const s = (...args) => ({ ...p(...args), programadoEm: '2026-11-05', publicarPeloServidor: true, fotoUrl: `https://speedfinanceira.com.br/midia/posts/google-${args[0]}.png` });
   const p = (data, tema, termo, texto, foto, rodape = true) =>
     ({ id: `post-${data}`, data, tema, termo, texto: rodape ? `${texto}\n\n${RODAPE}` : texto, foto, botao: 'Saiba mais', link: whatsapp(data), arte: arte(data), programadoEm: PROGRAMADO_EM });
 
@@ -63,9 +81,10 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
     p('2026-11-04', 'Antecipação FGTS', 'empréstimo do fgts varginha',
       'Empréstimo do FGTS em Varginha: quem aderiu ao saque-aniversário pode antecipar parcelas e receber o valor de uma vez, sem parcela no salário. O desconto sai do próprio saldo do FGTS.\n\nO valor liberado depende do saldo e das regras em vigor. Na Speed Financeira, no Centro, a gente simula com você, mostra quanto entra na conta e explica a autorização que precisa ser feita no aplicativo do FGTS.',
       'Atendente mostrando a simulação na tela, sem dados do cliente.'),
-    p('2026-11-06', 'Segurança', 'empréstimo para negativado',
-      'Empréstimo para negativado "liberado na hora" que pede depósito antes é golpe. Em Varginha e região, desconfie de quem cobra taxa, Pix ou "seguro" para liberar o dinheiro: correspondente bancário sério não cobra nada antecipado.\n\nNa Speed Financeira o atendimento é presencial, na Rua Santa Cruz, 696, no Centro de Varginha, e o contrato é sempre do banco, em seu nome. Na dúvida, venha conferir pessoalmente antes de pagar qualquer coisa.',
-      'Fachada da loja com o número 696 visível.', false),
+    // 06/11 era alerta de golpe; trocado em 30/10 porque um alerta igual foi publicado na ficha nesse dia.
+    p('2026-11-06', 'Financiamento de veículo', 'financiamento de veículo varginha',
+      'Financiamento de veículo em Varginha: antes de fechar a compra do carro ou da moto, compare o custo efetivo total (CET) das propostas, e não só o valor da parcela. Uma entrada maior e um prazo menor costumam deixar o total pago bem mais baixo.\n\nNa Speed Financeira, no Centro, a gente simula com você e mostra a parcela, o CET e o total a pagar antes de qualquer decisão.',
+      'Fachada da loja; evite foto de carro de cliente.'),
 
     // Semana 2
     p('2026-11-09', 'Consignado CLT', 'empréstimo clt varginha',
@@ -104,17 +123,19 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
     p('2026-11-30', 'Consignado INSS', 'empréstimo inss varginha',
       'Empréstimo INSS em Varginha: sabe quanto do seu benefício já está comprometido? O extrato de empréstimos do Meu INSS mostra os contratos ativos e a margem que ainda está livre.\n\nNa Speed Financeira, no Centro, a gente tira esse extrato com você, explica cada contrato e mostra se vale a pena um novo crédito, um refinanciamento ou a portabilidade.',
       'Tela do Meu INSS na loja, sem dados pessoais.'),
-    p('2026-12-02', 'Antecipação FGTS', 'saque-aniversário do fgts varginha',
-      'Saque-aniversário do FGTS em Varginha: se o seu FGTS está parado, dá para antecipar parcelas e usar o dinheiro agora, sem parcela no salário.\n\nA Speed Financeira, no Centro, consulta com você quanto pode ser antecipado e explica o passo a passo da autorização no aplicativo do FGTS.',
-      'Equipe no balcão.'),
+    // 02, 07, 14 e 16/12 trocados em 05/11/2026 pelas buscas reais da ficha (ago-out/2026): "empréstimo consignado"
+    // (146 buscas) não estava em nenhum post; FGTS, consórcio e "financeira" quase não aparecem nas buscas.
+    p('2026-12-02', 'Consignado', 'empréstimo consignado varginha',
+      'Empréstimo consignado em Varginha: a parcela é descontada direto do benefício do INSS ou do salário, por isso os juros costumam ser menores que os do crédito pessoal e do cartão. Podem fazer aposentados e pensionistas do INSS, servidores públicos e quem tem carteira assinada.\n\nNa Speed Financeira, no Centro, a gente consulta sua margem, compara as propostas de vários bancos e mostra a parcela e o custo total antes de você decidir.',
+      'Mesa de atendimento com a fachada ao fundo.'),
     p('2026-12-04', 'Avaliações', 'financeira em varginha',
       'Financeira em Varginha com mais de 200 avaliações no Google e nota 4,8: obrigado a cada cliente que contou como foi o atendimento na Speed Financeira.\n\nJá foi atendido por aqui? Sua avaliação ajuda outras pessoas da cidade a escolher com segurança onde fazer o empréstimo. Conte qual serviço você fez e como foi.',
       'Equipe reunida na frente da loja (com autorização).', false),
 
     // Semana 6
-    p('2026-12-07', 'Consórcio', 'consórcio varginha',
-      'Consórcio em Varginha: para comprar carro, moto ou imóvel sem pagar juros, o consórcio troca os juros por uma taxa de administração, e a carta de crédito sai por sorteio ou lance.\n\nNa Speed Financeira, no Centro, a gente explica como funciona, compara os planos disponíveis e mostra o valor da parcela e o custo total antes de você decidir.',
-      'Fachada da loja.'),
+    p('2026-12-07', 'Consignado CLT', 'empréstimo clt varginha',
+      'Empréstimo CLT em Varginha com pouco tempo de carteira assinada? Cada banco define quanto tempo de empresa exige para o consignado do trabalhador, e um pode aceitar quando outro recusa.\n\nPor isso vale comparar. Na Speed Financeira, no Centro, a gente consulta as ofertas dos bancos para você, mostra a parcela e o custo total e só segue se fizer sentido para o seu orçamento.',
+      'Equipe no balcão.'),
     p('2026-12-09', 'Consignado CLT', 'consignado clt varginha',
       'Consignado CLT em Varginha: quem tem carteira assinada pode trocar dívidas caras, como cartão e cheque especial, por um empréstimo com desconto em folha e juros menores. O valor e o prazo dependem do salário e das ofertas disponíveis.\n\nNa Speed Financeira, no Centro, a gente faz a conta com você antes de qualquer contratação.',
       'Atendente ao telefone no balcão.'),
@@ -123,11 +144,11 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
       'Mesa de atendimento.'),
 
     // Semana 7
-    p('2026-12-14', 'Portabilidade', 'crédito consignado varginha',
-      'Crédito consignado mais leve em Varginha: se o seu empréstimo foi feito há algum tempo, os juros e as condições dos bancos mudaram, e outro banco pode oferecer uma parcela menor para o mesmo contrato.\n\nA Speed Financeira, no Centro, compara as opções de portabilidade e só recomenda a troca quando ela é melhor para você.',
+    p('2026-12-14', 'Portabilidade', 'empréstimo consignado varginha',
+      'Empréstimo consignado em Varginha com parcela mais leve: se o seu consignado foi feito há algum tempo, outro banco pode oferecer juros menores para o mesmo contrato. É a portabilidade, e em alguns casos a parcela diminui ou sobra um valor para você.\n\nA Speed Financeira, no Centro, compara as opções e só recomenda a troca quando ela é melhor para você.',
       'Mesa de atendimento.'),
-    p('2026-12-16', 'Educação financeira', 'financeira varginha',
-      'A segunda parcela do 13º deve ser paga até 20 de dezembro, e a Speed Financeira, em Varginha, recomenda separar uma parte para as contas de janeiro: IPVA, IPTU, matrícula e material escolar.\n\nPlanejar agora evita entrar no cheque especial no começo do ano. Precisa organizar as dívidas? Venha ao Centro e a gente ajuda você a fazer as contas.',
+    p('2026-12-16', 'Educação financeira', 'empréstimo pessoal varginha',
+      'Empréstimo pessoal em Varginha no começo do ano? Antes, use a segunda parcela do 13º, que deve ser paga até 20 de dezembro: separe uma parte para as contas de janeiro, como IPVA, IPTU, matrícula e material escolar.\n\nSe mesmo assim faltar, compare antes de contratar: o consignado costuma ter juros menores que o pessoal. Na Speed Financeira, no Centro, a gente faz as contas com você.',
       'Fachada da loja.'),
     p('2026-12-18', 'Segurança', 'empréstimo varginha',
       'Fim de ano é época de golpe do falso empréstimo em Varginha e em todo o país: nunca faça depósito ou Pix para liberar crédito e não passe senha nem código recebido por SMS.\n\nA Speed Financeira não cobra nenhum valor antecipado e atende presencialmente na Rua Santa Cruz, 696, no Centro. Antes das festas, confira nesta ficha o horário de Natal e Ano Novo.',
@@ -137,6 +158,9 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
     p('2026-12-21', 'Crédito pessoal', 'empréstimo pessoal varginha',
       'Empréstimo pessoal ou consignado em Varginha? Para aposentados, pensionistas, servidores e quem tem carteira assinada, o consignado costuma ter juros bem menores, porque a parcela é descontada direto no benefício ou no salário.\n\nO empréstimo pessoal é uma opção para quem não tem acesso ao consignado. Na Speed Financeira, no Centro, a gente mostra qual faz mais sentido para você.',
       'Atendente no balcão.'),
+    s('2026-12-22', 'Consignado INSS', 'empréstimo consignado varginha',
+      'Empréstimo consignado em Varginha: vai encontrar seus pais aposentados no Natal? Aproveite para conferir com eles o extrato de empréstimos no Meu INSS. Ele mostra os contratos ativos e quanto do benefício já está comprometido, e ajuda a perceber um desconto que ninguém pediu.\n\nFicou alguma dúvida? Traga o extrato à Speed Financeira, no Centro, e a gente explica cada contrato com calma.',
+      'Casal de aposentados em casa.'),
     p('2026-12-23', 'Avaliações', 'financeira varginha',
       'A Speed Financeira agradece a confiança de cada cliente de Varginha e região em 2026. Desejamos um Natal com saúde e um ano novo com as contas em dia.\n\nConfira nesta ficha o horário de atendimento de Natal e Ano Novo.',
       'Equipe reunida na loja (com autorização).', false),
@@ -145,8 +169,50 @@ window.SPEED_GMB_POSTS_PLANO = (function () {
     p('2026-12-28', 'Educação financeira', 'empréstimo varginha',
       'Empréstimo para organizar as dívidas em Varginha: quer começar 2027 com as contas em ordem? Liste tudo o que deve, com a parcela e os juros de cada uma, e comece pela mais cara. Trocar várias dívidas caras por um só crédito, com juros menores, pode aliviar o orçamento.\n\nTraga sua lista à Speed Financeira, no Centro. A simulação não tem custo nem compromisso.',
       'Mesa de atendimento com caneta e papel.'),
+    s('2026-12-29', 'Consignado CLT', 'empréstimo clt varginha',
+      'Empréstimo CLT em Varginha para começar 2027 sem rotativo: quem tem carteira assinada pode trocar a dívida do cartão e do cheque especial por um consignado com parcela descontada em folha, que costuma ter juros bem menores.\n\nNa Speed Financeira, no Centro, a gente compara as ofertas dos bancos, mostra a parcela e o custo total e só segue se a troca valer a pena para você.',
+      'Atendente no balcão.'),
     p('2026-12-30', 'Consignado INSS', 'empréstimo para aposentado varginha',
       'Empréstimo para aposentado em Varginha: em janeiro a Speed Financeira segue atendendo no Centro para consignado, refinanciamento e portabilidade de aposentados e pensionistas do INSS.\n\nSe você planeja um crédito para o começo do ano, venha simular com calma e compare o custo total antes de decidir. Confira nesta ficha o horário de atendimento do Ano Novo.',
-      'Fachada da loja.')
+      'Fachada da loja.'),
+
+    // Janeiro de 2027: publicados pelo servidor. Termos pelas buscas reais da ficha (ago-out/2026):
+    // empréstimo consignado e empréstimo CLT primeiro; 01/01 é feriado.
+    s('2027-01-04', 'Consignado CLT', 'empréstimo clt varginha',
+      'Empréstimo CLT em Varginha: ano novo pode ser a hora de trocar a dívida mais cara por uma mais barata. Com carteira assinada, o consignado do trabalhador tem a parcela descontada em folha e costuma ter juros menores que o cartão e o crédito pessoal.\n\nNa Speed Financeira, no Centro, a gente consulta as ofertas dos bancos para você e mostra o custo total antes de qualquer contratação.',
+      'Balcão de atendimento.'),
+    s('2027-01-06', 'Consignado INSS', 'empréstimo consignado varginha',
+      'Empréstimo consignado em Varginha para aposentados e pensionistas: em janeiro os benefícios do INSS costumam ser reajustados, e a margem consignável acompanha o valor do benefício. Pode ser que você tenha um valor livre que não tinha antes.\n\nNa Speed Financeira, no Centro, a gente consulta sua margem com você, compara as propostas dos bancos e mostra a parcela e o custo total.',
+      'Aposentada em atendimento.'),
+    s('2027-01-08', 'Crédito pessoal', 'empréstimo pessoal varginha',
+      'Empréstimo pessoal em Varginha para IPVA, IPTU e material escolar? Antes de contratar, veja se dá para pagar à vista com desconto ou parcelar direto, e compare: quem é aposentado, servidor ou tem carteira assinada costuma conseguir juros menores no consignado.\n\nNa Speed Financeira, no Centro, a gente mostra as opções lado a lado, com a parcela e o custo total.',
+      'Mesa com material escolar.'),
+    s('2027-01-11', 'Segurança', 'empréstimo varginha',
+      'Empréstimo em Varginha: se pediram Pix, depósito ou boleto para liberar o seu crédito, é golpe. Banco e correspondente bancário não cobram nada antecipado para liberar empréstimo, e ninguém precisa da sua senha ou do código que chegou por SMS.\n\nNa dúvida, não pague e não envie documentos. Venha à Speed Financeira, na Rua Santa Cruz, 696, no Centro, e a gente confere com você.',
+      'Fachada da loja.', false),
+    s('2027-01-13', 'Consignado CLT', 'consignado clt varginha',
+      'Consignado CLT em Varginha: quanto posso pegar? Depende da sua margem, que é a parte do salário que pode ser comprometida com a parcela, e das ofertas que os bancos fazem para a sua empresa e o seu tempo de carteira.\n\nNa Speed Financeira, no Centro, a gente consulta isso com você, compara os bancos e mostra a parcela, o prazo e o custo total antes de qualquer decisão.',
+      'Atendente com o cliente no balcão.'),
+    s('2027-01-15', 'Financiamento', 'financiamento varginha',
+      'Financiamento em Varginha: vai trocar de carro ou moto em 2027? Antes de fechar, compare o custo efetivo total (CET) das propostas, e não só a parcela. Uma entrada maior e um prazo menor costumam reduzir bastante o total pago.\n\nNa Speed Financeira, no Centro, a gente simula financiamento e empréstimo com garantia de veículo e mostra o que sai mais barato para você.',
+      'Fachada da loja; evite foto de carro de cliente.'),
+    s('2027-01-18', 'Refinanciamento', 'empréstimo consignado varginha',
+      'Empréstimo consignado em Varginha: já pagou parte das parcelas? Dependendo do contrato, o refinanciamento pode liberar um valor novo, e a portabilidade pode levar o contrato para um banco com juros menores. O prazo e o custo mudam, então a conta precisa ser feita antes.\n\nTraga o seu contrato à Speed Financeira, no Centro. A gente compara as opções e só recomenda o que vale a pena.',
+      'Casal com o contrato na mesa.'),
+    s('2027-01-20', 'Avaliações', 'empréstimo varginha',
+      'Empréstimo em Varginha com atendimento de verdade: se você já fez um consignado, uma portabilidade ou uma simulação na Speed Financeira, conte aqui no Google como foi. Sua avaliação ajuda outras pessoas da cidade a escolher com segurança onde contratar crédito.\n\nVale contar qual serviço você fez e como foi o atendimento no Centro.',
+      'Equipe no balcão (com autorização).', false),
+    s('2027-01-22', 'Consignado CLT', 'empréstimo clt varginha',
+      'Empréstimo CLT em Varginha: o que trazer para simular o consignado do trabalhador na Speed Financeira:\n\n- documento com foto (RG ou CNH);\n- CPF;\n- último holerite;\n- comprovante de endereço.\n\nCom isso a gente consulta as ofertas dos bancos para você e mostra a parcela e o custo total, sem compromisso. Atendimento na Rua Santa Cruz, 696, Centro.',
+      'Documentos sobre o balcão, sem dados legíveis.', false),
+    s('2027-01-25', 'Consignado INSS', 'empréstimo para aposentado varginha',
+      'Empréstimo para aposentado em Varginha: três cuidados antes de assinar. Primeiro, saiba quanto de margem você tem. Segundo, compare o custo efetivo total (CET), não só a parcela. Terceiro, desconfie de quem pede dinheiro antes de liberar o crédito: isso é golpe.\n\nNa Speed Financeira, no Centro, a gente faz essa conferência com você antes de qualquer contrato.',
+      'Casal de aposentados em atendimento.'),
+    s('2027-01-27', 'Consignado', 'crédito consignado varginha',
+      'Crédito consignado em Varginha: quem pode fazer? Aposentados e pensionistas do INSS, servidores públicos e quem tem carteira assinada. A parcela sai direto do benefício ou do salário, por isso os juros costumam ser menores.\n\nCada caso tem a sua margem e as suas regras. Na Speed Financeira, no Centro, a gente confere o seu e compara as propostas de vários bancos.',
+      'Atendente explicando uma simulação.'),
+    s('2027-01-29', 'Consignado', 'empréstimo consignado varginha',
+      'Empréstimo consignado em Varginha com simulação sem custo: na Speed Financeira, no Centro, você compara as propostas de vários bancos num só atendimento e sai sabendo a parcela, o prazo e o custo total antes de assinar.\n\nTraga um documento com foto. Aposentado ou pensionista: se não tiver o extrato do benefício, a gente ajuda a tirar durante o atendimento.',
+      'Mesa de atendimento com a fachada ao fundo.')
   ];
 })();

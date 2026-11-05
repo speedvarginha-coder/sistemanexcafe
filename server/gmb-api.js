@@ -132,4 +132,18 @@ async function readFicha({ accessToken, accountName, locationName, fetchImpl = f
   return { location, updated, attributes, media, posts, reviews, voice, links, actions, keywords };
 }
 
-module.exports = { authUrl, newState, exchangeCode, refreshAccess, findLocation, listPosts, readFicha, SCOPE };
+// ---- Posts que o servidor publica (calendario do painel, publicarPeloServidor) ----
+// A API v4 nao programa post: o servidor cria no dia, a partir da hora marcada. Dia que passou fica de fora.
+function postsDoDia(plano, publicados, agora = new Date(), hora = 9) {
+  const hoje = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}-${String(agora.getDate()).padStart(2, "0")}`;
+  if (agora.getHours() < hora) return [];
+  return plano.filter(post => post.publicarPeloServidor && post.data === hoje && post.fotoUrl && !publicados[post.id]);
+}
+
+async function createPost({ accessToken, accountName, locationName, summary, url, photoUrl, fetchImpl = fetch }) {
+  const body = { languageCode: "pt", topicType: "STANDARD", summary, callToAction: { actionType: "LEARN_MORE", url }, media: [{ mediaFormat: "PHOTO", sourceUrl: photoUrl }] };
+  const data = await call(fetchImpl, `${V4_URL}${accountName}/${locationName}/localPosts`, { method: "POST", headers: { authorization: `Bearer ${accessToken}`, "content-type": "application/json" }, body: JSON.stringify(body) });
+  return { name: data.name || "", state: data.state || "" };
+}
+
+module.exports = { authUrl, newState, exchangeCode, refreshAccess, findLocation, listPosts, readFicha, postsDoDia, createPost, SCOPE };

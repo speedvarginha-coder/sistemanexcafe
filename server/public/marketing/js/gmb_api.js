@@ -80,6 +80,9 @@ async function carregarGmbApi() {
   try {
     GmbApiState.dados = (await geogridApi('/api/marketing/gmb-api')).gmb;
     renderGmbApi();
+    // A esteira de posts mostra se o servidor publicou ou falhou: redesenha com o resultado.
+    if (typeof renderGmbPostsPlano === 'function') renderGmbPostsPlano();
+    if (typeof renderGmbCicloResumo === 'function') renderGmbCicloResumo();
   } catch {
     gmbApiStatus('Indisponível', 'bg-gray-100 text-gray-700');
     conteudo.innerHTML = '<p class="results-empty">A conexão com a ficha funciona com o painel aberto pelo Nexcafe (Speed Marketing), logado como administrador.</p>';

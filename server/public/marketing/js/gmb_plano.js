@@ -294,6 +294,14 @@ function gmbSemAcento(texto) { return String(texto).normalize('NFD').replace(/[�
 function gmbEtapaPost(post, reg, legado, hoje, hora) {
   if (reg?.recusado) return { id: 'recusado', indice: GMB_ETAPA_INDICE.aprovado };
   if (legado) return { id: 'publicado', indice: GMB_ETAPA_INDICE.publicado, data: legado };
+  // Post que o servidor publica: o resultado vem da conexão com a ficha (js/gmb_api.js).
+  if (post.publicarPeloServidor) {
+    const servidor = (typeof GmbApiState !== 'undefined' && GmbApiState.dados?.postsServidor) || {};
+    if (servidor.publicados?.[post.id]) return { id: 'publicado', indice: GMB_ETAPA_INDICE.publicado, data: post.data };
+    if (servidor.erros?.[post.id]) return { id: 'erroServidor', indice: GMB_ETAPA_INDICE.aprovado, erro: servidor.erros[post.id].message };
+    const passou = post.data < hoje || (post.data === hoje && hora >= GMB_HORA_POST + 1);
+    return passou ? { id: 'naoSaiu', indice: GMB_ETAPA_INDICE.aprovado } : { id: 'programado', indice: GMB_ETAPA_INDICE.programado };
+  }
   if (reg?.programado || post.programadoEm) {
     const saiu = post.data < hoje || (post.data === hoje && hora >= GMB_HORA_POST);
     return saiu ? { id: 'publicado', indice: GMB_ETAPA_INDICE.publicado, data: post.data } : { id: 'programado', indice: GMB_ETAPA_INDICE.programado };
@@ -310,7 +318,9 @@ function gmbEtapaRotulo(etapa, post) {
     texto: ['bg-yellow-100 text-yellow-800', 'Falta a arte'],
     arte: ['bg-yellow-100 text-yellow-800', 'Falta aprovar'],
     aprovado: ['bg-blue-100 text-blue-800', 'Falta programar na ficha'],
-    programado: ['bg-gray-100 text-gray-700', `Programado para ${gmbDataCurta(post.data)} ${GMB_HORA_POST}h`],
+    programado: ['bg-gray-100 text-gray-700', `Programado para ${gmbDataCurta(post.data)} ${GMB_HORA_POST}h${post.publicarPeloServidor ? ' (pelo servidor)' : ''}`],
+    erroServidor: ['bg-red-100 text-red-700', `Servidor não publicou: ${etapa.erro || 'erro'}`],
+    naoSaiu: ['bg-red-100 text-red-700', 'Não saiu: o servidor estava desligado no dia'],
     publicado: ['bg-green-100 text-green-800', `Publicado em ${gmbDataCurta(etapa.data || post.data)}`],
     recusado: ['bg-red-100 text-red-700', 'Recusado pelo Google']
   }[etapa.id];

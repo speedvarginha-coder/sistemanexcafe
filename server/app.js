@@ -133,7 +133,7 @@ function verifyPassword(password, user) {
   return actual.length === expected.length && crypto.timingSafeEqual(actual, expected);
 }
 function defaults() {
-  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, gmbApi: emptyGmbApi(), vault: { salt: null, check: null, items: [], updatedAt: null } };
+  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, gmbApi: emptyGmbApi(), fichaSaude: { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null }, gmbPosts: { publicados: {}, erros: {} }, vault: { salt: null, check: null, items: [], updatedAt: null } };
 }
 function normalize(db) {
   const empty = defaults();
@@ -165,6 +165,7 @@ function normalize(db) {
   db.geogrid.runs ||= [];
   db.gmbApi ||= emptyGmbApi();
   db.fichaSaude ||= { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null };
+  db.gmbPosts ||= { publicados: {}, erros: {} };
   db.vault ||= { salt: null, check: null, items: [], updatedAt: null };
   db.vault.banks ||= [];
   // Despesa do sistema anterior veio com categoria generica: aluguel volta para Aluguel.
@@ -2974,7 +2975,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     return {
       clientConfigured: !!(g.clientId && g.clientSecret), clientIdHint: g.clientId ? `${g.clientId.slice(0, 12)}...` : "",
       connected: !!(g.refreshToken && g.locationName), title: g.title, address: g.address, connectedAt: g.connectedAt,
-      redirectUri: gmbRedirect(), scope: gmbApi.SCOPE, lastError: g.lastError
+      redirectUri: gmbRedirect(), scope: gmbApi.SCOPE, lastError: g.lastError,
+      postsServidor: { publicados: db.gmbPosts.publicados, erros: db.gmbPosts.erros }
     };
   }
   async function gmbToken() {
@@ -3147,6 +3149,38 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       .then(() => (!f.nap || Date.now() - Date.parse(f.nap.at) >= 7 * 86400_000 ? runNap("automatica") : null))
       .catch(cause => console.error(`Saude da ficha automatica falhou: ${cause.message}`));
   }
+  // Posts da ficha que o servidor publica no dia, a partir das 9h (calendario em public/marketing/js/data_gmb_posts.js).
+  const postsState = { running: null, lastCheck: 0 };
+  function gmbPostsPlano() {
+    const sandbox = { window: {} };
+    vm.runInNewContext(fs.readFileSync(path.join(marketingDir, "js", "data_gmb_posts.js"), "utf8"), sandbox, { timeout: 1000 });
+    return sandbox.window.SPEED_GMB_POSTS_PLANO || [];
+  }
+  function gmbPostsDue(agora = new Date()) {
+    if (!db.gmbApi.refreshToken || !db.gmbApi.locationName || postsState.running || Date.now() - postsState.lastCheck < 600_000) return null;
+    postsState.lastCheck = Date.now();
+    let pendentes;
+    try { pendentes = gmbApi.postsDoDia(gmbPostsPlano(), db.gmbPosts.publicados, agora); }
+    catch (cause) { console.error(`Calendario de posts ilegivel: ${cause.message}`); return null; }
+    // Erro recente (API fora, arte sem link): tenta de novo depois de 30 min.
+    pendentes = pendentes.filter(post => !db.gmbPosts.erros[post.id] || Date.now() - Date.parse(db.gmbPosts.erros[post.id].at) >= 1800_000);
+    if (!pendentes.length) return null;
+    postsState.running = (async () => {
+      for (const post of pendentes) {
+        try {
+          const criado = await gmbApi.createPost({ accessToken: await gmbToken(), accountName: db.gmbApi.accountName, locationName: db.gmbApi.locationName, summary: post.texto, url: post.link, photoUrl: post.fotoUrl, fetchImpl: gmbFetch });
+          db.gmbPosts.publicados[post.id] = { at: now(), name: criado.name, state: criado.state };
+          delete db.gmbPosts.erros[post.id];
+          event("sistema", "Post publicado na ficha do Google", `${post.data}: ${post.termo}`);
+        } catch (cause) {
+          db.gmbPosts.erros[post.id] = { at: now(), message: label(cause.message, 300) };
+          event("sistema", "Post da ficha não publicado", `${post.data}: ${label(cause.message, 160)}`);
+        }
+        save();
+      }
+    })().finally(() => { postsState.running = null; });
+    return postsState.running;
+  }
   function fichaView() {
     const f = db.fichaSaude, run = db.geogrid.runs.at(-1), actions = f.health?.actions;
     // Potencial por termo: ultima medicao do GeoGrid com as acoes dos ultimos 30 dias da ficha.
@@ -3249,6 +3283,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     for (const [ip, attempt] of enrollAttempts) if (attempt.until < nowMs) enrollAttempts.delete(ip);
     geogridDue();
     fichaDue();
+    gmbPostsDue();
   }, 15_000);
   server.on("close", () => clearInterval(sweeper));
   // O .NET das estacoes reaproveita conexao ociosa por ate 100 s; o padrao do Node fecha em 5 s.
