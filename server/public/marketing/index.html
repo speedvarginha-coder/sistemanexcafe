@@ -609,12 +609,12 @@
           <div>
             <label for="utmProduto" class="block text-[11px] font-bold text-gray-700 uppercase mb-1">Produto Promovido:</label>
             <select id="utmProduto" onchange="gerarLinkUtmCustomizado()" class="w-full border border-gray-300 rounded-lg p-2 text-xs bg-white">
-              <option value="fgts">Antecipação FGTS Pix</option>
+              <option value="clt">Consignado CLT (Crédito do Trabalhador)</option>
               <option value="inss">Consignado INSS / Aposentados</option>
-              <option value="portabilidade">Portabilidade com Troco</option>
+              <option value="portabilidade">Portabilidade e Refinanciamento INSS</option>
+              <option value="veiculos">Garantia e Financiamento de Veículos</option>
               <option value="bpc">BPC / LOAS</option>
-              <option value="clt">Consignado Privado CLT</option>
-              <option value="veiculos">Refinanciamento de Veículos</option>
+              <option value="fgts">Antecipação FGTS (pontual)</option>
             </select>
           </div>
 
@@ -930,11 +930,11 @@
           <input type="text" id="adSearchInput" placeholder="Buscar palavra-chave ou produto..." class="border border-gray-300 rounded-lg px-3 py-2 text-xs bg-white">
           <select id="adCampaignFilter" class="border border-gray-300 rounded-lg px-3 py-2 text-xs bg-white">
             <option value="todas">Todas as Campanhas</option>
-            <option value="fgts">Campanha FGTS Saque-Aniversário</option>
-            <option value="inss">Campanha Consignado INSS & Portabilidade</option>
             <option value="clt">Campanha Consignado CLT</option>
+            <option value="inss">Campanhas INSS e Portabilidade</option>
             <option value="veiculos">Campanha Financiamento & Garantia Veicular</option>
             <option value="institucional">Campanha Institucional Local</option>
+            <option value="fgts">Campanha FGTS (pontual)</option>
           </select>
         </div>
 
