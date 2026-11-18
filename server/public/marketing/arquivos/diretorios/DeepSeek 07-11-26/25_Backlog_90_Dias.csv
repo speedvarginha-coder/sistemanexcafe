@@ -1,0 +1,35 @@
+﻿ID;Frente;Tarefa;Por_que;Prioridade;Esforco;Responsavel;Inicio;Fim;Dependencia;Status;Evidencia;KPI
+B1-01;1 Fundação;Aprovar nome, horário, razão social/CEP e destino do Localo;Sem essas quatro respostas a correção volta na próxima reimportação;P0;Baixo;Dono;2026-11-09;2026-11-10;Nenhuma;A fazer;One-page 21 assinado;4 de 4 decisões
+B1-02;1 Fundação;Corrigir o Perfil da Empresa no Google;É a fonte que os diretórios reimportam;P0;Médio;Operação;2026-11-10;2026-11-11;B1-01;A fazer;Print antes e depois;Ficha 100% correta
+B1-03;1 Fundação;Corrigir NAP, schema e horário no site;O site declara razão social e CEP divergentes;P0;Médio;Marketing;2026-11-11;2026-11-13;B1-01;A fazer;Print do rodapé e do schema;0 divergências de NAP
+B1-04;1 Fundação;Resolver a página UENI;Quatro botões apontam para telefone desativado;P0;Baixo;Operação;2026-11-09;2026-11-10;Nenhuma;A fazer;Print da página ou despublicação;0 links para 3113-0458
+B1-05;2 Diretórios P0;Corrigir as 8 fichas com telefone morto;38,1% das fichas auditadas levam a número que não existe;P0;Alto;Operação;2026-11-11;2026-11-18;B1-04;A fazer;8 protocolos em 13_Protocolos.csv;8 de 8 corrigidas
+B1-06;2 Diretórios P0;Apagar post e atualizar bio do Instagram;Publicação antiga ainda divulga o telefone morto;P0;Baixo;Marketing;2026-11-09;2026-11-10;Nenhuma;A fazer;Print do perfil;0 menções ao telefone antigo
+B1-07;1 Fundação;Testar os 5 links de WhatsApp por intenção;Código de origem só funciona se o link estiver certo;P0;Baixo;Marketing;2026-11-11;2026-11-11;B1-01;A fazer;Print das 5 conversas de teste;5 de 5 links abrindo
+B1-08;1 Fundação;Testar acesso às 36 plataformas;Hoje há 0 comprovantes de acesso testado;P1;Alto;Operação;2026-11-09;2026-11-20;Nenhuma;A fazer;Mapa 15 preenchido;36 de 36 testados
+B1-09;7 Medição;Configurar conversão e UTM no WhatsApp e nas LPs;Sem conversão não há CPL nem decisão;P1;Médio;Marketing;2026-11-13;2026-11-14;B1-07;A fazer;Evento de teste no painel;Conversão registrando
+B2-01;3 Duplicidades;Pedir mesclagem das 6 fichas duplicadas;Duplicata divide avaliação e confunde o cliente;P1;Alto;Operação;2026-11-18;2026-11-30;B1-05;A fazer;6 protocolos;6 de 6 mescladas
+B2-02;5 Orgânico;Publicar as 8 páginas de serviço;Capturar a demanda que não pode ser anunciada;P1;Médio;Marketing;2026-11-16;2026-11-20;B1-03;A fazer;8 URLs no ar;8 páginas indexáveis
+B2-03;5 Orgânico;Publicar as LPs de gráfica e consignado;As campanhas pagas precisam de destino correto;P1;Médio;Marketing;2026-11-18;2026-11-20;B1-03;A fazer;2 URLs no ar;2 LPs publicadas
+B2-04;4 Perfil Google;Completar categorias, serviços, fotos e Q&A;A Speed não aparece no bloco de locais para xerox;P1;Médio;Operação;2026-11-16;2026-11-18;B1-02;A fazer;Print do perfil;100% dos campos
+B2-05;6 Conteúdo;Agendar os 8 posts do Perfil;Post semanal mantém a ficha ativa;P2;Baixo;Marketing;2026-11-16;2026-11-16;B2-04;A fazer;Calendário no 18;8 posts publicados
+B2-06;2 Diretórios P0;Cadastrar nos 8 novos diretórios;Ampliar citação com NAP já corrigido;P2;Alto;Operação;2026-11-23;2026-12-04;B1-05;A fazer;8 fichas e protocolos;8 de 8 no ar
+B2-07;7 Mídia paga;Subir G1 gráfica e G2 marca no Google;Capturar procura local existente;P1;Médio;Marketing;2026-11-23;2026-11-23;B1-09;A fazer;Print das campanhas ativas;2 campanhas ativas
+B2-08;7 Mídia paga;Concluir Terceiro Aprovado no Google;Sem isso não há anúncio financeiro;P1;Alto;Dono;2026-11-09;2026-11-27;Nenhuma;A fazer;E-mail de confirmação do banco;Domínio aprovado
+B2-09;7 Mídia paga;Checar categoria especial Crédito no Meta;Se exigida, perde segmentação por idade;P0;Baixo;Marketing;2026-11-13;2026-11-13;Nenhuma;A fazer;Print da configuração;Decisão registrada
+B2-10;7 Mídia paga;Subir M1 gráfica no Meta;Testar demanda de impressão e foto 3x4;P1;Médio;Marketing;2026-11-25;2026-11-25;B2-09;A fazer;Print da campanha ativa;1 campanha ativa
+B2-11;7 Mídia paga;Subir M2 consignado no Meta se permitido;Teste condicionado à categoria especial;P2;Médio;Marketing;2026-12-01;2026-12-01;B2-08 e B2-09;A fazer;Print da campanha ativa;1 campanha ativa
+B3-01;4 Perfil Google;Pedir 20 avaliações a clientes atendidos;Avaliação recente sustenta a reputação;P2;Médio;Operação;2026-11-16;2026-12-15;Nenhuma;A fazer;Lista de pedidos;20 pedidos e 8 novas
+B3-02;4 Perfil Google;Responder 100% das avaliações;Resposta mostra que a loja acompanha;P2;Baixo;Operação;2026-11-09;2027-02-07;Nenhuma;A fazer;Print das respostas;100% respondidas
+B3-03;6 Conteúdo;Publicar 8 posts e 4 stories de bastidor;Conteúdo local sem promessa de crédito;P2;Médio;Marketing;2026-11-30;2027-01-30;B2-05;A fazer;Calendário e prints;12 peças publicadas
+B3-04;5 Orgânico;Escrever artigo sobre CRLV digital;Demanda alta que não pode ser paga;P2;Médio;Marketing;2026-12-07;2026-12-09;B2-02;A fazer;URL publicada;1 artigo indexado
+B3-05;5 Orgânico;Escrever artigo sobre Meu INSS na loja;Explicar o atendimento sem se passar por órgão;P2;Médio;Marketing;2026-12-14;2026-12-16;B2-02;A fazer;URL publicada;1 artigo indexado
+B3-06;5 Orgânico;Criar página de informática;Serviço pronto para busca local;P2;Médio;Marketing;2026-12-01;2026-12-05;B2-02;A fazer;URL publicada;1 página no ar
+B4-01;8 Medição;Fechar o relatório do mês 1;Primeiro mês vira linha de base;P1;Baixo;Marketing;2026-12-01;2026-12-02;Nenhuma;A fazer;24 impresso;1 relatório salvo
+B4-02;8 Medição;Revisar KPIs e pausar o pior canal;Decidir com 14 dias de dado, não com impressão;P1;Baixo;Marketing;2026-12-08;2026-12-08;B4-01;A fazer;Painel atualizado;1 decisão registrada
+B4-03;7 Mídia paga;Revisar negativas e termos reprovados;Evitar gasto com busca errada;P1;Baixo;Marketing;2026-11-30;2027-02-07;B2-07;A fazer;Lista de negativas;Revisão semanal
+B4-04;1 Fundação;Auditar NAP de todas as fichas;Fechar o trimestre com número medido;P1;Médio;Operação;2027-02-01;2027-02-05;B2-06;A fazer;14 executado;21 de 21 auditadas
+B4-05;8 Medição;Revisar preços da gráfica com a calculadora;Preço sem custo destrói margem;P1;Baixo;Dono;2026-12-10;2026-12-10;Nenhuma;A fazer;Tabela revisada;100% dos itens com margem
+B4-06;6 Conteúdo;Padronizar a primeira resposta do WhatsApp;Velocidade e script aumentam qualificação;P1;Baixo;Operação;2026-11-14;2026-11-14;B1-07;A fazer;Script no 05;Resposta em até 10 min
+B4-07;8 Medição;Fazer backup do cofre e do mapa de acessos;Perder acesso é perder a correção;P2;Baixo;Dono;2026-12-20;2026-12-20;B1-08;A fazer;Backup externo;1 backup validado
+B4-08;8 Medição;Montar o plano do próximo trimestre;O que não entrou em 90 dias vira decisão consciente;P1;Médio;Dono;2027-01-25;2027-02-05;B4-04;A fazer;Plano assinado;1 plano aprovado

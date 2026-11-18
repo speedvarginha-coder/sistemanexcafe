@@ -1,0 +1,25 @@
+﻿CITACOES PADRONIZADAS - SPEED FINANCEIRA E LAN HOUSE
+Gerado em: 2026-11-07 14:53
+Fonte: dados/nap.json
+
+O que tem aqui:
+  00_LEIA.txt                  este arquivo
+  01_nap_completo.txt          bloco NAP para campo de descricao
+  02_nap_curto.txt             NAP em uma linha
+  03_descricao_150.txt         descricao curta (ate ~150 caracteres)
+  04_descricao_400.txt         descricao media (ate ~400 caracteres)
+  05_descricao_750.txt         descricao longa (ate ~750 caracteres)
+  06_horario_pendente.txt      aviso de horario
+  07_links_whatsapp.txt        links com codigo de origem
+  08_checklist.txt             conferencia antes de enviar
+  10_... a 17_...             uma ficha por diretorio novo
+  citacoes.csv                 todos os campos em uma planilha
+
+Regras:
+  1. O horario continua PENDENTE. Nao preencher como definitivo antes da Decisao 2.
+  2. Nao usar logo de INSS, Gov.br, Detran ou Governo Federal.
+  3. Nao prometer aprovacao de credito.
+  4. Registrar protocolo em 13_Protocolos.csv.
+  5. Telefones banidos: (35) 3113-0458 e (35) 3067-4361.
+
+Nada foi publicado. Nada foi enviado.

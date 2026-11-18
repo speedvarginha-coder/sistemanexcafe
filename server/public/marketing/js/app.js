@@ -41,9 +41,89 @@ function normalizarStatusPost(status) {
 }
 
 function obterImagemPost(nomeArquivo) {
-  const nome = String(nomeArquivo || '');
+  const original = String(nomeArquivo || '');
+  const nome = original === 'promo-fgts-204520.png' ? 'fgts-orientacao-speed-2026-11-06.png' : original;
   if (!nome || nome.includes('..') || !/^[a-zA-Z0-9_./-]+$/.test(nome)) return '';
   return `${POSTS_IMG_BASE}${nome}`;
+}
+
+function gerarSvgPlaceholderArte(post) {
+  const p = post || {};
+  const titulo = escaparHtml(p.manchete || p.titulo || 'Post Speed Financeira');
+  const sub = escaparHtml(p.sub || 'Consulte condições com nossos especialistas');
+  const cta = escaparHtml(p.cta || 'WhatsApp (35) 3067-5017');
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" width="1080" height="1080">
+    <defs>
+      <linearGradient id="speedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0f172a"/>
+        <stop offset="40%" stop-color="#022c22"/>
+        <stop offset="100%" stop-color="#014b29"/>
+      </linearGradient>
+    </defs>
+    <rect width="1080" height="1080" fill="url(#speedGrad)"/>
+    <rect x="50" y="50" width="980" height="980" rx="36" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="3"/>
+
+    <!-- Marca Speed -->
+    <rect x="90" y="90" width="64" height="64" rx="16" fill="#facc15"/>
+    <text x="122" y="136" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="900" fill="#0f172a" text-anchor="middle">S</text>
+    <text x="175" y="125" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="800" fill="#ffffff">Speed Financeira</text>
+    <text x="175" y="152" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#34d399">Loja Varginha/MG</text>
+
+    <!-- Tag -->
+    <rect x="760" y="98" width="230" height="46" rx="23" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" stroke-width="1.5"/>
+    <text x="875" y="128" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#fbbf24" text-anchor="middle">Rascunho Editorial</text>
+
+    <!-- Conteúdo Central -->
+    <foreignObject x="90" y="240" width="900" height="520">
+      <div xmlns="http://www.w3.org/1999/xhtml" style="color: white; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; justify-content: center; height: 100%;">
+        <h1 style="font-size: 52px; font-weight: 900; line-height: 1.18; margin: 0 0 20px 0; color: #ffffff; letter-spacing: -0.02em;">${titulo}</h1>
+        <p style="font-size: 26px; font-weight: 500; line-height: 1.45; margin: 0; color: #cbd5e1;">${sub}</p>
+      </div>
+    </foreignObject>
+
+    <!-- Barra de Rodapé Oficial -->
+    <rect x="90" y="850" width="900" height="110" rx="24" fill="#019652"/>
+    <text x="540" y="918" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="800" fill="#ffffff" text-anchor="middle">📲 ${cta}</text>
+    <text x="540" y="995" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="500" fill="#94a3b8" text-anchor="middle">Rua Santa Cruz, 696 - Centro · Varginha/MG · (35) 3067-5017</text>
+  </svg>`;
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function resolverImagemPost(post) {
+  if (!post) return '';
+  if (post.artePreview) return post.artePreview;
+  if (post.imagem) {
+    const imgUrl = obterImagemPost(post.imagem);
+    if (imgUrl) return imgUrl;
+  }
+
+  // Mapeamento automático de imagem existente para pautas do calendário
+  const texto = `${post.titulo || ''} ${post.manchete || ''} ${post.linha || ''}`.toLowerCase();
+  if (texto.includes('clt') && (texto.includes('consignado') || texto.includes('carteira') || texto.includes('trabalhador'))) {
+    return `${POSTS_IMG_BASE}ad-clt-01-troca-divida.png`;
+  }
+  if (texto.includes('fgts') || texto.includes('saque-aniversário') || texto.includes('saque aniversario')) {
+    return `${POSTS_IMG_BASE}fgts-orientacao-speed-2026-11-06.png`;
+  }
+  if (texto.includes('consignado') || texto.includes('inss')) {
+    return `${POSTS_IMG_BASE}promo-consignado-204504.png`;
+  }
+  if (texto.includes('portabilidade')) {
+    return `${POSTS_IMG_BASE}promo-portabilidade-204534.png`;
+  }
+  if (texto.includes('avaliaç') || texto.includes('google')) {
+    return `${POSTS_IMG_BASE}promo-avaliacoes-204548.png`;
+  }
+  if (texto.includes('cartão') || texto.includes('cartao') || texto.includes('limite')) {
+    return `${POSTS_IMG_BASE}promo-cartao-limite-091634.png`;
+  }
+  if (texto.includes('refinanciamento')) {
+    return `${POSTS_IMG_BASE}promo-refinanciamento-091642.png`;
+  }
+
+  return gerarSvgPlaceholderArte(post);
 }
 
 function salvarPostsLocais() {
@@ -65,6 +145,7 @@ function lerJsonStorage(chave, fallback) {
 document.addEventListener('DOMContentLoaded', () => {
   initData();
   setupNavigation();
+    setupLocalNinjaTools();
   setupEventListeners();
   // Carrega status salvo do checklist GMB antes do renderOverview
   if (typeof loadGmbChecklistFromStorage === 'function') loadGmbChecklistFromStorage();
@@ -98,7 +179,20 @@ function mesclarPostsFila(salvos, fila) {
 function initData() {
   const localSaved = lerJsonStorage('speed_posts_custom', null);
   const fila = Array.isArray(window.POSTS_FILA) ? window.POSTS_FILA : [];
-  AppState.posts = mesclarPostsFila(Array.isArray(localSaved) ? localSaved : [], fila);
+  AppState.posts = mesclarPostsFila(Array.isArray(localSaved) ? localSaved : [], fila).filter(p => p.id !== 'nov-06-atendimento-presencial');
+
+  // Vincula automaticamente imagens reais a posts de pauta salvos sem imagem
+  AppState.posts.forEach(p => {
+    if (!p.imagem && !p.artePreview) {
+      const texto = `${p.titulo || ''} ${p.manchete || ''} ${p.linha || ''}`.toLowerCase();
+      if (texto.includes('fgts')) p.imagem = 'fgts-orientacao-speed-2026-11-06.png';
+      else if (texto.includes('consignado')) p.imagem = 'promo-consignado-204504.png';
+      else if (texto.includes('portabilidade')) p.imagem = 'promo-portabilidade-204534.png';
+      else if (texto.includes('avaliaç')) p.imagem = 'promo-avaliacoes-204548.png';
+      else if (texto.includes('cartão') || texto.includes('cartao') || texto.includes('limite')) p.imagem = 'promo-cartao-limite-091634.png';
+      else if (texto.includes('refinanciamento')) p.imagem = 'promo-refinanciamento-091642.png';
+    }
+  });
 
   if (AppState.posts.length > 0 && !AppState.selectedPost) {
     AppState.selectedPost = AppState.posts[0];
@@ -111,7 +205,7 @@ function initData() {
   }
 }
 
-// Navegação de abas
+// Navegação de abas & Atalhos de Alta Velocidade (Menos Cliques)
 function setupNavigation() {
   const buttons = document.querySelectorAll('.nav-tab-btn');
   buttons.forEach((btn, indice) => {
@@ -133,6 +227,34 @@ function setupNavigation() {
       switchTab(buttons[destino].getAttribute('data-tab'));
     });
   });
+
+  // Pílulas de acesso rápido no topo (1-Clique)
+  document.querySelectorAll('.quick-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const tab = pill.getAttribute('data-tab-quick');
+      if (tab) switchTab(tab);
+    });
+  });
+
+  // Atalhos Globais de Teclado (0-Clique): Alt + 1 até Alt + 7
+  const mapaAbas = ['overview', 'calendario', 'social', 'marketing', 'ads', 'gmb', 'palavras'];
+  document.addEventListener('keydown', evento => {
+    if (evento.altKey && !evento.ctrlKey && !evento.shiftKey && !evento.metaKey) {
+      const num = parseInt(evento.key, 10);
+      if (num >= 1 && num <= mapaAbas.length) {
+        evento.preventDefault();
+        switchTab(mapaAbas[num - 1]);
+      }
+    }
+  });
+
+  // Botão flutuante de retorno ao topo (1-Clique)
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('btnVoltarTopo');
+    if (!btn) return;
+    if (window.scrollY > 280) btn.classList.add('visible');
+    else btn.classList.remove('visible');
+  }, { passive: true });
 }
 
 function switchTab(tabId) {
@@ -143,6 +265,12 @@ function switchTab(tabId) {
   }
   AppState.activeTab = tabId;
 
+  if (window.parent && window.parent !== window) {
+    try {
+      window.parent.postMessage({ type: 'mktTabChanged', tab: tabId }, '*');
+    } catch (e) {}
+  }
+
   // Atualiza botões
   document.querySelectorAll('.nav-tab-btn').forEach(b => {
     const ativa = b.getAttribute('data-tab') === tabId;
@@ -150,6 +278,18 @@ function switchTab(tabId) {
     b.setAttribute('aria-selected', String(ativa));
     b.tabIndex = ativa ? 0 : -1;
     if (ativa) b.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  });
+
+  // Atualiza pílulas de acesso rápido no topo
+  document.querySelectorAll('.quick-pill').forEach(pill => {
+    const ativa = pill.getAttribute('data-tab-quick') === tabId;
+    pill.classList.toggle('active', ativa);
+  });
+
+  // Atualiza grupos de aba na sidebar
+  document.querySelectorAll('.sidebar-tab-group').forEach(group => {
+    const ativa = group.getAttribute('data-tab-group') === tabId;
+    group.classList.toggle('active', ativa);
   });
 
   // Atualiza painéis
@@ -345,31 +485,68 @@ function renderOverview() {
   // Renderiza o banner dinâmico da Pauta de Hoje na Visão Geral
   if (typeof renderPautaDeHoje === 'function') renderPautaDeHoje();
 
-  // Carrega lista resumida dos posts mais recentes
+  renderPendenciasOverview();
+
+  // Fila de posts das redes: os que precisam de ação primeiro (rascunho e revisão), depois os prontos.
   const recentContainer = document.getElementById('overview-recent-posts');
   if (recentContainer) {
     recentContainer.innerHTML = '';
-    const slice = AppState.posts.slice(0, 3);
+    const ordem = { revisao: 0, rascunho: 1, aprovado: 2, publicado: 3 };
+    const slice = AppState.posts
+      .map((post, i) => ({ post, i, status: normalizarStatusPost(post.status) }))
+      .sort((a, b) => ordem[a.status] - ordem[b.status] || a.i - b.i)
+      .slice(0, 5);
     if (slice.length === 0) {
-      recentContainer.innerHTML = '<p class="text-xs text-gray-500 py-4">Nenhum post na fila ainda. Clique na aba Social Mídia para gerar.</p>';
+      recentContainer.innerHTML = '<p class="ov-vazio">A fila está vazia. Os posts gerados aparecem aqui para revisão; abra Social &amp; Artes para criar um.</p>';
       return;
     }
-    slice.forEach(post => {
-      const el = document.createElement('div');
-      el.className = 'flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition';
-      const imgSrc = escaparHtml(obterImagemPost(post.imagem));
-      const status = normalizarStatusPost(post.status);
+    const rotulo = { rascunho: 'Rascunho', revisao: 'Em revisão', aprovado: 'Aprovado', publicado: 'Publicado' };
+    slice.forEach(({ post, status }) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'ov-post';
+      el.addEventListener('click', () => switchTab('social'));
       el.innerHTML = `
-        <img src="${imgSrc}" alt="Prévia do post" class="w-12 h-12 rounded object-cover border border-gray-200" onerror="this.onerror=null; this.src='https://placehold.co/100x100?text=Speed'">
-        <div class="flex-grow min-w-0">
-          <p class="text-xs font-bold text-gray-900 truncate">${escaparHtml(post.manchete || post.titulo)}</p>
-          <p class="text-[11px] text-gray-500 truncate">${escaparHtml(post.linha || 'Crédito Consciente')}</p>
-        </div>
-        <span class="status-badge status-${status}">${status}</span>
+        <img src="${escaparHtml(resolverImagemPost(post))}" alt="" class="ov-post-img" loading="lazy">
+        <span class="ov-post-texto">
+          <strong>${escaparHtml(post.manchete || post.titulo)}</strong>
+          <span>${escaparHtml(post.linha || 'Crédito consciente')}</span>
+        </span>
+        <span class="status-badge status-${status}">${rotulo[status]}</span>
       `;
+      el.querySelector('img').addEventListener('error', function () { this.style.visibility = 'hidden'; }, { once: true });
       recentContainer.appendChild(el);
     });
   }
+}
+
+// "Esperando você" na Visão Geral: o que precisa de uma decisão hoje, com o atalho para resolver.
+function renderPendenciasOverview() {
+  const lista = document.getElementById('overview-pendencias');
+  if (!lista) return;
+  const contar = s => AppState.posts.filter(p => normalizarStatusPost(p.status) === s).length;
+  const revisar = contar('rascunho') + contar('revisao');
+  const aprovados = contar('aprovado');
+  const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+  const itens = [];
+  itens.push(revisar
+    ? { tom: 'acao', icone: 'fab fa-instagram', texto: `${plural(revisar, 'post das redes para revisar', 'posts das redes para revisar')}`, aba: 'social', botao: 'Revisar' }
+    : { tom: 'ok', icone: 'fab fa-instagram', texto: 'Nenhum post das redes esperando revisão', aba: 'social', botao: 'Abrir' });
+  if (aprovados) itens.push({ tom: 'info', icone: 'fas fa-paper-plane', texto: `${plural(aprovados, 'post aprovado', 'posts aprovados')} para agendar ou publicar`, aba: 'social', botao: 'Ver' });
+  if (typeof gmbEstadoPosts === 'function' && Array.isArray(window.SPEED_GMB_POSTS_PLANO)) {
+    const g = gmbEstadoPosts();
+    const hoje = g.itens.find(x => x.post.data === g.hoje);
+    if (g.recusados) itens.push({ tom: 'alerta', icone: 'fab fa-google', texto: `${plural(g.recusados, 'post da ficha recusado', 'posts da ficha recusados')} pelo Google`, aba: 'gmb', botao: 'Corrigir' });
+    if (hoje) itens.push({ tom: hoje.etapa.id === 'publicado' ? 'ok' : 'acao', icone: 'fab fa-google', texto: `Post da ficha de hoje: ${hoje.etapa.id === 'publicado' ? 'publicado' : String((typeof gmbEtapaRotulo === 'function' && gmbEtapaRotulo(hoje.etapa, hoje.post) || [])[1] || 'em andamento').toLowerCase()}`, aba: 'gmb', botao: 'Ver' });
+    const prazo = g.ciclo && g.ciclo.prazos && g.ciclo.prazos.pauta;
+    if (prazo) itens.push({ tom: prazo.falta < 0 ? 'alerta' : 'info', icone: 'fas fa-flag', texto: `Pauta da ficha de ${gmbMesNome(g.ciclo.mes)}: até ${gmbDataCurta(prazo.data)} (${prazo.texto})`, aba: 'gmb', botao: 'Abrir' });
+  }
+  lista.innerHTML = itens.map(i => `
+    <li class="ov-pendencia ov-pendencia-${i.tom}">
+      <i class="${i.icone} ov-pendencia-icone" aria-hidden="true"></i>
+      <span class="ov-pendencia-texto">${escaparHtml(i.texto)}</span>
+      <button type="button" onclick="switchTab('${i.aba}')" class="ov-pendencia-btn">${i.botao}</button>
+    </li>`).join('');
 }
 
 // -------------------------------------------------------------
@@ -414,17 +591,18 @@ function renderPosts() {
     const isSelected = AppState.selectedPost && AppState.selectedPost.id === post.id;
     card.className = `social-post-card card-premium ${isSelected ? 'is-selected' : ''}`;
     
-    const imgSrc = escaparHtml(post.artePreview || obterImagemPost(post.imagem));
+    const imgSrc = escaparHtml(resolverImagemPost(post));
     const status = normalizarStatusPost(post.status);
     const postIdJs = escaparStringJs(post.id);
 
     card.innerHTML = `
-      <img src="${imgSrc}" alt="Miniatura de ${escaparHtml(post.manchete || post.titulo)}" class="social-post-thumb" onerror="this.onerror=null; this.src='https://placehold.co/160x200/019652/FFFFFF?text=Speed'">
+      <img src="${imgSrc}" alt="Miniatura de ${escaparHtml(post.manchete || post.titulo)}" class="social-post-thumb" onerror="this.onerror=null; this.src=resolverImagemPost(post)">
       <div class="social-post-content">
         <div class="social-post-meta"><span>${escaparHtml(post.calendarioDiaNome || post.linha || 'Editorial')}</span><span class="status-badge status-${status}">${status}</span></div>
         <h4>${escaparHtml(post.manchete || post.titulo)}</h4>
         <p>${escaparHtml(post.sub || '')}</p>
         <div class="social-post-actions">
+          <button type="button" class="btn-quick-copy" onclick="event.stopPropagation(); copiarLegendaDoPost('${postIdJs}')" title="Copiar legenda com 1 clique para colar no Instagram/Facebook"><i class="fas fa-copy"></i> Copiar Legenda</button>
           <button type="button" onclick="event.stopPropagation(); selecionarPost('${postIdJs}')">Prévia</button>
           <button type="button" onclick="event.stopPropagation(); abrirModalEdicao('${postIdJs}')">Editar texto</button>
           <button type="button" onclick="event.stopPropagation(); abrirCriadorDoPost('${postIdJs}')">Criar arte <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
@@ -439,12 +617,61 @@ function renderPosts() {
   });
 }
 
+function copiarLegendaDoPost(postId) {
+  const post = AppState.posts.find(p => p.id === postId);
+  if (!post) return;
+  const texto = post.legenda || post.texto || `${post.manchete || post.titulo}\n\n${post.sub || ''}\n\n📲 Atendimento: WhatsApp (35) 3067-5017\n📍 Rua Santa Cruz, 696 - Centro, Varginha/MG`;
+  copiarTexto(texto, 'Legenda do post copiada para Instagram/WhatsApp!');
+}
+
+function abrirFormularioResultado() {
+  const det = document.getElementById('resultsEntry');
+  if (det) {
+    det.open = true;
+    det.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => document.getElementById('resultsDate')?.focus(), 150);
+  }
+}
+
 function selecionarPost(postId) {
   const post = AppState.posts.find(p => p.id === postId);
   if (!post) return;
   AppState.selectedPost = post;
   renderPosts();
   renderMockup();
+}
+
+function montarNavegacaoCarrossel(post, imagem) {
+  document.getElementById('speedCarouselNav')?.remove();
+  if (!imagem || !Array.isArray(post.imagens) || post.imagens.length < 2) return;
+  const urls = post.imagens.map(obterImagemPost).filter(Boolean);
+  if (urls.length < 2) return;
+  const nav = document.createElement('div');
+  nav.id = 'speedCarouselNav';
+  nav.setAttribute('role', 'group');
+  nav.setAttribute('aria-label', 'Telas do carrossel');
+  nav.style.cssText = 'display:flex;justify-content:center;align-items:center;gap:12px;padding:12px;background:#fff;color:#014b29';
+  const anterior = document.createElement('button');
+  const proxima = document.createElement('button');
+  const contador = document.createElement('span');
+  contador.setAttribute('aria-live', 'polite');
+  anterior.type = proxima.type = 'button';
+  anterior.textContent = 'Anterior';
+  proxima.textContent = 'Próxima';
+  for (const botao of [anterior, proxima]) botao.style.cssText = 'padding:8px 14px;border:1px solid #019652;border-radius:8px;font-weight:600;cursor:pointer';
+  let atual = 0;
+  function mostrar() {
+    imagem.src = urls[atual];
+    imagem.alt = `${post.titulo || post.manchete || 'Carrossel'} — tela ${atual + 1} de ${urls.length}`;
+    contador.textContent = `${atual + 1} / ${urls.length}`;
+    anterior.disabled = atual === 0;
+    proxima.disabled = atual === urls.length - 1;
+  }
+  anterior.addEventListener('click', () => { if (atual > 0) { atual--; mostrar(); } });
+  proxima.addEventListener('click', () => { if (atual < urls.length - 1) { atual++; mostrar(); } });
+  nav.append(anterior, contador, proxima);
+  imagem.parentElement.insertAdjacentElement('afterend', nav);
+  mostrar();
 }
 
 function renderMockup() {
@@ -457,13 +684,15 @@ function renderMockup() {
 
   if (!post) return;
 
-  const imgSrc = post.artePreview || obterImagemPost(post.imagem);
+  const imgSrc = resolverImagemPost(post);
   if (mockupImage) {
     mockupImage.src = imgSrc;
     mockupImage.onerror = () => {
-      mockupImage.src = 'https://placehold.co/600x600/019652/FFFFFF?text=Speed+Financeira';
+      mockupImage.src = resolverImagemPost(post);
     };
   }
+
+  montarNavegacaoCarrossel(post, mockupImage);
 
   if (mockupHeadline) mockupHeadline.innerText = post.manchete || post.titulo;
   if (mockupSub) mockupSub.innerText = post.sub || '';
@@ -653,7 +882,15 @@ function dispararWhatsappComTexto(elementId) {
   const el = document.getElementById(elementId);
   if (!el) return;
   const texto = encodeURIComponent(el.innerText.trim());
-  window.open(`https://wa.me/553530675017?text=${texto}`, '_blank', 'noopener,noreferrer');
+  const inputCliente = document.getElementById('quickWhatsappCliente');
+  const fone = inputCliente ? inputCliente.value.replace(/\D/g, '') : '';
+  const numeroDestino = fone.length >= 10 ? (fone.startsWith('55') ? fone : `55${fone}`) : '';
+  if (numeroDestino) {
+    window.open(`https://wa.me/${numeroDestino}?text=${texto}`, '_blank', 'noopener,noreferrer');
+  } else {
+    copiarTexto(el.innerText.trim(), 'Mensagem copiada para a área de transferência!');
+    window.open(`https://wa.me/553530675017?text=${texto}`, '_blank', 'noopener,noreferrer');
+  }
 }
 
 // Origem e meio no padrão do Google Analytics 4; valores fora do padrão caem em "Não atribuído".
@@ -839,3 +1076,102 @@ function mostrarToast(mensagem, tipo = 'sucesso') {
     toast.classList.remove('show');
   }, 2800);
 }
+
+// A barra de abas fica fixa no topo e muda de altura (quebra em 2 linhas no celular):
+// os menus fixos das abas param logo abaixo dela.
+(function () {
+  const barra = document.querySelector('.sticky-tabs-bar');
+  if (!barra) return;
+  const medir = () => document.documentElement.style.setProperty('--altura-abas', barra.offsetHeight + 'px');
+  medir();
+  if (window.ResizeObserver) new ResizeObserver(medir).observe(barra); else window.addEventListener('resize', medir);
+})();
+
+// ==========================================
+// MÓDULO LOCAL NINJA — AVALIAÇÕES & GUARDRAILS
+// ==========================================
+function setupLocalNinjaTools() {
+  const reviewNomeEl = document.getElementById('ninjaReviewNomeCliente');
+  const reviewTextoEl = document.getElementById('ninjaReviewTexto');
+  const btnDispararReview = document.getElementById('btnDispararReviewNinja');
+  const btnCopiarLinkReview = document.getElementById('btnCopiarLinkReviewNinja');
+
+  const LINK_AVALIACAO = 'https://share.google/TYMb8tNCjBYdCTloP';
+
+  function atualizarTextoReview() {
+    if (!reviewTextoEl) return;
+    const nome = (reviewNomeEl && reviewNomeEl.value.trim()) ? reviewNomeEl.value.trim() : '';
+    const saudacao = nome ? `Olá, ${nome}!` : 'Olá!';
+    reviewTextoEl.textContent = `${saudacao} Agradecemos pela confiança na Speed Financeira aqui no Centro de Varginha. Você poderia nos ajudar com uma avaliação sincera no Google? Leva apenas 30 segundos: ${LINK_AVALIACAO}`;
+  }
+
+  if (reviewNomeEl) {
+    reviewNomeEl.addEventListener('input', atualizarTextoReview);
+  }
+
+  if (btnCopiarLinkReview) {
+    btnCopiarLinkReview.addEventListener('click', () => {
+      copiarTexto(LINK_AVALIACAO);
+      mostrarToast('Link de avaliação do Google copiado!');
+    });
+  }
+
+  if (btnDispararReview) {
+    btnDispararReview.addEventListener('click', () => {
+      const msg = reviewTextoEl ? reviewTextoEl.textContent.trim() : '';
+      const phoneInput = document.getElementById('quickWhatsappCliente');
+      const rawPhone = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+      if (rawPhone.length >= 10) {
+        const url = `https://wa.me/55${rawPhone}?text=${encodeURIComponent(msg)}`;
+        window.open(url, '_blank');
+        mostrarToast(`Disparando pedido de avaliação para ${rawPhone}!`);
+      } else {
+        copiarTexto(msg);
+        window.open('https://web.whatsapp.com/', '_blank');
+        mostrarToast('Mensagem de avaliação copiada! Abrindo WhatsApp Web...');
+      }
+    });
+  }
+
+  // Estúdio de Respostas com Guardrails Anti-Spam
+  const tipoEl = document.getElementById('ninjaRespostaTipo');
+  const respostaNomeEl = document.getElementById('ninjaRespostaNomeCliente');
+  const respostaTextoEl = document.getElementById('ninjaRespostaTextoGerado');
+  const btnCopiarResposta = document.getElementById('btnCopiarRespostaNinja');
+
+  const RESPOSTAS = {
+    consignado: (nome) => `Olá ${nome ? nome : ''}, muito obrigado pela confiança e pelas 5 estrelas! Foi um prazer atendê-lo(a) para o seu empréstimo consignado. Estamos sempre à disposição aqui na Rua Santa Cruz, 696, Centro de Varginha!`,
+    fgts: (nome) => `Olá ${nome ? nome : ''}, agradecemos demais pela ótima avaliação! Ficamos muito felizes em liberar a sua antecipação do FGTS com rapidez, transparência e Pix na hora. Conte sempre com a Speed Financeira em Varginha!`,
+    balcao: (nome) => `Olá ${nome ? nome : ''}, muito obrigado pelo retorno positivo! Conte conosco sempre que precisar de impressão, cópias, fotos 3x4 ou suporte em serviços digitais no Centro de Varginha!`,
+    geral: (nome) => `Olá ${nome ? nome : ''}, agradecemos imensamente pela recomendação! Nosso compromisso há mais de 10 anos é oferecer um atendimento humano, ágil e transparente em Varginha. Um grande abraço de toda a nossa equipe!`,
+    critica: (nome) => `Olá ${nome ? nome : ''}, agradecemos por compartilhar seu relato. Nosso compromisso é o atendimento transparente e de qualidade. Por favor, entre em contato direto pelo telefone (35) 3067-5017 ou venha nos visitar na Rua Santa Cruz, 696, para que possamos resolver qualquer pendência prontamente.`
+  };
+
+  function atualizarResposta() {
+    if (!respostaTextoEl || !tipoEl) return;
+    const tipo = tipoEl.value || 'geral';
+    const nome = (respostaNomeEl && respostaNomeEl.value.trim()) ? respostaNomeEl.value.trim() : '';
+    const gerador = RESPOSTAS[tipo] || RESPOSTAS.geral;
+    respostaTextoEl.value = gerador(nome);
+  }
+
+  if (tipoEl) tipoEl.addEventListener('change', atualizarResposta);
+  if (respostaNomeEl) respostaNomeEl.addEventListener('input', atualizarResposta);
+  if (btnCopiarResposta) {
+    btnCopiarResposta.addEventListener('click', () => {
+      if (respostaTextoEl && respostaTextoEl.value) {
+        copiarTexto(respostaTextoEl.value);
+        mostrarToast('Resposta copiada com sucesso!');
+      }
+    });
+  }
+
+  atualizarTextoReview();
+  atualizarResposta();
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'switchTab' && event.data.tab) {
+    switchTab(event.data.tab);
+  }
+});

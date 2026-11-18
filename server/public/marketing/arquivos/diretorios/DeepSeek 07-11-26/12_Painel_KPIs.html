@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<!--
+  Painel local de KPIs — Speed Financeira.
+  Uso interno. Não publicar. Dados ficam no navegador (localStorage).
+  Para backup: botão "Exportar CSV".
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Painel de KPIs — Speed Financeira</title>
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f4f7f5; --branco:#fff;
+  --borda:#dfe7e2; --vermelho:#b91c1c; --cinza:#6b7d73;
+  --raio:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.55}
+header{background:linear-gradient(135deg,var(--verde-escuro),var(--verde));color:#fff;padding:26px 0}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+header h1{margin:0;font-size:clamp(22px,3vw,30px);letter-spacing:-.5px}
+header p{margin:6px 0 0;color:#dff1e7;font-size:14px}
+h2{font-size:19px;color:var(--tinta);margin:0 0 12px}
+main{padding:24px 0 60px}
+.card{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:20px;margin-bottom:18px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.kpi{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:16px;position:relative;overflow:hidden}
+.kpi:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--verde)}
+.kpi small{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.5px;color:var(--cinza);font-weight:700}
+.kpi strong{display:block;font-size:clamp(20px,2.6vw,26px);color:var(--tinta);margin-top:4px;letter-spacing:-.5px}
+.kpi em{font-style:normal;font-size:12.5px;color:var(--cinza)}
+.kpi.amarelo:before{background:var(--amarelo)}
+.kpi.vermelho:before{background:var(--vermelho)}
+
+label{display:block;font-size:12.5px;font-weight:700;color:var(--tinta);margin-bottom:4px}
+input,textarea,select{width:100%;padding:9px 11px;border:1px solid #cbd8d0;border-radius:9px;
+  font:inherit;font-size:14px;background:#fff;color:var(--tinta)}
+input:focus,textarea:focus{outline:2px solid var(--verde);outline-offset:1px}
+.campos{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.obs{grid-column:1/-1}
+button{font:inherit;font-weight:700;cursor:pointer;border-radius:9px;padding:10px 16px;border:2px solid transparent}
+.primario{background:var(--verde);color:#fff;border-color:var(--verde)}
+.primario:hover{background:var(--verde-escuro);border-color:var(--verde-escuro)}
+.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.sec:hover{background:#effaf4}
+.perigo{background:#fff;color:var(--vermelho);border-color:#f3c6c6}
+.perigo:hover{background:#fef2f2}
+.acoes{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.msg{font-size:13.5px;color:var(--verde-escuro);font-weight:600;margin-top:10px;min-height:20px}
+
+.tabela-wrap{overflow-x:auto;border:1px solid var(--borda);border-radius:12px;background:#fff}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:900px}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--borda);white-space:nowrap}
+th{background:#f0f6f2;color:var(--tinta);font-size:12px;text-transform:uppercase;letter-spacing:.4px;position:sticky;top:0}
+th:first-child,td:first-child{text-align:left}
+tbody tr:hover{background:#fafdfb}
+tfoot td{font-weight:800;background:#f7fbf9;color:var(--tinta);border-top:2px solid var(--verde)}
+.zero{color:#9aa8a0}
+.bt{background:none;border:none;color:var(--verde-escuro);font-weight:700;cursor:pointer;padding:2px 6px;font-size:12.5px}
+.bt.del{color:var(--vermelho)}
+.vazio{padding:30px;text-align:center;color:var(--cinza);font-size:14px}
+
+.grafico{display:flex;align-items:flex-end;gap:14px;height:190px;padding:10px 4px 0;overflow-x:auto}
+.col{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;min-width:64px;height:100%}
+.barras{display:flex;align-items:flex-end;gap:4px;height:100%}
+.barra{width:16px;border-radius:5px 5px 2px 2px;background:var(--verde);min-height:2px;transition:height .2s}
+.barra.receita{background:var(--amarelo)}
+.col span{font-size:11px;color:var(--cinza);white-space:nowrap}
+.legenda{display:flex;gap:16px;font-size:12.5px;color:var(--cinza);margin-top:8px}
+.legenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px}
+.legenda .v{background:var(--verde)} .legenda .r{background:var(--amarelo)}
+.aviso{background:#fffbe6;border:1px solid #f3e08a;border-radius:10px;padding:10px 14px;font-size:13px;color:#5c4b00;margin-bottom:18px}
+footer{color:var(--cinza);font-size:12.5px;padding:20px 0;text-align:center}
+@media(max-width:640px){.card{padding:16px}header{padding:20px 0}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>Painel de KPIs — Speed Financeira</h1>
+    <p>Registro semanal · dados salvos neste navegador · exporte o CSV como backup</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="aviso">
+    <strong>Uso interno.</strong> Este arquivo não é publicado no site. Os dados ficam apenas neste computador/navegador (localStorage).
+    Se limpar o navegador, perde o histórico — exporte o CSV toda semana.
+  </div>
+
+  <section class="card">
+    <h2>Resumo acumulado</h2>
+    <div class="grid" id="resumo"></div>
+  </section>
+
+  <section class="card">
+    <h2>Lançar semana</h2>
+    <form id="form">
+      <div class="campos">
+        <div>
+          <label for="semana">Semana (início)</label>
+          <input id="semana" type="date" required>
+        </div>
+        <div>
+          <label for="investimento">Investimento (R$)</label>
+          <input id="investimento" type="number" min="0" step="0.01" value="0">
+        </div>
+        <div>
+          <label for="conversas">Conversas iniciadas</label>
+          <input id="conversas" type="number" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label for="qualificadas">Conversas qualificadas</label>
+          <input id="qualificadas" type="number" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label for="visitas">Visitas identificadas</label>
+          <input id="visitas" type="number" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label for="vendas">Vendas fechadas</label>
+          <input id="vendas" type="number" min="0" step="1" value="0">
+        </div>
+        <div>
+          <label for="receita">Receita (R$)</label>
+          <input id="receita" type="number" min="0" step="0.01" value="0">
+        </div>
+        <div class="obs">
+          <label for="obs">Observações / decisão da semana</label>
+          <input id="obs" type="text" maxlength="300" placeholder="Ex.: pausar palavra 'grátis'; testar foto 3x4 no Meta">
+        </div>
+      </div>
+      <div class="acoes">
+        <button class="primario" type="submit" id="btnSalvar">Salvar semana</button>
+        <button class="sec" type="button" id="btnCancelar" hidden>Cancelar edição</button>
+        <button class="sec" type="button" id="btnExportar">Exportar CSV</button>
+        <button class="perigo" type="button" id="btnLimpar">Apagar tudo</button>
+      </div>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2>Evolução semanal</h2>
+    <div class="grafico" id="grafico"></div>
+    <div class="legenda"><span><i class="v"></i>Investimento</span><span><i class="r"></i>Receita</span></div>
+  </section>
+
+  <section class="card">
+    <h2>Semanas registradas</h2>
+    <div class="tabela-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Semana</th>
+            <th>Invest.</th>
+            <th>Conversas</th>
+            <th>Qualif.</th>
+            <th>Visitas</th>
+            <th>Vendas</th>
+            <th>Receita</th>
+            <th>Custo/conversa</th>
+            <th>CPL</th>
+            <th>% qualif.</th>
+            <th>% fecham.</th>
+            <th>ROAS</th>
+            <th>Ticket</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="corpo"></tbody>
+        <tfoot id="rodape"></tfoot>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Speed Financeira e Lan House · Rua Santa Cruz, 696 — Centro — Varginha/MG<br>
+    Painel local · nenhum dado é enviado para a internet.
+  </footer>
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var CHAVE = "speed_kpis_v1";
+  var registros = [];
+  var editando = null;
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  function carregar(){
+    try{
+      var bruto = localStorage.getItem(CHAVE);
+      registros = bruto ? JSON.parse(bruto) : [];
+      if(!Array.isArray(registros)) registros = [];
+    }catch(e){ registros = []; }
+  }
+  function salvarStorage(){
+    try{ localStorage.setItem(CHAVE, JSON.stringify(registros)); }
+    catch(e){ aviso("Não foi possível salvar no navegador. Exporte o CSV.", true); }
+  }
+  function aviso(texto, erro){
+    var el = $("msg");
+    el.textContent = texto || "";
+    el.style.color = erro ? "var(--vermelho)" : "var(--verde-escuro)";
+    if(texto){ setTimeout(function(){ if(el.textContent === texto) el.textContent = ""; }, 4000); }
+  }
+
+  function num(v){
+    var n = parseFloat(v);
+    return isFinite(n) ? n : 0;
+  }
+  function moeda(n){
+    if(!isFinite(n)) return "—";
+    return n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  }
+  function pct(n){
+    if(!isFinite(n)) return "—";
+    return (n*100).toLocaleString("pt-BR",{minimumFractionDigits:1,maximumFractionDigits:1}) + "%";
+  }
+  function razao(a,b){ return b > 0 ? a/b : NaN; }
+
+  function dataBR(iso){
+    if(!iso) return "—";
+    var p = iso.split("-");
+    if(p.length !== 3) return iso;
+    return p[2] + "/" + p[1] + "/" + p[0];
+  }
+  function inicioSemana(d){
+    var x = new Date(d.getTime());
+    var dia = x.getDay(); // 0 dom
+    var dif = (dia === 0 ? -6 : 1 - dia);
+    x.setDate(x.getDate() + dif);
+    return x.toISOString().slice(0,10);
+  }
+
+  function calcular(r){
+    var invest = num(r.investimento);
+    var receita = num(r.receita);
+    var conv = num(r.conversas);
+    var qual = num(r.qualificadas);
+    var vendas = num(r.vendas);
+    return {
+      custoConversa: razao(invest, conv),
+      cpl: razao(invest, qual),
+      taxaQualif: razao(qual, conv),
+      taxaFechamento: razao(vendas, qual),
+      roas: razao(receita, invest),
+      ticket: razao(receita, vendas)
+    };
+  }
+
+  function ordenar(){
+    registros.sort(function(a,b){ return (a.semana < b.semana) ? -1 : (a.semana > b.semana) ? 1 : 0; });
+  }
+
+  function renderResumo(){
+    var t = {investimento:0,conversas:0,qualificadas:0,visitas:0,vendas:0,receita:0};
+    registros.forEach(function(r){
+      t.investimento += num(r.investimento);
+      t.conversas += num(r.conversas);
+      t.qualificadas += num(r.qualificadas);
+      t.visitas += num(r.visitas);
+      t.vendas += num(r.vendas);
+      t.receita += num(r.receita);
+    });
+    var g = calcular(t);
+    var itens = [
+      ["Investimento", moeda(t.investimento), registros.length + " semana(s)"],
+      ["Conversas", String(t.conversas), "iniciadas"],
+      ["Qualificadas", String(t.qualificadas), pct(g.taxaQualif) + " das conversas"],
+      ["Visitas", String(t.visitas), "identificadas"],
+      ["Vendas", String(t.vendas), pct(g.taxaFechamento) + " das qualificadas"],
+      ["Receita", moeda(t.receita), "ticket " + moeda(g.ticket)],
+      ["CPL", isFinite(g.cpl) ? moeda(g.cpl) : "—", "por conversa qualificada"],
+      ["ROAS", isFinite(g.roas) ? g.roas.toFixed(2) + "x" : "—", "receita ÷ investimento"]
+    ];
+    $("resumo").innerHTML = itens.map(function(i, idx){
+      var cls = idx === 6 ? "amarelo" : (idx === 7 ? (isFinite(g.roas) && g.roas < 1 ? "vermelho" : "amarelo") : "");
+      return '<div class="kpi ' + cls + '"><small>' + i[0] + '</small><strong>' + i[1] + '</strong><em>' + i[2] + '</em></div>';
+    }).join("");
+  }
+
+  function renderGrafico(){
+    var el = $("grafico");
+    if(!registros.length){
+      el.innerHTML = '<div class="vazio">Sem dados. Lance a primeira semana acima.</div>';
+      return;
+    }
+    var max = 0;
+    registros.forEach(function(r){ max = Math.max(max, num(r.investimento), num(r.receita)); });
+    if(max <= 0) max = 1;
+    el.innerHTML = registros.map(function(r){
+      var hi = Math.max(2, Math.round(num(r.investimento)/max*100));
+      var hr = Math.max(2, Math.round(num(r.receita)/max*100));
+      return '<div class="col" title="Invest.: ' + moeda(num(r.investimento)) + ' | Receita: ' + moeda(num(r.receita)) + '">' +
+        '<div class="barras"><div class="barra" style="height:' + hi + '%"></div>' +
+        '<div class="barra receita" style="height:' + hr + '%"></div></div>' +
+        '<span>' + dataBR(r.semana).slice(0,5) + '</span></div>';
+    }).join("");
+  }
+
+  function renderTabela(){
+    var corpo = $("corpo");
+    var rodape = $("rodape");
+    if(!registros.length){
+      corpo.innerHTML = '<tr><td colspan="14" class="vazio">Nenhuma semana registrada.</td></tr>';
+      rodape.innerHTML = "";
+      return;
+    }
+    var t = {investimento:0,conversas:0,qualificadas:0,visitas:0,vendas:0,receita:0};
+    corpo.innerHTML = registros.map(function(r, i){
+      var c = calcular(r);
+      t.investimento += num(r.investimento);
+      t.conversas += num(r.conversas);
+      t.qualificadas += num(r.qualificadas);
+      t.visitas += num(r.visitas);
+      t.vendas += num(r.vendas);
+      t.receita += num(r.receita);
+      var obs = r.obs ? ' title="' + String(r.obs).replace(/"/g,"&quot;") + '"' : "";
+      return '<tr' + obs + '>' +
+        '<td>' + dataBR(r.semana) + (r.obs ? ' <span title="' + String(r.obs).replace(/"/g,"&quot;") + '">📝</span>' : '') + '</td>' +
+        '<td>' + moeda(num(r.investimento)) + '</td>' +
+        '<td>' + num(r.conversas) + '</td>' +
+        '<td>' + num(r.qualificadas) + '</td>' +
+        '<td>' + num(r.visitas) + '</td>' +
+        '<td>' + num(r.vendas) + '</td>' +
+        '<td>' + moeda(num(r.receita)) + '</td>' +
+        '<td>' + (isFinite(c.custoConversa) ? moeda(c.custoConversa) : '<span class="zero">—</span>') + '</td>' +
+        '<td>' + (isFinite(c.cpl) ? moeda(c.cpl) : '<span class="zero">—</span>') + '</td>' +
+        '<td>' + (isFinite(c.taxaQualif) ? pct(c.taxaQualif) : '<span class="zero">—</span>') + '</td>' +
+        '<td>' + (isFinite(c.taxaFechamento) ? pct(c.taxaFechamento) : '<span class="zero">—</span>') + '</td>' +
+        '<td>' + (isFinite(c.roas) ? c.roas.toFixed(2) + "x" : '<span class="zero">—</span>') + '</td>' +
+        '<td>' + (isFinite(c.ticket) ? moeda(c.ticket) : '<span class="zero">—</span>') + '</td>' +
+        '<td><button class="bt" data-editar="' + i + '">editar</button>' +
+        '<button class="bt del" data-excluir="' + i + '">excluir</button></td>' +
+        '</tr>';
+    }).join("");
+
+    var g = calcular(t);
+    rodape.innerHTML = '<tr>' +
+      '<td>Total</td><td>' + moeda(t.investimento) + '</td><td>' + t.conversas + '</td>' +
+      '<td>' + t.qualificadas + '</td><td>' + t.visitas + '</td><td>' + t.vendas + '</td>' +
+      '<td>' + moeda(t.receita) + '</td>' +
+      '<td>' + (isFinite(g.custoConversa) ? moeda(g.custoConversa) : "—") + '</td>' +
+      '<td>' + (isFinite(g.cpl) ? moeda(g.cpl) : "—") + '</td>' +
+      '<td>' + (isFinite(g.taxaQualif) ? pct(g.taxaQualif) : "—") + '</td>' +
+      '<td>' + (isFinite(g.taxaFechamento) ? pct(g.taxaFechamento) : "—") + '</td>' +
+      '<td>' + (isFinite(g.roas) ? g.roas.toFixed(2) + "x" : "—") + '</td>' +
+      '<td>' + (isFinite(g.ticket) ? moeda(g.ticket) : "—") + '</td><td></td></tr>';
+  }
+
+  function renderTudo(){ ordenar(); renderResumo(); renderGrafico(); renderTabela(); }
+
+  function limparFormulario(){
+    $("semana").value = "";
+    $("investimento").value = "0";
+    $("conversas").value = "0";
+    $("qualificadas").value = "0";
+    $("visitas").value = "0";
+    $("vendas").value = "0";
+    $("receita").value = "0";
+    $("obs").value = "";
+    editando = null;
+    $("btnSalvar").textContent = "Salvar semana";
+    $("btnCancelar").hidden = true;
+  }
+
+  $("form").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var semana = $("semana").value;
+    if(!semana){ aviso("Informe a data de início da semana.", true); return; }
+
+    var reg = {
+      semana: semana,
+      investimento: num($("investimento").value),
+      conversas: Math.round(num($("conversas").value)),
+      qualificadas: Math.round(num($("qualificadas").value)),
+      visitas: Math.round(num($("visitas").value)),
+      vendas: Math.round(num($("vendas").value)),
+      receita: num($("receita").value),
+      obs: $("obs").value.trim()
+    };
+
+    if(reg.qualificadas > reg.conversas){
+      aviso("Qualificadas não pode ser maior que conversas iniciadas.", true); return;
+    }
+    if(reg.vendas > reg.qualificadas && reg.qualificadas > 0){
+      aviso("Confira: vendas maior que conversas qualificadas.", true); return;
+    }
+
+    if(editando !== null){
+      registros[editando] = reg;
+      aviso("Semana atualizada.");
+    }else{
+      var existente = -1;
+      for(var i=0;i<registros.length;i++){
+        if(registros[i].semana === reg.semana){ existente = i; break; }
+      }
+      if(existente >= 0){ registros[existente] = reg; aviso("Semana já existia e foi atualizada."); }
+      else{ registros.push(reg); aviso("Semana salva."); }
+    }
+    salvarStorage();
+    limparFormulario();
+    renderTudo();
+  });
+
+  $("btnCancelar").addEventListener("click", function(){ limparFormulario(); aviso(""); });
+
+  document.addEventListener("click", function(ev){
+    var alvo = ev.target;
+    if(!alvo || !alvo.getAttribute) return;
+
+    var ed = alvo.getAttribute("data-editar");
+    if(ed !== null){
+      var i = parseInt(ed, 10);
+      var r = registros[i];
+      if(!r) return;
+      $("semana").value = r.semana;
+      $("investimento").value = r.investimento;
+      $("conversas").value = r.conversas;
+      $("qualificadas").value = r.qualificadas;
+      $("visitas").value = r.visitas;
+      $("vendas").value = r.vendas;
+      $("receita").value = r.receita;
+      $("obs").value = r.obs || "";
+      editando = i;
+      $("btnSalvar").textContent = "Atualizar semana";
+      $("btnCancelar").hidden = false;
+      window.scrollTo({top: 0, behavior: "smooth"});
+      return;
+    }
+
+    var ex = alvo.getAttribute("data-excluir");
+    if(ex !== null){
+      var j = parseInt(ex, 10);
+      if(!registros[j]) return;
+      if(confirm("Excluir a semana de " + dataBR(registros[j].semana) + "?")){
+        registros.splice(j,1);
+        salvarStorage();
+        limparFormulario();
+        renderTudo();
+        aviso("Semana excluída.");
+      }
+    }
+  });
+
+  function csvCampo(v){
+    var s = String(v == null ? "" : v);
+    if(/[";\n\r]/.test(s)) s = '"' + s.replace(/"/g,'""') + '"';
+    return s;
+  }
+
+  $("btnExportar").addEventListener("click", function(){
+    if(!registros.length){ aviso("Nada para exportar.", true); return; }
+    var linhas = [];
+    linhas.push(["Semana","Investimento","Conversas","Qualificadas","Visitas","Vendas","Receita",
+      "Custo por conversa","CPL","Taxa qualificacao","Taxa fechamento","ROAS","Ticket medio","Observacoes"].join(";"));
+    registros.forEach(function(r){
+      var c = calcular(r);
+      linhas.push([
+        r.semana,
+        num(r.investimento).toFixed(2).replace(".",","),
+        num(r.conversas),
+        num(r.qualificadas),
+        num(r.visitas),
+        num(r.vendas),
+        num(r.receita).toFixed(2).replace(".",","),
+        isFinite(c.custoConversa) ? c.custoConversa.toFixed(2).replace(".",",") : "",
+        isFinite(c.cpl) ? c.cpl.toFixed(2).replace(".",",") : "",
+        isFinite(c.taxaQualif) ? (c.taxaQualif*100).toFixed(1).replace(".",",") : "",
+        isFinite(c.taxaFechamento) ? (c.taxaFechamento*100).toFixed(1).replace(".",",") : "",
+        isFinite(c.roas) ? c.roas.toFixed(2).replace(".",",") : "",
+        isFinite(c.ticket) ? c.ticket.toFixed(2).replace(".",",") : "",
+        csvCampo(r.obs || "")
+      ].join(";"));
+    });
+    var conteudo = "\uFEFF" + linhas.join("\r\n");
+    var blob = new Blob([conteudo], {type:"text/csv;charset=utf-8;"});
+    var a = document.createElement("a");
+    var d = new Date().toISOString().slice(0,10);
+    a.href = URL.createObjectURL(blob);
+    a.download = "kpis_speed_" + d + ".csv";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    aviso("CSV exportado.");
+  });
+
+  $("btnLimpar").addEventListener("click", function(){
+    if(!registros.length){ aviso("Já está vazio."); return; }
+    if(confirm("Apagar TODAS as semanas deste navegador? Exporte o CSV antes se precisar.")){
+      registros = [];
+      salvarStorage();
+      limparFormulario();
+      renderTudo();
+      aviso("Histórico apagado.");
+    }
+  });
+
+  // data padrão: segunda-feira da semana atual
+  var hoje = new Date();
+  $("semana").value = inicioSemana(hoje);
+
+  carregar();
+  renderTudo();
+})();
+</script>
+</body>
+</html>

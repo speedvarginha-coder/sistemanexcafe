@@ -1,0 +1,112 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "FinancialService",
+      "@id": "https://speedfinanceira.com.br/#loja",
+      "name": "Speed Financeira e Lan House",
+      "alternateName": "Speed Financeira",
+      "description": "Loja física em Varginha/MG com correspondente bancário, gráfica rápida, auxílio presencial em serviços digitais e suporte de informática.",
+      "url": "https://speedfinanceira.com.br/",
+      "telephone": "+55-35-3067-5017",
+      "email": "speed.varginha@gmail.com",
+      "image": "https://speedfinanceira.com.br/logo.png",
+      "logo": "https://speedfinanceira.com.br/logo.png",
+      "currenciesAccepted": "BRL",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Rua Santa Cruz, 696",
+        "addressLocality": "Varginha",
+        "addressRegion": "MG",
+        "postalCode": "37002-090",
+        "addressCountry": "BR"
+      },
+      "areaServed": [
+        { "@type": "City", "name": "Varginha" },
+        { "@type": "City", "name": "Três Corações" },
+        { "@type": "City", "name": "Elói Mendes" },
+        { "@type": "City", "name": "Paraguaçu" }
+      ],
+      "knowsAbout": [
+        "Empréstimo consignado INSS",
+        "Empréstimo consignado CLT",
+        "Antecipação do FGTS",
+        "Financiamento de veículo",
+        "Impressão e xerox",
+        "Foto 3x4",
+        "Meu INSS",
+        "Extrato CNIS",
+        "Carta de concessão",
+        "Conta Gov.br",
+        "CRLV digital",
+        "MEI",
+        "Currículo",
+        "Suporte de informática"
+      ],
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Serviços da Speed",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Gráfica rápida",
+              "description": "Impressão P&B e colorida, xerox, digitalização, plastificação, encadernação, foto 3x4 e impressão fotográfica.",
+              "url": "https://speedfinanceira.com.br/grafica.html",
+              "provider": { "@id": "https://speedfinanceira.com.br/#loja" }
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Correspondente bancário",
+              "description": "Orientação e encaminhamento de consignado INSS e CLT, antecipação do FGTS e financiamento de veículo. Aprovação e condições são da instituição financeira.",
+              "url": "https://speedfinanceira.com.br/consignado.html",
+              "provider": { "@id": "https://speedfinanceira.com.br/#loja" }
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Auxílio em serviços digitais",
+              "description": "Apoio presencial para acessar e imprimir documentos do Meu INSS, CNIS, carta de concessão, Gov.br, CRLV e MEI, com o titular digitando a própria senha.",
+              "url": "https://speedfinanceira.com.br/servicos-digitais.html",
+              "provider": { "@id": "https://speedfinanceira.com.br/#loja" }
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Currículo",
+              "description": "Montagem, revisão e impressão de currículo, com o conteúdo aprovado pelo cliente.",
+              "url": "https://speedfinanceira.com.br/curriculo.html",
+              "provider": { "@id": "https://speedfinanceira.com.br/#loja" }
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Suporte de informática",
+              "description": "Suporte para computador e celular, formatação e diagnóstico, com prazo e garantia informados no orçamento.",
+              "url": "https://speedfinanceira.com.br/informatica.html",
+              "provider": { "@id": "https://speedfinanceira.com.br/#loja" }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://speedfinanceira.com.br/#site",
+      "url": "https://speedfinanceira.com.br/",
+      "name": "Speed Financeira e Lan House",
+      "inLanguage": "pt-BR",
+      "publisher": { "@id": "https://speedfinanceira.com.br/#loja" }
+    }
+  ]
+}

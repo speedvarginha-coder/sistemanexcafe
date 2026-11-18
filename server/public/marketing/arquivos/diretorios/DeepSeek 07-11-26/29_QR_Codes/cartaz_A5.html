@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--
+  Cartaz A5 com QR de WhatsApp — Speed Financeira e Lan House.
+  Uso interno: imprimir em A5 (ou A4 e cortar) e colocar na porta ou no balcão.
+  Não publicar. Nada é enviado para a internet.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Cartaz A5 com QR — Speed Financeira</title>
+<style>
+:root{--verde:#019652;--verde-escuro:#016b3b;--amarelo:#FADB20;--tinta:#14231b;--texto:#33443b;--borda:#dfe7e2}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#e8eeea;color:var(--texto);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5}
+.cartaz{width:148mm;min-height:210mm;margin:10mm auto;background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.12);overflow:hidden;display:flex;flex-direction:column}
+.topo{background:linear-gradient(140deg,var(--verde-escuro),var(--verde));color:#fff;padding:11mm 11mm 10mm}
+.topo small{display:block;font-size:8pt;text-transform:uppercase;letter-spacing:1px;color:#c9f0dc;font-weight:800}
+.topo h1{font-size:29pt;line-height:1.02;letter-spacing:-1px;margin:2.5mm 0 2.5mm}
+.topo p{margin:0;font-size:11pt;color:#e2f5ea;max-width:30ch}
+.corpo{padding:10mm 11mm;display:flex;gap:7mm;align-items:center;flex:1}
+.qr-grande{flex:0 0 auto}
+.qr-grande img{width:60mm;height:60mm;image-rendering:pixelated;border:1px solid var(--borda);border-radius:3mm;padding:2mm;background:#fff}
+.passos{font-size:10.5pt}
+.passos ol{margin:0;padding-left:5mm}
+.passos li{margin:0 0 3.5mm}
+.passos strong{color:var(--verde-escuro)}
+.pe{background:#f4f7f5;border-top:1px solid var(--borda);padding:6mm 11mm;font-size:8.5pt;color:#4b6356;line-height:1.6}
+.pe strong{color:var(--tinta)}
+.tela{max-width:148mm;margin:10mm auto 0;font-size:13px;color:#33443b}
+.tela h2{font-size:15px;margin:0 0 6px;color:#14231b}
+.tela ul{margin:0 0 0 18px;padding:0}
+.tela li{margin:4px 0}
+@media print{
+  @page{size:A5;margin:0}
+  body{background:#fff}
+  .tela{display:none!important}
+  .cartaz{width:148mm;height:210mm;min-height:0;margin:0;box-shadow:none}
+  .cartaz,.topo,.pe{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<div class="tela">
+  <h2>Cartaz A5 — como usar</h2>
+  <ul>
+    <li>Imprima em A5 (ou A4 e corte). Use escala <strong>100%</strong>, sem "ajustar à página".</li>
+    <li>Cole na porta ou no balcão, em local sem sol direto e sem reflexo.</li>
+    <li>Teste o QR com a câmera do celular antes de colar.</li>
+  </ul>
+</div>
+
+<div class="cartaz">
+  <div class="topo">
+    <small>Speed Financeira e Lan House</small>
+    <h1>Fale com a<br>Speed agora</h1>
+    <p>Aponte a câmera do celular para o código e abra a conversa no WhatsApp.</p>
+  </div>
+  <div class="corpo">
+    <div class="qr-grande">
+      <img src="qr_05_geral.png" alt="QR code para falar com a Speed no WhatsApp">
+    </div>
+    <div class="passos">
+      <ol>
+        <li>Abra a <strong>câmera</strong> do celular.</li>
+        <li>Aponte para o <strong>QR code</strong> ao lado.</li>
+        <li>Toque no aviso que aparece na tela.</li>
+        <li>Envie a mensagem. A conversa já chega identificada.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="pe">
+    <strong>Speed Financeira e Lan House</strong> · CNPJ 29.497.887/0001-57<br>
+    Rua Santa Cruz, 696 — Centro — Varginha/MG — CEP 37002-090<br>
+    Telefone e WhatsApp: (35) 3067-5017 · speedfinanceira.com.br<br>
+    Empresa privada. Não somos INSS, Gov.br, Detran ou órgão público.
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "ledger_version": "1.0.0",
+  "title": "Avaliacao de SEO da Speed Financeira (17/11/2026)",
+  "steps": [
+    {
+      "id": "conferencia-antigravity",
+      "path": "conferencia-auditoria-antigravity.md",
+      "title": "Conferencia da auditoria do Antigravity",
+      "status": "completed",
+      "owner": "Roteador seo",
+      "outcome": "Parte tecnica confere; buscas do Search Console nao existem nos dados reais",
+      "sha256": "109cbe9d86a5dd8a6605f1c752ee576476d3a997be4d4d327c201b2c8a06e2ac"
+    },
+    {
+      "id": "correcoes-publicadas",
+      "path": "correcoes-publicadas.md",
+      "title": "Correcoes publicadas no site",
+      "status": "completed",
+      "owner": "Roteador seo",
+      "outcome": "181 arquivos no ar e conferidos; previa removida; sitemap com 3 paginas novas",
+      "sha256": "0c309989ac7ba9f36002ee77f0212001e5a18b6ffc2e534210f23c199fcc531c"
+    },
+    {
+      "id": "avaliacao",
+      "path": "delivery-summary.md",
+      "title": "Avaliacao consolidada",
+      "status": "completed",
+      "owner": "Roteador seo",
+      "outcome": "12 achados priorizados; horario de sabado resolvido; itens 1-4 corrigidos e publicados",
+      "sha256": "4484fae952df1f02aa0afab07a468cf93f815761893dcd21001e198f23f3504c"
+    },
+    {
+      "id": "contagem-whatsapp",
+      "path": "contagem-whatsapp-por-cidade.md",
+      "title": "Contagem dos toques no WhatsApp por cidade",
+      "status": "completed",
+      "owner": "Roteador seo",
+      "outcome": "Contador do site no ar em 218 paginas; Nexcafe le a cada 3 h e mostra por cidade; 76/76 testes",
+      "sha256": "fcd54b005a1786882c320407b5bdf2ceee1bb5c09bfe44aef4ed14c82bfa857d"
+    },
+    {
+      "id": "volume-varginha-tng",
+      "path": "volume-buscas-varginha-tng.md",
+      "title": "Volume de buscas em Varginha (TNG)",
+      "status": "completed",
+      "owner": "Roteador seo",
+      "outcome": "50 termos medidos; CLT 350/mes, genericos ~2.500/mes, temas dos guias no piso",
+      "sha256": "a4e2355113ecab25c81eda35f7b8431d0e1a287833c23e3e28f4dc248487b369"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+﻿Link base do WhatsApp: https://wa.me/553530675017
+[GRAF]  https://wa.me/553530675017?text=Ola!%20Quero%20orcamento%20de%20impressao%20ou%20foto%203x4.%20%5BGRAF%5D
+[CONS]  https://wa.me/553530675017?text=Ola!%20Quero%20orientacao%20sobre%20consignado.%20%5BCONS%5D
+[DIG]   https://wa.me/553530675017?text=Ola!%20Preciso%20de%20ajuda%20com%20um%20servico%20digital.%20%5BDIG%5D
+[PERFIL] https://wa.me/553530675017?text=Ola!%20Vim%20pelo%20Perfil%20da%20Empresa%20no%20Google.%20%5BPERFIL%5D
+[GERAL] https://wa.me/553530675017?text=Ola!%20Vim%20pelo%20site%20e%20quero%20atendimento.%20%5BGERAL%5D

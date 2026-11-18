@@ -1,0 +1,16 @@
+# robots.txt — Speed Financeira e Lan House
+# Versao de 07/11/2026. Nada foi publicado.
+#
+# Objetivo: permitir a indexacao das paginas publicas e apontar o sitemap.
+# As ferramentas internas (21 a 32) NAO sao publicadas no site; por isso
+# nao aparecem aqui. Se algum dia forem publicadas, bloquear com Disallow.
+
+User-agent: *
+Allow: /
+
+# Nao indexar areas de teste ou rascunho, se forem publicadas por engano
+Disallow: /rascunho/
+Disallow: /teste/
+
+# Sitemap
+Sitemap: https://speedfinanceira.com.br/sitemap.xml

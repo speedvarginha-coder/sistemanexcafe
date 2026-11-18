@@ -1,0 +1,68 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Cartaz de Balcão — FGTS no PIX Speed</title>
+<style>
+  :root { --verde: #019652; --verde-escuro: #016b3b; --amarelo: #f8db1f; --texto: #1e293b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; background: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; }
+  .cartaz { width: 210mm; min-height: 297mm; margin: 10mm auto; background: #fff; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; flex-direction: column; justify-content: space-between; }
+  .header { background: linear-gradient(135deg, var(--verde-escuro), var(--verde)); color: #fff; padding: 25mm 20mm 20mm; text-align: center; border-bottom: 8mm solid var(--amarelo); }
+  .header small { font-size: 14pt; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: var(--amarelo); display: block; margin-bottom: 5mm; }
+  .header h1 { font-size: 38pt; line-height: 1.1; margin: 0; text-transform: uppercase; font-weight: 900; }
+  .body { padding: 15mm 20mm; text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .headline { font-size: 22pt; color: var(--verde-escuro); font-weight: 800; margin-bottom: 8mm; line-height: 1.3; }
+  .benefits { text-align: left; background: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 8mm; padding: 8mm 15mm; margin-bottom: 10mm; width: 100%; max-width: 170mm; }
+  .benefit-item { font-size: 16pt; margin: 4mm 0; display: flex; align-items: center; color: #0f172a; font-weight: 600; }
+  .benefit-item span { color: var(--verde); font-size: 22pt; margin-right: 4mm; font-weight: bold; }
+  .qr-box { display: flex; align-items: center; gap: 10mm; background: #ecfdf5; border: 3px solid var(--verde); border-radius: 6mm; padding: 6mm 10mm; }
+  .qr-box img { width: 48mm; height: 48mm; background: white; padding: 2mm; border-radius: 4mm; }
+  .qr-text { text-align: left; }
+  .qr-text h3 { margin: 0 0 2mm; font-size: 18pt; color: var(--verde-escuro); font-weight: 800; }
+  .qr-text p { margin: 0; font-size: 13pt; color: #334155; line-height: 1.4; }
+  .footer { background: #0f172a; color: #fff; text-align: center; padding: 8mm 20mm; font-size: 12pt; }
+  .footer strong { color: var(--amarelo); font-size: 14pt; }
+  @media print {
+    @page { size: A4 portrait; margin: 0; }
+    body { background: #fff; }
+    .cartaz { width: 100%; height: 100vh; margin: 0; box-shadow: none; }
+    .cartaz, .header, .footer, .qr-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+<div class="cartaz">
+  <div class="header">
+    <small>Speed Financeira — Rua Santa Cruz, 696 (Centro)</small>
+    <h1>Precisa de Dinheiro Hoje?</h1>
+  </div>
+  
+  <div class="body">
+    <div class="headline">
+      Antecipe o seu Saque-Aniversário do FGTS<br>
+      <span style="color: var(--verde); font-size: 26pt;">Direto no seu PIX em até 2 horas!</span>
+    </div>
+    
+    <div class="benefits">
+      <div class="benefit-item"><span>✓</span> Dinheiro rápido para quem trabalha ou já trabalhou de carteira assinada</div>
+      <div class="benefit-item"><span>✓</span> NÃO gera carnê nem boleto mensal para pagar</div>
+      <div class="benefit-item"><span>✓</span> NÃO desconta do salário do mês (desconto anual no saldo FGTS)</div>
+      <div class="benefit-item"><span>✓</span> Disponível mesmo para quem está com o nome negativado</div>
+    </div>
+    
+    <div class="qr-box">
+      <img src="qr_02_consignado.png" alt="QR Code WhatsApp Speed Financeira">
+      <div class="qr-text">
+        <h3>Faça sua simulação gratuita agora!</h3>
+        <p>Aponte a câmera do celular para o código ao lado ou <strong>peça ao atendente no balcão</strong>. Consulta em 2 minutos sem compromisso!</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    Atendimento no Balcão ou pelo WhatsApp: <strong>(35) 3067-5017</strong> — Correspondente Autorizado com mais de 10 Bancos
+  </div>
+</div>
+</body>
+</html>

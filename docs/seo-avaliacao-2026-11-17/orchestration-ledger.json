@@ -1,0 +1,320 @@
+{
+  "ledger_version": "1.0.0",
+  "suite_version": "3.3.0",
+  "created_at": "2026-11-17T20:25:30Z",
+  "request": {
+    "summary": "Avaliar o SEO do site e da ficha da Speed Financeira (somente leitura)",
+    "mode": "broad",
+    "authorized_boundary": "Avaliacao somente leitura; sem alteracao no site, na ficha ou em provedores"
+  },
+  "overall_state": "blocked",
+  "skills": [
+    {
+      "skill": "ai-search-research",
+      "state": "blocked",
+      "reason": "Sem acesso autorizado para observar respostas de buscadores com IA",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Acesso autorizado aos buscadores com IA ou exportacao de observacoes",
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-aeo",
+      "state": "blocked",
+      "reason": "Fica para depois da decisao do dono; exige Research Pack que nao existe",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Research Pack de buscadores com IA e decisao do dono",
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-geo",
+      "state": "blocked",
+      "reason": "Fica para depois da decisao do dono; exige Research Pack que nao existe",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Research Pack de buscadores com IA e decisao do dono",
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "ai-visibility-monitor",
+      "state": "blocked",
+      "reason": "Depende de Research Pack e corpus congelado, que nao existem",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Research Pack e corpus de perguntas congelado",
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo",
+      "state": "completed",
+      "reason": "Intake, cobertura, sintese e relatorio unico",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-action-plan",
+      "state": "blocked",
+      "reason": "Proximo passo apos aprovacao do dono sobre os achados",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Aprovacao do dono sobre quais achados viram plano",
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-agentic",
+      "state": "not-applicable",
+      "reason": "Contato e pelo WhatsApp; nao ha tarefa de agente no site para avaliar",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-architecture",
+      "state": "completed",
+      "reason": "Grafo de links internos, orfas, links recebidos e indice /guia/ com 403",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-authority",
+      "state": "blocked",
+      "reason": "Sem dados de backlinks; ferramenta de links nao autorizada",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Exportacao autorizada de backlinks (Ahrefs, Search Console Links ou similar)",
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-audit",
+      "state": "completed",
+      "reason": "Avaliacao multi-frente das 186 URLs dos sitemaps",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-commerce",
+      "state": "not-applicable",
+      "reason": "Servico financeiro sem loja, produto com preco ou feed de comercio",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-competitor-pages",
+      "state": "not-applicable",
+      "reason": "Nao ha paginas de comparacao ou alternativa a concorrentes",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-content",
+      "state": "completed",
+      "reason": "Profundidade, paginas finas e frases de promessa proibidas pela marca",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-hreflang",
+      "state": "not-applicable",
+      "reason": "Site em um unico idioma (pt-BR, 186 de 186 paginas) e um unico pais",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-images",
+      "state": "completed",
+      "reason": "Alt e dimensoes das imagens em todas as paginas",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-local",
+      "state": "completed",
+      "reason": "Saude da ficha (22 itens), GeoGrid de 4 termos e 9 diretorios NAP",
+      "evidence_refs": [
+        "evidencias/geogrid-ultimas.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-news-discover",
+      "state": "not-applicable",
+      "reason": "Blog de orientacao, sem politica de publicador de noticias",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-page",
+      "state": "completed",
+      "reason": "Titulo, descricao, H1 e dono de cada busca avaliados por pagina",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json",
+        "evidencias/search-console-2026-10-18_2026-11-14.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-plan",
+      "state": "blocked",
+      "reason": "Sequenciamento depende do plano de acao aprovado",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Plano de acao aprovado",
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-programmatic",
+      "state": "completed",
+      "reason": "129 guias por cidade: repeticao, datas e desempenho no Search Console",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json",
+        "evidencias/search-console-2026-10-18_2026-11-14.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-research",
+      "state": "completed",
+      "reason": "Buscas reais do Search Console e termos do GeoGrid separados em curto prazo e lideranca",
+      "evidence_refs": [
+        "evidencias/search-console-2026-10-18_2026-11-14.json",
+        "evidencias/geogrid-ultimas.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-performance",
+      "state": "completed",
+      "reason": "Search Console de 28 dias; PageSpeed recusado por limite diario (limitacao registrada)",
+      "evidence_refs": [
+        "evidencias/search-console-2026-10-18_2026-11-14.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-schema",
+      "state": "completed",
+      "reason": "Tipos de schema por pagina e horario no OpeningHoursSpecification",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-sitemap",
+      "state": "completed",
+      "reason": "Dois sitemaps comparados com as paginas no ar; 3 paginas fora e duplicidade",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-technical",
+      "state": "completed",
+      "reason": "Status, redirecionamentos, robots, canonical, noindex, cabecalhos e favicon conferidos",
+      "evidence_refs": [
+        "evidencias/captura-site-2026-11-17.json"
+      ],
+      "output_refs": [
+        "delivery-summary.md"
+      ],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "seo-video",
+      "state": "not-applicable",
+      "reason": "Nenhuma pagina de video ou player no inventario capturado",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": null,
+      "owner_decision_ref": null
+    },
+    {
+      "skill": "optimise-seo",
+      "state": "blocked",
+      "reason": "Implementacao nao autorizada nesta avaliacao somente leitura",
+      "evidence_refs": [],
+      "output_refs": [],
+      "blocker": "Autorizacao de implementacao no gerador do site",
+      "owner_decision_ref": null
+    }
+  ],
+  "coverage_summary": "13 frentes executadas, 3 bloqueadas por falta de dados (IA e backlinks), 6 nao se aplicam, 5 aguardam decisao do dono antes de plano e implementacao.",
+  "limitations": [
+    "PageSpeed Insights recusou a consulta por limite diario",
+    "Sem observacao de respostas de buscadores com IA",
+    "Sem dados de backlinks",
+    "Verificacao e links de acao da ficha nao lidos: APIs desligadas no Google Cloud"
+  ]
+}

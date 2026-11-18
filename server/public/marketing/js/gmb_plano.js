@@ -461,7 +461,10 @@ function renderGmbPostsPlano() {
             ${post.arte ? `<a href="${escaparHtml(post.arte.arquivo)}" target="_blank" rel="noopener" class="gmb-post-arte" title="Abrir a arte em tamanho real"><img src="${escaparHtml(post.arte.arquivo)}" alt="Arte do post de ${gmbDataCurta(post.data)}: ${escaparHtml(post.arte.titulo.replace(/\*/g, ''))}" loading="lazy"></a>` : ''}
             <div class="gmb-post-texto">${escaparHtml(post.texto)}</div>
             <p class="text-[11px] text-gray-600 mt-2"><strong>Foto:</strong> ${escaparHtml(post.foto)}</p>
-            <p class="text-[11px] text-gray-600"><strong>Botão:</strong> ${escaparHtml(post.botao)}${post.link ? ` (${escaparHtml(post.link)})` : ''}</p>
+            <div class="text-[11px] text-gray-600 flex items-center flex-wrap gap-1.5 mt-1">
+              <strong>Botão:</strong> <span>${escaparHtml(post.botao)}</span>
+              ${post.link ? `<a href="${escaparHtml(post.link)}" target="_blank" rel="noopener noreferrer" class="gmb-post-link-pill" title="${escaparHtml(post.link)}"><i class="fab fa-whatsapp text-emerald-600"></i> Link WhatsApp <i class="fas fa-arrow-up-right-from-square text-[9px] text-gray-400"></i></a>` : ''}
+            </div>
             <div class="gmb-rotina-acoes">
               ${acoes.join('')}
               <button type="button" data-gmb-post-copiar="${post.id}" class="gmb-btn-link">Copiar texto</button>

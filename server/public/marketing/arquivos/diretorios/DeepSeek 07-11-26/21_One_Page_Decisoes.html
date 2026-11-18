@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<!--
+  One-page de decisões — uso interno, imprimível em A4.
+  Não publicar. As respostas ficam no navegador (localStorage).
+  Versão: 2026-11-07
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Decisões que destravam a Speed — one-page</title>
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f4f7f5; --branco:#fff;
+  --borda:#dfe7e2; --cinza:#63766b; --vermelho:#b91c1c;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45;font-size:13px}
+.wrap{max-width:940px;margin:0 auto;padding:18px 20px 60px}
+header{background:linear-gradient(135deg,var(--verde-escuro),var(--verde));color:#fff;border-radius:14px;padding:22px 24px;margin-bottom:14px}
+header h1{margin:0;font-size:24px;letter-spacing:-.4px;line-height:1.15}
+header p{margin:6px 0 0;color:#dff1e7;font-size:12.5px}
+header .meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+header .meta span{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.28);
+  border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700}
+.status{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:14px}
+.status div{background:#fff;border:1px solid var(--borda);border-left:4px solid var(--amarelo);border-radius:9px;padding:9px 12px}
+.status strong{display:block;font-size:19px;color:var(--tinta);line-height:1.1}
+.status small{font-size:11px;color:var(--cinza);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.dec{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:14px 16px;margin-bottom:10px;break-inside:avoid}
+.dec h2{margin:0 0 2px;font-size:15px;color:var(--tinta);letter-spacing:-.2px}
+.dec h2 .n{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:7px;
+  background:var(--verde);color:#fff;font-size:12px;margin-right:7px;vertical-align:1px}
+.dec .pq{margin:0 0 8px;font-size:12.5px;color:var(--cinza)}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px;margin:6px 0}
+.opts label{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--borda);border-radius:8px;
+  padding:7px 9px;cursor:pointer;font-size:12.5px;background:#fbfdfc}
+.opts label:has(input:checked){border-color:var(--verde);background:#effaf4;box-shadow:0 0 0 1px var(--verde) inset}
+.opts input{margin:2px 0 0;accent-color:var(--verde);flex:0 0 auto}
+.rec{display:inline-block;background:#fff8cc;border:1px solid #f0dd7a;color:#5c4b00;
+  border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-left:6px}
+.horario{display:grid;grid-template-columns:1.2fr .8fr .8fr .6fr;gap:4px;margin-top:6px;max-width:430px}
+.horario span{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;color:var(--cinza)}
+.horario label{font-size:12px;padding:3px 0;color:var(--tinta);font-weight:600}
+input[type=text],input[type=time],textarea{width:100%;border:1px solid #cbd8d0;border-radius:7px;
+  padding:5px 7px;font:inherit;font-size:12.5px;color:var(--tinta);background:#fff}
+input[type=text]:focus,textarea:focus{outline:2px solid var(--verde);outline-offset:0}
+textarea{min-height:46px;resize:vertical}
+.assin{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-top:10px;align-items:end}
+.linha{border-bottom:1px solid #9fb2a7;padding-bottom:3px;font-size:11px;color:var(--cinza)}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 8px}
+button{font:inherit;font-size:12.5px;font-weight:800;cursor:pointer;border-radius:8px;padding:8px 14px;border:2px solid transparent}
+.primario{background:var(--verde);color:#fff;border-color:var(--verde)}
+.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.perigo{background:#fff;color:var(--vermelho);border-color:#f3c6c6}
+.msg{font-size:12px;color:var(--verde-escuro);font-weight:700;min-height:16px}
+.rodape{font-size:11.5px;color:var(--cinza);margin-top:10px;border-top:1px solid var(--borda);padding-top:10px}
+.rodape strong{color:var(--tinta)}
+.aviso{background:#fffbe6;border:1px solid #f3e08a;border-radius:9px;padding:8px 12px;font-size:11.5px;color:#5c4b00;margin-bottom:12px}
+@media print{
+  @page{size:A4;margin:8mm}
+  body{background:#fff;font-size:8.4pt;line-height:1.25}
+  .wrap{max-width:none;padding:0}
+  header{background:#016b3b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;border-radius:0;padding:5mm 6mm}
+  header h1{font-size:14pt}
+  header p{font-size:8.2pt;margin-top:2px}
+  header .meta{margin-top:4px;gap:4px}
+  header .meta span{font-size:6.8pt;padding:1px 6px}
+  .status{grid-template-columns:repeat(5,1fr);gap:3px;margin-bottom:5px}
+  .status div{padding:3px 6px;border-radius:0}
+  .status strong{font-size:10.5pt}
+  .status small{font-size:6.6pt}
+  .dec{padding:4px 6px;margin-bottom:3px;border-radius:0}
+  .dec h2{font-size:9.6pt}
+  .dec h2 .n{width:15px;height:15px;font-size:7.5pt;border-radius:4px;margin-right:4px}
+  .dec .pq{font-size:7.4pt;margin-bottom:2px}
+  .opts{grid-template-columns:1fr 1fr;gap:2px;margin:2px 0}
+  .opts label{padding:2px 4px;font-size:7.5pt;border-radius:0;gap:4px}
+  .rec{font-size:6.4pt;padding:0 5px}
+  .horario{grid-template-columns:1fr .65fr .65fr .5fr;max-width:none;gap:1px}
+  .horario span{font-size:6.6pt}
+  .horario label{font-size:7.6pt;padding:0}
+  input[type=text],input[type=time],textarea{border:0;border-bottom:1px solid #8fa397;border-radius:0;background:transparent;padding:0 1px;font-size:7.8pt}
+  textarea{min-height:16px}
+  .assin{grid-template-columns:1.4fr 1fr;gap:10px;margin-top:4px}
+  .linha{font-size:7pt;padding-bottom:1px}
+  .acoes,.aviso,.msg{display:none!important}
+  .rodape{font-size:6.6pt;margin-top:3px;padding-top:3px}
+  .dec,.status div{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Decisões que destravam a Speed</h1>
+  <p>Quatro respostas do dono liberam a correção de 25 fichas, o site e as campanhas. Leva menos de 10 minutos.</p>
+  <div class="meta">
+    <span>Varginha/MG · 07/11/2026</span>
+    <span>Uso interno</span>
+    <span>Preencha, assine e devolva</span>
+  </div>
+</header>
+
+<div class="aviso">
+  <strong>Como usar:</strong> marque uma opção por bloco (ou escreva a resposta), preencha o horário real e assine.
+  Para devolver, imprima esta página ou envie foto legível. As respostas ficam salvas neste navegador até você limpar.
+</div>
+
+<div class="status">
+  <div><small>Fichas com NAP correto</small><strong>10 / 21</strong></div>
+  <div><small>Telefone desativado</small><strong>8 fichas</strong></div>
+  <div><small>Identidade completa</small><strong>0 / 21</strong></div>
+  <div><small>Acessos confirmados</small><strong>0 / 36</strong></div>
+  <div><small>Duplicidades ativas</small><strong>6</strong></div>
+</div>
+
+<section class="dec">
+  <h2><span class="n">1</span>Nome de exibição <span class="rec">Recomendado: A</span></h2>
+  <p class="pq">Qual nome deve aparecer igual no Google, site, diretórios, landing pages e documentos?</p>
+  <div class="opts">
+    <label><input type="radio" name="nome" value="A">
+      <span><strong>A. Speed Financeira e Lan House</strong><br>Mantém a busca por lan house e gráfica. É o nome que a maioria das fichas já usa.</span></label>
+    <label><input type="radio" name="nome" value="B">
+      <span><strong>B. Speed Financeira</strong><br>Marca limpa, alinhada ao domínio. Perde a associação com lan house/gráfica.</span></label>
+    <label><input type="radio" name="nome" value="C">
+      <span><strong>C. Nome longo com “Empréstimo Consignado”</strong><br>Risco alto: o Google não aceita palavra-chave promocional no nome do perfil.</span></label>
+    <label><input type="radio" name="nome" value="OUTRO">
+      <span><strong>Outro nome</strong><br><input type="text" id="nomeOutro" placeholder="Escreva o nome aprovado" aria-label="Outro nome aprovado"></span></label>
+  </div>
+</section>
+
+<section class="dec">
+  <h2><span class="n">2</span>Horário de funcionamento</h2>
+  <p class="pq">Hoje há seis versões no ar. O horário aprovado aqui vira a fonte única.</p>
+  <div class="horario">
+    <span>Dia</span><span>Abre</span><span>Fecha</span><span>Fechado</span>
+    <label>Segunda</label><input type="time" id="segA" aria-label="Abertura segunda"><input type="time" id="segF" aria-label="Fechamento segunda"><input type="text" id="segX" placeholder="—" aria-label="Fechado segunda">
+    <label>Terça</label><input type="time" id="terA" aria-label="Abertura terça"><input type="time" id="terF" aria-label="Fechamento terça"><input type="text" id="terX" placeholder="—" aria-label="Fechado terça">
+    <label>Quarta</label><input type="time" id="quaA" aria-label="Abertura quarta"><input type="time" id="quaF" aria-label="Fechamento quarta"><input type="text" id="quaX" placeholder="—" aria-label="Fechado quarta">
+    <label>Quinta</label><input type="time" id="quiA" aria-label="Abertura quinta"><input type="time" id="quiF" aria-label="Fechamento quinta"><input type="text" id="quiX" placeholder="—" aria-label="Fechado quinta">
+    <label>Sexta</label><input type="time" id="sexA" aria-label="Abertura sexta"><input type="time" id="sexF" aria-label="Fechamento sexta"><input type="text" id="sexX" placeholder="—" aria-label="Fechado sexta">
+    <label>Sábado</label><input type="time" id="sabA" aria-label="Abertura sábado"><input type="time" id="sabF" aria-label="Fechamento sábado"><input type="text" id="sabX" placeholder="—" aria-label="Fechado sábado">
+    <label>Domingo</label><input type="time" id="domA" aria-label="Abertura domingo"><input type="time" id="domF" aria-label="Fechamento domingo"><input type="text" id="domX" placeholder="fechado" aria-label="Fechado domingo">
+  </div>
+  <div style="margin-top:6px">
+    <label for="obsHorario" style="font-size:11px;font-weight:800;color:#63766b;text-transform:uppercase;letter-spacing:.3px">Feriados, almoço ou observação</label>
+    <input type="text" id="obsHorario" placeholder="Ex.: almoço 12h–13h; feriado segue horário de sábado">
+  </div>
+</section>
+
+<section class="dec">
+  <h2><span class="n">3</span>Razão social e CEP no site</h2>
+  <p class="pq">O site declara “Speed Financeira Promotora de Crédito Ltda” e CEP 37010-000. O registro aponta empresário individual e CEP 37002-090.</p>
+  <div class="opts">
+    <label><input type="radio" name="razao" value="A">
+      <span><strong>A. Corrigir agora</strong><br>Exibir a marca “Speed Financeira” com CNPJ no rodapé e CEP 37002-090.</span></label>
+    <label><input type="radio" name="razao" value="B">
+      <span><strong>B. Consultar o contador antes</strong><br>Manter como está até a orientação contábil. O restante do plano segue.</span></label>
+    <label><input type="radio" name="razao" value="C">
+      <span><strong>C. Exibir a razão social completa</strong><br>Gleison Kleber dos Santos — empresário individual, conforme Receita.</span></label>
+  </div>
+</section>
+
+<section class="dec">
+  <h2><span class="n">4</span>Destino das fichas e do Localo</h2>
+  <p class="pq">Cylex e Planeta Brasileiro apontam para Localo e Spotway. Citação que aponta para terceiro transfere autoridade.</p>
+  <div class="opts">
+    <label><input type="radio" name="localo" value="A">
+      <span><strong>A. Padronizar no domínio próprio</strong><br>Todas as fichas apontam para speedfinanceira.com.br. Localo só como apoio, apontando para o site.</span></label>
+    <label><input type="radio" name="localo" value="B">
+      <span><strong>B. Manter o Localo como página de apoio</strong><br>Sem competir com o site e sempre com link para o domínio próprio.</span></label>
+    <label><input type="radio" name="localo" value="C">
+      <span><strong>C. Remover o Localo</strong><br>Redirecionar ou despublicar a página de terceiro.</span></label>
+  </div>
+</section>
+
+<div class="assin">
+  <div>
+    <div class="linha">Aprovado por (nome e assinatura)</div>
+  </div>
+  <div>
+    <div class="linha">Data ____ / ____ / ______</div>
+  </div>
+</div>
+
+<div class="acoes">
+  <button class="primario" type="button" id="btnSalvar">Salvar respostas</button>
+  <button class="sec" type="button" id="btnImprimir">Imprimir / salvar PDF</button>
+  <button class="perigo" type="button" id="btnLimpar">Limpar respostas</button>
+</div>
+<div class="msg" id="msg" role="status" aria-live="polite"></div>
+
+<div class="rodape">
+  <strong>Depois de assinar:</strong> atualize `03_Decisoes_Pendentes.md` com as respostas e execute, nesta ordem:
+  Google → site → 25 fichas → landing pages. Sem o nome e o horário, a correção volta na próxima reimportação.
+  <br><strong>Speed Financeira e Lan House</strong> · CNPJ 29.497.887/0001-57 · Rua Santa Cruz, 696, Centro, Varginha/MG · (35) 3067-5017
+</div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var CHAVE = 'speed_decisoes_v1';
+  var camposTexto = ['nomeOutro', 'obsHorario'];
+  var dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+
+  function $(id) { return document.getElementById(id); }
+
+  function coletar() {
+    var dados = { texto: {}, radios: {}, horarios: {} };
+    camposTexto.forEach(function (id) { dados.texto[id] = $(id).value; });
+    ['nome', 'razao', 'localo'].forEach(function (nome) {
+      var marcado = document.querySelector('input[name="' + nome + '"]:checked');
+      dados.radios[nome] = marcado ? marcado.value : '';
+    });
+    dias.forEach(function (d) {
+      dados.horarios[d] = {
+        abre: $(d + 'A').value,
+        fecha: $(d + 'F').value,
+        fechado: $(d + 'X').value
+      };
+    });
+    return dados;
+  }
+
+  function salvar(silencioso) {
+    try {
+      localStorage.setItem(CHAVE, JSON.stringify(coletar()));
+      if (!silencioso) {
+        $('msg').textContent = 'Respostas salvas neste navegador em ' +
+          new Date().toLocaleString('pt-BR') + '.';
+      }
+    } catch (e) {
+      if (!silencioso) $('msg').textContent = 'Não foi possível salvar: ' + e.message;
+    }
+  }
+
+  function carregar() {
+    var bruto;
+    try { bruto = localStorage.getItem(CHAVE); } catch (e) { return; }
+    if (!bruto) return;
+    var dados;
+    try { dados = JSON.parse(bruto); } catch (e) { return; }
+
+    Object.keys(dados.texto || {}).forEach(function (id) {
+      if ($(id)) $(id).value = dados.texto[id];
+    });
+    Object.keys(dados.radios || {}).forEach(function (nome) {
+      var valor = dados.radios[nome];
+      if (!valor) return;
+      var alvo = document.querySelector('input[name="' + nome + '"][value="' + valor + '"]');
+      if (alvo) alvo.checked = true;
+    });
+    Object.keys(dados.horarios || {}).forEach(function (d) {
+      if (dias.indexOf(d) === -1) return;
+      var h = dados.horarios[d] || {};
+      if (h.abre) $(d + 'A').value = h.abre;
+      if (h.fecha) $(d + 'F').value = h.fecha;
+      if (h.fechado) $(d + 'X').value = h.fechado;
+    });
+  }
+
+  document.querySelectorAll('input, textarea').forEach(function (el) {
+    el.addEventListener('change', function () { salvar(true); });
+  });
+
+  $('btnSalvar').addEventListener('click', function () { salvar(false); });
+
+  $('btnImprimir').addEventListener('click', function () {
+    salvar(true);
+    window.print();
+  });
+
+  $('btnLimpar').addEventListener('click', function () {
+    if (!confirm('Apagar todas as respostas salvas neste navegador?')) return;
+    try { localStorage.removeItem(CHAVE); } catch (e) {}
+    document.querySelectorAll('input[type=radio]').forEach(function (r) { r.checked = false; });
+    document.querySelectorAll('input[type=text], input[type=time], textarea').forEach(function (i) { i.value = ''; });
+    $('msg').textContent = 'Respostas apagadas.';
+  });
+
+  carregar();
+})();
+</script>
+</body>
+</html>

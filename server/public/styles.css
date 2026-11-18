@@ -4804,3 +4804,70 @@ tr.mutedRow td { color: var(--text-muted); }
 /* Painel do plano: diferenca para a meta */
 .planOk { color: #047857; font-weight: 700; }
 .planGap { color: #b91c1c; font-weight: 700; }
+
+/* Sub-menu do Speed Marketing na Sidebar Lateral */
+.sidebar-sub-menu {
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 6px 14px;
+  margin-top: 2px;
+  border-left: 2px solid rgba(255, 255, 255, 0.15);
+  margin-left: 18px;
+}
+.sidebar-sub-menu.open {
+  display: flex;
+}
+.sidebar-sub-menu .sub-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  color: #d7eedf;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.12s ease;
+  width: 100%;
+  font-weight: 500;
+}
+.sidebar-sub-menu .sub-nav-btn svg {
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  flex-shrink: 0;
+}
+.sidebar-sub-menu .sub-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+.sidebar-sub-menu .sub-nav-btn.active {
+  background: rgba(245, 197, 24, 0.2);
+  color: #f5c518;
+  font-weight: 700;
+}
+.sidebar-sub-menu .sub-nav-btn.active svg {
+  color: #f5c518;
+}
+
+/* Menu lateral do tamanho da tela: com o submenu do Speed Marketing aberto a lista passa da altura,
+   então ela rola por dentro do fundo verde em vez de crescer a página (antes os últimos itens
+   ficavam fora do verde e a tela do marketing terminava no meio, com área vazia embaixo).
+   A margem negativa à esquerda mantém visível a marca amarela do item ativo (left: -14px). */
+@media (min-width: 769px) {
+  .sidebar { overflow: hidden; }
+  .sidebar nav {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    margin: 0 -8px 0 -14px;
+    padding: 0 8px 8px 14px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+  }
+  .sideFooter { flex-shrink: 0; }
+}

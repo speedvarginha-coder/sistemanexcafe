@@ -1,0 +1,9 @@
+﻿HORARIO - PENDENTE DE DECISAO
+
+O horario ainda nao foi aprovado pelo dono (03_Decisoes_Pendentes.md, Decisao 2).
+Enquanto isso:
+  - no Google, usar o horario real praticado pela loja;
+  - nos diretorios, nao inventar: se o campo for obrigatorio, usar o mesmo do Google;
+  - no site, nao publicar horario divergente.
+
+Depois da aprovacao, este bloco sera atualizado e replicado em site, Google e fichas.

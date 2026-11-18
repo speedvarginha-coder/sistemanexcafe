@@ -1,0 +1,17 @@
+﻿CONFERENCIA ANTES DE ENVIAR
+
+[ ] Nome igual em todos os campos
+[ ] Endereco: Rua Santa Cruz, 696 - Centro
+[ ] CEP: 37002-090
+[ ] Telefone: (35) 3067-5017
+[ ] WhatsApp: https://wa.me/553530675017
+[ ] Site: https://speedfinanceira.com.br
+[ ] E-mail: speed.varginha@gmail.com
+[ ] Horario: somente o aprovado na Decisao 2
+[ ] Nenhum telefone 3113-0458 ou 3067-4361
+[ ] Nenhuma promessa de aprovacao de credito
+[ ] Nenhum logo oficial de governo
+[ ] Descricao dentro do limite do campo
+[ ] Protocolo registrado em 13_Protocolos.csv
+[ ] Print da ficha salvo na pasta da loja
+[ ] Conferido em janela anonima depois de publicar

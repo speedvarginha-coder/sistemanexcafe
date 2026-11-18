@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<!--
+  Simulador de mídia — uso interno.
+  Projeção com premissas EDITÁVEIS. Não é promessa de resultado.
+  Dados ficam no navegador (localStorage).
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Simulador de mídia — Speed Financeira</title>
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f4f7f5; --branco:#fff;
+  --borda:#dfe7e2; --cinza:#63766b; --vermelho:#b91c1c; --azul:#1d4ed8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5;font-size:14px}
+.wrap{max-width:1120px;margin:0 auto;padding:18px 20px 70px}
+header{background:linear-gradient(135deg,var(--verde-escuro),var(--verde));color:#fff;border-radius:14px;padding:24px;margin-bottom:16px}
+header h1{margin:0;font-size:clamp(21px,3vw,28px);letter-spacing:-.5px}
+header p{margin:6px 0 0;color:#dff1e7;font-size:13.5px;max-width:82ch}
+.aviso{background:#fffbe6;border:1px solid #f3e08a;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#5c4b00;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:17px;color:var(--tinta);letter-spacing:-.3px}
+.card .sub{margin:0 0 12px;font-size:12.5px;color:var(--cinza)}
+label{display:block;font-size:11.5px;font-weight:800;color:var(--tinta);margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+input{width:100%;padding:8px 10px;border:1px solid #cbd8d0;border-radius:8px;font:inherit;font-size:13.5px;background:#fff;color:var(--tinta)}
+input:focus{outline:2px solid var(--verde);outline-offset:0}
+.campos{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button{font:inherit;font-size:13px;font-weight:800;cursor:pointer;border-radius:8px;padding:9px 15px;border:2px solid transparent}
+.primario{background:var(--verde);color:#fff;border-color:var(--verde)}
+.primario:hover{background:var(--verde-escuro);border-color:var(--verde-escuro)}
+.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.sec:hover{background:#effaf4}
+.perigo{background:#fff;color:var(--vermelho);border-color:#f3c6c6}
+.mini{padding:4px 9px;font-size:11.5px;border-width:1px}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--borda);text-align:right;white-space:nowrap}
+th{background:#f0f6f2;color:var(--tinta);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+th:first-child,td:first-child{text-align:left}
+td input{padding:5px 7px;font-size:12.5px;min-width:74px}
+td input.nome{min-width:150px}
+.tabela-wrap{overflow-x:auto;border:1px solid var(--borda);border-radius:10px}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:14px}
+.kpi{border:1px solid var(--borda);border-radius:10px;padding:12px;background:#fbfdfc;border-left:4px solid var(--verde)}
+.kpi small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--cinza);font-weight:800}
+.kpi strong{display:block;font-size:21px;color:var(--tinta);letter-spacing:-.5px;line-height:1.2;margin-top:2px}
+.kpi em{font-style:normal;font-size:11.5px;color:var(--cinza)}
+.kpi.amarelo{border-left-color:var(--amarelo)}
+.kpi.vermelho{border-left-color:var(--vermelho)}
+.funil{margin-top:8px}
+.funil .etapa{margin-bottom:7px}
+.funil .rotulo{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--tinta);margin-bottom:3px}
+.funil .trilho{background:#eef4f0;border-radius:999px;height:22px;overflow:hidden}
+.funil .barra{height:100%;background:linear-gradient(90deg,var(--verde-escuro),var(--verde));border-radius:999px;min-width:2px;transition:width .25s}
+.funil .barra.amarela{background:linear-gradient(90deg,#d8b900,var(--amarelo))}
+.funil .barra.azul{background:linear-gradient(90deg,#1e3a8a,#3b82f6)}
+.msg{font-size:12.5px;font-weight:700;color:var(--verde-escuro);min-height:18px;margin-top:8px}
+.linha-total td{font-weight:800;background:#f7fbf9;color:var(--tinta);border-top:2px solid var(--verde)}
+.cenario-1{border-left-color:#b91c1c}
+.cenario-3{border-left-color:#1d4ed8}
+.nota{font-size:11.5px;color:var(--cinza);margin-top:10px}
+.somente-impressao{display:none}
+@media(max-width:700px){.wrap{padding:12px 12px 60px}.card{padding:14px}header{padding:18px}}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:10pt}
+  .wrap{max-width:none;padding:0}
+  .nao-imprime,header,.aviso,.acoes,.msg,.nota{display:none!important}
+  .card{border:0;padding:0;margin:0 0 10px;border-radius:0}
+  .somente-impressao{display:block}
+  .kpis{grid-template-columns:repeat(4,1fr);gap:5px}
+  .kpi{padding:6px 8px;border-radius:0}
+  .kpi strong{font-size:12pt}
+  table{font-size:8.6pt}
+  th,td{padding:4px 5px}
+  td input{border:0;padding:0;background:transparent;font-size:8.6pt}
+  .funil .trilho{height:14px}
+  .funil .rotulo{font-size:8.6pt}
+  .card{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="nao-imprime">
+  <h1>Simulador de mídia</h1>
+  <p>Quanto R$ 1.000 podem virar — em cenário conservador, base e otimista. As premissas são <strong>exemplos</strong> até existir histórico real de campanha. Projeção não é promessa.</p>
+</header>
+
+<div class="aviso nao-imprime">
+  <strong>Leia antes de usar:</strong> custo por conversa, qualificação, fechamento, ticket e margem são chutes iniciais marcados como exemplo.
+  Troque pelos números reais assim que tiver 14 dias de campanha. O simulador não prevê resultado; ele mostra a matemática das suas premissas.
+</div>
+
+<section class="card nao-imprime">
+  <h2>1. Orçamento e canais</h2>
+  <p class="sub">Distribua o orçamento por canal. “Custo por conversa” é o investimento dividido pelas conversas iniciadas no WhatsApp. Qualificação é a parcela que vira conversa útil.</p>
+  <div class="campos">
+    <div>
+      <label for="orcamento">Orçamento mensal (R$)</label>
+      <input id="orcamento" type="number" min="0" step="10" value="1000">
+    </div>
+    <div>
+      <label for="dias">Dias de campanha</label>
+      <input id="dias" type="number" min="1" max="90" step="1" value="30">
+    </div>
+    <div>
+      <label for="metaConversas">Meta de conversas/mês</label>
+      <input id="metaConversas" type="number" min="1" step="1" value="45">
+    </div>
+    <div>
+      <label for="metaVendas">Meta de vendas/mês</label>
+      <input id="metaVendas" type="number" min="1" step="1" value="8">
+    </div>
+  </div>
+
+  <div class="tabela-wrap" style="margin-top:12px">
+    <table>
+      <thead>
+        <tr>
+          <th>Canal</th>
+          <th>Investimento</th>
+          <th>Custo/conversa</th>
+          <th>Qualifica %</th>
+          <th>Fecha %</th>
+          <th>Ticket (R$)</th>
+          <th>Margem %</th>
+          <th>Conversas</th>
+          <th>Vendas</th>
+          <th>Lucro</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="corpoCanais"></tbody>
+      <tfoot id="rodapeCanais"></tfoot>
+    </table>
+  </div>
+
+  <div class="acoes">
+    <button class="sec" type="button" id="btnNovoCanal">Adicionar canal</button>
+    <button class="sec" type="button" id="btnRestaurar">Restaurar exemplo</button>
+    <button class="sec" type="button" id="btnAplicarMil">Aplicar R$ 1.000 proporcional</button>
+  </div>
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</section>
+
+<section class="card">
+  <h2>2. Resultado do cenário base</h2>
+  <p class="sub">Com as premissas atuais, sem contar imposto, taxa de cartão ou custo indireto não informado.</p>
+  <div class="kpis" id="kpis"></div>
+  <div class="funil" id="funil"></div>
+</section>
+
+<section class="card">
+  <h2>3. Três cenários</h2>
+  <p class="sub">O cenário conservador reduz em 30% a qualificação e o fechamento. O otimista aumenta em 30%. O investimento não muda.</p>
+  <div class="kpis" id="cenarios"></div>
+  <div class="nota">Se o cenário conservador já cobre o investimento, a decisão é menos arriscada. Se só o otimista fecha a conta, o teste precisa ser pequeno e rápido.</div>
+</section>
+
+<section class="card">
+  <h2>4. Leitura rápida</h2>
+  <p class="sub">O que decidir com esses números.</p>
+  <div id="diagnostico" class="sub" style="font-size:13.5px"></div>
+</section>
+
+<section class="somente-impressao card">
+  <h2>Premissas usadas</h2>
+  <div class="tabela-wrap">
+    <table>
+      <thead><tr><th>Canal</th><th>Investimento</th><th>Custo/conversa</th><th>Qualifica %</th><th>Fecha %</th><th>Ticket</th><th>Margem %</th></tr></thead>
+      <tbody id="impCanais"></tbody>
+    </table>
+  </div>
+  <div class="nota">
+    Projeção feita em <span id="impData"></span> com premissas editáveis. Não representa promessa de resultado.
+  </div>
+</section>
+
+<div class="acoes nao-imprime">
+  <button class="primario" type="button" id="btnImprimir">Imprimir relatório</button>
+  <button class="sec" type="button" id="btnExportar">Exportar CSV</button>
+  <button class="perigo" type="button" id="btnLimpar">Limpar dados salvos</button>
+</div>
+
+<div class="nota nao-imprime">
+  Uso interno · dados salvos neste navegador · nada é enviado para a internet.
+</div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CHAVE = 'speed_simulador_midia_v1';
+
+  var EXEMPLO = [
+    { nome: 'Google — Gráfica', invest: 300, custoConversa: 12, qualifica: 70, fecha: 55, ticket: 80, margem: 50 },
+    { nome: 'Google — Marca', invest: 150, custoConversa: 8, qualifica: 75, fecha: 60, ticket: 100, margem: 45 },
+    { nome: 'Meta — Gráfica', invest: 200, custoConversa: 10, qualifica: 65, fecha: 50, ticket: 60, margem: 50 },
+    { nome: 'Meta — Consignado', invest: 250, custoConversa: 30, qualifica: 50, fecha: 25, ticket: 700, margem: 50 },
+    { nome: 'Teste do mês', invest: 100, custoConversa: 15, qualifica: 60, fecha: 40, ticket: 100, margem: 40 }
+  ];
+
+  var estado = {
+    orcamento: 1000,
+    dias: 30,
+    metaConversas: 45,
+    metaVendas: 8,
+    canais: []
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function num(v) {
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isFinite(n) ? n : 0;
+  }
+
+  function fmt(v) {
+    return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmt0(v) {
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+
+  function pct(v) { return (v * 100).toFixed(1).replace('.', ',') + '%'; }
+
+  function limitar(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+  function salvar() {
+    try { localStorage.setItem(CHAVE, JSON.stringify(estado)); return true; }
+    catch (e) { return false; }
+  }
+
+  function carregar() {
+    var bruto;
+    try { bruto = localStorage.getItem(CHAVE); } catch (e) { return false; }
+    if (!bruto) return false;
+    var dados;
+    try { dados = JSON.parse(bruto); } catch (e) { return false; }
+    if (!dados || !Array.isArray(dados.canais)) return false;
+    estado = {
+      orcamento: num(dados.orcamento),
+      dias: num(dados.dias) || 30,
+      metaConversas: num(dados.metaConversas) || 45,
+      metaVendas: num(dados.metaVendas) || 8,
+      canais: dados.canais
+    };
+    return true;
+  }
+
+  function restaurar() {
+    estado.canais = EXEMPLO.map(function (c) { return Object.assign({}, c); });
+    estado.orcamento = 1000;
+    estado.dias = 30;
+    estado.metaConversas = 45;
+    estado.metaVendas = 8;
+  }
+
+  function resultadoCanal(canal, fator) {
+    fator = fator == null ? 1 : fator;
+    var invest = num(canal.invest);
+    var custoConversa = num(canal.custoConversa);
+    var conversas = custoConversa > 0 ? invest / custoConversa : 0;
+    var qualifica = limitar(num(canal.qualifica) / 100 * fator, 0, 1);
+    var fecha = limitar(num(canal.fecha) / 100 * fator, 0, 1);
+    var qualificadas = conversas * qualifica;
+    var vendas = qualificadas * fecha;
+    var ticket = num(canal.ticket);
+    var margem = limitar(num(canal.margem) / 100, 0, 1);
+    var receita = vendas * ticket;
+    var contribuicao = receita * margem;
+    var lucro = contribuicao - invest;
+    return {
+      invest: invest,
+      conversas: conversas,
+      qualificadas: qualificadas,
+      vendas: vendas,
+      receita: receita,
+      contribuicao: contribuicao,
+      lucro: lucro,
+      cac: vendas > 0 ? invest / vendas : 0,
+      roas: invest > 0 ? receita / invest : 0,
+      roi: invest > 0 ? lucro / invest : 0,
+      margem: margem
+    };
+  }
+
+  function totais(fator) {
+    var t = { invest: 0, conversas: 0, qualificadas: 0, vendas: 0, receita: 0, contribuicao: 0, lucro: 0 };
+    estado.canais.forEach(function (canal) {
+      var r = resultadoCanal(canal, fator);
+      Object.keys(t).forEach(function (k) { t[k] += r[k]; });
+    });
+    t.cac = t.vendas > 0 ? t.invest / t.vendas : 0;
+    t.roas = t.invest > 0 ? t.receita / t.invest : 0;
+    t.roi = t.invest > 0 ? t.lucro / t.invest : 0;
+    t.custoConversa = t.conversas > 0 ? t.invest / t.conversas : 0;
+    t.ticketMedio = t.vendas > 0 ? t.receita / t.vendas : 0;
+    t.margem = t.receita > 0 ? t.contribuicao / t.receita : 0;
+    t.breakEvenVendas = t.contribuicao > 0 && t.vendas > 0 ? t.invest / (t.contribuicao / t.vendas) : 0;
+    return t;
+  }
+
+  function renderCampos() {
+    $('orcamento').value = estado.orcamento;
+    $('dias').value = estado.dias;
+    $('metaConversas').value = estado.metaConversas;
+    $('metaVendas').value = estado.metaVendas;
+  }
+
+  function celula(canal, campo, passo, classe) {
+    var td = document.createElement('td');
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.min = '0';
+    input.step = passo;
+    input.value = canal[campo];
+    if (classe) input.className = classe;
+    input.addEventListener('change', function () {
+      canal[campo] = num(input.value);
+      if (campo === 'invest') {
+        estado.orcamento = estado.canais.reduce(function (s, c) { return s + num(c.invest); }, 0);
+        $('orcamento').value = estado.orcamento;
+      }
+      salvar();
+      renderTudo();
+    });
+    td.appendChild(input);
+    return td;
+  }
+
+  function renderCanais() {
+    var corpo = $('corpoCanais');
+    corpo.textContent = '';
+
+    estado.canais.forEach(function (canal, indice) {
+      var r = resultadoCanal(canal, 1);
+      var tr = document.createElement('tr');
+
+      var tdNome = document.createElement('td');
+      var inputNome = document.createElement('input');
+      inputNome.type = 'text';
+      inputNome.className = 'nome';
+      inputNome.value = canal.nome;
+      inputNome.addEventListener('change', function () {
+        canal.nome = inputNome.value;
+        salvar();
+        renderTudo();
+      });
+      tdNome.appendChild(inputNome);
+      tr.appendChild(tdNome);
+
+      tr.appendChild(celula(canal, 'invest', '10'));
+      tr.appendChild(celula(canal, 'custoConversa', '1'));
+      tr.appendChild(celula(canal, 'qualifica', '1'));
+      tr.appendChild(celula(canal, 'fecha', '1'));
+      tr.appendChild(celula(canal, 'ticket', '1'));
+      tr.appendChild(celula(canal, 'margem', '1'));
+
+      var tdConversas = document.createElement('td');
+      tdConversas.textContent = fmt0(r.conversas);
+      tr.appendChild(tdConversas);
+
+      var tdVendas = document.createElement('td');
+      tdVendas.textContent = fmt0(r.vendas);
+      tr.appendChild(tdVendas);
+
+      var tdLucro = document.createElement('td');
+      tdLucro.textContent = 'R$ ' + fmt(r.lucro);
+      tdLucro.style.color = r.lucro < 0 ? '#b91c1c' : '#016b3b';
+      tdLucro.style.fontWeight = '700';
+      tr.appendChild(tdLucro);
+
+      var tdAcao = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'perigo mini';
+      btn.textContent = 'Excluir';
+      btn.addEventListener('click', function () {
+        estado.canais.splice(indice, 1);
+        salvar();
+        renderTudo();
+      });
+      tdAcao.appendChild(btn);
+      tr.appendChild(tdAcao);
+
+      corpo.appendChild(tr);
+    });
+
+    if (!estado.canais.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 11;
+      td.textContent = 'Nenhum canal. Adicione ou restaure o exemplo.';
+      td.style.textAlign = 'center';
+      td.style.padding = '20px';
+      tr.appendChild(td);
+      corpo.appendChild(tr);
+    }
+
+    var t = totais(1);
+    var rodape = $('rodapeCanais');
+    rodape.textContent = '';
+    var trf = document.createElement('tr');
+    trf.className = 'linha-total';
+    var valores = ['Total', 'R$ ' + fmt(t.invest), 'R$ ' + fmt(t.custoConversa), '', '', '', '', fmt0(t.conversas), fmt0(t.vendas), 'R$ ' + fmt(t.lucro), ''];
+    valores.forEach(function (v) {
+      var td = document.createElement('td');
+      td.textContent = v;
+      trf.appendChild(td);
+    });
+    rodape.appendChild(trf);
+  }
+
+  function kpi(container, rotulo, valor, detalhe, cor) {
+    var div = document.createElement('div');
+    div.className = 'kpi' + (cor ? ' ' + cor : '');
+    var small = document.createElement('small');
+    small.textContent = rotulo;
+    var strong = document.createElement('strong');
+    strong.textContent = valor;
+    var em = document.createElement('em');
+    em.textContent = detalhe || '';
+    div.appendChild(small);
+    div.appendChild(strong);
+    div.appendChild(em);
+    container.appendChild(div);
+  }
+
+  function renderKpis() {
+    var t = totais(1);
+    var k = $('kpis');
+    k.textContent = '';
+    kpi(k, 'Investimento', 'R$ ' + fmt(t.invest), estado.dias + ' dias', 'amarelo');
+    kpi(k, 'Conversas', fmt0(t.conversas), 'R$ ' + fmt(t.custoConversa) + ' cada');
+    kpi(k, 'Qualificadas', fmt0(t.qualificadas), pct(t.conversas > 0 ? t.qualificadas / t.conversas : 0) + ' das conversas');
+    kpi(k, 'Vendas', fmt0(t.vendas), pct(t.qualificadas > 0 ? t.vendas / t.qualificadas : 0) + ' das qualificadas');
+    kpi(k, 'Receita', 'R$ ' + fmt0(t.receita), 'ticket médio R$ ' + fmt(t.ticketMedio));
+    kpi(k, 'Margem', 'R$ ' + fmt0(t.contribuicao), pct(t.margem) + ' da receita');
+    kpi(k, 'Lucro', 'R$ ' + fmt0(t.lucro), 'margem - investimento', t.lucro < 0 ? 'vermelho' : '');
+    kpi(k, 'ROI', pct(t.roi), 'ROAS ' + t.roas.toFixed(2).replace('.', ',') + 'x', t.roi < 0 ? 'vermelho' : '');
+    kpi(k, 'CAC', 'R$ ' + fmt(t.cac), 'por venda');
+    kpi(k, 'Empate', fmt0(t.breakEvenVendas) + ' vendas', 'para cobrir o investimento', 'amarelo');
+  }
+
+  function renderFunil() {
+    var t = totais(1);
+    var f = $('funil');
+    f.textContent = '';
+    var etapas = [
+      { nome: 'Conversas iniciadas', valor: t.conversas, classe: '' },
+      { nome: 'Conversas qualificadas', valor: t.qualificadas, classe: 'amarela' },
+      { nome: 'Vendas fechadas', valor: t.vendas, classe: 'azul' }
+    ];
+    var maximo = Math.max(1, t.conversas);
+    etapas.forEach(function (e) {
+      var div = document.createElement('div');
+      div.className = 'etapa';
+      var rotulo = document.createElement('div');
+      rotulo.className = 'rotulo';
+      var esquerda = document.createElement('span');
+      esquerda.textContent = e.nome;
+      var direita = document.createElement('span');
+      direita.textContent = fmt0(e.valor);
+      rotulo.appendChild(esquerda);
+      rotulo.appendChild(direita);
+      var trilho = document.createElement('div');
+      trilho.className = 'trilho';
+      var barra = document.createElement('div');
+      barra.className = 'barra ' + e.classe;
+      barra.style.width = Math.max(1, (e.valor / maximo) * 100) + '%';
+      trilho.appendChild(barra);
+      div.appendChild(rotulo);
+      div.appendChild(trilho);
+      f.appendChild(div);
+    });
+  }
+
+  function renderCenarios() {
+    var c = $('cenarios');
+    c.textContent = '';
+    var cenarios = [
+      { nome: 'Conservador (-30%)', fator: 0.7, cor: 'vermelho' },
+      { nome: 'Base', fator: 1, cor: '' },
+      { nome: 'Otimista (+30%)', fator: 1.3, cor: '' }
+    ];
+    cenarios.forEach(function (cen) {
+      var t = totais(cen.fator);
+      var div = document.createElement('div');
+      div.className = 'kpi ' + cen.cor;
+      var small = document.createElement('small');
+      small.textContent = cen.nome;
+      var strong = document.createElement('strong');
+      strong.textContent = 'R$ ' + fmt0(t.lucro);
+      var em = document.createElement('em');
+      em.textContent = fmt0(t.vendas) + ' vendas · ROI ' + pct(t.roi) + (t.lucro < 0 ? ' · não cobre' : ' · cobre');
+      div.appendChild(small);
+      div.appendChild(strong);
+      div.appendChild(em);
+      c.appendChild(div);
+    });
+  }
+
+  function renderDiagnostico() {
+    var alvo = $('diagnostico');
+    var t = totais(1);
+    var conservador = totais(0.7);
+    var linhas = [];
+
+    if (!estado.canais.length) {
+      alvo.textContent = 'Adicione um canal para simular.';
+      return;
+    }
+
+    if (t.lucro > 0) {
+      linhas.push('<strong style="color:#016b3b">O cenário base cobre o investimento.</strong> Lucro projetado de R$ ' + fmt0(t.lucro) + ' com ROI de ' + pct(t.roi) + '.');
+    } else {
+      linhas.push('<strong style="color:#b91c1c">O cenário base não cobre o investimento.</strong> Faltam R$ ' + fmt0(Math.abs(t.lucro)) + '. Reveja ticket, margem ou custo por conversa antes de subir.');
+    }
+
+    if (conservador.lucro < 0 && t.lucro > 0) {
+      linhas.push('No conservador, o resultado fica em R$ ' + fmt0(conservador.lucro) + '. Ou seja: a conta depende de as premissas se confirmarem. Comece pequeno e meça 14 dias.');
+    }
+
+    if (t.conversas < estado.metaConversas) {
+      linhas.push('A projeção gera ' + fmt0(t.conversas) + ' conversas, abaixo da meta de ' + fmt0(estado.metaConversas) + '. Para bater a meta no custo atual, o investimento precisaria de cerca de R$ ' + fmt0(estado.metaConversas * t.custoConversa) + '.');
+    } else {
+      linhas.push('A projeção de ' + fmt0(t.conversas) + ' conversas supera a meta de ' + fmt0(estado.metaConversas) + '.');
+    }
+
+    if (t.vendas < estado.metaVendas) {
+      linhas.push('A projeção de ' + fmt0(t.vendas) + ' vendas fica abaixo da meta de ' + fmt0(estado.metaVendas) + '. O gargalo está no fechamento ou no volume de conversas qualificadas.');
+    }
+
+    var pior = null;
+    estado.canais.forEach(function (canal) {
+      var r = resultadoCanal(canal, 1);
+      if (!pior || r.roi < pior.roi) pior = { nome: canal.nome, roi: r.roi, lucro: r.lucro };
+    });
+    if (pior) {
+      linhas.push('O canal com pior retorno é <strong>' + pior.nome + '</strong> (ROI ' + pct(pior.roi) + ', lucro R$ ' + fmt0(pior.lucro) + '). Se o teste de 14 dias confirmar, pause ou ajuste.');
+    }
+
+    linhas.push('Custo por conversa geral: R$ ' + fmt(t.custoConversa) + '. CAC: R$ ' + fmt(t.cac) + '. Ticket médio: R$ ' + fmt(t.ticketMedio) + '.');
+    alvo.innerHTML = linhas.join('<br>');
+  }
+
+  function renderImpressao() {
+    $('impData').textContent = new Date().toLocaleDateString('pt-BR');
+    var corpo = $('impCanais');
+    corpo.textContent = '';
+    estado.canais.forEach(function (canal) {
+      var tr = document.createElement('tr');
+      [canal.nome, 'R$ ' + fmt(num(canal.invest)), 'R$ ' + fmt(num(canal.custoConversa)),
+        num(canal.qualifica) + '%', num(canal.fecha) + '%', 'R$ ' + fmt(num(canal.ticket)),
+        num(canal.margem) + '%'].forEach(function (v) {
+        var td = document.createElement('td');
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+      corpo.appendChild(tr);
+    });
+  }
+
+  function renderTudo() {
+    renderCampos();
+    renderCanais();
+    renderKpis();
+    renderFunil();
+    renderCenarios();
+    renderDiagnostico();
+    renderImpressao();
+  }
+
+  function lerOrcamento() {
+    estado.orcamento = num($('orcamento').value);
+    estado.dias = Math.max(1, Math.min(90, Math.round(num($('dias').value))));
+    estado.metaConversas = Math.max(1, Math.round(num($('metaConversas').value)));
+    estado.metaVendas = Math.max(1, Math.round(num($('metaVendas').value)));
+    salvar();
+    renderTudo();
+  }
+
+  function csvSeguro(v) {
+    return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  }
+
+  function exportar() {
+    var t = totais(1);
+    var linhas = [
+      ['Canal', 'Investimento', 'Custo por conversa', 'Qualificacao %', 'Fecha %', 'Ticket', 'Margem %', 'Conversas', 'Vendas', 'Receita', 'Lucro', 'ROI %'].map(csvSeguro).join(';')
+    ];
+    estado.canais.forEach(function (canal) {
+      var r = resultadoCanal(canal, 1);
+      linhas.push([
+        canal.nome, fmt(num(canal.invest)), fmt(num(canal.custoConversa)),
+        num(canal.qualifica), num(canal.fecha), fmt(num(canal.ticket)),
+        num(canal.margem), fmt0(r.conversas), fmt0(r.vendas), fmt(r.receita),
+        fmt(r.lucro), pct(r.roi)
+      ].map(csvSeguro).join(';'));
+    });
+    linhas.push('');
+    linhas.push(['TOTAL', fmt(t.invest), fmt(t.custoConversa), '', '', fmt(t.ticketMedio), pct(t.margem), fmt0(t.conversas), fmt0(t.vendas), fmt(t.receita), fmt(t.lucro), pct(t.roi)].map(csvSeguro).join(';'));
+    linhas.push(['Cenario conservador', '', '', '', '', '', '', '', fmt0(totais(0.7).vendas), '', fmt0(totais(0.7).lucro), pct(totais(0.7).roi)].map(csvSeguro).join(';'));
+    linhas.push(['Cenario otimista', '', '', '', '', '', '', '', fmt0(totais(1.3).vendas), '', fmt0(totais(1.3).lucro), pct(totais(1.3).roi)].map(csvSeguro).join(';'));
+
+    var blob = new Blob(['\uFEFF' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'speed_simulacao_midia.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    $('msg').textContent = 'Simulação exportada.';
+  }
+
+  ['orcamento', 'dias', 'metaConversas', 'metaVendas'].forEach(function (id) {
+    $(id).addEventListener('change', lerOrcamento);
+  });
+
+  $('btnNovoCanal').addEventListener('click', function () {
+    estado.canais.push({ nome: 'Novo canal', invest: 0, custoConversa: 15, qualifica: 60, fecha: 40, ticket: 50, margem: 40 });
+    salvar();
+    renderTudo();
+  });
+
+  $('btnRestaurar').addEventListener('click', function () {
+    if (!confirm('Restaurar as premissas de exemplo? Os dados atuais serão substituídos.')) return;
+    restaurar();
+    salvar();
+    renderTudo();
+    $('msg').textContent = 'Exemplo restaurado. Ajuste com os números reais.';
+  });
+
+  $('btnAplicarMil').addEventListener('click', function () {
+    var total = estado.canais.reduce(function (s, c) { return s + num(c.invest); }, 0);
+    if (total <= 0) {
+      $('msg').textContent = 'Não há investimento para redistribuir.';
+      return;
+    }
+    var fator = 1000 / total;
+    estado.canais.forEach(function (c) {
+      c.invest = Math.round(num(c.invest) * fator * 100) / 100;
+    });
+    estado.orcamento = estado.canais.reduce(function (s, c) { return s + num(c.invest); }, 0);
+    salvar();
+    renderTudo();
+    $('msg').textContent = 'R$ 1.000 redistribuídos proporcionalmente.';
+  });
+
+  $('btnImprimir').addEventListener('click', function () { window.print(); });
+
+  $('btnExportar').addEventListener('click', exportar);
+
+  $('btnLimpar').addEventListener('click', function () {
+    if (!confirm('Apagar os dados salvos e voltar ao exemplo?')) return;
+    try { localStorage.removeItem(CHAVE); } catch (e) {}
+    restaurar();
+    renderTudo();
+    $('msg').textContent = 'Dados apagados. Exemplo recarregado.';
+  });
+
+  if (!carregar()) restaurar();
+  renderTudo();
+})();
+</script>
+</body>
+</html>

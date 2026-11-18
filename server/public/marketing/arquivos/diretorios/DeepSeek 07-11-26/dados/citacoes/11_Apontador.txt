@@ -1,0 +1,38 @@
+﻿FICHA: Apontador
+Descricao: media (400)
+Categoria sugerida: Correspondente bancario - Lan house
+Observacao: Se ja existir ficha, reivindicar em vez de criar outra.
+
+--- NAP (copiar igual) ---
+Speed Financeira e Lan House
+Correspondente bancario - CNPJ 29.497.887/0001-57
+Rua Santa Cruz, 696 - Centro - Varginha/MG - CEP 37002-090
+Telefone e WhatsApp: (35) 3067-5017
+E-mail: speed.varginha@gmail.com
+Site: https://speedfinanceira.com.br
+Horario: A CONFIRMAR (Decisao 2)
+
+--- DESCRICAO ---
+A Speed Financeira e Lan House atua no Centro de Varginha como correspondente bancário, gráfica rápida e central de serviços digitais. Oferece consignado INSS e CLT, FGTS, portabilidade e crédito pessoal, com análise da instituição parceira. Faz impressão, xerox, foto 3x4, plastificação, encadernação e auxílio em Meu INSS, Gov.br, CNIS, CRLV e MEI. Rua Santa Cruz, 696. WhatsApp (35) 3067-5017.
+
+--- CAMPOS ---
+Nome de exibicao: Speed Financeira e Lan House
+Nome alternativo: Speed Financeira
+CNPJ: 29.497.887/0001-57
+Endereco: Rua Santa Cruz, 696
+Bairro: Centro
+Cidade/UF: Varginha / MG
+CEP: 37002-090
+Telefone: (35) 3067-5017
+WhatsApp: https://wa.me/553530675017
+Site: https://speedfinanceira.com.br
+E-mail: speed.varginha@gmail.com
+Horario: A CONFIRMAR (Decisao 2)
+
+--- ANTES DE ENVIAR ---
+[ ] Reivindicar ficha existente em vez de criar duplicata
+[ ] Descricao dentro do limite do campo
+[ ] Nenhum telefone banido
+[ ] Nenhuma promessa de credito
+[ ] Protocolo em 13_Protocolos.csv
+[ ] Print salvo

@@ -13,6 +13,23 @@ window.SPEED_MARKETING_DATA = {
 
   copys_whatsapp: [
     {
+      id: "copy-clt-consignado",
+      produto: "Consignado CLT (Trabalhador)",
+      icone: "fa-briefcase",
+      badge: "Carteira Assinada",
+      titulo: "Trabalhador CLT - Crédito com Desconto em Folha",
+      destinatario: "Trabalhadores de empresas privadas com carteira assinada",
+      texto: `Olá! Aqui é da Speed Financeira, no Centro de Varginha (Rua Santa Cruz, 696). 💼
+
+Você trabalha com carteira assinada (CLT)? Sabia que agora você pode ter Crédito Consignado com desconto em folha, pagando juros bem menores que o empréstimo pessoal ou rotativo do cartão?
+
+✅ Taxas reguladas e parcelas fixas que cabem no seu contracheque
+✅ Você NÃO mexe no seu FGTS e mantém seu Saque-Rescisão intacto se for demitido
+✅ Consulta rápida e 100% segura
+
+Se quiser comparar quanto fica a parcela para a sua faixa salarial, é só me responder aqui que calculo em 2 minutos!`
+    },
+    {
       id: "copy-fgts-pix",
       produto: "FGTS Saque-Aniversário",
       icone: "fa-bolt",
@@ -26,6 +43,7 @@ Você sabia que quem tem saldo no FGTS (mesmo de empregos antigos) pode antecipa
 ✅ Não precisa pagar boleto mensal (desconta direto do fundo)
 ✅ Liberado inclusive para negativados
 ✅ Sem burocracia, 100% digital ou presencial na loja
+⚠️ *Regra atual:* Se você já optou pelo Saque-Aniversário, a liberação é imediata. Se ainda não optou, a Caixa exige 90 dias de carência — mas se for CLT, temos a opção de Consignado em Folha na hora!
 
 Se quiser consultar quanto você tem liberado sem compromisso, é só me responder aqui que calculo em 2 minutos!`
     },

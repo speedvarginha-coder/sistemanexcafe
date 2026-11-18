@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<!--
+  Relatório mensal — uso interno.
+  Lê o CSV exportado pelo Painel de KPIs (12) ou aceita lançamento manual.
+  Dados ficam no navegador (localStorage). Nada é enviado.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Relatório mensal — Speed Financeira</title>
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f4f7f5; --branco:#fff;
+  --borda:#dfe7e2; --cinza:#63766b; --vermelho:#b91c1c; --azul:#1d4ed8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5;font-size:14px}
+.wrap{max-width:980px;margin:0 auto;padding:18px 20px 70px}
+header.topo{background:linear-gradient(135deg,var(--verde-escuro),var(--verde));color:#fff;border-radius:14px;padding:24px;margin-bottom:16px}
+header.topo .titulo-app{margin:0;font-size:clamp(21px,3vw,28px);letter-spacing:-.5px;font-weight:800}
+header.topo p{margin:6px 0 0;color:#dff1e7;font-size:13.5px;max-width:80ch}
+.card{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:17px;color:var(--tinta);letter-spacing:-.3px}
+.card .sub{margin:0 0 12px;font-size:12.5px;color:var(--cinza)}
+label{display:block;font-size:11.5px;font-weight:800;color:var(--tinta);margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+input,textarea,select{width:100%;padding:8px 10px;border:1px solid #cbd8d0;border-radius:8px;font:inherit;font-size:13.5px;background:#fff;color:var(--tinta)}
+input:focus,textarea:focus{outline:2px solid var(--verde);outline-offset:0}
+textarea{min-height:90px;resize:vertical;line-height:1.55}
+.campos{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(155px,1fr))}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button{font:inherit;font-size:13px;font-weight:800;cursor:pointer;border-radius:8px;padding:9px 15px;border:2px solid transparent}
+.primario{background:var(--verde);color:#fff;border-color:var(--verde)}
+.primario:hover{background:var(--verde-escuro);border-color:var(--verde-escuro)}
+.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.sec:hover{background:#effaf4}
+.perigo{background:#fff;color:var(--vermelho);border-color:#f3c6c6}
+.msg{font-size:12.5px;font-weight:700;color:var(--verde-escuro);min-height:18px;margin-top:8px}
+.arquivo{font-size:12.5px;margin-top:8px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 9px;border-bottom:1px solid var(--borda);text-align:right}
+th{background:#f0f6f2;color:var(--tinta);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+th:first-child,td:first-child{text-align:left}
+tfoot td{font-weight:800;background:#f7fbf9;border-top:2px solid var(--verde);color:var(--tinta)}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));margin-top:12px}
+.kpi{border:1px solid var(--borda);border-radius:10px;padding:12px;background:#fbfdfc;border-left:4px solid var(--verde)}
+.kpi small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--cinza);font-weight:800}
+.kpi strong{display:block;font-size:20px;color:var(--tinta);letter-spacing:-.5px;line-height:1.2;margin-top:2px}
+.kpi em{font-style:normal;font-size:11.5px;color:var(--cinza)}
+.kpi.amarelo{border-left-color:var(--amarelo)}
+.kpi.vermelho{border-left-color:var(--vermelho)}
+.delta{font-size:11.5px;font-weight:800;margin-left:5px}
+.delta.sobe{color:#016b3b}
+.delta.desce{color:#b91c1c}
+.folha{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:34px;margin-bottom:16px}
+.folha .cab{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid var(--verde);padding-bottom:14px;margin-bottom:20px}
+.folha .marca{font-size:12px;font-weight:800;color:var(--verde-escuro);letter-spacing:.5px}
+.folha h1{margin:2px 0 4px;font-size:24px;color:var(--tinta);letter-spacing:-.6px}
+.folha .meta{font-size:11.5px;color:var(--cinza);text-align:right;line-height:1.7}
+.folha h3{font-size:14px;color:var(--verde-escuro);margin:20px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+.folha p{margin:0 0 9px;font-size:13px;line-height:1.6}
+.folha .texto{white-space:pre-wrap;font-size:13px;line-height:1.6;margin:0 0 10px}
+.folha table{font-size:11.5px;margin:8px 0 14px}
+.folha th,.folha td{padding:6px 7px}
+.folha .nota{font-size:10.5px;color:var(--cinza);border-top:1px solid var(--borda);padding-top:10px;margin-top:18px}
+.selo{display:inline-block;background:#fffbe6;border:1px solid #f3e08a;color:#5c4b00;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.aviso{background:#fffbe6;border:1px solid #f3e08a;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#5c4b00;margin-bottom:14px}
+@media(max-width:700px){.wrap{padding:12px 12px 60px}.card,.folha{padding:16px}header.topo{padding:18px}}
+@media print{
+  @page{size:A4;margin:14mm}
+  body{background:#fff;font-size:10pt}
+  .wrap{max-width:none;padding:0}
+  .nao-imprime,header.topo,.aviso,.acoes,.msg,.arquivo{display:none!important}
+  .card{border:0;padding:0;margin:0}
+  .folha{border:0;padding:0;margin:0;border-radius:0}
+  .folha h1{font-size:18pt}
+  .folha h3{font-size:10pt;margin:12px 0 4px;break-after:avoid}
+  .folha p,.folha .texto{font-size:9.2pt;line-height:1.45}
+  .folha table{font-size:8.4pt;page-break-inside:avoid}
+  .kpis{display:none}
+  .folha .cab{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .selo{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .folha .nota{font-size:8pt}
+  section{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="topo nao-imprime">
+  <div class="titulo-app">Relatório mensal</div>
+  <p>Um documento por mês, com números, presença local, aprendizados e decisões. Pode ser preenchido à mão ou importado do Painel de KPIs.</p>
+</header>
+
+<div class="aviso nao-imprime">
+  <strong>Sem número inventado.</strong> Campo vazio aparece como “não informado” no relatório. É melhor assumir a lacuna do que maquiar o mês.
+</div>
+
+<section class="card nao-imprime">
+  <h2>1. Mês e importação</h2>
+  <p class="sub">O CSV é o exportado pelo painel `12_Painel_KPIs.html`. O relatório soma as semanas que começam dentro do mês escolhido.</p>
+  <div class="campos">
+    <div>
+      <label for="mes">Mês de referência</label>
+      <input id="mes" type="month">
+    </div>
+    <div>
+      <label for="responsavel">Responsável pelo relatório</label>
+      <input id="responsavel" type="text" maxlength="80" placeholder="Nome de quem preenche">
+    </div>
+    <div>
+      <label for="arquivo">Importar CSV do painel</label>
+      <input id="arquivo" type="file" accept=".csv,text/csv">
+    </div>
+    <div>
+      <label for="mesesSalvos">Meses salvos neste navegador</label>
+      <select id="mesesSalvos"><option value="">—</option></select>
+    </div>
+  </div>
+  <div class="arquivo" id="statusArquivo"></div>
+  <div class="acoes">
+    <button class="sec" type="button" id="btnImportar">Importar CSV</button>
+    <button class="sec" type="button" id="btnCarregarMes">Carregar mês selecionado</button>
+    <button class="primario" type="button" id="btnGerarTexto">Gerar resumo automático</button>
+  </div>
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</section>
+
+<section class="card nao-imprime">
+  <h2>2. Números do mês</h2>
+  <p class="sub">Preencha manualmente ou importe o CSV. Receita é o que entrou; margem bruta é o que sobra antes de descontar a mídia.</p>
+  <div class="campos">
+    <div><label for="investimento">Investimento em mídia (R$)</label><input id="investimento" type="number" min="0" step="0.01" value="0"></div>
+    <div><label for="conversas">Conversas iniciadas</label><input id="conversas" type="number" min="0" step="1" value="0"></div>
+    <div><label for="qualificadas">Conversas qualificadas</label><input id="qualificadas" type="number" min="0" step="1" value="0"></div>
+    <div><label for="visitas">Visitas identificadas</label><input id="visitas" type="number" min="0" step="1" value="0"></div>
+    <div><label for="vendas">Vendas fechadas</label><input id="vendas" type="number" min="0" step="1" value="0"></div>
+    <div><label for="receita">Receita (R$)</label><input id="receita" type="number" min="0" step="0.01" value="0"></div>
+    <div><label for="margemBruta">Margem bruta (R$)</label><input id="margemBruta" type="number" min="0" step="0.01" value="0"></div>
+    <div><label for="avaliacoesNovas">Avaliações novas no Google</label><input id="avaliacoesNovas" type="number" min="0" step="1" value="0"></div>
+    <div><label for="notaMedia">Nota média no Google</label><input id="notaMedia" type="number" min="0" max="5" step="0.1" placeholder="4,8"></div>
+  </div>
+</section>
+
+<section class="card nao-imprime">
+  <h2>3. Presença local</h2>
+  <p class="sub">Use os números do recálculo (`14_Recalcular_NAP.ps1`) e do controle de protocolos.</p>
+  <div class="campos">
+    <div><label for="fichasCorrigidas">Fichas com NAP núcleo correto (de 21)</label><input id="fichasCorrigidas" type="number" min="0" max="21" step="1" value="10"></div>
+    <div><label for="telefoneMorto">Fichas com telefone desativado</label><input id="telefoneMorto" type="number" min="0" max="21" step="1" value="8"></div>
+    <div><label for="duplicidades">Duplicidades resolvidas (de 6)</label><input id="duplicidades" type="number" min="0" max="6" step="1" value="0"></div>
+    <div><label for="acessos">Acessos testados (de 36)</label><input id="acessos" type="number" min="0" max="36" step="1" value="0"></div>
+    <div><label for="protocolosAbertos">Protocolos abertos no mês</label><input id="protocolosAbertos" type="number" min="0" step="1" value="0"></div>
+  </div>
+</section>
+
+<section class="card nao-imprime">
+  <h2>4. Texto do relatório</h2>
+  <p class="sub">O botão “Gerar resumo” escreve um rascunho com os dados acima. Edite à vontade: o texto final é o que vale.</p>
+  <div style="margin-bottom:10px">
+    <label for="resumo">Resumo executivo</label>
+    <textarea id="resumo" placeholder="Como foi o mês em 4 a 6 linhas."></textarea>
+  </div>
+  <div style="margin-bottom:10px">
+    <label for="aprendizados">O que aprendemos</label>
+    <textarea id="aprendizados" placeholder="O que funcionou, o que não funcionou e a evidência."></textarea>
+  </div>
+  <div>
+    <label for="decisoes">Decisões para o próximo mês</label>
+    <textarea id="decisoes" placeholder="Até 5 decisões, com dono e prazo."></textarea>
+  </div>
+  <div class="acoes">
+    <button class="primario" type="button" id="btnSalvar">Salvar mês</button>
+    <button class="sec" type="button" id="btnImprimir">Imprimir / salvar PDF</button>
+    <button class="sec" type="button" id="btnExportar">Exportar JSON</button>
+    <button class="perigo" type="button" id="btnApagar">Apagar este mês</button>
+  </div>
+  <div class="msg" id="msg2" role="status" aria-live="polite"></div>
+</section>
+
+<!-- ===================== FOLHA IMPRESSA ===================== -->
+<section class="folha" id="folha">
+  <div class="cab">
+    <div>
+      <div class="marca">SPEED FINANCEIRA E LAN HOUSE</div>
+      <h1>Relatório mensal de marketing</h1>
+      <div style="font-size:12px;color:#63766b">CNPJ 29.497.887/0001-57 · Rua Santa Cruz, 696, Centro, Varginha/MG · (35) 3067-5017</div>
+    </div>
+    <div class="meta">
+      <div><strong>Mês:</strong> <span id="fMes">—</span></div>
+      <div><strong>Responsável:</strong> <span id="fResp">—</span></div>
+      <div><strong>Emitido em:</strong> <span id="fData"></span></div>
+      <div><span class="selo">Uso interno</span></div>
+    </div>
+  </div>
+
+  <h3>1. Resumo executivo</h3>
+  <div class="texto" id="fResumo">Sem resumo. Preencha o campo acima ou clique em “Gerar resumo automático”.</div>
+
+  <h3>2. Números do mês</h3>
+  <table>
+    <thead><tr><th>Indicador</th><th>Valor</th><th>Leitura</th></tr></thead>
+    <tbody id="fNumeros"></tbody>
+  </table>
+
+  <h3>3. Presença local</h3>
+  <table>
+    <thead><tr><th>Indicador</th><th>Valor</th><th>Leitura</th></tr></thead>
+    <tbody id="fLocal"></tbody>
+  </table>
+  <p id="fLocalTexto">—</p>
+
+  <h3>4. O que aprendemos</h3>
+  <div class="texto" id="fAprendizados">—</div>
+
+  <h3>5. Decisões para o próximo mês</h3>
+  <div class="texto" id="fDecisoes">—</div>
+
+  <h3>6. Limites deste relatório</h3>
+  <p id="fLimites">—</p>
+
+  <div class="nota">
+    Documento interno de acompanhamento. Não é peça publicitária e não deve ser publicado. Números de mídia dependem do painel de cada plataforma; números de atendimento dependem do registro manual no WhatsApp. Divergência entre fontes deve ser registrada, não escondida.
+  </div>
+</section>
+
+<div class="nota nao-imprime" style="font-size:11.5px;color:#63766b">
+  Uso interno · dados salvos neste navegador · para backup, exporte o JSON e guarde fora do computador da loja.
+</div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CHAVE = 'speed_relatorio_v1';
+  var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
+    'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+  var camposNum = ['investimento', 'conversas', 'qualificadas', 'visitas', 'vendas',
+    'receita', 'margemBruta', 'avaliacoesNovas', 'notaMedia', 'fichasCorrigidas',
+    'telefoneMorto', 'duplicidades', 'acessos', 'protocolosAbertos'];
+
+  var camposTexto = ['responsavel', 'resumo', 'aprendizados', 'decisoes'];
+
+  var estado = {};
+  var meses = {};
+
+  function $(id) { return document.getElementById(id); }
+
+  function num(v) {
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isFinite(n) ? n : 0;
+  }
+
+  function fmt(v) {
+    return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmt0(v) {
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+
+  function pct(v) {
+    if (!isFinite(v)) return '—';
+    return (v * 100).toFixed(1).replace('.', ',') + '%';
+  }
+
+  function nomeMes(iso) {
+    if (!iso || iso.indexOf('-') === -1) return '—';
+    var p = iso.split('-');
+    return MESES[Number(p[1]) - 1] + ' de ' + p[0];
+  }
+
+  function mesAtualISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+
+  function salvarTudo() {
+    try { localStorage.setItem(CHAVE, JSON.stringify(meses)); return true; }
+    catch (e) { return false; }
+  }
+
+  function carregarTudo() {
+    var bruto;
+    try { bruto = localStorage.getItem(CHAVE); } catch (e) { return; }
+    if (!bruto) return;
+    try {
+      var dados = JSON.parse(bruto);
+      if (dados && typeof dados === 'object') meses = dados;
+    } catch (e) {}
+  }
+
+  function novoMes() {
+    estado = { mes: mesAtualISO() };
+    camposNum.forEach(function (id) { estado[id] = 0; });
+    camposTexto.forEach(function (id) { estado[id] = ''; });
+    estado.fichasCorrigidas = 10;
+    estado.telefoneMorto = 8;
+  }
+
+  function carregarNoFormulario() {
+    $('mes').value = estado.mes || mesAtualISO();
+    camposNum.forEach(function (id) {
+      $(id).value = estado[id] === undefined ? 0 : estado[id];
+    });
+    camposTexto.forEach(function (id) {
+      $(id).value = estado[id] || '';
+    });
+  }
+
+  function lerDoFormulario() {
+    estado.mes = $('mes').value || mesAtualISO();
+    camposNum.forEach(function (id) { estado[id] = num($(id).value); });
+    camposTexto.forEach(function (id) { estado[id] = $(id).value; });
+  }
+
+  function atualizarListaMeses() {
+    var select = $('mesesSalvos');
+    var atual = select.value;
+    select.textContent = '';
+    var vazio = document.createElement('option');
+    vazio.value = '';
+    vazio.textContent = '—';
+    select.appendChild(vazio);
+    Object.keys(meses).sort().reverse().forEach(function (k) {
+      var op = document.createElement('option');
+      op.value = k;
+      op.textContent = nomeMes(k);
+      select.appendChild(op);
+    });
+    if (atual && meses[atual]) select.value = atual;
+  }
+
+  function derivados(e) {
+    var d = {};
+    d.custoConversa = e.conversas > 0 ? e.investimento / e.conversas : NaN;
+    d.cpl = e.qualificadas > 0 ? e.investimento / e.qualificadas : NaN;
+    d.taxaQualif = e.conversas > 0 ? e.qualificadas / e.conversas : NaN;
+    d.taxaFechamento = e.qualificadas > 0 ? e.vendas / e.qualificadas : NaN;
+    d.ticket = e.vendas > 0 ? e.receita / e.vendas : NaN;
+    d.roas = e.investimento > 0 ? e.receita / e.investimento : NaN;
+    d.cac = e.vendas > 0 ? e.investimento / e.vendas : NaN;
+    d.lucro = e.margemBruta - e.investimento;
+    d.roi = e.investimento > 0 ? d.lucro / e.investimento : NaN;
+    d.margemPct = e.receita > 0 ? e.margemBruta / e.receita : NaN;
+    return d;
+  }
+
+  function textoOuTraco(v, sufixo) {
+    return isFinite(v) ? fmt(v) + (sufixo || '') : '—';
+  }
+
+  function gerarResumo() {
+    lerDoFormulario();
+    var d = derivados(estado);
+    var linhas = [];
+    var faltando = camposNum.filter(function (id) {
+      return id !== 'fichasCorrigidas' && id !== 'telefoneMorto' && estado[id] === 0;
+    });
+
+    if (estado.conversas === 0 && estado.vendas === 0 && estado.investimento === 0) {
+      linhas.push('Em ' + nomeMes(estado.mes) + ', ainda não há dados de mídia e atendimento lançados. O relatório registra a situação da presença local e as decisões do próximo mês.');
+    } else {
+      linhas.push('Em ' + nomeMes(estado.mes) + ', a Speed investiu R$ ' + fmt(estado.investimento) +
+        ' em mídia e registrou ' + fmt0(estado.conversas) + ' conversas iniciadas, das quais ' +
+        fmt0(estado.qualificadas) + ' foram qualificadas. Foram ' + fmt0(estado.vendas) +
+        ' vendas, com receita de R$ ' + fmt(estado.receita) + '.');
+      linhas.push('O custo por conversa ficou em ' + textoOuTraco(d.custoConversa, '') +
+        ', o custo por conversa qualificada em ' + textoOuTraco(d.cpl, '') +
+        ' e o CAC em ' + textoOuTraco(d.cac, '') + '. O ROAS foi ' +
+        (isFinite(d.roas) ? d.roas.toFixed(2).replace('.', ',') + 'x' : '—') + '.');
+      if (estado.margemBruta > 0) {
+        linhas.push('A margem bruta foi R$ ' + fmt(estado.margemBruta) + ', resultando em ' +
+          (d.lucro >= 0 ? 'lucro' : 'prejuízo') + ' de R$ ' + fmt(Math.abs(d.lucro)) +
+          ' após a mídia (ROI ' + pct(d.roi) + ').');
+      } else {
+        linhas.push('A margem bruta não foi informada; portanto, não é possível afirmar se o mês deu lucro ou prejuízo após a mídia.');
+      }
+      linhas.push('A taxa de qualificação foi ' + pct(d.taxaQualif) + ' e a de fechamento sobre as qualificadas foi ' + pct(d.taxaFechamento) + '.');
+    }
+
+    linhas.push('Na presença local, ' + fmt0(estado.fichasCorrigidas) + ' de 21 fichas estavam com o NAP núcleo correto; ' +
+      fmt0(estado.telefoneMorto) + ' ainda exibiam telefone desativado e ' + fmt0(estado.duplicidades) +
+      ' das 6 duplicidades foram resolvidas. Os acessos testados chegaram a ' + fmt0(estado.acessos) + ' de 36.');
+
+    if (faltando.length) {
+      linhas.push('Campos sem valor no mês: ' + faltando.join(', ') + '. O dado ausente fica registrado como lacuna, não como zero.');
+    }
+
+    $('resumo').value = linhas.join('\n\n');
+    estado.resumo = $('resumo').value;
+    renderFolha();
+    $('msg').textContent = 'Resumo gerado. Revise e edite antes de salvar.';
+  }
+
+  function renderFolha() {
+    lerDoFormulario();
+    var e = estado;
+    var d = derivados(e);
+    var mesAnterior = mesAnteriorChave(e.mes);
+    var anterior = meses[mesAnterior] || null;
+
+    $('fMes').textContent = nomeMes(e.mes);
+    $('fResp').textContent = e.responsavel || '—';
+    $('fData').textContent = new Date().toLocaleDateString('pt-BR');
+    $('fResumo').textContent = e.resumo || 'Sem resumo. Preencha o campo acima ou clique em “Gerar resumo automático”.';
+    $('fAprendizados').textContent = e.aprendizados || '—';
+    $('fDecisoes').textContent = e.decisoes || '—';
+
+    var numeros = [
+      ['Investimento em mídia', 'R$ ' + fmt(e.investimento), 'quanto saiu do caixa'],
+      ['Conversas iniciadas', fmt0(e.conversas), 'WhatsApp + balcão identificado'],
+      ['Conversas qualificadas', fmt0(e.qualificadas), 'com intenção real de compra'],
+      ['Visitas identificadas', fmt0(e.visitas), 'quem chegou à loja'],
+      ['Vendas fechadas', fmt0(e.vendas), 'contratos e serviços concluídos'],
+      ['Receita', 'R$ ' + fmt(e.receita), 'valor que entrou'],
+      ['Margem bruta', 'R$ ' + fmt(e.margemBruta), 'antes da mídia'],
+      ['Custo por conversa', isFinite(d.custoConversa) ? 'R$ ' + fmt(d.custoConversa) : '—', 'investimento ÷ conversas'],
+      ['CPL (qualificada)', isFinite(d.cpl) ? 'R$ ' + fmt(d.cpl) : '—', 'investimento ÷ qualificadas'],
+      ['Taxa de qualificação', pct(d.taxaQualif), 'qualificadas ÷ conversas'],
+      ['Taxa de fechamento', pct(d.taxaFechamento), 'vendas ÷ qualificadas'],
+      ['Ticket médio', isFinite(d.ticket) ? 'R$ ' + fmt(d.ticket) : '—', 'receita ÷ vendas'],
+      ['ROAS', isFinite(d.roas) ? d.roas.toFixed(2).replace('.', ',') + 'x' : '—', 'receita ÷ investimento'],
+      ['CAC', isFinite(d.cac) ? 'R$ ' + fmt(d.cac) : '—', 'investimento ÷ vendas'],
+      ['Resultado após mídia', 'R$ ' + fmt(d.lucro), 'margem bruta − investimento'],
+      ['ROI', pct(d.roi), 'resultado ÷ investimento']
+    ];
+
+    var corpo = $('fNumeros');
+    corpo.textContent = '';
+    numeros.forEach(function (linha) {
+      var tr = document.createElement('tr');
+      linha.forEach(function (v) {
+        var td = document.createElement('td');
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+      corpo.appendChild(tr);
+    });
+
+    var local = [
+      ['Fichas com NAP núcleo correto', fmt0(e.fichasCorrigidas) + ' / 21', 'nome, endereço e telefone'],
+      ['Fichas com telefone desativado', fmt0(e.telefoneMorto), '3113-0458 e 3067-4361'],
+      ['Duplicidades resolvidas', fmt0(e.duplicidades) + ' / 6', 'mescladas ou despublicadas'],
+      ['Acessos testados', fmt0(e.acessos) + ' / 36', 'login confirmado, sem senha registrada'],
+      ['Protocolos abertos no mês', fmt0(e.protocolosAbertos), 'pedidos formais registrados'],
+      ['Avaliações novas', fmt0(e.avaliacoesNovas), e.notaMedia > 0 ? 'nota média ' + String(e.notaMedia).replace('.', ',') : 'nota não informada']
+    ];
+
+    var corpoLocal = $('fLocal');
+    corpoLocal.textContent = '';
+    local.forEach(function (linha) {
+      var tr = document.createElement('tr');
+      linha.forEach(function (v) {
+        var td = document.createElement('td');
+        td.textContent = v;
+        tr.appendChild(td);
+      });
+      corpoLocal.appendChild(tr);
+    });
+
+    var fraseLocal = 'A identidade completa ainda não é o padrão: ' + fmt0(e.fichasCorrigidas) +
+      ' de 21 fichas têm o núcleo correto. Cada ficha com telefone morto é uma ligação perdida.';
+    if (e.duplicidades > 0) {
+      fraseLocal += ' As ' + fmt0(e.duplicidades) + ' mesclagens feitas reduzem a chance de o cliente cair em ficha desatualizada.';
+    }
+    $('fLocalTexto').textContent = fraseLocal;
+
+    var limites = [];
+    if (anterior) {
+      var da = derivados(anterior);
+      limites.push('Comparação com ' + nomeMes(mesAnterior) + ': investimento R$ ' + fmt(anterior.investimento) +
+        ' → R$ ' + fmt(e.investimento) + '; conversas ' + fmt0(anterior.conversas) + ' → ' + fmt0(e.conversas) +
+        '; vendas ' + fmt0(anterior.vendas) + ' → ' + fmt0(e.vendas) + '.');
+    } else {
+      limites.push('Não há mês anterior salvo para comparar. O primeiro relatório é a linha de base.');
+    }
+    limites.push('Números de mídia dependem do painel de cada plataforma; números de atendimento dependem do registro no WhatsApp e no balcão. O relatório não corrige divergência entre fontes — ele mostra a divergência.');
+    if (e.margemBruta === 0) {
+      limites.push('Margem bruta não informada: o resultado após mídia não deve ser lido como lucro.');
+    }
+    $('fLimites').textContent = limites.join(' ');
+  }
+
+  function mesAnteriorChave(iso) {
+    if (!iso || iso.indexOf('-') === -1) return '';
+    var p = iso.split('-');
+    var ano = Number(p[0]);
+    var mes = Number(p[1]) - 1;
+    if (mes === 0) { mes = 12; ano -= 1; }
+    return ano + '-' + String(mes).padStart(2, '0');
+  }
+
+  function importarCSV(texto) {
+    var linhas = texto.replace(/^\uFEFF/, '').split(/\r?\n/).filter(function (l) { return l.trim(); });
+    if (linhas.length < 2) throw new Error('CSV sem linhas de dados.');
+
+    var cabecalho = linhas[0].split(';').map(function (c) { return c.replace(/^"|"$/g, '').trim().toLowerCase(); });
+    var iData = cabecalho.indexOf('semana');
+    if (iData === -1) throw new Error('Coluna "Semana" não encontrada. Use o CSV exportado pelo painel.');
+
+    var mes = $('mes').value || mesAtualISO();
+    var soma = { investimento: 0, conversas: 0, qualificadas: 0, visitas: 0, vendas: 0, receita: 0 };
+    var encontradas = 0;
+
+    linhas.slice(1).forEach(function (linha) {
+      var c = linha.split(';');
+      var data = (c[iData] || '').replace(/"/g, '').trim();
+      if (data.slice(0, 7) !== mes) return;
+      encontradas++;
+      soma.investimento += num(c[1]);
+      soma.conversas += num(c[2]);
+      soma.qualificadas += num(c[3]);
+      soma.visitas += num(c[4]);
+      soma.vendas += num(c[5]);
+      soma.receita += num(c[6]);
+    });
+
+    if (!encontradas) throw new Error('Nenhuma semana de ' + nomeMes(mes) + ' no arquivo.');
+
+    Object.keys(soma).forEach(function (k) {
+      estado[k] = Math.round(soma[k] * 100) / 100;
+      $(k).value = estado[k];
+    });
+
+    return encontradas;
+  }
+
+  function importarArquivo() {
+    var arquivo = $('arquivo').files[0];
+    if (!arquivo) {
+      $('msg').textContent = 'Selecione o CSV exportado pelo painel.';
+      return;
+    }
+    var leitor = new FileReader();
+    leitor.onload = function () {
+      try {
+        var semanas = importarCSV(String(leitor.result));
+        $('statusArquivo').textContent = 'CSV lido: ' + semanas + ' semana(s) de ' + nomeMes($('mes').value) + '.';
+        $('msg').textContent = 'Números importados. Confira antes de salvar.';
+        renderFolha();
+      } catch (e) {
+        $('msg').textContent = 'Erro ao importar: ' + e.message;
+      }
+    };
+    leitor.onerror = function () { $('msg').textContent = 'Não foi possível ler o arquivo.'; };
+    leitor.readAsText(arquivo, 'utf-8');
+  }
+
+  function salvarMes() {
+    lerDoFormulario();
+    if (!estado.mes) {
+      $('msg2').textContent = 'Escolha o mês antes de salvar.';
+      return;
+    }
+    if (!estado.resumo) estado.resumo = $('resumo').value;
+    meses[estado.mes] = Object.assign({}, estado);
+    var ok = salvarTudo();
+    atualizarListaMeses();
+    $('mesesSalvos').value = estado.mes;
+    $('msg2').textContent = ok ? 'Mês salvo em ' + nomeMes(estado.mes) + '.' : 'Não foi possível salvar neste navegador.';
+    renderFolha();
+  }
+
+  function carregarMes(chave) {
+    if (!chave || !meses[chave]) {
+      $('msg').textContent = 'Escolha um mês salvo na lista.';
+      return;
+    }
+    estado = Object.assign({}, meses[chave]);
+    carregarNoFormulario();
+    $('statusArquivo').textContent = '';
+    $('msg').textContent = 'Mês carregado: ' + nomeMes(chave) + '.';
+    renderFolha();
+  }
+
+  function exportarJSON() {
+    lerDoFormulario();
+    if (!estado.mes) estado.mes = mesAtualISO();
+    meses[estado.mes] = Object.assign({}, estado);
+    salvarTudo();
+    var blob = new Blob([JSON.stringify(meses, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'speed_relatorios.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    $('msg2').textContent = 'Backup JSON exportado.';
+  }
+
+  // Eventos
+  camposNum.forEach(function (id) {
+    $(id).addEventListener('change', function () { lerDoFormulario(); renderFolha(); });
+  });
+  camposTexto.forEach(function (id) {
+    $(id).addEventListener('change', function () { lerDoFormulario(); renderFolha(); });
+  });
+  $('mes').addEventListener('change', function () {
+    lerDoFormulario();
+    renderFolha();
+  });
+
+  $('btnGerarTexto').addEventListener('click', gerarResumo);
+  $('btnImportar').addEventListener('click', importarArquivo);
+  $('btnCarregarMes').addEventListener('click', function () { carregarMes($('mesesSalvos').value); });
+  $('btnSalvar').addEventListener('click', salvarMes);
+  $('btnImprimir').addEventListener('click', function () {
+    lerDoFormulario();
+    if (!estado.resumo) estado.resumo = $('resumo').value;
+    renderFolha();
+    window.print();
+  });
+  $('btnExportar').addEventListener('click', exportarJSON);
+  $('btnApagar').addEventListener('click', function () {
+    var chave = $('mes').value || estado.mes;
+    if (!chave || !meses[chave]) {
+      $('msg2').textContent = 'Não há mês salvo para apagar.';
+      return;
+    }
+    if (!confirm('Apagar o relatório de ' + nomeMes(chave) + ' deste navegador?')) return;
+    delete meses[chave];
+    salvarTudo();
+    atualizarListaMeses();
+    novoMes();
+    carregarNoFormulario();
+    renderFolha();
+    $('msg2').textContent = 'Mês apagado.';
+  });
+
+  // Inicialização
+  carregarTudo();
+  atualizarListaMeses();
+  novoMes();
+  var inicial = Object.keys(meses).sort().reverse()[0];
+  if (inicial) {
+    estado = Object.assign({}, meses[inicial]);
+    $('mesesSalvos').value = inicial;
+  } else {
+    estado.mes = mesAtualISO();
+  }
+  carregarNoFormulario();
+  renderFolha();
+})();
+</script>
+</body>
+</html>

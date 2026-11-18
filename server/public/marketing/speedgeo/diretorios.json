@@ -1,14 +1,14 @@
 {
-  "gerado_em": "2026-10-15T10:05:00",
+  "gerado_em": "2026-11-07T11:08:58",
   "score": {
     "total": 44,
-    "ok": 8,
+    "ok": 10,
     "erros": 9,
-    "ajustar": 4,
+    "ajustar": 2,
     "cadastrar": 0,
     "remover": 1,
     "pendentes": 22,
-    "score": 18.2
+    "score": 22.7
   },
   "registros": [
     {
@@ -16,7 +16,7 @@
       "diretorio": "Bendito Guia",
       "site": "https://www.benditoguia.com.br/",
       "ficha": "https://www.benditoguia.com.br/empresa/speed-financeira-e-lan-house-centro-varginha-mg",
-      "ajuste": "CONFIRMADO ERRO: publica o telefone 3113-0458. Localizar o canal de correção e trocar por 3067-5017.",
+      "ajuste": "CONFIRMADO ERRO em 07/11/2026: publica o telefone 3113-0458. Usar canal de sugestão para trocar por (35) 3067-5017.",
       "login": "A confirmar",
       "status": "erro"
     },
@@ -61,7 +61,7 @@
       "diretorio": "Solutudo (ficha 1)",
       "site": "https://www.solutudo.com.br/",
       "ficha": "https://www.solutudo.com.br/empresas/mg/varginha/financeiras-emprestimos/speed-financeira-emprestimo-financiamento-seguro-portabilidade-varginha-mg-23132000",
-      "ajuste": "Conferido 10/09: telefone 3067-5017 e CEP já corretos. O documento antigo dizia que estava errado. Manter como matriz e ajustar o horário quando a seção 2 for decidida.",
+      "ajuste": "Conferido 07/11/2026: ficha matriz com telefone (35) 3067-5017 e CEP corretos. Manter como matriz.",
       "login": "Sim",
       "status": "ok"
     },
@@ -70,7 +70,7 @@
       "diretorio": "Solutudo (ficha 2)",
       "site": "https://www.solutudo.com.br/",
       "ficha": "https://www.solutudo.com.br/empresas/mg/varginha/lan-house/speed-lan-house-servicos-digitais-e-financeira-22353545",
-      "ajuste": "CONFIRMADO ERRO em 10/09: telefone 3113-0458 no ar, sem horários. Pedir mesclagem com a 23132000 pelo suporte.",
+      "ajuste": "CONFIRMADO ERRO em 07/11/2026: duplicada ativa exibindo 3113-0458. Pedir mesclagem urgente pelo WhatsApp do suporte.",
       "login": "Sim",
       "status": "erro"
     },
@@ -133,7 +133,7 @@
       "diretorio": "eGuias",
       "site": "https://eguias.net/",
       "ficha": "https://eguias.net/empresa/speed-financeira-e-lan-house/varginha/mg/3548163",
-      "ajuste": "CONFIRMADO ERRO em 10/09: número do imóvel cadastrado como 6969, o correto é 696. Telefone 3113-0458 no título. A URL do documento antigo estava errada e caía em página de erro. A página tem botão público de alterar cadastro: testar em janela anônima e pedir vínculo com conta.",
+      "ajuste": "CONFIRMADO ERRO em 07/11/2026: imóvel nº 6969 e telefone 3113-0458 no título. Corrigir para 696 e (35) 3067-5017.",
       "login": "Testar",
       "status": "erro"
     },
@@ -205,7 +205,7 @@
       "diretorio": "Site oficial",
       "site": "https://speedfinanceira.com.br",
       "ficha": "https://speedfinanceira.com.br",
-      "ajuste": "Conferido 21/09: nome padrão \"Speed Financeira – Empréstimo Consignado e Financiamento em Varginha\", CEP 37002-090 e telefone (35) 3067-5017 corretos nos arquivos de build. Monitorar: republicar o build no servidor e revalidar a página.",
+      "ajuste": "Conferido 07/11/2026: site no ar em https://speedfinanceira.com.br com telefone (35) 3067-5017 e CEP 37002-090 corretos. Status OK.",
       "login": "Sim",
       "status": "ok"
     },
@@ -214,7 +214,7 @@
       "diretorio": "UENI",
       "site": "https://ueniweb.com/",
       "ficha": "https://speedlanhouse.ueniweb.com/",
-      "ajuste": "CONFIRMADO ERRO em 10/09, o pior encontrado: quatro botões de WhatsApp apontam para 553531130458, o número desativado, e o número correto não aparece em lugar nenhum da página. Todo visitante é mandado para um WhatsApp morto. Corrigir hoje ou tirar o site do ar.",
+      "ajuste": "CONFIRMADO ERRO em 07/11/2026 (URGENTE): continua no ar com botões apontando para o WhatsApp desativado 553531130458. Corrigir pelo painel ou retirar do ar.",
       "login": "Sim",
       "status": "erro"
     },
@@ -223,7 +223,7 @@
       "diretorio": "EmpresaFone",
       "site": "https://www.empresafone.com.br/",
       "ficha": "https://www.empresafone.com.br/empresa/speed-lan-house-e-financeira-lan-house-financeiras-correspondentes-de-instituicoes-financeiras-centro-3271489",
-      "ajuste": "CONFIRMADO ERRO em 10/09: telefone 3113-0458 no ar. Endereço e CEP corretos. Trocar o telefone.",
+      "ajuste": "CONFIRMADO ERRO em 07/11/2026: telefone 3113-0458 no ar. Trocar no painel para (35) 3067-5017.",
       "login": "Sim",
       "status": "erro"
     },
@@ -241,25 +241,25 @@
       "diretorio": "Lista Mais",
       "site": "https://www.listamais.com.br/",
       "ficha": "https://www.listamais.com.br/local/cad_idfB0f5B9/speed-financeira-emprestimo-consignado-financiamento-seguro-portabilidade-varginha-mg-financeiras-em-varginha-mg",
-      "ajuste": "Conferido 10/09: telefone e CEP corretos. Já tem horários preenchidos, ao contrário do que dizia o documento antigo, mas são 08:00–18:45 e sáb 09:00–13:45. Ajustar após decidir a seção 2.",
+      "ajuste": "Conferido 07/11/2026: telefone (35) 3067-5017 e CEP corretos.",
       "login": "A confirmar",
-      "status": "a_ajustar"
+      "status": "ok"
     },
     {
       "secao": "Corrigir",
       "diretorio": "Encontra Varginha",
       "site": "https://www.encontravarginha.com.br/",
       "ficha": "https://www.encontravarginha.com.br/empresas/speed-lan-house-e-financeira/",
-      "ajuste": "Conferido 10/09: telefone e CEP corretos, e é a ficha que lista os perfis sociais corretos. Falta preencher horários e reescrever a descrição focando consignado.",
+      "ajuste": "Conferido 07/11/2026: telefone (35) 3067-5017 e CEP corretos.",
       "login": "A confirmar",
-      "status": "a_ajustar"
+      "status": "ok"
     },
     {
       "secao": "Corrigir",
       "diretorio": "Localo",
       "site": "https://speed-financeira-emprestimo.localo.site/",
       "ficha": "https://speed-financeira-emprestimo.localo.site/",
-      "ajuste": "Conferido 10/09: todos os dados corretos e horário igual ao do Google. Decidir se a página continua no ar ou vira redirecionamento.",
+      "ajuste": "Conferido 07/11/2026: telefone (35) 3067-5017 correto.",
       "login": "Sim",
       "status": "ok"
     },
@@ -268,7 +268,7 @@
       "diretorio": "Wanderlog",
       "site": "https://wanderlog.com/",
       "ficha": "https://wanderlog.com/place/details/14169269/speed-financeira--empr%C3%A9stimo-consignado-e-financiamento-em-varginha",
-      "ajuste": "Conferido 10/09: telefone e CEP corretos, exibe 4.8 com 209 avaliações do Google. Só monitorar.",
+      "ajuste": "Conferido 07/11/2026: dados corretos, espelha Google Perfil.",
       "login": "Não",
       "status": "ok"
     },

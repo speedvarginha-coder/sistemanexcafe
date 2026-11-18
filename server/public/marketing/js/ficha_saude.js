@@ -13,30 +13,80 @@ function fichaStatus(texto, classe) {
 
 function fichaItem(c) {
   const [tag, classe] = FICHA_IMPORTANCIA[c.importance] || ['', ''];
-  const icone = c.status === 'pass' ? 'fa-circle-check text-green-600' : c.status === 'fail' ? 'fa-circle-xmark text-red-600' : 'fa-circle-question text-gray-400';
-  return `<li class="ficha-item">
-    <i class="fas ${icone} mt-0.5" aria-hidden="true"></i>
-    <div><p class="font-bold text-gray-900">${escaparHtml(c.title)} <span class="ficha-tag ${classe}">${tag}</span></p>
-    <p class="text-gray-600">${escaparHtml(c.detail)}</p>
-    ${c.fix ? `<p class="text-green-800 font-semibold">Onde corrigir: ${escaparHtml(c.fix)}</p>` : ''}</div></li>`;
+  const isFail = c.status === 'fail';
+  const icone = c.status === 'pass'
+    ? 'fa-circle-check text-emerald-600'
+    : isFail
+      ? 'fa-circle-exclamation text-amber-500'
+      : 'fa-circle-question text-gray-400';
+  const borderClass = isFail ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-emerald-500';
+
+  return `<li class="ficha-card-modern ${borderClass}">
+    <div class="flex items-start justify-between gap-2 mb-1.5">
+      <div class="flex items-start gap-1.5 min-w-0">
+        <i class="fas ${icone} text-xs mt-0.5 shrink-0" aria-hidden="true"></i>
+        <h4 class="font-bold text-xs text-gray-900 leading-snug break-words">${escaparHtml(c.title)}</h4>
+      </div>
+      <span class="ficha-tag ${classe} shrink-0">${tag}</span>
+    </div>
+    <p class="text-[11px] text-gray-600 leading-relaxed mb-2.5">${escaparHtml(c.detail)}</p>
+    ${c.fix ? `<div class="ficha-fix-box"><i class="fas fa-wrench text-[10px] text-emerald-700 mr-1.5"></i><span class="font-semibold text-emerald-950">Onde corrigir:</span> ${escaparHtml(c.fix)}</div>` : ''}
+  </li>`;
 }
 
 function fichaAlteracoes(d) {
   const blocos = [];
   const novas = d.changes.filter(c => !c.seen);
+
+  const sidebarBadge = document.getElementById('gmbSidebarBadge');
+  if (sidebarBadge) {
+    if (novas.length > 0) {
+      sidebarBadge.textContent = String(novas.length);
+      sidebarBadge.classList.remove('hidden');
+    } else {
+      sidebarBadge.classList.add('hidden');
+    }
+  }
+
   if (novas.length) {
-    blocos.push(`<div class="ficha-alerta">
-      <p class="font-black text-red-800"><i class="fas fa-triangle-exclamation mr-1"></i>A ficha mudou desde a conferência anterior</p>
-      <p class="text-[11px] text-red-700 mb-2">Se ninguém da loja mexeu, pode ter sido o Google ou uma sugestão de terceiros aceita. Confira na ficha.</p>
-      <ul class="space-y-1">${novas.map(c => `<li><strong>${escaparHtml(c.label)}</strong> (${fichaData(c.at)}): <span class="line-through text-gray-500">${escaparHtml(c.before)}</span> → ${escaparHtml(c.after)}</li>`).join('')}</ul>
-      <button type="button" data-ficha="visto" class="gmb-btn-link mt-2">Já conferi, marcar como visto</button>
+    blocos.push(`<div class="ficha-alerta-modern">
+      <div class="ficha-alerta-icon">
+        <i class="fas fa-triangle-exclamation"></i>
+      </div>
+      <div class="ficha-alerta-body">
+        <div class="flex items-center gap-2 mb-1 flex-wrap">
+          <span class="ficha-alerta-title">Alteração Detectada no Perfil</span>
+          <span class="ficha-alerta-tag">${novas.length} ${novas.length === 1 ? 'campo alterado' : 'campos alterados'}</span>
+        </div>
+        <p class="ficha-alerta-desc">Se ninguém da loja mexeu, pode ter sido o Google ou sugestão de terceiros aceita:</p>
+        <ul class="ficha-alerta-list">${novas.map(c => `<li>
+          <span class="font-bold text-gray-800">${escaparHtml(c.label)}</span>
+          <span class="text-gray-400 text-[10px]">(${fichaData(c.at)})</span>:
+          <span class="line-through text-red-500 bg-red-50 px-1 py-0.5 rounded text-[11px]">${escaparHtml(c.before)}</span>
+          <span class="text-gray-400 mx-1">→</span>
+          <span class="font-semibold text-emerald-800 bg-emerald-50 px-1 py-0.5 rounded text-[11px]">${escaparHtml(c.after)}</span>
+        </li>`).join('')}</ul>
+      </div>
+      <div class="ficha-alerta-action">
+        <button type="button" data-ficha="visto" class="ficha-alerta-btn">
+          <i class="fas fa-check"></i>
+          <span>Já conferi, marcar como visto</span>
+        </button>
+      </div>
     </div>`);
   }
   if (d.googleDiff?.length) {
-    blocos.push(`<div class="ficha-aviso">
-      <p class="font-black text-amber-900"><i class="fas fa-pen-to-square mr-1"></i>O Google mostra uma versão diferente da sua em: ${d.googleDiff.map(g => escaparHtml(g.label)).join(', ')}</p>
-      <ul class="text-[11px] text-amber-900 mt-1">${d.googleDiff.filter(g => g.google).map(g => `<li>${escaparHtml(g.label)} no Google: ${escaparHtml(g.google)}</li>`).join('')}</ul>
-      <p class="text-[11px] text-amber-800 mt-1">Abra o Perfil da Empresa: ele mostra as edições do Google para aceitar ou recusar.</p>
+    blocos.push(`<div class="ficha-aviso-modern">
+      <div class="ficha-aviso-icon">
+        <i class="fas fa-pen-to-square"></i>
+      </div>
+      <div class="ficha-aviso-body">
+        <div class="flex items-center gap-2 mb-1">
+          <span class="ficha-aviso-title">Divergência de Cadastro</span>
+        </div>
+        <ul class="ficha-alerta-list">${d.googleDiff.filter(g => g.google).map(g => `<li><strong>${escaparHtml(g.label)}</strong> no Google: <span class="bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded text-[11px]">${escaparHtml(g.google)}</span></li>`).join('')}</ul>
+        <p class="ficha-alerta-desc mt-1.5">Abra o Perfil da Empresa para aceitar ou recusar as edições sugeridas.</p>
+      </div>
     </div>`);
   }
   return blocos.join('');
@@ -86,38 +136,123 @@ function renderFicha() {
   if (!conteudo || !d) return;
   const mensagem = FichaState.mensagem ? `<p class="geogrid-mensagem">${escaparHtml(FichaState.mensagem)}</p>` : '';
   const erro = d.lastError ? `<p class="geogrid-erro">Última conferência (${fichaData(d.lastError.at)}) falhou: ${escaparHtml(d.lastError.message)}</p>` : '';
-  const conferir = `<button type="button" data-ficha="conferir" class="gmb-btn-primario" ${FichaState.ocupado || !d.connected ? 'disabled' : ''}>${FichaState.ocupado === 'conferir' ? 'Conferindo...' : 'Conferir agora'}</button>`;
+  const conferir = `<button type="button" data-ficha="conferir" class="gmb-btn-primario w-full sm:w-auto" ${FichaState.ocupado || !d.connected ? 'disabled' : ''}><i class="fas ${FichaState.ocupado === 'conferir' ? 'fa-spinner fa-spin' : 'fa-arrows-rotate'} mr-1"></i>${FichaState.ocupado === 'conferir' ? 'Conferindo...' : 'Conferir agora'}</button>`;
   if (!d.connected) { fichaStatus('Sem conexão', 'bg-gray-100 text-gray-700'); conteudo.innerHTML = '<p class="text-[11px] text-gray-600">Conecte a ficha no cartão acima para o servidor conferir a saúde dela todo dia.</p>'; return; }
   if (!d.health) { fichaStatus('Ainda não conferida', 'bg-yellow-100 text-yellow-800'); conteudo.innerHTML = `<p class="text-[11px] text-gray-600 mb-2">O servidor confere a ficha uma vez por dia. Faça a primeira conferência agora.</p>${conferir}${mensagem}${erro}`; return; }
 
   const h = d.health, s = h.score;
-  const cor = s.percent >= 85 ? 'text-green-700' : s.percent >= 65 ? 'text-amber-600' : 'text-red-600';
-  fichaStatus(d.unseenChanges ? `${d.unseenChanges} ${d.unseenChanges === 1 ? 'alteração' : 'alterações'}` :`Nota ${s.percent}`, d.unseenChanges ? 'bg-red-100 text-red-800' : s.percent >= 85 ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800');
+  const corBg = s.percent >= 85 ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : s.percent >= 65 ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-red-50 border-red-200 text-red-900';
+  const corNumero = s.percent >= 85 ? 'text-emerald-700' : s.percent >= 65 ? 'text-amber-700' : 'text-red-700';
+  const badgeTexto = s.percent >= 85 ? 'Excelente Saúde' : s.percent >= 65 ? 'Bom Estado' : 'Atenção Necessária';
+
+  fichaStatus(d.unseenChanges ? `${d.unseenChanges} ${d.unseenChanges === 1 ? 'alteração' : 'alterações'}` : `Nota ${s.percent}`, d.unseenChanges ? 'bg-red-100 text-red-800' : s.percent >= 85 ? 'bg-emerald-100 text-emerald-800' : 'bg-yellow-100 text-yellow-800');
   const anterior = d.history.length > 1 ? d.history[d.history.length - 2] : null;
-  const variacao = anterior && anterior.percent !== s.percent ? ` <span class="text-xs font-bold ${s.percent > anterior.percent ? 'text-green-700' : 'text-red-600'}">${s.percent > anterior.percent ? '+' : ''}${s.percent - anterior.percent} desde ${fichaData(anterior.at)}</span>` : '';
+  const variacao = anterior && anterior.percent !== s.percent ? ` <span class="text-xs font-bold ${s.percent > anterior.percent ? 'text-emerald-700' : 'text-red-600'}">(${s.percent > anterior.percent ? '+' : ''}${s.percent - anterior.percent})</span>` : '';
   const checks = [...h.checks].sort((a, b) => FICHA_ORDEM[a.importance] - FICHA_ORDEM[b.importance]);
   const falhas = checks.filter(c => c.status === 'fail'), naoLidos = checks.filter(c => c.status === 'unknown'), certos = checks.filter(c => c.status === 'pass');
   const p = h.profile;
+
   conteudo.innerHTML = `
     ${fichaAlteracoes(d)}
-    <div class="ficha-topo">
-      <div><p class="text-5xl font-black ${cor} leading-none">${s.percent}</p><p class="text-[11px] text-gray-600 mt-1">${s.passed} de ${s.total} itens certos${variacao}</p></div>
-      <div class="text-[11px] text-gray-600">
-        <p><strong>Categoria principal:</strong> ${escaparHtml(p.primaryCategory || '-')}${p.additionalCategories.length ? ` • adicionais: ${escaparHtml(p.additionalCategories.join(', '))}` : ''}</p>
-        ${h.reviews ? `<p><strong>Avaliações:</strong> ${h.reviews.avgRating ?? '-'} estrelas em ${h.reviews.total}; ${h.reviews.newInWindow} nos últimos 30 dias</p>` : ''}
-        ${h.keywords?.length ? `<p><strong>Mais buscados (3 meses):</strong> ${h.keywords.slice(0, 6).map(k => `${escaparHtml(k.term)} (${k.approx ? 'menos de ' : ''}${k.count})`).join(', ')}</p>` : ''}
-        <p class="text-gray-500 mt-1">Conferida em ${fichaData(h.at)} (${h.trigger === 'manual' ? 'manual' : 'automática, todo dia'}).</p>
+    <div class="ficha-dashboard-grid">
+      <!-- Card Score -->
+      <div class="ficha-score-box ${corBg}">
+        <div class="flex items-baseline justify-center gap-1">
+          <span class="text-4xl font-black ${corNumero} leading-none tracking-tight">${s.percent}</span>
+          <span class="text-xs font-bold text-gray-400">/100</span>
+        </div>
+        <div class="mt-1 font-black text-[11px] tracking-wide uppercase">${badgeTexto}</div>
+        <div class="text-[10px] text-gray-600 font-medium mt-0.5">${s.passed} de ${s.total} itens aprovados${variacao}</div>
+        <div class="mt-3 w-full">${conferir}</div>
       </div>
-      <div class="ml-auto">${conferir}</div>
+
+      <!-- Quick Stats Grid -->
+      <div class="ficha-stats-grid">
+        <div class="ficha-stat-card">
+          <div class="ficha-stat-label"><i class="fas fa-building text-gray-400 mr-1"></i> Categoria Principal</div>
+          <div class="ficha-stat-value font-bold text-gray-900 truncate" title="${escaparHtml(p.primaryCategory || '-')}">${escaparHtml(p.primaryCategory || '-')}</div>
+          ${p.additionalCategories.length ? `<div class="text-[10px] text-gray-500 mt-1 truncate" title="${escaparHtml(p.additionalCategories.join(', '))}">Adicionais: ${escaparHtml(p.additionalCategories.join(', '))}</div>` : ''}
+        </div>
+
+        <div class="ficha-stat-card">
+          <div class="ficha-stat-label"><i class="fas fa-star text-amber-400 mr-1"></i> Avaliações no Maps</div>
+          <div class="flex items-baseline gap-1.5 mt-0.5">
+            <span class="text-sm font-black text-gray-900">${h.reviews?.avgRating ?? '-'} ★</span>
+            <span class="text-[11px] text-gray-500">(${h.reviews?.total ?? 0} avaliações)</span>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-1">${h.reviews?.newInWindow ?? 0} novas nos últimos 30 dias</div>
+        </div>
+
+        <div class="ficha-stat-card">
+          <div class="ficha-stat-label"><i class="fas fa-magnifying-glass text-gray-400 mr-1"></i> Termos Mais Buscados</div>
+          <div class="flex flex-wrap gap-1 mt-1">
+            ${h.keywords?.length ? h.keywords.slice(0, 3).map(k => `<span class="ficha-chip">${escaparHtml(k.term)} (${k.approx ? '<' : ''}${k.count})</span>`).join('') : '<span class="text-[10px] text-gray-400">Sem dados</span>'}
+          </div>
+        </div>
+
+        <div class="ficha-stat-card">
+          <div class="ficha-stat-label"><i class="fas fa-clock-rotate-left text-gray-400 mr-1"></i> Última Conferência</div>
+          <div class="text-[11px] font-bold text-gray-800 mt-0.5">${fichaData(h.at)}</div>
+          <div class="text-[10px] text-gray-500 mt-0.5">${h.trigger === 'manual' ? 'Conferência manual' : 'Rotina automática diária do servidor'}</div>
+        </div>
+      </div>
     </div>
+
     ${mensagem}${erro}
-    ${falhas.length ? `<p class="ficha-subtitulo">A corrigir (${falhas.length})</p><ul class="ficha-lista">${falhas.map(fichaItem).join('')}</ul>` : '<p class="ficha-subtitulo text-green-800">Nenhum item a corrigir.</p>'}
-    ${naoLidos.length ? `<p class="ficha-subtitulo">Não lidos (${naoLidos.length}), fora da nota</p><ul class="ficha-lista">${naoLidos.map(fichaItem).join('')}</ul>` : ''}
-    <details class="mt-2"><summary class="ficha-subtitulo cursor-pointer">Itens certos (${certos.length})</summary><ul class="ficha-lista">${certos.map(fichaItem).join('')}</ul></details>
-    <p class="ficha-subtitulo mt-4">Pedir avaliação aos clientes</p>${fichaAvaliacao(d)}
-    <p class="ficha-subtitulo mt-4">Potencial de crescimento no Maps</p>${fichaPotencial(d)}
-    <p class="ficha-subtitulo mt-4">Nome, endereço e telefone nos diretórios</p>${fichaNap(d)}
-    ${d.changes.some(c => c.seen) ? `<details class="mt-3"><summary class="ficha-subtitulo cursor-pointer">Alterações anteriores</summary><ul class="text-[11px] text-gray-600 space-y-1 mt-1">${d.changes.filter(c => c.seen).map(c => `<li>${fichaData(c.at)} • <strong>${escaparHtml(c.label)}</strong>: ${escaparHtml(c.before)} → ${escaparHtml(c.after)}</li>`).join('')}</ul></details>` : ''}`;
+
+    ${falhas.length ? `
+      <div class="mb-5">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="ficha-section-title text-amber-900"><i class="fas fa-triangle-exclamation text-amber-500 mr-1.5"></i> Itens a Corrigir (${falhas.length})</h4>
+          <span class="text-[10px] text-gray-500 font-medium">Recomendações prioritárias para subir a nota</span>
+        </div>
+        <ul class="ficha-lista">${falhas.map(fichaItem).join('')}</ul>
+      </div>
+    ` : '<div class="ficha-alerta-sucesso mb-4"><i class="fas fa-circle-check text-emerald-600 mr-2 text-base"></i> Parabéns! Nenhum item pendente de correção na ficha.</div>'}
+
+    ${naoLidos.length ? `
+      <div class="mb-4">
+        <h4 class="ficha-section-title text-gray-700 mb-2"><i class="fas fa-circle-info text-gray-400 mr-1.5"></i> Não lidos (${naoLidos.length}) <span class="text-[10px] font-normal text-gray-500">(fora da nota)</span></h4>
+        <ul class="ficha-lista">${naoLidos.map(fichaItem).join('')}</ul>
+      </div>
+    ` : ''}
+
+    <details class="ficha-details-card mb-4">
+      <summary class="ficha-details-summary">
+        <span><i class="fas fa-circle-check text-emerald-600 mr-1.5"></i> Ver itens corretos e aprovados (${certos.length})</span>
+        <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+      </summary>
+      <ul class="ficha-lista p-3 pt-2 border-t border-gray-100">${certos.map(fichaItem).join('')}</ul>
+    </details>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+      <div class="ficha-box-auxiliar">
+        <h4 class="font-bold text-xs text-gray-900 mb-2 flex items-center gap-1.5"><i class="fab fa-whatsapp text-emerald-600"></i> Pedir Avaliação aos Clientes</h4>
+        ${fichaAvaliacao(d)}
+      </div>
+
+      <div class="ficha-box-auxiliar">
+        <h4 class="font-bold text-xs text-gray-900 mb-2 flex items-center gap-1.5"><i class="fas fa-chart-line text-blue-600"></i> Potencial de Crescimento no Maps</h4>
+        ${fichaPotencial(d)}
+      </div>
+    </div>
+
+    <div class="ficha-box-auxiliar mt-4">
+      <h4 class="font-bold text-xs text-gray-900 mb-2 flex items-center gap-1.5"><i class="fas fa-address-book text-indigo-600"></i> Nome, Endereço e Telefone nos Diretórios (NAP)</h4>
+      ${fichaNap(d)}
+    </div>
+
+    ${d.changes.some(c => c.seen) ? `
+      <details class="ficha-details-card mt-3">
+        <summary class="ficha-details-summary">
+          <span><i class="fas fa-history text-gray-400 mr-1.5"></i> Histórico de alterações anteriores</span>
+          <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+        </summary>
+        <ul class="text-[11px] text-gray-600 space-y-1.5 p-3 pt-2 border-t border-gray-100">
+          ${d.changes.filter(c => c.seen).map(c => `<li><span class="text-gray-400">${fichaData(c.at)}</span> • <strong>${escaparHtml(c.label)}</strong>: <span class="line-through text-gray-400">${escaparHtml(c.before)}</span> → <span class="text-emerald-800 font-medium">${escaparHtml(c.after)}</span></li>`).join('')}
+        </ul>
+      </details>
+    ` : ''}`;
 }
 
 async function carregarFicha() {

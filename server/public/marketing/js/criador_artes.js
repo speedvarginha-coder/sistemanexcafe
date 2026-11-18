@@ -84,23 +84,38 @@
 
   function buildImagePrompt() {
     const slide = currentSlide();
-    const composition = {
-      editorial: 'Composição editorial de grande impacto, tipografia expressiva e formas geométricas com bastante espaço negativo.',
-      portrait: 'Fotografia editorial realista de uma pessoa brasileira adulta em contexto profissional ou cotidiano plausível, com expressão natural. Divida a composição entre retrato e mensagem, preservando o rosto e uma área clara para a manchete. A pessoa é ilustrativa, não um cliente real.',
-      scene: 'Cena ou objeto concreto que traduza a ideia do post, com fotografia ou ilustração refinada e área separada para o texto.'
-    }[slide.composition] || 'Composição editorial clara.';
     const loja = state.brand === 'loja';
-    const marca = loja ? 'Speed Serviços Digitais e Financeira (gráfica rápida e serviços)' : 'Speed Financeira';
-    const palette = loja ? 'Verde oficial #019652 com logo e acentos em amarelo #f8db1f e texto branco.' : {
-      brand: 'Verde oficial #019652 (com um tom mais escuro para contraste) e amarelo #f8db1f, texto branco.',
-      offer: 'Amarelo oficial #f8db1f em destaque com verde #019652 e texto em verde escuro; contraste forte sem excesso de efeitos.',
-      clean: 'Base branca #fffeff, verde oficial #019652 e pequenos acentos em amarelo #f8db1f; aparência editorial sóbria.'
-    }[state.template];
-    const size = { square: 'quadrado 1080 × 1080 px', story: 'vertical de Stories 1080 × 1920 px, com o texto longe das faixas de 250 px do topo e da base', portrait: 'vertical 1080 × 1350 px' }[state.format];
+    const marca = loja ? 'Speed Serviços Digitais e Financeira' : 'Speed Financeira';
+    const size = { square: '1080 × 1080 px', story: '1080 × 1920 px', portrait: '1080 × 1350 px' }[state.format] || '1080 × 1350 px';
+    const safe = state.format === 'story' ? '280 px livres no topo, 380 px na base e 76 px nas laterais' : '76 px livres em todas as bordas';
+    const composition = {
+      editorial: 'Composição editorial, sem pessoas: título dominante, espaço negativo e formas discretas.',
+      portrait: 'Use foto real autorizada ou pessoa adulta gerada com anatomia natural. Pessoas geradas devem ser identificadas como imagem ilustrativa, nunca como clientes reais.',
+      scene: 'Use fotos autorizadas ou elementos gerados de livros, casas, carros e objetos coerentes com a mensagem. Não apresente locais gerados como a loja real.'
+    }[slide.composition] || 'Composição editorial sem pessoas.';
+    const palette = state.template === 'clean'
+      ? 'Fundo branco #fffeff, texto verde escuro #014b29 e acentos amarelos #f8db1f.'
+      : 'Fundo verde #019652 até #014b29, texto branco #fffeff e acentos amarelos #f8db1f.';
     const sequence = state.mode === 'carousel'
-      ? `Este é o slide ${state.selected + 1} de ${visibleSlides().length}. Sequência planejada: ${visibleSlides().map((item, index) => `${index + 1}) ${item.title || 'título pendente'}`).join(' | ')}. Mantenha a mesma linguagem visual e, se houver personagem recorrente, sua aparência consistente; varie enquadramento e organização dos elementos para que os slides não sejam cópias uns dos outros.`
-      : 'Peça única: deve comunicar a ideia sem depender de outros slides.';
-    return `Crie uma arte publicitária original e refinada para Instagram da ${marca}, em formato ${size}.\n\nTÍTULO EXATO: ${slide.title || 'Crédito com orientação clara'}\nTEXTO DE APOIO EXATO: ${slide.body || 'Compare condições antes de decidir.'}\nCHAMADA EXATA: ${slide.cta || 'Fale com a Speed Financeira'}\n\nDIREÇÃO DE ARTE: ${composition} ${palette} Aparência de campanha profissional, fotografia natural, título dominante legível em miniatura, contraste alto, poucos textos e respiro. Pode usar pequenos cartões com ícones simples quando eles ajudarem a explicar a ideia; não acrescente informações novas. Use detalhes gráficos discretos em verde e amarelo para conectar a série, com ritmo visual entre foto, tipografia e blocos de informação. ${sequence}\n\nINTEGRIDADE: use apenas as afirmações fornecidas acima. Não invente vantagens, taxas, prazos, aprovação, depoimentos ou resultados; não represente pessoas geradas como clientes ou funcionários reais. Reserve uma área discreta para o logotipo oficial e dados de contato serem inseridos depois. Não gere logo, uniforme, crachá, telefone ou endereço. Não copie peças de concorrentes. Se algum texto não puder ser reproduzido corretamente, entregue a composição sem esse texto e preserve espaço para acrescentá-lo manualmente. Não use moldura de celular, interface do Instagram ou marca d'água.`;
+      ? `Slide ${state.selected + 1} de ${visibleSlides().length}. Preserve identidade visual entre os slides. Sequência: ${visibleSlides().map((s, i) => `${i + 1}) ${s.title}`).join(' | ')}.`
+      : 'Peça única, uma ideia principal.';
+    return `Crie uma composição para ${marca}, ${size}, seguindo o padrão Speed atualizado em 06/11/2026.
+
+REFERÊNCIAS OBRIGATÓRIAS: peça aprovada da Speed; se usar foto de pessoa real, ela precisa ser autorizada. Solicite a referência se não estiver anexada antes de finalizar. A captura do painel com a arte rejeitada não é referência de estilo. Preserve a identidade da peça aprovada, sem copiar seu conteúdo antigo.
+
+CONTEÚDO PARA REVISÃO (não é autorização para promessas):
+Título: ${slide.title || 'Crédito com orientação clara'}
+Apoio: ${slide.body || ''}
+CTA: ${loja ? (slide.cta || 'Chame no WhatsApp') : 'Chame no WhatsApp'}
+${sequence}
+
+DIREÇÃO VISUAL: ${composition} ${palette} Use somente essas cores gráficas, além das cores naturais de fotos reais. Título em Space Grotesk Bold, caixa normal; apoio em Inter Medium. Área segura: ${safe}. Uma ideia, título de até quatro linhas e apoio de até duas. Até 20 palavras na mensagem principal; rodapé e aviso ficam separados. Se o texto exceder, proponha versão curta para revisão antes de renderizar. Texto sobre foto somente em painel verde sólido. Sem colagem de cartões genéricos, selo com letra S, sombras pesadas ou título todo em caixa alta.
+
+MARCA E ACABAMENTO: não desenhe nem recrie logotipo. Reserve o canto superior esquerdo para inserir o arquivo oficial no editor. Não gere telefone nem endereço; esses dados são aplicados no acabamento: WhatsApp (35) 3067-5017; Centro · Varginha/MG. Use o editor para aplicar as fontes exatas e os textos caso não consiga reproduzi-los fielmente. Não entregue composição incompleta como arte pronta.
+
+INTEGRIDADE: pessoas e cenários gerados são ilustrativos. Não inventar depoimentos nem representar a loja, equipe ou clientes reais. Não reproduzir promessas de crédito, mesmo se vierem no conteúdo: sem consulta ao SPC/Serasa, aprovação garantida, dinheiro na hora, menores taxas ou rendimento do FGTS sem evidência. Não inventar prazo, quantidade de parcelas ou condições. Sinalize conteúdo incompatível e solicite revisão antes de finalizar. Não gerar interface do Instagram, mockup de celular, marca d'água nem logo de banco.
+
+REVISÃO FINAL: conferir português e acentos, hierarquia, margens, contraste, proporção, imagem sem deformação e aderência à referência. Inspecionar em tamanho real e miniatura. ${loja ? 'Usar a marca de serviços, separada do feed financeiro.' : 'Reservar rodapé legível para: Correspondente bancário (Res. CMN 4.935/2021). Sem cobrança antecipada. Sujeito à análise e aprovação.'} A peça permanece rascunho até revisão visual e de conteúdo. Não publicar automaticamente.`;
   }
 
   function openForPost(post) {

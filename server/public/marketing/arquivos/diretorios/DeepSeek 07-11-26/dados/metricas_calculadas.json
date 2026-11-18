@@ -1,0 +1,32 @@
+﻿{
+    "gerado_em":  "2026-11-07T14:04:45",
+    "arquivo":  "D:\\Gestão Speed Financeira Marketing\\marketing\\diretorios\\DeepSeek 07-11-26\\dados\\auditoria_2026-11-07.csv",
+    "total_linhas":  44,
+    "terceiros_auditaveis":  21,
+    "nap_nucleo_ok":  10,
+    "nap_nucleo_pct":  47.6,
+    "telefone_morto":  8,
+    "telefone_morto_pct":  38.1,
+    "identidade_completa":  0,
+    "duplicidades_ativas":  6,
+    "p0":  8,
+    "p1":  9,
+    "acesso_sim_csv":  14,
+    "fichas_telefone_morto":  [
+                                  "Bendito Guia",
+                                  "Brasil Locais",
+                                  "Planeta Brasileiro (1)",
+                                  "Solutudo (2)",
+                                  "TeleListas (2)",
+                                  "eGuias",
+                                  "UENI",
+                                  "EmpresaFone"
+                              ],
+    "diretorios_duplicados":  [
+                                  "Planeta Brasileiro (2 fichas)",
+                                  "Página Amarela (2 fichas)",
+                                  "Solutudo (2 fichas)",
+                                  "TeleListas (2 fichas)",
+                                  "Cylex (3 fichas)"
+                              ]
+}

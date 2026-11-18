@@ -1,0 +1,1688 @@
+data;servico;quantidade;receita;vendas_com_o_servico;valor_exato_ou_rateado
+2026-05-04;Bomboniere e bebidas;8;31,67;4;contem rateio
+2026-05-04;Currículo;1;10,00;1;exato
+2026-05-04;Detran;1;15,00;1;exato
+2026-05-04;Envelope;4;8,67;4;contem rateio
+2026-05-04;Envio de arquivos;1;5,00;1;contem rateio
+2026-05-04;Foto 3x4;1;15,00;1;contem rateio
+2026-05-04;Impressão Colorida;4;8,00;3;contem rateio
+2026-05-04;Impressão P&B;141;122,38;27;contem rateio
+2026-05-04;Outros: Atestado de Bons Antecedentes;1;9,50;1;contem rateio
+2026-05-04;Plastificação;2;16,00;2;contem rateio
+2026-05-04;Recebimento de Arquivos;22;22,33;18;contem rateio
+2026-05-04;Resultado de exame;2;11,36;2;contem rateio
+2026-05-04;Scanner;1;1,50;1;contem rateio
+2026-05-04;Suporte ao cliente;3;8,38;3;contem rateio
+2026-05-04;Uso de computador;5;20,93;5;contem rateio
+2026-05-05;Bomboniere e bebidas;4;7,69;3;contem rateio
+2026-05-05;Consulta simples;1;4,29;1;contem rateio
+2026-05-05;Envelope;5;10,60;5;contem rateio
+2026-05-05;Envio de arquivos;3;15,00;3;contem rateio
+2026-05-05;INSS (Meu INSS);1;30,00;1;exato
+2026-05-05;Impressão Colorida;1;2,00;1;contem rateio
+2026-05-05;Impressão P&B;128;110,11;22;contem rateio
+2026-05-05;Impressão em papel especial;1;7,00;1;exato
+2026-05-05;Outros: Kit Carregador Gold 3.1 Tip C;1;29,90;1;exato
+2026-05-05;Plastificação;5;37,45;3;contem rateio
+2026-05-05;Recebimento de Arquivos;11;10,86;10;contem rateio
+2026-05-05;Resultado de exame;1;5,00;1;contem rateio
+2026-05-05;Scanner;6;9,00;3;contem rateio
+2026-05-05;Transferência de titularidade;1;15,00;1;exato
+2026-05-05;Uso de computador;4;19,00;4;contem rateio
+2026-05-05;gov.br;1;10,00;1;exato
+2026-05-06;Bomboniere e bebidas;3;11,03;3;contem rateio
+2026-05-06;Currículo;1;10,00;1;exato
+2026-05-06;Envelope;1;2,00;1;contem rateio
+2026-05-06;Envio de arquivos;1;4,37;1;contem rateio
+2026-05-06;Impressão Colorida;5;10,00;1;contem rateio
+2026-05-06;Impressão P&B;78;74,27;22;contem rateio
+2026-05-06;Outros: Arte Simples - 10 minutos;1;15,00;1;contem rateio
+2026-05-06;Outros: Baixar Playlis CD;2;10,00;1;exato
+2026-05-06;Outros: GPS Guia da Previdência Social;1;10,00;1;exato
+2026-05-06;Plastificação;1;8,00;1;exato
+2026-05-06;Recebimento de Arquivos;14;14,00;13;contem rateio
+2026-05-06;Scanner;2;2,63;1;contem rateio
+2026-05-06;Suporte ao cliente;2;6,00;2;contem rateio
+2026-05-06;Uso de computador;4;13,15;4;contem rateio
+2026-05-06;gov.br;2;40,00;2;contem rateio
+2026-05-07;Bomboniere e bebidas;2;4,24;2;contem rateio
+2026-05-07;Currículo;2;25,00;2;contem rateio
+2026-05-07;Detran;1;35,00;1;exato
+2026-05-07;Envelope;3;6,84;3;contem rateio
+2026-05-07;Impressão Colorida;12;25,26;2;contem rateio
+2026-05-07;Impressão P&B;135;96,98;12;contem rateio
+2026-05-07;Impressão em papel especial;11;73,00;2;exato
+2026-05-07;Plastificação;8;49,00;3;contem rateio
+2026-05-07;Recebimento de Arquivos;3;3,43;3;contem rateio
+2026-05-07;Resultado de exame;1;5,00;1;contem rateio
+2026-05-07;Suporte ao cliente;1;3,00;1;exato
+2026-05-07;Transferência de titularidade;1;25,00;1;exato
+2026-05-08;Bomboniere e bebidas;4;8,34;4;contem rateio
+2026-05-08;Contrato de locação;1;35,00;1;contem rateio
+2026-05-08;Currículo;4;33,50;4;contem rateio
+2026-05-08;Detran;1;15,00;1;exato
+2026-05-08;Digitação;1;7,00;1;exato
+2026-05-08;Envelope;7;13,59;7;contem rateio
+2026-05-08;Impressão Colorida;32;59,49;4;contem rateio
+2026-05-08;Impressão P&B;131;111,14;30;contem rateio
+2026-05-08;Impressão em papel especial;8;52,50;3;contem rateio
+2026-05-08;Outros: Atestado de Bons Antecedentes;2;19,50;2;exato
+2026-05-08;Outros: Kit Carregador Gold 3.1 Tip C;1;32,27;1;contem rateio
+2026-05-08;Outros: Recuperação Simples senha;1;30,00;1;exato
+2026-05-08;Plastificação;3;15,00;1;exato
+2026-05-08;Recebimento de Arquivos;21;21,00;21;contem rateio
+2026-05-08;Resultado de exame;1;6,00;1;contem rateio
+2026-05-08;Scanner;6;9,00;2;contem rateio
+2026-05-08;Suporte ao cliente;4;11,93;4;contem rateio
+2026-05-08;Transferência de titularidade;4;60,00;1;exato
+2026-05-08;Uso de computador;2;4,84;2;contem rateio
+2026-05-09;Bomboniere e bebidas;2;7,55;2;contem rateio
+2026-05-09;Envelope;1;2,00;1;contem rateio
+2026-05-09;Impressão P&B;137;102,56;12;contem rateio
+2026-05-09;Impressão em papel especial;1;6,00;1;contem rateio
+2026-05-09;Manutenção de celular;1;25,00;1;exato
+2026-05-09;Outros: Claro Promoção;1;40,00;1;exato
+2026-05-09;Plastificação;2;13,00;1;contem rateio
+2026-05-09;Recebimento de Arquivos;7;6,79;7;contem rateio
+2026-05-11;Bomboniere e bebidas;5;13,19;4;contem rateio
+2026-05-11;Currículo;9;100,82;9;contem rateio
+2026-05-11;Detran;2;30,00;2;exato
+2026-05-11;Edição de arquivo;1;15,00;1;exato
+2026-05-11;Envelope;11;22,97;11;contem rateio
+2026-05-11;Impressão Colorida;7;14,00;3;contem rateio
+2026-05-11;Impressão P&B;235;169,42;34;contem rateio
+2026-05-11;Impressão em papel especial;1;10,00;1;exato
+2026-05-11;Outros: Claro;1;30,00;1;exato
+2026-05-11;Outros: Kit Carregador Gold 3.1 Tip C;1;29,90;1;exato
+2026-05-11;Plastificação;2;10,00;1;contem rateio
+2026-05-11;Recebimento de Arquivos;25;27,39;24;contem rateio
+2026-05-11;Scanner;1;1,50;1;contem rateio
+2026-05-11;Suporte ao cliente;5;14,02;5;contem rateio
+2026-05-11;Uso de computador;6;18,14;6;contem rateio
+2026-05-12;Bomboniere e bebidas;6;13,75;3;contem rateio
+2026-05-12;Currículo;5;60,00;5;contem rateio
+2026-05-12;Detran;1;20,00;1;exato
+2026-05-12;Envelope;10;19,35;9;contem rateio
+2026-05-12;Impressão Colorida;6;12,00;5;contem rateio
+2026-05-12;Impressão P&B;82;82,34;25;contem rateio
+2026-05-12;Impressão em papel especial;2;12,00;1;exato
+2026-05-12;Outros: Segunda Via de Conta;1;10,00;1;exato
+2026-05-12;Plastificação;2;9,15;2;contem rateio
+2026-05-12;Recebimento de Arquivos;17;17,00;12;contem rateio
+2026-05-12;Scanner;11;16,86;2;contem rateio
+2026-05-12;Suporte ao cliente;7;20,85;7;contem rateio
+2026-05-12;Uso de computador;6;61,20;6;contem rateio
+2026-05-13;Bomboniere e bebidas;4;16,50;3;exato
+2026-05-13;Consulta simples;1;5,00;1;contem rateio
+2026-05-13;Contrato de locação;1;50,00;1;exato
+2026-05-13;Currículo;2;20,00;2;contem rateio
+2026-05-13;Envelope;4;8,34;4;contem rateio
+2026-05-13;Impressão Colorida;20;41,90;5;contem rateio
+2026-05-13;Impressão P&B;129;87,85;17;contem rateio
+2026-05-13;Outros: Cadastro Simples site;1;20,00;1;exato
+2026-05-13;Outros: Segunda Via de Conta;1;10,00;1;exato
+2026-05-13;Recebimento de Arquivos;8;8,00;7;contem rateio
+2026-05-13;Scanner;3;4,50;1;contem rateio
+2026-05-13;Suporte ao cliente;5;17,24;5;contem rateio
+2026-05-13;Uso de computador;3;10,17;3;contem rateio
+2026-05-14;Bomboniere e bebidas;4;17,24;4;contem rateio
+2026-05-14;Consulta SPC/crédito;1;30,00;1;exato
+2026-05-14;Currículo;2;19,30;2;contem rateio
+2026-05-14;Edição de arquivo;1;15,00;1;exato
+2026-05-14;Envelope;3;6,00;3;contem rateio
+2026-05-14;Envio de arquivos;1;4,35;1;contem rateio
+2026-05-14;Impressão Colorida;11;21,03;4;contem rateio
+2026-05-14;Impressão P&B;89;70,34;14;contem rateio
+2026-05-14;Impressão em papel especial;2;14,00;1;exato
+2026-05-14;Outros: Baixar Playlis CD;2;10,00;1;exato
+2026-05-14;Recebimento de Arquivos;10;10,26;10;contem rateio
+2026-05-14;Scanner;30;38,85;2;contem rateio
+2026-05-14;Suporte ao cliente;2;5,57;2;contem rateio
+2026-05-14;Uso de computador;3;15,56;3;contem rateio
+2026-05-15;Bomboniere e bebidas;3;13,32;3;contem rateio
+2026-05-15;Contrato de locação;1;35,00;1;contem rateio
+2026-05-15;Currículo;2;20,00;2;contem rateio
+2026-05-15;Envelope;14;25,20;7;contem rateio
+2026-05-15;Envio de arquivos;1;5,00;1;contem rateio
+2026-05-15;Impressão Colorida;11;19,20;3;contem rateio
+2026-05-15;Impressão P&B;118;91,83;17;contem rateio
+2026-05-15;Impressão em papel especial;3;19,00;2;contem rateio
+2026-05-15;Outros: Certidão Negativa;5;47,50;1;exato
+2026-05-15;Outros: Paçoca amor sing`S;2;2,00;1;contem rateio
+2026-05-15;Recebimento de Arquivos;9;9,00;9;contem rateio
+2026-05-15;Scanner;3;4,50;1;contem rateio
+2026-05-15;Suporte ao cliente;4;11,50;4;contem rateio
+2026-05-15;Transferência de titularidade;1;20,00;1;exato
+2026-05-15;Uso de computador;6;46,80;6;contem rateio
+2026-05-16;Bomboniere e bebidas;3;9,00;2;exato
+2026-05-16;Detran;3;46,67;3;contem rateio
+2026-05-16;Edição de arquivo;1;6,67;1;contem rateio
+2026-05-16;Envelope;3;6,56;3;contem rateio
+2026-05-16;INSS (Meu INSS);1;33,33;1;contem rateio
+2026-05-16;Impressão Colorida;2;3,89;1;contem rateio
+2026-05-16;Impressão P&B;25;24,76;7;contem rateio
+2026-05-16;Impressão em papel especial;8;57,29;4;contem rateio
+2026-05-16;Plastificação;1;5,00;1;exato
+2026-05-16;Recebimento de Arquivos;4;4,00;4;contem rateio
+2026-05-16;Suporte ao cliente;1;3,00;1;exato
+2026-05-16;Uso de computador;1;3,33;1;contem rateio
+2026-05-18;Bomboniere e bebidas;2;7,00;1;exato
+2026-05-18;Currículo;2;20,00;2;contem rateio
+2026-05-18;Digitação;1;15,00;1;exato
+2026-05-18;Encadernação;1;10,47;1;contem rateio
+2026-05-18;Envelope;6;12,29;6;contem rateio
+2026-05-18;Envio de arquivos;3;16,03;3;contem rateio
+2026-05-18;Impressão P&B;321;222,90;27;contem rateio
+2026-05-18;Outros: Atestado de Bons Antecedentes;1;11,58;1;contem rateio
+2026-05-18;Outros: Baixar Musica Link até 2horas/;2;10,00;1;exato
+2026-05-18;Outros: Quitação Eleitoral;1;7,92;1;contem rateio
+2026-05-18;Plastificação;4;20,00;2;contem rateio
+2026-05-18;Recebimento de Arquivos;19;19,00;19;contem rateio
+2026-05-18;Resultado de exame;1;5,00;1;contem rateio
+2026-05-18;Scanner;3;4,50;2;contem rateio
+2026-05-18;Suporte ao cliente;5;14,81;4;contem rateio
+2026-05-18;Transferência de titularidade;1;25,00;1;exato
+2026-05-18;Uso de computador;1;9,00;1;exato
+2026-05-19;Bomboniere e bebidas;5;21,07;5;contem rateio
+2026-05-19;Consulta simples;1;5,00;1;exato
+2026-05-19;Currículo;3;25,00;3;contem rateio
+2026-05-19;Envelope;7;14,58;7;contem rateio
+2026-05-19;Envio de arquivos;3;15,00;3;contem rateio
+2026-05-19;Foto 3x4;1;15,00;1;exato
+2026-05-19;INSS (Meu INSS);1;30,00;1;contem rateio
+2026-05-19;Impressão Colorida;2;3,68;2;contem rateio
+2026-05-19;Impressão P&B;119;93,94;23;contem rateio
+2026-05-19;Impressão em papel especial;6;40,29;4;contem rateio
+2026-05-19;Manutenção de celular;1;27,00;1;contem rateio
+2026-05-19;Outros: Cifra/Letra;1;4,00;1;exato
+2026-05-19;Outros: Paçoca amor sing`S;2;1,68;1;contem rateio
+2026-05-19;Outros: Recuperação Simples senha;1;18,00;1;contem rateio
+2026-05-19;Plastificação;3;15,00;1;exato
+2026-05-19;Recebimento de Arquivos;16;16,00;15;contem rateio
+2026-05-19;Resultado de exame;1;5,00;1;contem rateio
+2026-05-19;Scanner;5;7,50;4;contem rateio
+2026-05-19;Suporte ao cliente;1;3,00;1;exato
+2026-05-19;Transferência de titularidade;1;13,46;1;contem rateio
+2026-05-19;Uso de computador;4;177,50;3;contem rateio
+2026-05-20;Bomboniere e bebidas;9;20,50;4;contem rateio
+2026-05-20;Currículo;2;30,00;2;exato
+2026-05-20;Edição de arquivo;1;2,60;1;contem rateio
+2026-05-20;Envelope;10;26,13;7;contem rateio
+2026-05-20;Envio de arquivos;1;5,00;1;contem rateio
+2026-05-20;Impressão P&B;98;104,37;16;contem rateio
+2026-05-20;Impressão em papel especial;3;23,40;1;contem rateio
+2026-05-20;Outros: Atestado de Bons Antecedentes;2;19,70;2;contem rateio
+2026-05-20;Recebimento de Arquivos;7;6,82;6;contem rateio
+2026-05-20;Scanner;5;7,50;1;contem rateio
+2026-05-20;Suporte ao cliente;2;6,00;2;contem rateio
+2026-05-20;Uso de computador;5;20,48;5;contem rateio
+2026-05-21;Currículo;2;27,08;2;contem rateio
+2026-05-21;Detran;1;15,00;1;exato
+2026-05-21;Edição de arquivo;2;25,00;2;exato
+2026-05-21;Envelope;6;12,42;6;contem rateio
+2026-05-21;INSS (Meu INSS);1;30,00;1;exato
+2026-05-21;Impressão Colorida;10;21,00;4;contem rateio
+2026-05-21;Impressão P&B;112;81,32;17;contem rateio
+2026-05-21;Impressão em papel especial;1;7,00;1;exato
+2026-05-21;Outros: Arte Simples - 10 minutos;1;15,00;1;contem rateio
+2026-05-21;Recebimento de Arquivos;11;11,00;11;contem rateio
+2026-05-21;Suporte ao cliente;4;13,18;4;contem rateio
+2026-05-21;Uso de computador;2;2,70;2;contem rateio
+2026-05-22;Bomboniere e bebidas;5;19,83;4;contem rateio
+2026-05-22;Consulta simples;1;5,00;1;contem rateio
+2026-05-22;Detran;1;15,00;1;exato
+2026-05-22;Digitação;1;11,52;1;contem rateio
+2026-05-22;Edição de arquivo;3;19,97;3;contem rateio
+2026-05-22;Envelope;16;43,63;11;contem rateio
+2026-05-22;Impressão Colorida;3;6,96;3;contem rateio
+2026-05-22;Impressão P&B;202;161,87;22;contem rateio
+2026-05-22;Impressão em papel especial;4;26,51;2;contem rateio
+2026-05-22;Outros: Baixar playlis 250 música;2;65,00;2;exato
+2026-05-22;Outros: DAS MEI;1;9,50;1;exato
+2026-05-22;Outros: Fone PMCELL FO-01 Microfone P2;1;15,00;1;exato
+2026-05-22;Plastificação;4;26,67;3;contem rateio
+2026-05-22;Recebimento de Arquivos;9;9,29;9;contem rateio
+2026-05-22;Suporte ao cliente;1;5,25;1;contem rateio
+2026-05-22;Uso de computador;4;23,95;4;contem rateio
+2026-05-23;Currículo;1;10,00;1;contem rateio
+2026-05-23;Detran;1;20,00;1;exato
+2026-05-23;Envelope;4;7,68;4;contem rateio
+2026-05-23;Envio de arquivos;1;5,00;1;contem rateio
+2026-05-23;Impressão Colorida;41;64,58;3;contem rateio
+2026-05-23;Impressão P&B;58;45,01;5;contem rateio
+2026-05-23;Impressão em papel especial;4;24,50;2;contem rateio
+2026-05-23;Outros: Quitação Eleitoral;1;8,97;1;contem rateio
+2026-05-23;Plastificação;1;9,68;1;contem rateio
+2026-05-23;Recebimento de Arquivos;1;1,00;1;contem rateio
+2026-05-23;Scanner;4;6,00;1;contem rateio
+2026-05-23;Uso de computador;1;1,38;1;contem rateio
+2026-05-25;Bomboniere e bebidas;1;4,64;1;contem rateio
+2026-05-25;Currículo;3;45,00;3;contem rateio
+2026-05-25;Digitação;1;10,60;1;contem rateio
+2026-05-25;Edição de arquivo;1;2,31;1;contem rateio
+2026-05-25;Envelope;4;8,65;4;contem rateio
+2026-05-25;Impressão Colorida;5;10,00;2;contem rateio
+2026-05-25;Impressão P&B;153;109,65;14;contem rateio
+2026-05-25;Manutenção de celular;1;55,00;1;exato
+2026-05-25;Outros: Segunda Via de Conta;1;10,00;1;exato
+2026-05-25;Plastificação;3;25,23;2;contem rateio
+2026-05-25;Recebimento de Arquivos;7;7,32;7;contem rateio
+2026-05-25;Uso de computador;2;7,50;2;exato
+2026-05-26;Bomboniere e bebidas;4;19,96;4;contem rateio
+2026-05-26;Currículo;3;30,00;3;contem rateio
+2026-05-26;Detran;3;58,18;3;contem rateio
+2026-05-26;Envelope;12;27,92;10;contem rateio
+2026-05-26;Envio de arquivos;1;8,44;1;contem rateio
+2026-05-26;INSS (Meu INSS);1;20,00;1;exato
+2026-05-26;Impressão Colorida;1;2,00;1;contem rateio
+2026-05-26;Impressão P&B;142;105,20;19;contem rateio
+2026-05-26;Impressão em papel especial;4;30,00;2;exato
+2026-05-26;Plastificação;6;41,11;3;contem rateio
+2026-05-26;Recebimento de Arquivos;9;9,31;9;contem rateio
+2026-05-26;Resultado de exame;1;4,39;1;contem rateio
+2026-05-26;Scanner;4;10,13;1;contem rateio
+2026-05-26;Uso de computador;4;41,81;4;contem rateio
+2026-05-26;gov.br;1;15,00;1;exato
+2026-05-27;Bomboniere e bebidas;7;16,83;5;contem rateio
+2026-05-27;Currículo;2;20,00;1;exato
+2026-05-27;Detran;1;25,00;1;exato
+2026-05-27;Envelope;3;6,00;3;contem rateio
+2026-05-27;Envio de arquivos;3;15,00;3;contem rateio
+2026-05-27;Impressão Colorida;8;16,00;3;contem rateio
+2026-05-27;Impressão P&B;46;41,64;13;contem rateio
+2026-05-27;Impressão em papel especial;17;111,00;2;exato
+2026-05-27;Outros: Claro;1;30,00;1;exato
+2026-05-27;Recebimento de Arquivos;12;12,28;12;contem rateio
+2026-05-27;Scanner;10;15,00;3;contem rateio
+2026-05-27;Uso de computador;2;25,00;2;exato
+2026-05-28;Bomboniere e bebidas;3;16,35;3;contem rateio
+2026-05-28;Consulta SPC/crédito;1;30,00;1;exato
+2026-05-28;Consulta simples;1;5,00;1;contem rateio
+2026-05-28;Currículo;4;45,00;4;contem rateio
+2026-05-28;Detran;1;15,00;1;exato
+2026-05-28;Digitação;1;20,80;1;contem rateio
+2026-05-28;Encadernação;1;10,00;1;exato
+2026-05-28;Envelope;8;16,58;8;contem rateio
+2026-05-28;Impressão P&B;99;93,33;22;contem rateio
+2026-05-28;Impressão em papel especial;1;7,00;1;exato
+2026-05-28;Plastificação;2;13,00;2;contem rateio
+2026-05-28;Recebimento de Arquivos;12;12,29;11;contem rateio
+2026-05-28;Suporte ao cliente;2;6,00;2;contem rateio
+2026-05-28;Uso de computador;2;7,30;2;contem rateio
+2026-05-29;Bomboniere e bebidas;1;3,86;1;contem rateio
+2026-05-29;Contrato de locação;2;65,00;2;exato
+2026-05-29;Currículo;3;36,36;3;contem rateio
+2026-05-29;Detran;4;60,00;2;exato
+2026-05-29;Edição de arquivo;1;2,75;1;contem rateio
+2026-05-29;Envelope;2;4,00;2;contem rateio
+2026-05-29;Envio de arquivos;2;10,00;2;contem rateio
+2026-05-29;Impressão Colorida;10;20,22;4;contem rateio
+2026-05-29;Impressão P&B;82;59,40;10;contem rateio
+2026-05-29;Impressão em papel especial;3;22,56;3;contem rateio
+2026-05-29;Manutenção de celular;1;60,00;1;exato
+2026-05-29;Outros: Atestado de Bons Antecedentes;1;10,32;1;contem rateio
+2026-05-29;Outros: Certidão Negativa;4;41,27;1;contem rateio
+2026-05-29;Outros: Quitação Eleitoral;1;7,05;1;contem rateio
+2026-05-29;Recebimento de Arquivos;8;8,11;8;contem rateio
+2026-05-29;Scanner;8;12,00;2;contem rateio
+2026-05-29;Suporte ao cliente;1;3,00;1;contem rateio
+2026-05-29;Uso de computador;2;23,00;2;exato
+2026-05-29;gov.br;1;45,00;1;exato
+2026-05-30;Bomboniere e bebidas;2;6,74;2;contem rateio
+2026-05-30;Consulta simples;1;4,32;1;contem rateio
+2026-05-30;Edição de arquivo;1;2,50;1;contem rateio
+2026-05-30;Impressão Colorida;3;5,19;1;contem rateio
+2026-05-30;Impressão P&B;44;31,16;6;contem rateio
+2026-05-30;Impressão em papel especial;5;38,34;3;contem rateio
+2026-05-30;Outros: Baixar Playlis CD;1;18,00;1;exato
+2026-05-30;Recebimento de Arquivos;3;3,00;3;contem rateio
+2026-06-01;Bomboniere e bebidas;4;14,06;3;contem rateio
+2026-06-01;Currículo;2;30,00;2;contem rateio
+2026-06-01;Detran;1;15,00;1;exato
+2026-06-01;Envio de arquivos;1;6,04;1;contem rateio
+2026-06-01;Impressão Colorida;3;6,00;1;contem rateio
+2026-06-01;Impressão P&B;225;179,90;16;contem rateio
+2026-06-01;Impressão em papel especial;9;55,00;2;exato
+2026-06-01;Outros: Cabo Óptico;1;15,90;1;exato
+2026-06-01;Recebimento de Arquivos;6;6,27;6;contem rateio
+2026-06-01;Scanner;6;10,25;2;contem rateio
+2026-06-01;Uso de computador;6;74,88;6;contem rateio
+2026-06-02;Bomboniere e bebidas;4;22,34;3;contem rateio
+2026-06-02;Currículo;1;10,00;1;contem rateio
+2026-06-02;Detran;1;20,00;1;exato
+2026-06-02;Envelope;10;22,29;10;contem rateio
+2026-06-02;Foto 3x4;1;15,00;1;contem rateio
+2026-06-02;Impressão Colorida;3;6,00;2;contem rateio
+2026-06-02;Impressão P&B;126;118,32;24;contem rateio
+2026-06-02;Impressão em papel especial;1;7,00;1;exato
+2026-06-02;Outros: Certidão Negativa;3;29,22;1;contem rateio
+2026-06-02;Outros: Kit Carregador Gold 3.1 Tip C;1;30,66;1;contem rateio
+2026-06-02;Plastificação;3;15,00;2;contem rateio
+2026-06-02;Recebimento de Arquivos;12;12,45;12;contem rateio
+2026-06-02;Suporte ao cliente;3;9,00;3;contem rateio
+2026-06-02;Uso de computador;3;5,82;3;contem rateio
+2026-06-03;Bomboniere e bebidas;6;20,75;5;contem rateio
+2026-06-03;Consulta SPC/crédito;1;30,00;1;exato
+2026-06-03;Currículo;1;15,00;1;contem rateio
+2026-06-03;Envelope;6;11,73;4;contem rateio
+2026-06-03;Impressão Colorida;7;14,00;3;contem rateio
+2026-06-03;Impressão P&B;58;52,19;10;contem rateio
+2026-06-03;Recebimento de Arquivos;8;8,44;8;contem rateio
+2026-06-03;Suporte ao cliente;3;8,80;3;contem rateio
+2026-06-03;Transferência de titularidade;1;20,00;1;contem rateio
+2026-06-03;Uso de computador;2;3,09;2;contem rateio
+2026-06-05;Bomboniere e bebidas;8;17,79;6;contem rateio
+2026-06-05;Consulta simples;3;15,00;3;contem rateio
+2026-06-05;Currículo;4;34,21;4;contem rateio
+2026-06-05;Detran;1;15,00;1;exato
+2026-06-05;Edição de arquivo;1;2,80;1;contem rateio
+2026-06-05;Envelope;10;20,93;9;contem rateio
+2026-06-05;Impressão Colorida;49;90,61;6;contem rateio
+2026-06-05;Impressão P&B;279;212,66;34;contem rateio
+2026-06-05;Impressão em papel especial;21;147,50;7;contem rateio
+2026-06-05;Outros: Kit Carregador Gold V8 3.1;1;33,33;1;contem rateio
+2026-06-05;Outros: Paçoca amor sing`S;1;1,00;1;contem rateio
+2026-06-05;Outros: Segunda Via de Conta;2;25,00;2;exato
+2026-06-05;Plastificação;6;32,00;2;contem rateio
+2026-06-05;Recebimento de Arquivos;22;22,68;19;contem rateio
+2026-06-05;Scanner;15;22,50;2;contem rateio
+2026-06-05;Suporte ao cliente;5;15,34;5;contem rateio
+2026-06-05;Uso de computador;1;1,25;1;contem rateio
+2026-06-06;Bomboniere e bebidas;1;3,00;1;contem rateio
+2026-06-06;Detran;3;45,00;2;contem rateio
+2026-06-06;Envelope;3;6,63;3;contem rateio
+2026-06-06;Impressão P&B;30;24,18;7;contem rateio
+2026-06-06;Impressão em papel especial;16;103,00;3;exato
+2026-06-06;Recebimento de Arquivos;3;3,00;3;contem rateio
+2026-06-06;Resultado de exame;1;5,00;1;contem rateio
+2026-06-06;Suporte ao cliente;1;3,94;1;contem rateio
+2026-06-08;Consulta simples;2;10,00;1;exato
+2026-06-08;Contrato de locação;2;70,00;1;exato
+2026-06-08;Envelope;7;24,08;6;contem rateio
+2026-06-08;Envio de arquivos;2;10,00;2;contem rateio
+2026-06-08;Foto 3x4;1;16,12;1;contem rateio
+2026-06-08;Impressão P&B;94;81,70;17;contem rateio
+2026-06-08;Outros: GPS Guia da Previdência Social;1;10,00;1;exato
+2026-06-08;Plastificação;4;23,37;4;contem rateio
+2026-06-08;Recebimento de Arquivos;11;12,25;11;contem rateio
+2026-06-08;Resultado de exame;1;5,00;1;contem rateio
+2026-06-08;Scanner;5;7,50;2;contem rateio
+2026-06-08;Suporte ao cliente;1;3,00;1;exato
+2026-06-08;Uso de computador;3;11,98;3;contem rateio
+2026-06-09;Bomboniere e bebidas;1;3,50;1;contem rateio
+2026-06-09;Envelope;2;4,00;2;contem rateio
+2026-06-09;INSS (Meu INSS);2;50,00;1;contem rateio
+2026-06-09;Impressão Colorida;2;4,00;1;contem rateio
+2026-06-09;Impressão P&B;153;99,57;12;contem rateio
+2026-06-09;Impressão em papel especial;1;7,00;1;exato
+2026-06-09;Manutenção de celular;1;32,50;1;contem rateio
+2026-06-09;Outros: Claro Promoção;1;32,50;1;contem rateio
+2026-06-09;Outros: Fone PMLCELL FO-42;1;29,90;1;exato
+2026-06-09;Outros: Tim Promoção;1;40,00;1;exato
+2026-06-09;Plastificação;10;77,66;4;contem rateio
+2026-06-09;Recebimento de Arquivos;5;5,27;5;contem rateio
+2026-06-09;Resultado de exame;1;5,00;1;contem rateio
+2026-06-09;Suporte ao cliente;1;3,00;1;contem rateio
+2026-06-09;Uso de computador;2;33,70;2;exato
+2026-06-10;Bomboniere e bebidas;1;3,50;1;contem rateio
+2026-06-10;Digitação;1;11,20;1;contem rateio
+2026-06-10;Edição de arquivo;1;2,57;1;contem rateio
+2026-06-10;Envelope;2;4,80;2;contem rateio
+2026-06-10;Envio de arquivos;1;5,00;1;contem rateio
+2026-06-10;Foto 3x4;1;15,00;1;contem rateio
+2026-06-10;INSS (Meu INSS);1;20,00;1;exato
+2026-06-10;Impressão Colorida;15;31,91;4;contem rateio
+2026-06-10;Impressão P&B;55;50,83;9;contem rateio
+2026-06-10;Impressão em papel especial;3;20,23;3;contem rateio
+2026-06-10;Recebimento de Arquivos;4;4,29;4;contem rateio
+2026-06-10;Scanner;3;4,50;1;contem rateio
+2026-06-10;Suporte ao cliente;2;6,00;2;contem rateio
+2026-06-10;Uso de computador;1;1,67;1;contem rateio
+2026-06-11;Bomboniere e bebidas;2;4,50;2;contem rateio
+2026-06-11;Currículo;2;25,00;2;contem rateio
+2026-06-11;Envelope;9;27,28;7;contem rateio
+2026-06-11;Envio de arquivos;2;10,00;2;contem rateio
+2026-06-11;Foto 3x4;1;15,00;1;exato
+2026-06-11;Impressão Colorida;11;22,70;3;contem rateio
+2026-06-11;Impressão P&B;77;55,44;5;contem rateio
+2026-06-11;Impressão em papel especial;4;24,30;2;contem rateio
+2026-06-11;Outros: Imigrante Chekilist;1;70,00;1;exato
+2026-06-11;Plastificação;3;24,00;1;contem rateio
+2026-06-11;Recebimento de Arquivos;2;2,35;2;contem rateio
+2026-06-11;Scanner;8;12,00;2;contem rateio
+2026-06-11;Suporte ao cliente;1;3,00;1;exato
+2026-06-11;Uso de computador;2;9,23;2;contem rateio
+2026-06-11;gov.br;1;30,00;1;exato
+2026-06-12;Bomboniere e bebidas;3;13,87;2;contem rateio
+2026-06-12;Envelope;6;22,56;6;contem rateio
+2026-06-12;Envio de arquivos;1;6,11;1;contem rateio
+2026-06-12;Impressão Colorida;12;22,79;2;contem rateio
+2026-06-12;Impressão P&B;67;51,99;8;contem rateio
+2026-06-12;Outros: Atestado de Bons Antecedentes;1;8,64;1;contem rateio
+2026-06-12;Outros: Recuperação Simples senha;1;20,00;1;exato
+2026-06-12;Outros: Segunda via CPF;1;9,10;1;contem rateio
+2026-06-12;Plastificação;4;26,00;2;contem rateio
+2026-06-12;Recebimento de Arquivos;3;3,24;3;contem rateio
+2026-06-12;Scanner;27;41,84;3;contem rateio
+2026-06-12;Suporte ao cliente;1;3,00;1;contem rateio
+2026-06-12;Transferência de titularidade;1;12,22;1;contem rateio
+2026-06-12;Uso de computador;1;5,67;1;contem rateio
+2026-06-13;Detran;1;15,00;1;exato
+2026-06-13;Envelope;2;4,00;2;contem rateio
+2026-06-13;Foto 3x4;1;15,00;1;contem rateio
+2026-06-13;Impressão Colorida;5;10,00;2;contem rateio
+2026-06-13;Impressão P&B;37;21,00;4;contem rateio
+2026-06-13;Impressão em papel especial;21;155,50;3;exato
+2026-06-13;Plastificação;1;8,00;1;contem rateio
+2026-06-13;Recebimento de Arquivos;4;4,00;3;contem rateio
+2026-06-13;Suporte ao cliente;1;3,00;1;exato
+2026-06-15;Bomboniere e bebidas;2;5,50;1;exato
+2026-06-15;Currículo;2;25,00;2;contem rateio
+2026-06-15;Detran;1;15,00;1;exato
+2026-06-15;Envelope;3;6,92;3;contem rateio
+2026-06-15;Impressão Colorida;6;12,00;1;contem rateio
+2026-06-15;Impressão P&B;81;68,08;6;contem rateio
+2026-06-15;Recebimento de Arquivos;1;1,00;1;contem rateio
+2026-06-15;Transferência de titularidade;1;10,00;1;exato
+2026-06-15;Uso de computador;1;8,00;1;exato
+2026-06-16;Bomboniere e bebidas;12;33,27;7;contem rateio
+2026-06-16;Edição de arquivo;2;6,26;2;contem rateio
+2026-06-16;Envelope;8;16,86;8;contem rateio
+2026-06-16;Envio de arquivos;1;5,00;1;contem rateio
+2026-06-16;Impressão Colorida;5;10,00;2;contem rateio
+2026-06-16;Impressão P&B;202;150,44;23;contem rateio
+2026-06-16;Outros: GPS Guia da Previdência Social;1;10,00;1;exato
+2026-06-16;Plastificação;1;5,00;1;contem rateio
+2026-06-16;Recebimento de Arquivos;6;6,00;6;contem rateio
+2026-06-16;Resultado de exame;2;11,35;2;contem rateio
+2026-06-16;Scanner;37;47,00;2;contem rateio
+2026-06-16;Suporte ao cliente;1;3,00;1;contem rateio
+2026-06-16;Uso de computador;5;25,77;5;contem rateio
+2026-06-17;Bomboniere e bebidas;2;9,09;2;contem rateio
+2026-06-17;Consulta SPC/crédito;1;30,00;1;exato
+2026-06-17;Currículo;1;10,00;1;contem rateio
+2026-06-17;Detran;1;15,00;1;exato
+2026-06-17;Edição de arquivo;1;3,33;1;contem rateio
+2026-06-17;Envelope;6;12,00;3;contem rateio
+2026-06-17;Impressão Colorida;43;86,00;3;contem rateio
+2026-06-17;Impressão P&B;70;62,34;15;contem rateio
+2026-06-17;Plastificação;2;16,00;2;contem rateio
+2026-06-17;Recebimento de Arquivos;6;6,24;6;contem rateio
+2026-06-17;Uso de computador;1;3,00;1;exato
+2026-06-18;Bomboniere e bebidas;5;16,32;4;contem rateio
+2026-06-18;Contrato de locação;1;35,00;1;contem rateio
+2026-06-18;Currículo;1;15,38;1;contem rateio
+2026-06-18;Detran;2;30,00;1;contem rateio
+2026-06-18;Envelope;4;7,83;4;contem rateio
+2026-06-18;Envio de arquivos;1;5,00;1;contem rateio
+2026-06-18;Foto 3x4;2;30,00;2;contem rateio
+2026-06-18;Impressão Colorida;7;14,00;3;contem rateio
+2026-06-18;Impressão P&B;73;70,30;17;contem rateio
+2026-06-18;Impressão em papel especial;2;15,57;2;contem rateio
+2026-06-18;Plastificação;1;8,00;1;exato
+2026-06-18;Recebimento de Arquivos;11;11,00;11;contem rateio
+2026-06-18;Scanner;1;1,50;1;contem rateio
+2026-06-18;Uso de computador;4;15,10;4;contem rateio
+2026-06-19;Bomboniere e bebidas;1;3,00;1;exato
+2026-06-19;Consulta SPC/crédito;2;57,86;2;contem rateio
+2026-06-19;Consulta simples;1;5,00;1;exato
+2026-06-19;Currículo;2;20,00;2;exato
+2026-06-19;Envelope;4;9,02;4;contem rateio
+2026-06-19;Foto 3x4;1;15,00;1;contem rateio
+2026-06-19;INSS (Meu INSS);1;40,00;1;exato
+2026-06-19;Impressão Colorida;24;42,29;4;contem rateio
+2026-06-19;Impressão P&B;43;32,74;8;contem rateio
+2026-06-19;Impressão em papel especial;28;126,00;1;exato
+2026-06-19;Outros: Cadastro - CAIXA;1;20,00;1;exato
+2026-06-19;Outros: Recuperação Simples senha;2;37,14;1;contem rateio
+2026-06-19;Outros: Tim;1;30,00;1;exato
+2026-06-19;Recebimento de Arquivos;8;8,00;7;contem rateio
+2026-06-19;Resultado de exame;1;6,20;1;contem rateio
+2026-06-20;Bomboniere e bebidas;4;14,75;3;contem rateio
+2026-06-20;Currículo;1;17,92;1;contem rateio
+2026-06-20;Detran;1;30,00;1;exato
+2026-06-20;Envelope;5;12,51;5;contem rateio
+2026-06-20;Impressão Colorida;11;23,25;3;contem rateio
+2026-06-20;Impressão P&B;83;66,26;10;contem rateio
+2026-06-20;Impressão em papel especial;2;13,50;1;contem rateio
+2026-06-20;Recebimento de Arquivos;8;8,35;8;contem rateio
+2026-06-20;Transferência de titularidade;1;20,00;1;exato
+2026-06-20;Uso de computador;4;13,91;4;contem rateio
+2026-06-22;Bomboniere e bebidas;5;29,54;3;contem rateio
+2026-06-22;Contrato de locação;1;35,00;1;contem rateio
+2026-06-22;Currículo;1;10,00;1;exato
+2026-06-22;Detran;2;30,00;1;exato
+2026-06-22;Envelope;6;11,82;6;contem rateio
+2026-06-22;Impressão P&B;54;54,79;13;contem rateio
+2026-06-22;Impressão em papel especial;2;18,00;1;exato
+2026-06-22;Outros: DAS MEI;1;10,00;1;exato
+2026-06-22;Outros: Declaração de Imposto de Renda;1;25,00;1;exato
+2026-06-22;Recebimento de Arquivos;3;3,00;3;contem rateio
+2026-06-22;Suporte ao cliente;1;2,74;1;contem rateio
+2026-06-22;Uso de computador;4;17,20;4;contem rateio
+2026-06-23;Bomboniere e bebidas;1;3,46;1;contem rateio
+2026-06-23;Currículo;2;15,71;2;contem rateio
+2026-06-23;Detran;1;20,00;1;exato
+2026-06-23;Edição de arquivo;1;2,66;1;contem rateio
+2026-06-23;Envelope;4;9,11;4;contem rateio
+2026-06-23;Foto 3x4;1;15,00;1;exato
+2026-06-23;Impressão Colorida;4;6,80;2;contem rateio
+2026-06-23;Impressão P&B;73;71,82;13;contem rateio
+2026-06-23;Impressão em papel especial;1;9,00;1;exato
+2026-06-23;Manutenção de celular;1;34,29;1;contem rateio
+2026-06-23;Outros: Arte Simples - 10 minutos;1;12,00;1;contem rateio
+2026-06-23;Outros: Sensações Peito de Peru;1;6,00;1;contem rateio
+2026-06-23;Plastificação;5;32,20;2;contem rateio
+2026-06-23;Recebimento de Arquivos;6;6,44;6;contem rateio
+2026-06-23;Transferência de titularidade;1;15,00;1;exato
+2026-06-23;Uso de computador;3;5,81;3;contem rateio
+2026-06-24;Bomboniere e bebidas;3;12,28;3;contem rateio
+2026-06-24;Currículo;1;10,00;1;contem rateio
+2026-06-24;Detran;1;15,00;1;exato
+2026-06-24;Envelope;5;10,74;5;contem rateio
+2026-06-24;Envio de arquivos;1;4,61;1;contem rateio
+2026-06-24;Impressão Colorida;7;14,00;3;contem rateio
+2026-06-24;Impressão P&B;109;77,93;12;contem rateio
+2026-06-24;Plastificação;1;8,00;1;exato
+2026-06-24;Recebimento de Arquivos;9;9,44;9;contem rateio
+2026-06-24;Scanner;5;6,92;1;contem rateio
+2026-06-24;Uso de computador;1;0,92;1;contem rateio
+2026-06-25;Currículo;1;10,00;1;contem rateio
+2026-06-25;Edição de arquivo;1;2,86;1;contem rateio
+2026-06-25;Envelope;7;19,30;4;contem rateio
+2026-06-25;Envio de arquivos;3;15,00;3;contem rateio
+2026-06-25;Foto 3x4;2;30,00;2;exato
+2026-06-25;Impressão Colorida;1;2,00;1;contem rateio
+2026-06-25;Impressão P&B;103;109,89;11;contem rateio
+2026-06-25;Impressão em papel especial;4;24,00;1;contem rateio
+2026-06-25;Outros: Segunda Via de Conta;1;5,00;1;exato
+2026-06-25;Outros: Segunda via CPF;2;20,00;1;exato
+2026-06-25;Plastificação;2;16,00;1;contem rateio
+2026-06-25;Recebimento de Arquivos;12;14,80;10;contem rateio
+2026-06-25;Scanner;5;7,50;3;contem rateio
+2026-06-25;Uso de computador;2;4,15;2;contem rateio
+2026-06-26;Bomboniere e bebidas;3;9,90;2;contem rateio
+2026-06-26;Currículo;1;5,00;1;contem rateio
+2026-06-26;Detran;1;15,43;1;contem rateio
+2026-06-26;Envelope;3;5,72;3;contem rateio
+2026-06-26;Envio de arquivos;1;5,00;1;contem rateio
+2026-06-26;Foto 3x4;1;15,00;1;contem rateio
+2026-06-26;Impressão Colorida;3;6,00;3;contem rateio
+2026-06-26;Impressão P&B;81;69,41;11;contem rateio
+2026-06-26;Plastificação;1;8,00;1;contem rateio
+2026-06-26;Recebimento de Arquivos;4;4,29;4;contem rateio
+2026-06-26;Scanner;2;3,00;1;contem rateio
+2026-06-27;Bomboniere e bebidas;1;3,01;1;contem rateio
+2026-06-27;Currículo;1;6,02;1;contem rateio
+2026-06-27;Edição de arquivo;1;4,97;1;contem rateio
+2026-06-27;Envelope;2;6,73;2;contem rateio
+2026-06-27;Impressão Colorida;25;44,42;2;contem rateio
+2026-06-27;Impressão P&B;43;37,38;4;contem rateio
+2026-06-27;Recebimento de Arquivos;2;2,21;2;contem rateio
+2026-06-27;Scanner;1;1,81;1;contem rateio
+2026-06-30;Bomboniere e bebidas;1;3,67;1;contem rateio
+2026-06-30;Consulta simples;2;10,00;2;contem rateio
+2026-06-30;Currículo;2;20,00;2;contem rateio
+2026-06-30;Encadernação;2;19,47;1;contem rateio
+2026-06-30;Envelope;10;20,67;10;contem rateio
+2026-06-30;Envio de arquivos;2;10,00;2;contem rateio
+2026-06-30;INSS (Meu INSS);3;105,00;2;contem rateio
+2026-06-30;Impressão Colorida;2;4,00;1;contem rateio
+2026-06-30;Impressão P&B;177;113,19;19;contem rateio
+2026-06-30;Recebimento de Arquivos;8;8,00;8;contem rateio
+2026-06-30;Scanner;4;6,00;2;contem rateio
+2026-06-30;Uso de computador;1;19,00;1;exato
+2026-07-01;Bomboniere e bebidas;4;24,29;4;contem rateio
+2026-07-01;Contrato de locação;1;35,00;1;exato
+2026-07-01;Currículo;2;20,00;2;contem rateio
+2026-07-01;Digitação;2;20,00;2;contem rateio
+2026-07-01;Envelope;4;7,63;4;contem rateio
+2026-07-01;Envio de arquivos;2;10,00;2;contem rateio
+2026-07-01;INSS (Meu INSS);1;30,00;1;exato
+2026-07-01;Impressão Colorida;2;4,00;1;contem rateio
+2026-07-01;Impressão P&B;107;104,30;17;contem rateio
+2026-07-01;Impressão em papel especial;2;18,00;1;exato
+2026-07-01;Manutenção de celular;1;30,00;1;exato
+2026-07-01;Outros: Baixar Playlist 100;1;25,00;1;exato
+2026-07-01;Outros: Baixar playlis 250 música;1;50,00;1;exato
+2026-07-01;Recebimento de Arquivos;11;11,67;10;contem rateio
+2026-07-01;Scanner;6;9,00;3;contem rateio
+2026-07-01;Suporte ao cliente;1;2,74;1;contem rateio
+2026-07-01;Uso de computador;3;5,11;3;contem rateio
+2026-07-02;Bomboniere e bebidas;2;7,42;2;contem rateio
+2026-07-02;Edição de arquivo;2;7,67;2;contem rateio
+2026-07-02;Envelope;8;16,92;5;contem rateio
+2026-07-02;Envio de arquivos;1;5,00;1;contem rateio
+2026-07-02;INSS (Meu INSS);1;35,00;1;exato
+2026-07-02;Impressão Colorida;38;100,72;4;contem rateio
+2026-07-02;Impressão P&B;154;113,95;19;contem rateio
+2026-07-02;Impressão em papel especial;4;29,51;3;contem rateio
+2026-07-02;Outros: Atestado de Bons Antecedentes;1;9,81;1;contem rateio
+2026-07-02;Plastificação;2;20,00;2;contem rateio
+2026-07-02;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-07-02;Scanner;1;1,50;1;contem rateio
+2026-07-02;Suporte ao cliente;1;3,00;1;contem rateio
+2026-07-03;Bomboniere e bebidas;2;9,01;2;contem rateio
+2026-07-03;Consulta SPC/crédito;1;30,00;1;exato
+2026-07-03;Detran;4;62,85;2;contem rateio
+2026-07-03;Digitação;1;7,00;1;exato
+2026-07-03;Edição de arquivo;2;12,00;2;contem rateio
+2026-07-03;Envelope;3;6,98;3;contem rateio
+2026-07-03;INSS (Meu INSS);1;40,00;1;contem rateio
+2026-07-03;Impressão Colorida;1;2,13;1;contem rateio
+2026-07-03;Impressão P&B;172;111,74;9;contem rateio
+2026-07-03;Outros: Cadastro - CAIXA;1;17,86;1;contem rateio
+2026-07-03;Outros: DelValle Uva 450ml;1;4,50;1;exato
+2026-07-03;Outros: Recuperação Simples senha;1;20,00;1;contem rateio
+2026-07-03;Plastificação;1;8,51;1;contem rateio
+2026-07-03;Recebimento de Arquivos;3;3,42;2;contem rateio
+2026-07-03;Suporte ao cliente;3;9,00;3;contem rateio
+2026-07-03;Uso de computador;2;21,00;2;contem rateio
+2026-07-04;Bomboniere e bebidas;1;4,00;1;contem rateio
+2026-07-04;Envelope;1;2,00;1;exato
+2026-07-04;Impressão P&B;138;83,00;13;contem rateio
+2026-07-04;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-07-04;Suporte ao cliente;1;3,00;1;contem rateio
+2026-07-06;Bomboniere e bebidas;2;6,00;1;exato
+2026-07-06;Currículo;3;30,00;3;contem rateio
+2026-07-06;Encadernação;1;12,30;1;contem rateio
+2026-07-06;Envelope;4;8,67;4;contem rateio
+2026-07-06;Envio de arquivos;1;5,00;1;contem rateio
+2026-07-06;INSS (Meu INSS);3;95,00;2;contem rateio
+2026-07-06;Impressão P&B;104;81,43;10;contem rateio
+2026-07-06;Outros: Arte Simples - 10 minutos;1;15,00;1;contem rateio
+2026-07-06;Outros: GPS Guia da Previdência Social;1;10,00;1;exato
+2026-07-06;Outros: Recuperação Simples senha;2;40,00;1;contem rateio
+2026-07-06;Plastificação;1;8,00;1;contem rateio
+2026-07-06;Recebimento de Arquivos;3;3,50;3;contem rateio
+2026-07-06;Scanner;15;22,50;2;contem rateio
+2026-07-06;Suporte ao cliente;1;3,00;1;contem rateio
+2026-07-06;Transferência de titularidade;1;15,00;1;exato
+2026-07-08;Bomboniere e bebidas;3;34,33;2;contem rateio
+2026-07-08;Currículo;1;10,00;1;exato
+2026-07-08;Detran;1;15,00;1;contem rateio
+2026-07-08;Edição de arquivo;1;4,29;1;contem rateio
+2026-07-08;Envio de arquivos;2;24,12;2;contem rateio
+2026-07-08;INSS (Meu INSS);1;40,00;1;exato
+2026-07-08;Impressão P&B;102;78,96;16;contem rateio
+2026-07-08;Impressão em papel especial;13;78,00;1;exato
+2026-07-08;Outros: E-defesa Receita Federal Termo para Preenchimento;1;70,00;1;exato
+2026-07-08;Outros: Imigrante Chekilist;2;120,00;1;exato
+2026-07-08;Outros: Segunda Via de Conta;1;10,00;1;exato
+2026-07-08;Plastificação;3;15,00;2;contem rateio
+2026-07-08;Recebimento de Arquivos;10;12,06;10;contem rateio
+2026-07-08;Scanner;3;12,07;1;contem rateio
+2026-07-08;Suporte ao cliente;1;3,00;1;exato
+2026-07-08;Transferência de titularidade;1;15,00;1;exato
+2026-07-08;Uso de computador;3;15,27;3;contem rateio
+2026-07-09;Bomboniere e bebidas;2;7,10;2;contem rateio
+2026-07-09;Currículo;2;31,38;2;contem rateio
+2026-07-09;Digitação;1;9,05;1;contem rateio
+2026-07-09;Envelope;3;6,18;3;contem rateio
+2026-07-09;Envio de arquivos;1;5,00;1;contem rateio
+2026-07-09;INSS (Meu INSS);1;33,95;1;contem rateio
+2026-07-09;Impressão Colorida;13;28,67;3;contem rateio
+2026-07-09;Impressão P&B;68;58,69;11;contem rateio
+2026-07-09;Impressão em papel especial;4;32,00;3;exato
+2026-07-09;Outros: Gravação de CD (10);2;24,00;1;exato
+2026-07-09;Recebimento de Arquivos;6;6,00;6;contem rateio
+2026-07-09;Resultado de exame;1;5,00;1;contem rateio
+2026-07-09;Scanner;5;7,50;1;contem rateio
+2026-07-09;Suporte ao cliente;2;6,00;2;contem rateio
+2026-07-09;Uso de computador;4;25,43;4;contem rateio
+2026-07-10;Bomboniere e bebidas;2;6,71;1;contem rateio
+2026-07-10;Currículo;1;14,38;1;contem rateio
+2026-07-10;Digitação;1;7,27;1;contem rateio
+2026-07-10;Edição de arquivo;1;3,50;1;contem rateio
+2026-07-10;Envelope;4;8,42;4;contem rateio
+2026-07-10;Envio de arquivos;1;5,00;1;contem rateio
+2026-07-10;Impressão Colorida;1;2,00;1;contem rateio
+2026-07-10;Impressão P&B;86;61,52;11;contem rateio
+2026-07-10;Impressão em papel especial;1;7,00;1;exato
+2026-07-10;Recebimento de Arquivos;4;4,00;4;contem rateio
+2026-07-10;Scanner;2;3,00;1;contem rateio
+2026-07-10;Suporte ao cliente;1;2,73;1;contem rateio
+2026-07-10;Uso de computador;1;1,67;1;contem rateio
+2026-07-11;Detran;1;20,00;1;exato
+2026-07-13;Bomboniere e bebidas;1;5,00;1;exato
+2026-07-13;Currículo;1;15,00;1;contem rateio
+2026-07-13;Edição de arquivo;1;12,41;1;contem rateio
+2026-07-13;Envelope;8;16,83;6;contem rateio
+2026-07-13;Envio de arquivos;2;11,94;2;contem rateio
+2026-07-13;Impressão Colorida;9;17,94;2;contem rateio
+2026-07-13;Impressão P&B;99;79,06;10;contem rateio
+2026-07-13;Outros: Atestado de Bons Antecedentes;1;15,00;1;exato
+2026-07-13;Recebimento de Arquivos;5;5,27;5;contem rateio
+2026-07-13;Scanner;15;27,17;2;contem rateio
+2026-07-13;Uso de computador;3;4,18;3;contem rateio
+2026-07-14;Bomboniere e bebidas;1;3,79;1;contem rateio
+2026-07-14;Edição de arquivo;2;5,54;2;contem rateio
+2026-07-14;Encadernação;1;13,08;1;contem rateio
+2026-07-14;Envelope;4;7,26;3;contem rateio
+2026-07-14;Envio de arquivos;3;15,91;3;contem rateio
+2026-07-14;Impressão Colorida;6;13,50;2;contem rateio
+2026-07-14;Impressão P&B;211;141,34;9;contem rateio
+2026-07-14;Outros: Atestado de Bons Antecedentes;1;9,83;1;contem rateio
+2026-07-14;Recebimento de Arquivos;8;8,22;7;contem rateio
+2026-07-14;Scanner;8;12,00;2;contem rateio
+2026-07-14;Uso de computador;1;1,18;1;contem rateio
+2026-07-15;Bomboniere e bebidas;1;4,00;1;contem rateio
+2026-07-15;Detran;2;30,00;2;exato
+2026-07-15;Edição de arquivo;3;26,35;1;contem rateio
+2026-07-15;Envelope;3;7,33;2;contem rateio
+2026-07-15;Impressão Colorida;5;11,55;3;contem rateio
+2026-07-15;Impressão P&B;46;44,77;6;contem rateio
+2026-07-15;Outros: Abertura de MEI;1;60,00;1;exato
+2026-07-15;Outros: Atestado de Bons Antecedentes;1;10,00;1;exato
+2026-07-15;Outros: Baixar playlis 250 música;1;30,00;1;exato
+2026-07-15;Recebimento de Arquivos;1;1,00;1;contem rateio
+2026-07-15;Suporte ao cliente;1;3,75;1;contem rateio
+2026-07-15;Uso de computador;1;1,25;1;contem rateio
+2026-07-16;Edição de arquivo;1;14,00;1;exato
+2026-07-16;Envelope;3;6,78;3;contem rateio
+2026-07-16;Envio de arquivos;2;10,00;2;contem rateio
+2026-07-16;INSS (Meu INSS);1;30,00;1;exato
+2026-07-16;Impressão Colorida;11;22,00;2;contem rateio
+2026-07-16;Impressão P&B;134;113,10;15;contem rateio
+2026-07-16;Outros: Arte Simples - 10 minutos;1;12,50;1;contem rateio
+2026-07-16;Outros: Cadastro Emprego;1;50,00;1;exato
+2026-07-16;Plastificação;1;6,39;1;contem rateio
+2026-07-16;Recebimento de Arquivos;8;8,67;8;contem rateio
+2026-07-16;Resultado de exame;1;6,31;1;contem rateio
+2026-07-16;Scanner;5;7,50;2;contem rateio
+2026-07-16;Suporte ao cliente;1;3,00;1;contem rateio
+2026-07-17;Bomboniere e bebidas;1;4,98;1;contem rateio
+2026-07-17;Currículo;1;15,00;1;exato
+2026-07-17;Envelope;4;8,00;3;contem rateio
+2026-07-17;Impressão Colorida;6;12,00;2;contem rateio
+2026-07-17;Impressão P&B;72;71,46;12;contem rateio
+2026-07-17;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-07-17;Scanner;10;15,00;1;exato
+2026-07-17;Transferência de titularidade;1;30,00;1;exato
+2026-07-17;Uso de computador;2;4,06;2;contem rateio
+2026-07-18;Envelope;3;5,65;2;contem rateio
+2026-07-18;Envio de arquivos;1;5,00;1;contem rateio
+2026-07-18;Impressão Colorida;13;26,00;2;contem rateio
+2026-07-18;Impressão P&B;57;47,41;5;contem rateio
+2026-07-18;Impressão em papel especial;2;10,94;2;contem rateio
+2026-07-18;Plastificação;1;8,00;1;contem rateio
+2026-07-18;Recebimento de Arquivos;3;3,25;3;contem rateio
+2026-07-18;Scanner;1;1,50;1;contem rateio
+2026-07-20;Bomboniere e bebidas;1;2,86;1;contem rateio
+2026-07-20;Consulta simples;2;10,89;2;contem rateio
+2026-07-20;Contrato de locação;1;70,00;1;exato
+2026-07-20;Currículo;4;55,00;4;contem rateio
+2026-07-20;Digitação;2;16,00;1;contem rateio
+2026-07-20;Edição de arquivo;2;27,41;1;contem rateio
+2026-07-20;Envelope;4;8,35;3;contem rateio
+2026-07-20;Envio de arquivos;1;5,00;1;contem rateio
+2026-07-20;Impressão Colorida;10;19,65;2;contem rateio
+2026-07-20;Impressão P&B;93;89,65;13;contem rateio
+2026-07-20;Outros: DAS MEI;1;9,85;1;contem rateio
+2026-07-20;Outros: Guia de Pagamento Ambiental;1;15,00;1;exato
+2026-07-20;Outros: Nota fiscal;1;30,00;1;exato
+2026-07-20;Recebimento de Arquivos;4;4,44;4;contem rateio
+2026-07-20;Scanner;1;1,50;1;contem rateio
+2026-07-20;Suporte ao cliente;2;5,51;2;contem rateio
+2026-07-20;Transferência de titularidade;1;20,00;1;exato
+2026-07-20;Uso de computador;1;1,14;1;contem rateio
+2026-07-21;Bomboniere e bebidas;5;18,25;3;contem rateio
+2026-07-21;Consulta simples;1;4,71;1;contem rateio
+2026-07-21;Contrato de locação;1;35,00;1;exato
+2026-07-21;Currículo;2;30,00;2;exato
+2026-07-21;Envelope;3;7,45;3;contem rateio
+2026-07-21;Impressão Colorida;13;25,27;4;contem rateio
+2026-07-21;Impressão P&B;69;58,65;8;contem rateio
+2026-07-21;Recebimento de Arquivos;6;6,37;6;contem rateio
+2026-07-21;Resultado de exame;1;5,00;1;contem rateio
+2026-07-21;Uso de computador;2;9,29;2;contem rateio
+2026-07-22;Bomboniere e bebidas;2;10,00;2;contem rateio
+2026-07-22;Currículo;2;20,00;2;contem rateio
+2026-07-22;Envelope;4;8,81;4;contem rateio
+2026-07-22;Foto 3x4;1;15,00;1;exato
+2026-07-22;INSS (Meu INSS);3;106,00;3;contem rateio
+2026-07-22;Impressão Colorida;1;2,00;1;contem rateio
+2026-07-22;Impressão P&B;67;54,35;12;contem rateio
+2026-07-22;Outros: Criação de Email/Facebook/instagran;1;18,00;1;contem rateio
+2026-07-22;Outros: Segunda via boleto simples;1;10,00;1;exato
+2026-07-22;Plastificação;1;9,09;1;contem rateio
+2026-07-22;Recebimento de Arquivos;8;8,00;8;contem rateio
+2026-07-22;Uso de computador;1;6,20;1;exato
+2026-07-23;Envelope;3;7,37;3;contem rateio
+2026-07-23;Foto 3x4;1;15,00;1;exato
+2026-07-23;Impressão Colorida;5;11,54;1;contem rateio
+2026-07-23;Impressão P&B;53;44,94;5;contem rateio
+2026-07-23;Outros: Cabo Carregamento Kaidi Tipo Lightning Iphone 1m KD 22C;1;19,00;1;exato
+2026-07-23;Recebimento de Arquivos;2;2,35;2;contem rateio
+2026-07-23;Resultado de exame;1;6,46;1;contem rateio
+2026-07-23;Uso de computador;3;10,94;3;contem rateio
+2026-07-24;Bomboniere e bebidas;8;32,90;4;contem rateio
+2026-07-24;Consulta SPC/crédito;2;60,00;1;exato
+2026-07-24;Currículo;3;45,00;2;exato
+2026-07-24;Digitação;1;5,33;1;contem rateio
+2026-07-24;Envelope;2;4,00;2;contem rateio
+2026-07-24;Foto 3x4;1;14,33;1;contem rateio
+2026-07-24;Impressão Colorida;2;4,00;1;contem rateio
+2026-07-24;Impressão P&B;66;64,92;13;contem rateio
+2026-07-24;Impressão em papel especial;1;6,20;1;contem rateio
+2026-07-24;Outros: Arte Simples - 10 minutos;1;15,52;1;contem rateio
+2026-07-24;Outros: DelValle Uva 450ml;1;4,00;1;contem rateio
+2026-07-24;Plastificação;1;8,28;1;contem rateio
+2026-07-24;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-07-24;Uso de computador;2;20,60;2;exato
+2026-07-25;Envio de arquivos;1;5,00;1;contem rateio
+2026-07-25;Impressão Colorida;2;4,00;2;contem rateio
+2026-07-25;Impressão P&B;99;71,97;6;contem rateio
+2026-07-25;Outros: Certidão Negativa;5;52,21;1;contem rateio
+2026-07-25;Plastificação;1;9,60;1;contem rateio
+2026-07-25;Recebimento de Arquivos;5;5,53;5;contem rateio
+2026-07-25;Scanner;6;9,00;1;contem rateio
+2026-07-25;Uso de computador;1;1,34;1;contem rateio
+2026-07-27;Currículo;3;31,83;3;contem rateio
+2026-07-27;Edição de arquivo;1;2,74;1;contem rateio
+2026-07-27;Envelope;7;16,21;7;contem rateio
+2026-07-27;Foto 3x4;1;15,00;1;exato
+2026-07-27;INSS (Meu INSS);2;50,00;2;exato
+2026-07-27;Impressão Colorida;1;2,00;1;contem rateio
+2026-07-27;Impressão P&B;137;110,41;16;contem rateio
+2026-07-27;Outros: Certidão Negativa;3;30,00;1;exato
+2026-07-27;Recebimento de Arquivos;11;12,56;11;contem rateio
+2026-07-27;Scanner;6;9,00;1;exato
+2026-07-28;Bomboniere e bebidas;2;6,50;2;contem rateio
+2026-07-28;Currículo;2;20,00;2;contem rateio
+2026-07-28;Envelope;1;2,00;1;contem rateio
+2026-07-28;Impressão Colorida;14;28,00;2;contem rateio
+2026-07-28;Impressão P&B;44;45,33;10;contem rateio
+2026-07-28;Impressão em papel especial;15;90,00;1;contem rateio
+2026-07-28;Outros: Agendamento UAI;1;20,00;1;exato
+2026-07-28;Outros: Recuperação Simples senha;1;20,00;1;exato
+2026-07-28;Recebimento de Arquivos;6;6,00;5;contem rateio
+2026-07-28;Scanner;7;10,50;1;contem rateio
+2026-07-28;Uso de computador;1;1,67;1;contem rateio
+2026-07-29;Bomboniere e bebidas;2;6,24;1;contem rateio
+2026-07-29;Digitação;1;12,67;1;contem rateio
+2026-07-29;Envelope;6;13,49;5;contem rateio
+2026-07-29;Envio de arquivos;1;4,57;1;contem rateio
+2026-07-29;Foto 3x4;1;15,60;1;contem rateio
+2026-07-29;INSS (Meu INSS);2;70,00;1;contem rateio
+2026-07-29;Impressão Colorida;1;2,00;1;contem rateio
+2026-07-29;Impressão P&B;59;59,95;13;contem rateio
+2026-07-29;Impressão em papel especial;2;14,00;1;exato
+2026-07-29;Outros: Certidão Negativa;3;29,86;1;contem rateio
+2026-07-29;Plastificação;1;8,94;1;contem rateio
+2026-07-29;Recebimento de Arquivos;8;8,00;8;contem rateio
+2026-07-29;Resultado de exame;1;5,00;1;exato
+2026-07-29;Scanner;13;17,81;1;contem rateio
+2026-07-29;Uso de computador;1;1,12;1;contem rateio
+2026-07-30;Bomboniere e bebidas;1;4,41;1;contem rateio
+2026-07-30;Envelope;4;9,29;4;contem rateio
+2026-07-30;Impressão Colorida;2;4,00;1;exato
+2026-07-30;Impressão P&B;88;74,55;9;contem rateio
+2026-07-30;Impressão em papel especial;3;18,59;1;contem rateio
+2026-07-30;Outros: Baixar música avulso;13;26,00;1;exato
+2026-07-30;Outros: Cadastro Nota Fiscal Prefeitura;1;20,00;1;contem rateio
+2026-07-30;Outros: Nota fiscal;2;60,00;1;contem rateio
+2026-07-30;Recebimento de Arquivos;3;4,03;3;contem rateio
+2026-07-30;Suporte ao cliente;1;3,00;1;contem rateio
+2026-07-30;Transferência de titularidade;6;140,00;2;exato
+2026-07-30;Uso de computador;3;4,58;3;contem rateio
+2026-07-31;Bomboniere e bebidas;1;3,12;1;contem rateio
+2026-07-31;Consulta SPC/crédito;1;30,00;1;contem rateio
+2026-07-31;Currículo;1;15,00;1;exato
+2026-07-31;Edição de arquivo;1;2,78;1;contem rateio
+2026-07-31;Encadernação;1;13,89;1;contem rateio
+2026-07-31;Envelope;7;15,50;6;contem rateio
+2026-07-31;Impressão Colorida;15;30,00;2;contem rateio
+2026-07-31;Impressão P&B;205;146,70;18;contem rateio
+2026-07-31;Impressão em papel especial;5;30,00;1;exato
+2026-07-31;Plastificação;2;10,00;1;exato
+2026-07-31;Recebimento de Arquivos;10;10,00;10;contem rateio
+2026-07-31;Resultado de exame;1;5,00;1;contem rateio
+2026-07-31;Uso de computador;3;5,01;2;contem rateio
+2026-08-03;Bomboniere e bebidas;5;19,80;5;contem rateio
+2026-08-03;Currículo;2;23,00;2;contem rateio
+2026-08-03;Envelope;4;14,77;3;contem rateio
+2026-08-03;Envio de arquivos;2;10,25;2;contem rateio
+2026-08-03;Impressão P&B;97;94,11;21;contem rateio
+2026-08-03;Outros: Baixar Musica Link até 2horas/;1;7,08;1;contem rateio
+2026-08-03;Outros: Qualificação CPF;1;10,00;1;contem rateio
+2026-08-03;Outros: Segunda Via de Conta;1;20,00;1;exato
+2026-08-03;Outros: Tim Promoção;1;40,00;1;exato
+2026-08-03;Plastificação;1;8,00;1;exato
+2026-08-03;Recebimento de Arquivos;8;8,29;8;contem rateio
+2026-08-03;Resultado de exame;1;5,00;1;contem rateio
+2026-08-03;Scanner;4;6,15;2;contem rateio
+2026-08-03;Suporte ao cliente;2;6,65;2;contem rateio
+2026-08-03;Uso de computador;8;86,65;8;contem rateio
+2026-08-04;Bomboniere e bebidas;7;28,96;6;contem rateio
+2026-08-04;Consulta SPC/crédito;1;30,00;1;exato
+2026-08-04;Currículo;2;25,00;2;contem rateio
+2026-08-04;Edição de arquivo;1;2,21;1;contem rateio
+2026-08-04;Envelope;16;33,69;10;contem rateio
+2026-08-04;Envio de arquivos;3;16,70;3;contem rateio
+2026-08-04;Impressão Colorida;23;47,05;5;contem rateio
+2026-08-04;Impressão P&B;82;80,10;21;contem rateio
+2026-08-04;Impressão em papel especial;1;7,00;1;exato
+2026-08-04;Outros: Baixar música avulso;6;12,00;1;exato
+2026-08-04;Outros: Cabo Óptico;1;20,00;1;exato
+2026-08-04;Outros: Cifra/Letra;5;15,00;2;contem rateio
+2026-08-04;Outros: Segunda via CPF;1;10,00;1;contem rateio
+2026-08-04;Plastificação;4;20,00;3;contem rateio
+2026-08-04;Recebimento de Arquivos;10;10,44;10;contem rateio
+2026-08-04;Resultado de exame;1;5,00;1;contem rateio
+2026-08-04;Scanner;32;50,55;4;contem rateio
+2026-08-04;Suporte ao cliente;5;14,32;5;contem rateio
+2026-08-04;Uso de computador;7;39,58;7;contem rateio
+2026-08-05;Bomboniere e bebidas;5;14,54;5;contem rateio
+2026-08-05;Currículo;1;10,00;1;contem rateio
+2026-08-05;Digitação;1;8,00;1;contem rateio
+2026-08-05;Edição de arquivo;1;2,36;1;contem rateio
+2026-08-05;Envelope;8;16,52;7;contem rateio
+2026-08-05;Envio de arquivos;3;16,56;3;contem rateio
+2026-08-05;INSS (Meu INSS);1;40,00;1;exato
+2026-08-05;Impressão Colorida;9;18,72;3;contem rateio
+2026-08-05;Impressão P&B;122;114,34;21;contem rateio
+2026-08-05;Impressão em papel especial;2;14,00;1;exato
+2026-08-05;Outros: Cabo Carregamento Kaidi Tipo Lightning Iphone 1m KD 22C;1;19,90;1;exato
+2026-08-05;Outros: Cadastro Emprego;1;20,00;1;exato
+2026-08-05;Outros: GPS Guia da Previdência Social;1;10,00;1;exato
+2026-08-05;Plastificação;2;16,00;2;contem rateio
+2026-08-05;Recebimento de Arquivos;10;10,19;10;contem rateio
+2026-08-05;Scanner;5;8,25;2;contem rateio
+2026-08-05;Suporte ao cliente;4;14,10;4;contem rateio
+2026-08-05;Uso de computador;7;21,12;7;contem rateio
+2026-08-05;gov.br;1;20,00;1;exato
+2026-08-06;Bomboniere e bebidas;1;2,29;1;contem rateio
+2026-08-06;Currículo;1;15,00;1;contem rateio
+2026-08-06;Digitação;1;9,14;1;contem rateio
+2026-08-06;Envelope;3;6,29;3;contem rateio
+2026-08-06;Envio de arquivos;1;5,00;1;contem rateio
+2026-08-06;Foto 3x4;1;15,00;1;contem rateio
+2026-08-06;Impressão Colorida;16;32,00;2;contem rateio
+2026-08-06;Impressão P&B;55;51,33;14;contem rateio
+2026-08-06;Impressão em papel especial;5;45,00;1;exato
+2026-08-06;Outros: Claro;1;30,00;1;exato
+2026-08-06;Plastificação;3;18,00;1;contem rateio
+2026-08-06;Recebimento de Arquivos;10;10,45;10;contem rateio
+2026-08-06;Scanner;3;4,50;1;contem rateio
+2026-08-06;Suporte ao cliente;2;6,00;2;exato
+2026-08-06;Uso de computador;4;70,60;4;exato
+2026-08-07;Bomboniere e bebidas;9;24,85;4;contem rateio
+2026-08-07;Currículo;2;20,00;1;contem rateio
+2026-08-07;Edição de arquivo;1;2,00;1;contem rateio
+2026-08-07;Encadernação;1;11,16;1;contem rateio
+2026-08-07;Envelope;7;16,17;7;contem rateio
+2026-08-07;Envio de arquivos;3;15,83;3;contem rateio
+2026-08-07;Impressão Colorida;7;16,26;3;contem rateio
+2026-08-07;Impressão P&B;192;149,49;31;contem rateio
+2026-08-07;Outros: Baixar Filmes Pendrive;1;60,00;1;exato
+2026-08-07;Outros: Baixar Playlis CD;1;20,00;1;exato
+2026-08-07;Outros: Certidão Negativa;3;36,00;1;exato
+2026-08-07;Outros: Claro;1;30,00;1;exato
+2026-08-07;Outros: Fone de Ouvido - PMCEL;1;29,90;1;exato
+2026-08-07;Plastificação;2;13,73;2;contem rateio
+2026-08-07;Recebimento de Arquivos;20;21,68;20;contem rateio
+2026-08-07;Resultado de exame;1;5,00;1;contem rateio
+2026-08-07;Scanner;5;8,50;2;contem rateio
+2026-08-07;Suporte ao cliente;2;5,57;2;contem rateio
+2026-08-07;Uso de computador;11;34,96;9;contem rateio
+2026-08-08;Bomboniere e bebidas;5;18,00;4;contem rateio
+2026-08-08;Detran;2;30,00;2;exato
+2026-08-08;Digitação;1;6,67;1;contem rateio
+2026-08-08;Envelope;2;4,39;2;contem rateio
+2026-08-08;Envio de arquivos;2;10,91;2;contem rateio
+2026-08-08;Impressão P&B;108;81,60;13;contem rateio
+2026-08-08;Impressão em papel especial;3;20,00;3;exato
+2026-08-08;Outros: Arte Simples - 10 minutos;1;15,00;1;contem rateio
+2026-08-08;Plastificação;2;13,00;2;contem rateio
+2026-08-08;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-08-08;Scanner;6;9,55;2;contem rateio
+2026-08-08;Suporte ao cliente;1;3,00;1;exato
+2026-08-08;Uso de computador;2;2,38;2;contem rateio
+2026-08-10;Bomboniere e bebidas;6;15,61;5;contem rateio
+2026-08-10;Currículo;4;48,50;4;contem rateio
+2026-08-10;Detran;1;15,00;1;exato
+2026-08-10;Edição de arquivo;1;2,67;1;contem rateio
+2026-08-10;Encadernação;1;6,67;1;contem rateio
+2026-08-10;Envelope;21;41,72;10;contem rateio
+2026-08-10;Envio de arquivos;1;6,17;1;contem rateio
+2026-08-10;Foto 3x4;1;15,00;1;contem rateio
+2026-08-10;Impressão Colorida;15;31,33;3;contem rateio
+2026-08-10;Impressão P&B;219;168,14;26;contem rateio
+2026-08-10;Outros: Fone de Ouvido - PMCEL;1;29,90;1;contem rateio
+2026-08-10;Outros: Recuperação Simples senha;1;20,00;1;exato
+2026-08-10;Plastificação;1;8,00;1;contem rateio
+2026-08-10;Recebimento de Arquivos;11;11,00;11;contem rateio
+2026-08-10;Scanner;8;12,00;2;exato
+2026-08-10;Suporte ao cliente;2;6,69;2;contem rateio
+2026-08-10;Uso de computador;1;2,00;1;contem rateio
+2026-08-11;Bomboniere e bebidas;1;4,00;1;contem rateio
+2026-08-11;Currículo;3;50,00;3;contem rateio
+2026-08-11;Envelope;3;6,76;3;contem rateio
+2026-08-11;Impressão Colorida;1;2,00;1;contem rateio
+2026-08-11;Impressão P&B;96;81,79;16;contem rateio
+2026-08-11;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-08-12;Bomboniere e bebidas;1;4,50;1;contem rateio
+2026-08-12;Currículo;1;15,00;1;exato
+2026-08-12;Detran;2;30,00;2;exato
+2026-08-12;Digitação;1;6,40;1;contem rateio
+2026-08-12;Edição de arquivo;1;15,00;1;contem rateio
+2026-08-12;Envelope;5;11,52;4;contem rateio
+2026-08-12;Impressão Colorida;5;10,00;3;contem rateio
+2026-08-12;Impressão P&B;167;109,88;15;contem rateio
+2026-08-12;Plastificação;1;8,00;1;contem rateio
+2026-08-12;Recebimento de Arquivos;13;13,20;13;contem rateio
+2026-08-12;Resultado de exame;1;5,00;1;contem rateio
+2026-08-13;Bomboniere e bebidas;1;3,41;1;contem rateio
+2026-08-13;Currículo;1;10,00;1;exato
+2026-08-13;Envelope;3;6,27;3;contem rateio
+2026-08-13;Envio de arquivos;1;5,42;1;contem rateio
+2026-08-13;Foto 3x4;1;14,59;1;contem rateio
+2026-08-13;Impressão Colorida;1;2,00;1;contem rateio
+2026-08-13;Impressão P&B;251;153,41;15;contem rateio
+2026-08-13;Impressão em papel especial;2;13,60;1;contem rateio
+2026-08-13;Outros: Baixar Playlis CD;2;10,00;1;exato
+2026-08-13;Recebimento de Arquivos;11;11,32;11;contem rateio
+2026-08-13;Scanner;12;19,50;1;contem rateio
+2026-08-13;Uso de computador;1;1,08;1;contem rateio
+2026-08-14;Bomboniere e bebidas;3;8,00;2;contem rateio
+2026-08-14;Currículo;2;30,00;2;contem rateio
+2026-08-14;Edição de arquivo;1;22,09;1;contem rateio
+2026-08-14;Envelope;3;6,00;3;contem rateio
+2026-08-14;Envio de arquivos;1;5,00;1;contem rateio
+2026-08-14;Impressão P&B;196;156,16;11;contem rateio
+2026-08-14;Plastificação;1;5,00;1;contem rateio
+2026-08-14;Recebimento de Arquivos;5;5,00;5;contem rateio
+2026-08-14;Suporte ao cliente;1;3,75;1;contem rateio
+2026-08-14;Transferência de titularidade;2;30,00;1;exato
+2026-08-15;Currículo;1;10,00;1;exato
+2026-08-15;Envelope;2;5,26;1;contem rateio
+2026-08-15;Envio de arquivos;1;5,00;1;contem rateio
+2026-08-15;Impressão P&B;44;33,99;3;contem rateio
+2026-08-15;Recebimento de Arquivos;2;2,75;2;contem rateio
+2026-08-17;Digitação;1;10,00;1;contem rateio
+2026-08-17;Edição de arquivo;1;4,66;1;contem rateio
+2026-08-17;Envelope;5;14,00;4;contem rateio
+2026-08-17;Envio de arquivos;3;16,90;3;contem rateio
+2026-08-17;Impressão Colorida;14;27,56;3;contem rateio
+2026-08-17;Impressão P&B;163;122,26;16;contem rateio
+2026-08-17;Outros: Paçoca amor sing`S;2;2,76;1;contem rateio
+2026-08-17;Plastificação;1;6,46;1;contem rateio
+2026-08-17;Recebimento de Arquivos;8;9,49;8;contem rateio
+2026-08-17;Scanner;1;2,08;1;contem rateio
+2026-08-17;Uso de computador;1;1,08;1;contem rateio
+2026-08-18;Bomboniere e bebidas;5;15,54;4;contem rateio
+2026-08-18;Consulta SPC/crédito;1;30,00;1;contem rateio
+2026-08-18;Currículo;1;15,00;1;contem rateio
+2026-08-18;Envelope;2;4,00;2;contem rateio
+2026-08-18;Impressão P&B;21;21,00;5;contem rateio
+2026-08-18;Impressão em papel especial;2;12,00;1;exato
+2026-08-18;Outros: Kit Carregador Gold V8 3.1;1;30,36;1;contem rateio
+2026-08-18;Outros: Vivo normal;1;30,00;1;exato
+2026-08-18;Recebimento de Arquivos;3;3,00;3;contem rateio
+2026-08-19;Bomboniere e bebidas;1;4,00;1;contem rateio
+2026-08-19;Currículo;1;15,00;1;contem rateio
+2026-08-19;Detran;1;17,27;1;contem rateio
+2026-08-19;Envelope;4;7,50;3;contem rateio
+2026-08-19;Envio de arquivos;1;5,00;1;contem rateio
+2026-08-19;Impressão P&B;101;85,78;11;contem rateio
+2026-08-19;Outros: Carteira Digital Impressão;1;11,52;1;contem rateio
+2026-08-19;Recebimento de Arquivos;27;23,18;7;contem rateio
+2026-08-19;Resultado de exame;1;5,00;1;contem rateio
+2026-08-19;Scanner;4;6,00;1;contem rateio
+2026-08-19;Suporte ao cliente;1;4,15;1;contem rateio
+2026-08-20;Bomboniere e bebidas;3;9,50;1;contem rateio
+2026-08-20;Currículo;1;15,00;1;exato
+2026-08-20;Detran;1;15,00;1;exato
+2026-08-20;Envelope;2;4,00;2;contem rateio
+2026-08-20;Envio de arquivos;1;5,00;1;contem rateio
+2026-08-20;INSS (Meu INSS);1;35,00;1;exato
+2026-08-20;Impressão Colorida;15;30,00;2;contem rateio
+2026-08-20;Impressão P&B;72;44,00;6;contem rateio
+2026-08-20;Outros: Baixar Musica Link até 2horas/;8;40,00;1;exato
+2026-08-20;Plastificação;4;26,00;2;contem rateio
+2026-08-20;Recebimento de Arquivos;1;1,00;1;contem rateio
+2026-08-20;Resultado de exame;1;5,00;1;contem rateio
+2026-08-20;Scanner;1;1,50;1;contem rateio
+2026-08-20;Suporte ao cliente;1;3,00;1;contem rateio
+2026-08-20;Uso de computador;1;2,00;1;contem rateio
+2026-08-21;Bomboniere e bebidas;6;26,32;5;contem rateio
+2026-08-21;Envelope;5;10,26;5;contem rateio
+2026-08-21;Envio de arquivos;1;4,72;1;contem rateio
+2026-08-21;Impressão P&B;49;46,47;12;contem rateio
+2026-08-21;Impressão em papel especial;1;7,00;1;exato
+2026-08-21;Outros: Abertura de MEI;1;50,00;1;contem rateio
+2026-08-21;Outros: Baixar música avulso;4;8,00;1;exato
+2026-08-21;Outros: DAS MEI;1;9,50;1;contem rateio
+2026-08-21;Recebimento de Arquivos;7;7,26;7;contem rateio
+2026-08-21;Scanner;5;7,07;1;contem rateio
+2026-08-21;Suporte ao cliente;1;2,40;1;contem rateio
+2026-08-21;Uso de computador;4;6,45;4;contem rateio
+2026-08-22;Bomboniere e bebidas;1;3,00;1;contem rateio
+2026-08-22;Envio de arquivos;2;10,00;2;contem rateio
+2026-08-22;Impressão P&B;15;11,50;2;contem rateio
+2026-08-22;Recebimento de Arquivos;1;1,00;1;contem rateio
+2026-08-22;Scanner;13;19,50;2;contem rateio
+2026-08-24;Digitação;1;6,86;1;contem rateio
+2026-08-24;Envelope;2;3,71;2;contem rateio
+2026-08-24;Impressão P&B;25;24,43;4;contem rateio
+2026-08-24;Manutenção de celular;1;35,00;1;exato
+2026-08-24;Plastificação;1;8,00;1;contem rateio
+2026-08-24;Recebimento de Arquivos;1;1,00;1;contem rateio
+2026-08-24;Scanner;4;6,00;1;exato
+2026-08-25;Bomboniere e bebidas;3;14,17;2;contem rateio
+2026-08-25;Currículo;1;15,64;1;contem rateio
+2026-08-25;Edição de arquivo;1;2,09;1;contem rateio
+2026-08-25;Envelope;4;8,43;4;contem rateio
+2026-08-25;Impressão Colorida;5;9,83;2;contem rateio
+2026-08-25;Impressão P&B;72;58,48;7;contem rateio
+2026-08-25;Recebimento de Arquivos;3;2,76;3;contem rateio
+2026-08-25;Scanner;1;1,56;1;contem rateio
+2026-08-25;Uso de computador;1;1,99;1;contem rateio
+2026-08-26;Bomboniere e bebidas;1;4,38;1;contem rateio
+2026-08-26;Currículo;1;16,44;1;contem rateio
+2026-08-26;Envelope;3;6,19;3;contem rateio
+2026-08-26;Impressão Colorida;7;14,00;2;exato
+2026-08-26;Impressão P&B;37;32,49;12;contem rateio
+2026-08-26;Outros: DAS MEI;1;10,00;1;exato
+2026-08-26;Recebimento de Arquivos;10;10,00;10;contem rateio
+2026-08-26;Suporte ao cliente;1;3,00;1;exato
+2026-08-27;Bomboniere e bebidas;6;23,53;3;contem rateio
+2026-08-27;Detran;3;45,00;2;exato
+2026-08-27;Digitação;1;10,29;1;contem rateio
+2026-08-27;Envelope;2;4,36;2;contem rateio
+2026-08-27;Foto 3x4;1;15,00;1;exato
+2026-08-27;Impressão P&B;100;65,77;5;contem rateio
+2026-08-27;Recebimento de Arquivos;3;3,55;3;contem rateio
+2026-08-27;Uso de computador;2;9,20;2;exato
+2026-08-28;Bomboniere e bebidas;1;3,00;1;contem rateio
+2026-08-28;Consulta simples;1;5,00;1;contem rateio
+2026-08-28;Currículo;1;10,00;1;contem rateio
+2026-08-28;Envelope;7;14,00;6;contem rateio
+2026-08-28;INSS (Meu INSS);1;40,00;1;exato
+2026-08-28;Impressão P&B;84;55,00;12;contem rateio
+2026-08-28;Impressão em papel especial;2;12,00;1;contem rateio
+2026-08-28;Outros: Cifra/Letra;2;6,00;1;contem rateio
+2026-08-28;Plastificação;4;20,00;1;exato
+2026-08-28;Recebimento de Arquivos;5;5,00;5;contem rateio
+2026-08-28;Suporte ao cliente;2;6,00;2;contem rateio
+2026-08-28;Uso de computador;2;6,60;2;contem rateio
+2026-08-29;Bomboniere e bebidas;2;7,00;2;exato
+2026-08-29;Detran;1;15,00;1;exato
+2026-08-29;Envelope;2;3,60;2;contem rateio
+2026-08-29;Foto 3x4;1;15,00;1;contem rateio
+2026-08-29;Impressão P&B;45;39,94;8;contem rateio
+2026-08-29;Impressão em papel especial;3;21,00;2;exato
+2026-08-29;Recebimento de Arquivos;6;6,21;6;contem rateio
+2026-08-29;Scanner;50;37,50;1;exato
+2026-08-31;Bomboniere e bebidas;5;14,64;3;contem rateio
+2026-08-31;Consulta simples;1;4,93;1;contem rateio
+2026-08-31;Currículo;2;21,50;2;contem rateio
+2026-08-31;Detran;1;35,00;1;exato
+2026-08-31;Edição de arquivo;2;5,68;2;contem rateio
+2026-08-31;Envelope;6;12,56;6;contem rateio
+2026-08-31;Envio de arquivos;3;14,19;3;contem rateio
+2026-08-31;INSS (Meu INSS);5;140,00;3;contem rateio
+2026-08-31;Impressão Colorida;13;26,00;4;contem rateio
+2026-08-31;Impressão P&B;146;103,69;19;contem rateio
+2026-08-31;Impressão em papel especial;3;32,31;1;contem rateio
+2026-08-31;Outros: Baixar Playlis CD;1;5,00;1;contem rateio
+2026-08-31;Outros: Baixar música avulso;9;18,00;1;contem rateio
+2026-08-31;Outros: Claro Promoção;1;40,00;1;exato
+2026-08-31;Plastificação;2;13,00;2;contem rateio
+2026-08-31;Recebimento de Arquivos;14;14,53;14;contem rateio
+2026-08-31;Scanner;40;54,18;3;contem rateio
+2026-08-31;Suporte ao cliente;1;3,00;1;contem rateio
+2026-08-31;Uso de computador;1;1,29;1;contem rateio
+2026-09-01;Bomboniere e bebidas;6;21,00;3;contem rateio
+2026-09-01;Currículo;1;10,00;1;contem rateio
+2026-09-01;Detran;1;15,00;1;exato
+2026-09-01;Envelope;5;10,00;5;contem rateio
+2026-09-01;Foto 3x4;1;15,00;1;exato
+2026-09-01;INSS (Meu INSS);1;40,00;1;exato
+2026-09-01;Impressão P&B;80;56,00;10;contem rateio
+2026-09-01;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-09-02;Bomboniere e bebidas;5;13,46;4;contem rateio
+2026-09-02;Consulta SPC/crédito;1;30,00;1;exato
+2026-09-02;Currículo;4;45,00;4;contem rateio
+2026-09-02;Detran;2;30,00;2;exato
+2026-09-02;Edição de arquivo;1;2,27;1;contem rateio
+2026-09-02;Envelope;8;17,96;8;contem rateio
+2026-09-02;Envio de arquivos;2;10,00;2;contem rateio
+2026-09-02;Foto 3x4;1;15,00;1;contem rateio
+2026-09-02;INSS (Meu INSS);2;55,00;2;exato
+2026-09-02;Impressão Colorida;34;83,13;3;contem rateio
+2026-09-02;Impressão P&B;58;52,28;15;contem rateio
+2026-09-02;Impressão em papel especial;3;21,00;1;exato
+2026-09-02;Manutenção de celular;1;50,00;1;exato
+2026-09-02;Plastificação;1;5,00;1;contem rateio
+2026-09-02;Recebimento de Arquivos;11;11,30;11;contem rateio
+2026-09-02;Scanner;8;12,00;2;contem rateio
+2026-09-03;Bomboniere e bebidas;7;25,00;6;contem rateio
+2026-09-03;Consulta simples;2;9,00;2;exato
+2026-09-03;Currículo;2;30,00;2;contem rateio
+2026-09-03;Detran;1;15,00;1;contem rateio
+2026-09-03;Envelope;4;8,00;4;contem rateio
+2026-09-03;Envio de arquivos;3;15,00;3;contem rateio
+2026-09-03;INSS (Meu INSS);1;25,00;1;exato
+2026-09-03;Impressão Colorida;3;6,00;1;contem rateio
+2026-09-03;Impressão P&B;57;38,50;9;contem rateio
+2026-09-03;Outros: Vivo Promoção;1;40,00;1;exato
+2026-09-03;Recebimento de Arquivos;8;8,00;8;contem rateio
+2026-09-03;Scanner;3;4,50;2;contem rateio
+2026-09-03;Suporte ao cliente;1;3,00;1;contem rateio
+2026-09-03;Transferência de titularidade;2;40,00;1;exato
+2026-09-03;Uso de computador;1;3,70;1;exato
+2026-09-04;Bomboniere e bebidas;4;10,83;3;contem rateio
+2026-09-04;Envelope;1;2,00;1;contem rateio
+2026-09-04;Envio de arquivos;1;7,53;1;contem rateio
+2026-09-04;Foto 3x4;2;30,00;1;contem rateio
+2026-09-04;INSS (Meu INSS);2;60,00;2;contem rateio
+2026-09-04;Impressão Colorida;2;2,91;1;contem rateio
+2026-09-04;Impressão P&B;125;100,50;14;contem rateio
+2026-09-04;Outros: Carteira Digital Impressão;1;10,00;1;contem rateio
+2026-09-04;Plastificação;1;5,22;1;contem rateio
+2026-09-04;Recebimento de Arquivos;12;12,16;12;contem rateio
+2026-09-04;Resultado de exame;2;8,19;2;contem rateio
+2026-09-04;Suporte ao cliente;1;3,00;1;contem rateio
+2026-09-04;Uso de computador;2;5,21;2;contem rateio
+2026-09-05;Detran;1;20,00;1;exato
+2026-09-05;Envelope;4;8,83;4;contem rateio
+2026-09-05;Impressão Colorida;6;12,00;3;contem rateio
+2026-09-05;Impressão P&B;56;50,17;13;contem rateio
+2026-09-05;Outros: GPS Guia da Previdência Social;1;10,00;1;exato
+2026-09-05;Plastificação;2;16,00;1;contem rateio
+2026-09-05;Recebimento de Arquivos;9;9,00;9;contem rateio
+2026-09-05;Suporte ao cliente;3;9,00;3;contem rateio
+2026-09-05;Uso de computador;1;8,00;1;exato
+2026-09-08;Bomboniere e bebidas;4;14,94;4;contem rateio
+2026-09-08;Currículo;2;21,25;2;contem rateio
+2026-09-08;Detran;1;15,00;1;exato
+2026-09-08;Digitação;1;9,60;1;contem rateio
+2026-09-08;Envelope;5;12,80;5;contem rateio
+2026-09-08;Envio de arquivos;1;5,00;1;contem rateio
+2026-09-08;Impressão Colorida;4;8,00;1;contem rateio
+2026-09-08;Impressão P&B;320;224,56;27;contem rateio
+2026-09-08;Outros: Vivo Promoção;2;80,00;1;exato
+2026-09-08;Recebimento de Arquivos;12;12,51;12;contem rateio
+2026-09-08;Resultado de exame;1;6,46;1;contem rateio
+2026-09-08;Scanner;18;34,50;2;contem rateio
+2026-09-08;Suporte ao cliente;2;6,00;2;contem rateio
+2026-09-08;Transferência de titularidade;2;28,00;2;exato
+2026-09-08;Uso de computador;8;12,98;8;contem rateio
+2026-09-09;Bomboniere e bebidas;2;7,00;2;contem rateio
+2026-09-09;Envelope;4;8,00;3;contem rateio
+2026-09-09;Impressão P&B;97;57,00;11;contem rateio
+2026-09-09;Outros: DAS MEI;5;29,50;1;contem rateio
+2026-09-09;Recebimento de Arquivos;11;11,00;11;contem rateio
+2026-09-09;Suporte ao cliente;2;6,00;2;contem rateio
+2026-09-10;Bomboniere e bebidas;1;3,50;1;exato
+2026-09-10;Edição de arquivo;2;23,44;2;contem rateio
+2026-09-10;Envelope;5;10,70;3;contem rateio
+2026-09-10;Envio de arquivos;1;7,40;1;contem rateio
+2026-09-10;Impressão Colorida;2;4,00;1;contem rateio
+2026-09-10;Impressão P&B;167;116,19;22;contem rateio
+2026-09-10;Outros: Vivo Promoção;1;40,00;1;exato
+2026-09-10;Recebimento de Arquivos;14;14,00;13;contem rateio
+2026-09-10;Scanner;1;2,22;1;contem rateio
+2026-09-10;Suporte ao cliente;1;3,00;1;contem rateio
+2026-09-10;Transferência de titularidade;2;40,00;1;exato
+2026-09-10;Uso de computador;2;3,15;2;contem rateio
+2026-09-11;Contrato de locação;1;30,00;1;exato
+2026-09-11;Edição de arquivo;1;2,50;1;contem rateio
+2026-09-11;Envelope;8;16,15;8;contem rateio
+2026-09-11;Envio de arquivos;1;5,00;1;contem rateio
+2026-09-11;Impressão Colorida;7;14,62;4;contem rateio
+2026-09-11;Impressão P&B;105;102,02;22;contem rateio
+2026-09-11;Impressão em papel especial;3;24,50;2;contem rateio
+2026-09-11;Plastificação;2;17,23;2;contem rateio
+2026-09-11;Recebimento de Arquivos;16;16,00;16;contem rateio
+2026-09-11;Resultado de exame;1;5,00;1;contem rateio
+2026-09-11;Scanner;4;6,00;1;contem rateio
+2026-09-11;Suporte ao cliente;2;7,50;2;contem rateio
+2026-09-11;Uso de computador;6;34,73;6;contem rateio
+2026-09-12;Envelope;2;4,76;2;contem rateio
+2026-09-12;Envio de arquivos;1;5,00;1;contem rateio
+2026-09-12;Impressão P&B;39;24,04;3;contem rateio
+2026-09-12;Impressão em papel especial;8;57,00;2;exato
+2026-09-12;Plastificação;4;22,58;3;contem rateio
+2026-09-12;Recebimento de Arquivos;2;2,15;2;contem rateio
+2026-09-12;Scanner;11;16,50;1;contem rateio
+2026-09-12;Suporte ao cliente;1;3,43;1;contem rateio
+2026-09-12;Uso de computador;1;1,14;1;contem rateio
+2026-09-14;Bomboniere e bebidas;1;3,00;1;contem rateio
+2026-09-14;Consulta simples;1;8,00;1;exato
+2026-09-14;Edição de arquivo;1;3,23;1;contem rateio
+2026-09-14;Envelope;5;11,23;5;contem rateio
+2026-09-14;Impressão Colorida;39;66,65;2;contem rateio
+2026-09-14;Impressão P&B;209;134,42;12;contem rateio
+2026-09-14;Outros: Claro;1;30,00;1;exato
+2026-09-14;Recebimento de Arquivos;9;9,62;9;contem rateio
+2026-09-14;Suporte ao cliente;4;12,00;4;contem rateio
+2026-09-14;Uso de computador;1;0,85;1;contem rateio
+2026-09-15;Bomboniere e bebidas;1;3,43;1;contem rateio
+2026-09-15;Consulta SPC/crédito;1;30,00;1;exato
+2026-09-15;Currículo;1;10,00;1;exato
+2026-09-15;Detran;1;18,75;1;contem rateio
+2026-09-15;Digitação;1;15,00;1;exato
+2026-09-15;Edição de arquivo;1;15,00;1;contem rateio
+2026-09-15;Envio de arquivos;1;5,71;1;contem rateio
+2026-09-15;INSS (Meu INSS);1;30,00;1;exato
+2026-09-15;Impressão P&B;42;38,61;9;contem rateio
+2026-09-15;Outros: Cadastro Emprego;1;20,00;1;exato
+2026-09-15;Outros: IPTU;3;21,00;1;exato
+2026-09-15;Recebimento de Arquivos;5;5,25;5;contem rateio
+2026-09-15;Resultado de exame;1;6,46;1;contem rateio
+2026-09-15;Scanner;4;6,85;1;contem rateio
+2026-09-15;Uso de computador;2;4,44;2;contem rateio
+2026-09-16;Consulta simples;2;15,00;2;contem rateio
+2026-09-16;Encadernação;3;24,00;1;exato
+2026-09-16;Envelope;3;6,00;3;contem rateio
+2026-09-16;Envio de arquivos;1;5,00;1;contem rateio
+2026-09-16;Impressão Colorida;7;14,00;3;contem rateio
+2026-09-16;Impressão P&B;101;62,00;14;contem rateio
+2026-09-16;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-09-16;Suporte ao cliente;1;3,00;1;contem rateio
+2026-09-16;Uso de computador;1;6,70;1;exato
+2026-09-17;Bomboniere e bebidas;10;31,42;5;contem rateio
+2026-09-17;Contrato de locação;1;40,00;1;exato
+2026-09-17;Currículo;3;34,23;3;contem rateio
+2026-09-17;Edição de arquivo;1;20,00;1;exato
+2026-09-17;Encadernação;1;10,00;1;exato
+2026-09-17;Envelope;7;13,85;7;contem rateio
+2026-09-17;Envio de arquivos;1;5,00;1;contem rateio
+2026-09-17;Foto 3x4;1;15,00;1;contem rateio
+2026-09-17;Impressão Colorida;3;6,00;2;contem rateio
+2026-09-17;Impressão P&B;89;66,50;12;contem rateio
+2026-09-17;Impressão em papel especial;1;6,00;1;contem rateio
+2026-09-17;Outros: Claro Promoção;1;40,00;1;exato
+2026-09-17;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-09-17;Scanner;44;55,25;2;contem rateio
+2026-09-17;Uso de computador;1;9,00;1;exato
+2026-09-18;Bomboniere e bebidas;1;3,00;1;exato
+2026-09-18;Currículo;1;10,00;1;contem rateio
+2026-09-18;Edição de arquivo;1;2,50;1;contem rateio
+2026-09-18;Envelope;11;22,00;8;contem rateio
+2026-09-18;Impressão Colorida;21;43,25;5;contem rateio
+2026-09-18;Impressão P&B;158;105,87;14;contem rateio
+2026-09-18;Impressão em papel especial;1;7,50;1;contem rateio
+2026-09-18;Outros: Cifra/Letra;2;6,00;1;contem rateio
+2026-09-18;Outros: Segunda Via de Conta;1;10,00;1;exato
+2026-09-18;Outros: Tim Promoção;1;40,00;1;exato
+2026-09-18;Plastificação;2;11,25;1;contem rateio
+2026-09-18;Recebimento de Arquivos;11;11,00;11;contem rateio
+2026-09-18;Uso de computador;30;48,13;3;contem rateio
+2026-09-19;Bomboniere e bebidas;1;4,00;1;contem rateio
+2026-09-19;Contrato de locação;1;30,00;1;exato
+2026-09-19;Edição de arquivo;2;5,87;2;contem rateio
+2026-09-19;Envelope;1;2,00;1;contem rateio
+2026-09-19;Impressão Colorida;1;2,00;1;contem rateio
+2026-09-19;Impressão P&B;10;10,00;5;contem rateio
+2026-09-19;Impressão em papel especial;3;29,13;2;contem rateio
+2026-09-19;Recebimento de Arquivos;4;4,00;4;contem rateio
+2026-09-19;Suporte ao cliente;1;3,00;1;contem rateio
+2026-09-21;Bomboniere e bebidas;1;4,00;1;contem rateio
+2026-09-21;Edição de arquivo;1;2,34;1;contem rateio
+2026-09-21;Envelope;4;8,00;4;contem rateio
+2026-09-21;Envio de arquivos;2;10,86;2;contem rateio
+2026-09-21;Impressão Colorida;8;16,00;3;contem rateio
+2026-09-21;Impressão P&B;148;117,70;19;contem rateio
+2026-09-21;Impressão em papel especial;3;27,00;1;exato
+2026-09-21;Outros: Atestado de Bons Antecedentes;1;9,80;1;contem rateio
+2026-09-21;Outros: Claro;1;30,00;1;exato
+2026-09-21;Recebimento de Arquivos;10;10,74;10;contem rateio
+2026-09-21;Resultado de exame;1;6,46;1;contem rateio
+2026-09-21;Scanner;16;25,80;2;contem rateio
+2026-09-21;Suporte ao cliente;2;15,10;2;contem rateio
+2026-09-22;Envelope;9;19,02;4;contem rateio
+2026-09-22;Impressão Colorida;15;30,00;5;contem rateio
+2026-09-22;Impressão P&B;44;32,78;8;contem rateio
+2026-09-22;Plastificação;1;8,00;1;contem rateio
+2026-09-22;Recebimento de Arquivos;5;5,00;5;contem rateio
+2026-09-22;Resultado de exame;1;5,00;1;contem rateio
+2026-09-22;Suporte ao cliente;1;3,00;1;contem rateio
+2026-09-23;Bomboniere e bebidas;1;3,50;1;contem rateio
+2026-09-23;Currículo;2;25,00;2;contem rateio
+2026-09-23;Edição de arquivo;1;3,85;1;contem rateio
+2026-09-23;Envelope;3;8,08;3;contem rateio
+2026-09-23;Envio de arquivos;1;8,33;1;contem rateio
+2026-09-23;Impressão Colorida;11;22,55;3;contem rateio
+2026-09-23;Impressão P&B;42;51,79;14;contem rateio
+2026-09-23;Outros: Cadastro Emprego;1;25,00;1;exato
+2026-09-23;Outros: DAS MEI;1;15,00;1;exato
+2026-09-23;Plastificação;1;5,56;1;contem rateio
+2026-09-23;Recebimento de Arquivos;10;10,17;10;contem rateio
+2026-09-23;Scanner;1;2,50;1;contem rateio
+2026-09-23;Suporte ao cliente;1;3,00;1;contem rateio
+2026-09-23;Uso de computador;1;1,67;1;contem rateio
+2026-09-24;Consulta simples;1;5,00;1;exato
+2026-09-24;Envelope;3;6,06;2;contem rateio
+2026-09-24;Foto 3x4;1;15,00;1;exato
+2026-09-24;Impressão P&B;32;32,83;5;contem rateio
+2026-09-24;Manutenção de celular;1;3,92;1;contem rateio
+2026-09-24;Recebimento de Arquivos;1;1,00;1;contem rateio
+2026-09-24;Resultado de exame;1;5,00;1;exato
+2026-09-24;Suporte ao cliente;1;15,00;1;exato
+2026-09-24;Uso de computador;3;2,19;3;contem rateio
+2026-09-25;Bomboniere e bebidas;3;9,50;3;contem rateio
+2026-09-25;Consulta SPC/crédito;1;30,00;1;exato
+2026-09-25;Envelope;2;4,00;2;contem rateio
+2026-09-25;Impressão Colorida;3;6,00;3;contem rateio
+2026-09-25;Impressão P&B;54;53,50;13;contem rateio
+2026-09-25;Outros: Tim Promoção;1;40,00;1;exato
+2026-09-25;Recebimento de Arquivos;11;11,00;11;contem rateio
+2026-09-25;Suporte ao cliente;2;5,50;2;contem rateio
+2026-09-25;Uso de computador;1;15,00;1;exato
+2026-09-26;Bomboniere e bebidas;3;8,67;3;contem rateio
+2026-09-26;Envelope;1;2,00;1;contem rateio
+2026-09-26;Impressão Colorida;9;18,00;5;contem rateio
+2026-09-26;Impressão P&B;48;39,20;6;contem rateio
+2026-09-26;Impressão em papel especial;2;12,00;2;contem rateio
+2026-09-26;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-09-26;Suporte ao cliente;2;7,53;2;contem rateio
+2026-09-28;Consulta simples;1;5,00;1;exato
+2026-09-28;Currículo;1;10,00;1;exato
+2026-09-28;Envelope;1;2,00;1;contem rateio
+2026-09-28;Foto 3x4;2;30,00;2;contem rateio
+2026-09-28;INSS (Meu INSS);1;35,00;1;exato
+2026-09-28;Impressão Colorida;20;40,00;1;exato
+2026-09-28;Impressão P&B;119;93,53;15;contem rateio
+2026-09-28;Impressão em papel especial;8;48,00;1;exato
+2026-09-28;Outros: Atestado de Bons Antecedentes;1;9,77;1;contem rateio
+2026-09-28;Outros: Cadastro Simples site;1;10,00;1;exato
+2026-09-28;Recebimento de Arquivos;7;7,00;7;contem rateio
+2026-09-28;Resultado de exame;1;5,00;1;contem rateio
+2026-09-28;Suporte ao cliente;4;12,00;4;contem rateio
+2026-09-29;Bomboniere e bebidas;4;13,00;3;contem rateio
+2026-09-29;Currículo;1;10,00;1;exato
+2026-09-29;Edição de arquivo;1;15,00;1;contem rateio
+2026-09-29;Envelope;6;12,16;5;contem rateio
+2026-09-29;Foto 3x4;1;15,00;1;exato
+2026-09-29;Impressão Colorida;7;14,92;2;contem rateio
+2026-09-29;Impressão P&B;65;65,00;20;contem rateio
+2026-09-29;Impressão em papel especial;10;60,92;2;contem rateio
+2026-09-29;Plastificação;2;15,00;1;contem rateio
+2026-09-29;Recebimento de Arquivos;17;17,00;17;contem rateio
+2026-09-29;Transferência de titularidade;3;60,00;1;exato
+2026-09-29;Uso de computador;2;10,50;2;exato
+2026-09-30;Bomboniere e bebidas;5;18,05;3;contem rateio
+2026-09-30;Currículo;2;22,17;2;contem rateio
+2026-09-30;Digitação;3;32,00;1;contem rateio
+2026-09-30;Edição de arquivo;1;15,00;1;contem rateio
+2026-09-30;Envelope;11;25,05;8;contem rateio
+2026-09-30;Envio de arquivos;1;5,00;1;contem rateio
+2026-09-30;INSS (Meu INSS);1;30,00;1;exato
+2026-09-30;Impressão Colorida;7;14,23;2;contem rateio
+2026-09-30;Impressão P&B;108;100,93;19;contem rateio
+2026-09-30;Manutenção de celular;1;30,00;1;exato
+2026-09-30;Outros: Cabo Iphone Ecooda 18w;1;29,90;1;exato
+2026-09-30;Plastificação;4;26,91;2;contem rateio
+2026-09-30;Recebimento de Arquivos;11;11,14;11;contem rateio
+2026-09-30;Scanner;4;6,18;2;contem rateio
+2026-09-30;Suporte ao cliente;1;3,34;1;contem rateio
+2026-09-30;Uso de computador;5;24,00;5;contem rateio
+2026-10-01;Bomboniere e bebidas;2;7,75;2;exato
+2026-10-01;Currículo;1;15,00;1;exato
+2026-10-01;Digitação;1;25,00;1;exato
+2026-10-01;Envelope;5;10,00;5;exato
+2026-10-01;Envio de arquivos;3;15,00;3;exato
+2026-10-01;Foto 3x4;3;45,00;1;exato
+2026-10-01;Impressão Colorida;2;4,00;2;exato
+2026-10-01;Impressão P&B;113;98,00;27;exato
+2026-10-01;Impressão em papel especial;17;93,50;1;exato
+2026-10-01;Outros: Tim;1;30,00;1;exato
+2026-10-01;Recebimento de Arquivos;14;14,00;14;exato
+2026-10-01;Resultado de exame;2;10,00;2;exato
+2026-10-01;Scanner;14;21,00;3;exato
+2026-10-01;Suporte ao cliente;3;9,00;3;exato
+2026-10-01;Uso de computador;6;38,50;6;exato
+2026-10-02;Bomboniere e bebidas;6;22,00;6;exato
+2026-10-02;Currículo;1;10,00;1;exato
+2026-10-02;Detran;1;15,00;1;exato
+2026-10-02;Digitação;2;35,00;2;exato
+2026-10-02;Envelope;6;12,00;6;exato
+2026-10-02;Envio de arquivos;6;30,00;6;exato
+2026-10-02;INSS (Meu INSS);1;35,00;1;exato
+2026-10-02;Impressão Colorida;21;42,00;2;exato
+2026-10-02;Impressão P&B;156;157,50;34;exato
+2026-10-02;Outros: Agua sem Gás 500ml;1;3,00;1;exato
+2026-10-02;Outros: Baixar Playlis CD;2;10,00;1;exato
+2026-10-02;Outros: Vivo normal;1;30,00;1;exato
+2026-10-02;Recebimento de Arquivos;16;16,00;15;exato
+2026-10-02;Resultado de exame;1;5,00;1;exato
+2026-10-02;Scanner;43;48,50;6;exato
+2026-10-02;Suporte ao cliente;4;12,00;4;exato
+2026-10-02;Uso de computador;5;29,50;5;exato
+2026-10-03;Detran;2;30,00;1;exato
+2026-10-03;Envelope;5;10,00;4;exato
+2026-10-03;Impressão Colorida;1;2,00;1;exato
+2026-10-03;Impressão P&B;41;36,50;9;exato
+2026-10-03;Outros: Segunda Via de Conta;1;15,00;1;exato
+2026-10-03;Plastificação;2;13,00;2;exato
+2026-10-03;Recebimento de Arquivos;6;6,00;6;exato
+2026-10-03;Uso de computador;1;3,00;1;exato
+2026-10-05;Bomboniere e bebidas;1;4,00;1;exato
+2026-10-05;Consulta simples;1;5,00;1;exato
+2026-10-05;Currículo;2;30,00;2;exato
+2026-10-05;Edição de arquivo;1;5,00;1;exato
+2026-10-05;Envelope;2;4,00;2;exato
+2026-10-05;Envio de arquivos;2;10,00;2;exato
+2026-10-05;Foto 3x4;1;15,00;1;exato
+2026-10-05;Impressão Colorida;9;18,00;9;exato
+2026-10-05;Impressão P&B;75;64,75;15;exato
+2026-10-05;Recebimento de Arquivos;10;10,00;10;exato
+2026-10-05;Resultado de exame;2;10,00;2;exato
+2026-10-05;Scanner;5;7,50;2;exato
+2026-10-05;Suporte ao cliente;2;6,00;2;exato
+2026-10-05;Transferência de titularidade;1;20,00;1;exato
+2026-10-05;Uso de computador;7;27,00;7;exato
+2026-10-06;Consulta simples;1;5,00;1;exato
+2026-10-06;Currículo;3;45,00;3;exato
+2026-10-06;Envelope;6;12,00;6;exato
+2026-10-06;Envio de arquivos;1;5,00;1;exato
+2026-10-06;Foto 3x4;1;15,00;1;exato
+2026-10-06;INSS (Meu INSS);1;35,00;1;exato
+2026-10-06;Impressão Colorida;2;4,00;2;exato
+2026-10-06;Impressão P&B;87;87,00;19;exato
+2026-10-06;Impressão em papel especial;1;6,00;1;exato
+2026-10-06;Outros: Atestado de Bons Antecedentes;1;10,00;1;exato
+2026-10-06;Outros: Cabo Kaidi Lightning iPhone 1m;1;19,00;1;exato
+2026-10-06;Outros: Guia de Pagamento Ambiental;5;50,00;1;exato
+2026-10-06;Recebimento de Arquivos;13;13,00;13;exato
+2026-10-06;Scanner;2;3,00;2;exato
+2026-10-06;Suporte ao cliente;1;3,00;1;exato
+2026-10-06;Uso de computador;5;24,50;5;exato
+2026-10-08;Bomboniere e bebidas;3;10,00;3;exato
+2026-10-08;Edição de arquivo;2;13,00;2;exato
+2026-10-08;Envelope;4;8,00;4;exato
+2026-10-08;Envio de arquivos;2;10,00;2;exato
+2026-10-08;Foto 3x4;6;84,00;3;exato
+2026-10-08;Impressão Colorida;35;86,00;5;exato
+2026-10-08;Impressão P&B;207;199,25;62;exato
+2026-10-08;Outros: Agua com gás 500ml;1;4,00;1;exato
+2026-10-08;Outros: Imigrante Chekilist;1;50,00;1;exato
+2026-10-08;Plastificação;11;80,00;2;exato
+2026-10-08;Recebimento de Arquivos;20;20,00;20;exato
+2026-10-08;Scanner;5;7,50;2;exato
+2026-10-08;Suporte ao cliente;4;11,00;4;exato
+2026-10-08;Uso de computador;9;30,50;9;exato
+2026-10-09;Bomboniere e bebidas;3;13,00;2;exato
+2026-10-09;Currículo;3;40,00;2;exato
+2026-10-09;Digitação;3;45,00;1;exato
+2026-10-09;Envelope;4;8,00;3;exato
+2026-10-09;Envio de arquivos;2;10,00;2;exato
+2026-10-09;Foto 3x4;3;45,00;2;exato
+2026-10-09;INSS (Meu INSS);1;40,00;1;exato
+2026-10-09;Impressão Colorida;12;24,00;4;exato
+2026-10-09;Impressão P&B;84;78,00;25;exato
+2026-10-09;Impressão em papel especial;1;8,00;1;exato
+2026-10-09;Outros: Criação de Email/Facebook/instagran;1;15,00;1;exato
+2026-10-09;Plastificação;1;5,00;1;exato
+2026-10-09;Recebimento de Arquivos;15;15,00;15;exato
+2026-10-09;Scanner;1;1,50;1;exato
+2026-10-09;Suporte ao cliente;2;6,00;2;exato
+2026-10-09;Uso de computador;3;32,50;3;exato
+2026-10-10;Envelope;1;2,00;1;exato
+2026-10-10;Envio de arquivos;1;20,00;1;exato
+2026-10-10;Impressão P&B;34;29,75;4;exato
+2026-10-10;Impressão em papel especial;2;16,00;1;exato
+2026-10-10;Recebimento de Arquivos;2;2,00;2;exato
+2026-10-10;Suporte ao cliente;1;3,00;1;exato
+2026-10-13;Bomboniere e bebidas;4;13,00;4;exato
+2026-10-13;Currículo;3;35,00;3;exato
+2026-10-13;Envio de arquivos;1;5,00;1;exato
+2026-10-13;Foto 3x4;1;15,00;1;exato
+2026-10-13;Impressão Colorida;5;10,00;3;exato
+2026-10-13;Impressão P&B;90;83,75;24;exato
+2026-10-13;Manutenção de celular;2;65,00;2;exato
+2026-10-13;Outros: Agendamento UAI;1;15,00;1;exato
+2026-10-13;Outros: Tim Promoção;1;40,00;1;exato
+2026-10-13;Plastificação;5;35,00;4;exato
+2026-10-13;Recebimento de Arquivos;15;15,00;14;exato
+2026-10-13;Scanner;9;13,50;1;exato
+2026-10-13;Suporte ao cliente;2;6,00;2;exato
+2026-10-13;Uso de computador;7;24,50;7;exato
+2026-10-14;Bomboniere e bebidas;5;19,00;4;exato
+2026-10-14;Consulta simples;1;5,00;1;exato
+2026-10-14;Currículo;1;10,00;1;exato
+2026-10-14;Detran;4;65,00;3;exato
+2026-10-14;Digitação;2;35,00;2;exato
+2026-10-14;Envio de arquivos;2;10,00;2;exato
+2026-10-14;Impressão Colorida;15;31,00;9;exato
+2026-10-14;Impressão P&B;144;110,50;18;exato
+2026-10-14;Impressão em papel especial;3;22,00;2;exato
+2026-10-14;Outros: Agua com gás 500ml;1;4,00;1;exato
+2026-10-14;Outros: Agua sem Gás 500ml;2;6,00;2;exato
+2026-10-14;Outros: Baixar Playlist 100;1;25,00;1;exato
+2026-10-14;Outros: Cadastro Simples site;1;15,00;1;exato
+2026-10-14;Plastificação;2;16,00;2;exato
+2026-10-14;Recebimento de Arquivos;10;10,00;10;exato
+2026-10-14;Resultado de exame;1;5,00;1;exato
+2026-10-14;Scanner;13;19,50;2;exato
+2026-10-14;Suporte ao cliente;1;3,00;1;exato
+2026-10-14;Uso de computador;6;28,00;6;exato
+2026-10-15;Bomboniere e bebidas;1;3,00;1;exato
+2026-10-15;Contrato de locação;1;38,00;1;exato
+2026-10-15;Currículo;5;75,00;5;exato
+2026-10-15;Impressão P&B;69;64,50;23;exato
+2026-10-15;Outros: Agua com gás 500ml;1;4,00;1;exato
+2026-10-15;Outros: Consulta Processual;2;50,00;1;exato
+2026-10-15;Recebimento de Arquivos;12;12,00;12;exato
+2026-10-15;Suporte ao cliente;1;3,00;1;exato
+2026-10-15;Uso de computador;5;25,00;5;exato
+2026-10-16;Bomboniere e bebidas;2;8,00;2;exato
+2026-10-16;Consulta SPC/crédito;1;30,00;1;exato
+2026-10-16;Edição de arquivo;2;12,00;2;exato
+2026-10-16;Envelope;1;2,00;1;exato
+2026-10-16;Envio de arquivos;1;5,00;1;exato
+2026-10-16;Impressão Colorida;3;8,00;2;exato
+2026-10-16;Impressão P&B;154;122,00;16;exato
+2026-10-16;Plastificação;1;5,00;1;exato
+2026-10-16;Recebimento de Arquivos;7;7,00;7;exato
+2026-10-16;Scanner;10;15,00;1;exato
+2026-10-16;Uso de computador;6;32,00;6;exato
+2026-10-17;Envelope;2;4,00;2;exato
+2026-10-17;Impressão P&B;30;19,00;4;exato
+2026-10-17;Impressão em papel especial;1;7,00;1;exato
+2026-10-17;Recebimento de Arquivos;1;1,00;1;exato
+2026-10-17;Uso de computador;1;3,50;1;exato

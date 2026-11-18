@@ -252,6 +252,17 @@ function criarPostDaPauta(diaIndice) {
   const id = `pauta-${getSemanaAnoChave()}-${diaIndice}`;
   let post = AppState.posts.find(item => item.id === id);
   if (!post) {
+    // Seleciona a imagem temática oficial da biblioteca Speed
+    let imagemInicial = '';
+    const foco = (dia.foco_produto || '').toLowerCase();
+    if (foco.includes('fgts')) imagemInicial = 'promo-fgts-204520.png';
+    else if (foco.includes('consignado')) imagemInicial = 'promo-consignado-204504.png';
+    else if (foco.includes('portabilidade')) imagemInicial = 'promo-portabilidade-204534.png';
+    else if (foco.includes('avaliaç')) imagemInicial = 'promo-avaliacoes-204548.png';
+    else if (foco.includes('cartão') || foco.includes('cartao') || foco.includes('limite')) imagemInicial = 'promo-cartao-limite-091634.png';
+    else if (foco.includes('refinanciamento')) imagemInicial = 'promo-refinanciamento-091642.png';
+    else if (dia.post_fila_relacionado) imagemInicial = `${dia.post_fila_relacionado}.png`;
+
     post = {
       id,
       calendarioDiaNome: dia.dia_nome,
@@ -263,7 +274,7 @@ function criarPostDaPauta(diaIndice) {
       legenda_ig: dia.social.legenda_pronta,
       legenda_fb: dia.social.legenda_pronta,
       status: 'rascunho',
-      imagem: ''
+      imagem: imagemInicial
     };
     AppState.posts.unshift(post);
     salvarPostsLocais();
@@ -287,7 +298,7 @@ function renderPautaDeHoje() {
   if (!container || !window.SPEED_CALENDARIO_DATA) return;
 
   const diaHoje = getDiaAtualIndice();
-  const diaData = window.SPEED_CALENDARIO_DATA.dias.find(d => d.dia_indice === diaHoje);
+  const diaData = window.SPEED_CALENDARIO_DATA.dias.find(d => d.dia_indice === diaHoje) || (window.SPEED_CALENDARIO_DATA.dias && window.SPEED_CALENDARIO_DATA.dias[0]);
   if (!diaData) return;
 
   const progKeySocial = `dia_${diaData.dia_indice}_social`;
@@ -295,27 +306,33 @@ function renderPautaDeHoje() {
   const isSocialDone  = !!(CalendarioState.progresso && CalendarioState.progresso[progKeySocial]);
   const isGmbDone     = !!(CalendarioState.progresso && CalendarioState.progresso[progKeyGmb]);
 
-  container.innerHTML = `
-    <div class="bg-gradient-to-r from-green-900 via-green-800 to-green-700 rounded-2xl p-5 text-white shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="bg-yellow-400 text-gray-900 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Pauta de Hoje • ${diaData.dia_nome}</span>
-          <span class="text-xs text-green-200">${diaData.foco_produto}</span>
-        </div>
-        <h4 class="text-base sm:text-lg font-bold mt-1 text-white leading-snug">
-          "${diaData.social.manchete_imagem}"
-        </h4>
-        <p class="text-xs text-green-100 mt-1 max-w-2xl leading-relaxed">
-          <strong>Instagram/Face:</strong> ${diaData.social.tipo_formato} às ${diaData.social.horario_recomendado} • 
-          <strong>Google Meu Negócio:</strong> ${diaData.gmb.tipo_post_gmb} às ${diaData.gmb.horario_recomendado}
-        </p>
-      </div>
+  // Domingo não tem pauta: o painel já mostra a de segunda.
+  const quando = new Date().getDay() === 0 ? `Amanhã · ${diaData.dia_nome}` : `Hoje · ${diaData.dia_nome}`;
+  const esc = typeof escaparHtml === 'function' ? escaparHtml : v => String(v ?? '');
+  // Horário curto na linha ("09h00 às 11h00"); a explicação entre parênteses fica no title.
+  const horaCurta = h => String(h || '').split('(')[0].trim();
+  const canal = (key, feito, icone, nome, formato, horario) => `
+        <li class="ov-canal ${feito ? 'ov-canal-feito' : ''}">
+          <i class="${icone} ov-canal-icone" aria-hidden="true"></i>
+          <span class="ov-canal-texto"><strong>${nome}</strong><span title="${esc(horario)}">${esc(formato)} · ${esc(horaCurta(horario))}</span></span>
+          <button type="button" onclick="toggleProgressoCalendario('${key}')" class="ov-canal-feito-btn" aria-pressed="${feito}">
+            <i class="fas ${feito ? 'fa-check-circle' : 'fa-circle'}" aria-hidden="true"></i>${feito ? 'Feito' : 'Marcar feito'}
+          </button>
+        </li>`;
 
-      <div class="flex items-center gap-2 shrink-0">
-        <button onclick="switchTab('calendario')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 text-xs font-bold py-2.5 px-4 rounded-xl transition shadow flex items-center gap-1.5 whitespace-nowrap">
-          <i class="fas fa-calendar-alt"></i> Ver Calendário Completo
-        </button>
-      </div>
+  container.innerHTML = `
+    <div class="ov-pauta-cabeca">
+      <span class="ov-pauta-dia">${esc(quando)}</span>
+      <span class="ov-pauta-foco">${esc(diaData.foco_produto)}</span>
     </div>
+    <p class="ov-pauta-tema">Tema do dia</p>
+    <h2 class="ov-pauta-manchete">${esc(diaData.social.manchete_imagem)}</h2>
+    <ul class="ov-canais">
+      ${canal(progKeySocial, isSocialDone, 'fab fa-instagram', 'Instagram e Facebook', diaData.social.tipo_formato, diaData.social.horario_recomendado)}
+      ${canal(progKeyGmb, isGmbDone, 'fab fa-google', 'Ficha do Google', diaData.gmb.tipo_post_gmb, diaData.gmb.horario_recomendado)}
+    </ul>
+    <button type="button" onclick="switchTab('calendario')" class="ov-pauta-acao">
+      <i class="fas fa-calendar-alt" aria-hidden="true"></i> Abrir a pauta completa (legenda e arte)
+    </button>
   `;
 }

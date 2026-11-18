@@ -99,7 +99,7 @@ function showAuth(setup = false, pendingLocalSetup = false) {
 function showWorkspace(user) {
   $("#authScreen").hidden = true; $("#workspace").hidden = false;
   $("#operatorName").textContent = user.name;
-  for (const el of document.querySelectorAll('[data-view="settings"],[data-view="users"]')) el.hidden = user.role !== "admin";
+  for (const el of document.querySelectorAll('[data-view="settings"],[data-view="users"],#marketingSubMenu')) el.hidden = user.role !== "admin";
   $("#addMachineButton").hidden = user.role !== "admin";
   $("#downloadInstallerButton").hidden = user.role !== "admin";
   $("#addProductButton").hidden = user.role !== "admin";
@@ -4060,7 +4060,12 @@ $("#marketingSync")?.addEventListener("click", async event => {
   try {
     const { result } = await api("/api/marketing/sync", {});
     const frame = $("#marketingFrame");
-    if (result.copied.length && !frame.hidden) frame.setAttribute("src", frame.getAttribute("src"));
+    if (result.copied.length && !frame.hidden) {
+      const activeSubBtn = $("#marketingSubMenu .sub-nav-btn.active");
+      const currentTab = activeSubBtn ? activeSubBtn.dataset.tab : "";
+      const baseSrc = (frame.getAttribute("src") || "marketing/index.html").split("#")[0];
+      frame.setAttribute("src", currentTab ? `${baseSrc}#${currentTab}` : baseSrc);
+    }
     toast(result.errors.length ? `Sincronizado com ${result.errors.length} erro(s): ${result.errors[0]}` : result.copied.length ? `Marketing atualizado: ${result.copied.length} arquivo(s).` : "Marketing já estava em dia.");
   } catch (cause) { toast(cause.message); }
   finally { btn.disabled = false; btn.textContent = "Sincronizar"; }
@@ -4194,8 +4199,10 @@ function render() {
 }
 
 // ---- Financeira: funil de contatos da Speed Financeira ----
-let leadData = null;
+let leadData = null, waData = null;
 async function loadLeads() {
+  // Toques no WhatsApp do site (contagem anônima do próprio site); falha aqui não impede o funil.
+  try { waData = (await api("/api/wa-cliques")).wa; } catch { waData = null; }
   try { leadData = await api("/api/leads"); renderLeads(); } catch (cause) { setHtml("#leadBoard", `<p class="muted">${html(cause.message)}</p>`); }
 }
 function renderLeads() {
@@ -4215,6 +4222,26 @@ function renderLeads() {
     metric(String(leads.filter(l => !["won", "lost"].includes(l.stage)).length), "Em andamento") +
     metric(String(wonMonth.length), `Contratos no mês · conversão ${conv}%`, wonMonth.length ? "free" : "") +
     metric(currency(wonMonth.reduce((s, l) => s + (l.commissionCents || 0), 0)), "Comissão no mês", wonMonth.length ? "free" : ""));
+  // Por cidade: quem chegou pelas páginas de cidade e guias do site, e quanto rendeu.
+  // Junta os toques no WhatsApp dos últimos 30 dias (contados pelo site) com os contatos registrados no funil.
+  const novaCidade = () => ({ cliques: 0, contatos: 0, site: 0, contratos: 0, comissao: 0 });
+  const porCidade = new Map();
+  for (const w of waData?.cidades || []) porCidade.set(w.cidade, { ...novaCidade(), cliques: w.cliques });
+  for (const l of leads.filter(l => l.city)) {
+    const c = porCidade.get(l.city) || novaCidade();
+    c.contatos++; if (l.source === "Site") c.site++;
+    if (l.stage === "won") { c.contratos++; c.comissao += l.commissionCents || 0; }
+    porCidade.set(l.city, c);
+  }
+  const linhas = [...porCidade.entries()].sort((a, b) => b[1].cliques - a[1].cliques || b[1].contatos - a[1].contatos);
+  const quando = waData?.fetchedAt ? `atualizado em ${new Date(waData.fetchedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}` : "ainda sem leitura";
+  const aviso = !waData ? "" : waData.lastError ? `<p class="muted">Contagem do site: ${html(waData.lastError.message)}</p>`
+    : !waData.configured ? `<p class="muted">Contagem do site desligada: falta a chave do contador no servidor.</p>`
+    : `<p class="muted">Toques no botão do WhatsApp do site nos últimos ${waData.dias} dias: ${waData.total} (${quando}). Conta toques, não conversas: compare com os contatos registrados.</p>`;
+  const paginas = (waData?.paginas || []).slice(0, 10);
+  setHtml("#leadCities", (linhas.length || aviso) ? `<h3>Por cidade: toques no WhatsApp do site e contatos</h3>${aviso}` +
+    (linhas.length ? `<div class="tableWrap"><table class="dataTable"><thead><tr><th>Cidade</th><th>Toques no WhatsApp (${waData?.dias || 30} dias)</th><th>Contatos</th><th>Pelo site</th><th>Contratos</th><th>Comissão</th></tr></thead><tbody>${linhas.map(([cidade, c]) => `<tr><td>${html(cidade)}</td><td>${c.cliques}</td><td>${c.contatos}</td><td>${c.site}</td><td>${c.contratos}</td><td>${currency(c.comissao)}</td></tr>`).join("")}</tbody></table></div>` : "") +
+    (paginas.length ? `<h3 class="spacedTop">Páginas com mais toques no WhatsApp</h3><div class="tableWrap"><table class="dataTable"><thead><tr><th>Página</th><th>Tipo</th><th>Cidade</th><th>Toques</th></tr></thead><tbody>${paginas.map(p => `<tr><td><a href="https://speedfinanceira.com.br${html(p.caminho)}" target="_blank" rel="noopener">${html(p.caminho)}</a></td><td>${html(p.tipo)}</td><td>${html(p.cidade)}</td><td>${p.cliques}</td></tr>`).join("")}</tbody></table></div>` : "") : "");
   const daysAgo = at => Math.max(0, Math.floor((Date.now() - Date.parse(at)) / 86400000));
   const wa = phone => { const d = String(phone || "").replace(/\D/g, ""); return d ? `https://wa.me/${d.length <= 11 ? "55" + d : d}` : ""; };
   setHtml("#leadBoard", leadData.stages.map(stage => {
@@ -4224,7 +4251,7 @@ function renderLeads() {
       <div class="leadColHead"><strong>${html(stage.label)}</strong><span>${cards.length}${stage.key === "won" && total ? ` · ${currency(total)}` : ""}</span></div>
       ${cards.map(l => `<article class="leadCard">
         <div class="leadCardTop"><strong>${html(l.name)}</strong><span class="planTag">${html(l.product)}</span></div>
-        <div class="leadMeta">${html(l.source)}${l.sourceDetail ? ` · ${html(l.sourceDetail)}` : ""}${l.campaign ? ` · <code>${html(l.campaign)}</code>` : ""}</div>
+        <div class="leadMeta">${html(l.source)}${l.city ? ` · ${html(l.city)}` : ""}${l.sourceDetail ? ` · ${html(l.sourceDetail)}` : ""}${l.campaign ? ` · <code>${html(l.campaign)}</code>` : ""}</div>
         <div class="leadMeta">${wa(l.phone) ? `<a href="${wa(l.phone)}" target="_blank" rel="noopener">${html(l.phone)}</a>` : html(l.phone)} · ${daysAgo(l.stageAt || l.createdAt)} dia(s) nesta etapa</div>
         ${l.notes ? `<div class="leadNotes">${html(l.notes)}</div>` : ""}
         ${l.stage === "won" ? `<div class="leadWon">Comissão ${currency(l.commissionCents)}${l.contractCents ? ` · contrato ${currency(l.contractCents)}` : ""}</div>` : ""}
@@ -4238,11 +4265,17 @@ function openLeadModal(prefill = {}) {
   const products = leadData?.products || ["Consignado INSS", "Antecipação FGTS", "Consignado CLT", "Portabilidade", "Refinanciamento", "Financiamento de veículos"];
   const sources = leadData?.sources || ["Serviço da loja", "Indicação", "Campanha", "Passou na frente", "WhatsApp", "Instagram", "Facebook", "Google", "Cliente antigo", "Outro"];
   const camps = (state.campaigns || []);
+  const cities = leadData?.cities || [];
+  // Sem escolha ("pela mensagem"), o servidor tira produto, origem, cidade e guia da mensagem colada do WhatsApp.
+  const auto = prefill.source ? "" : "pela mensagem";
   openModal("Novo contato da financeira",
     field("name", "Nome", "text", prefill.name || "", "required") + field("phone", "Telefone / WhatsApp", "tel", prefill.phone || "", "required") +
-    select("product", "Interesse", products.map(p => [p, p]), prefill.product || products[0]) +
-    select("source", "De onde veio", sources.map(s => [s, s]), prefill.source || "Passou na frente") +
-    field("sourceDetail", "Detalhe (ex.: serviço feito na loja, quem indicou)", "text", prefill.sourceDetail || "") +
+    `<label><span>Primeira mensagem do cliente no WhatsApp (cole aqui; a do site já diz a cidade e o guia)</span><textarea name="message" rows="3" maxlength="600" placeholder="Ex.: Olá, sou de Três Pontas e quero simular um empréstimo."></textarea></label>` +
+    select("product", "Interesse", [...(auto ? [["", "Pela mensagem (ou Consignado INSS)"]] : []), ...products.map(p => [p, p])], prefill.product || "") +
+    select("source", "De onde veio", [...(auto ? [["", "Pela mensagem (ou Outro)"]] : []), ...sources.map(s => [s, s])], prefill.source || "") +
+    field("city", "Cidade do cliente", "text", prefill.city || "", `list="leadCityList" autocomplete="off"`) +
+    `<datalist id="leadCityList">${cities.map(c => `<option value="${html(c)}">`).join("")}</datalist>` +
+    field("sourceDetail", "Detalhe (ex.: serviço feito na loja, quem indicou, guia do site)", "text", prefill.sourceDetail || "") +
     (camps.length ? select("campaign", "Campanha", [["", "Nenhuma"], ...camps.map(c => [c.code, `${c.code} · ${c.name}`])], "") : "") +
     field("notes", "Observações (benefício, margem, banco atual)", "text", ""),
     async values => { await api("/api/leads", { ...values, clientId: prefill.clientId }); toast("Contato registrado na financeira."); if (currentView === "leads") await loadLeads(); }, "Registrar");
@@ -4400,7 +4433,11 @@ function view(name) {
   currentView = name;
   for (const section of document.querySelectorAll(".view")) section.hidden = section.id !== `view-${name}`;
   for (const button of document.querySelectorAll("[data-view]")) button.classList.toggle("active", button.dataset.view === name);
-  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação", leads: "Financeira" };
+  const mktSub = $("#marketingSubMenu");
+  if (mktSub) mktSub.classList.toggle("open", name === "marketing");
+  // O submenu abre no fim do menu (que rola por dentro): traz os itens dele para a vista.
+  if (mktSub && name === "marketing") requestAnimationFrame(() => mktSub.scrollIntoView({ block: "nearest" }));
+  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação", leads: "Financeira", crlv: "Consultas & CRLV" };
   const label = titles[name] || "Painel";
   $("#pageTitle").textContent = label;
   document.title = `${label} · Nexcafé`;
@@ -4409,6 +4446,7 @@ function view(name) {
   if (name === "leads") loadLeads();
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
+  if (name === "crlv") loadCrlvStatus();
   if (name === "marketing" && !$("#marketingResults").hidden) loadMarketingResults();
   if (name === "reports") loadReport();
   if (name === "cash") {
@@ -4508,6 +4546,42 @@ async function loadReport(period = null, customStart = null, customEnd = null) {
 }
 
 document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => view(button.dataset.view)));
+
+document.querySelectorAll("#marketingSubMenu [data-mkt-tab]").forEach(button => {
+  button.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const tab = button.dataset.mktTab;
+    if (currentView !== "marketing") view("marketing");
+    document.querySelectorAll("#marketingSubMenu [data-mkt-tab]").forEach(b => b.classList.toggle("active", b === button));
+    const frame = $("#marketingFrame");
+    const results = $("#marketingResults");
+    if (frame && results) {
+      document.querySelectorAll("#marketingTabs [data-mk]").forEach(b => b.classList.toggle("active", b.dataset.mk === "/marketing/"));
+      results.hidden = true;
+      frame.hidden = false;
+      // Painel ainda não carregado (ou outra página no quadro): abre já na aba pedida.
+      const loaded = /\/marketing\/(#.*)?$/.test(frame.getAttribute("src") || "");
+      if (!loaded) { frame.setAttribute("src", `/marketing/#${tab}`); return; }
+      try {
+        if (frame.contentWindow && typeof frame.contentWindow.switchTab === "function") {
+          frame.contentWindow.switchTab(tab);
+        } else {
+          frame.contentWindow.postMessage({ type: "switchTab", tab }, "*");
+        }
+      } catch (err) {
+        frame.src = `/marketing/#${tab}`;
+      }
+    }
+  });
+});
+
+window.addEventListener("message", event => {
+  if (event.data && event.data.type === "mktTabChanged") {
+    document.querySelectorAll("#marketingSubMenu [data-mkt-tab]").forEach(b => {
+      b.classList.toggle("active", b.dataset.mktTab === event.data.tab);
+    });
+  }
+});
 $("#refreshButton").addEventListener("click", loadState);
 
 $("#powerAllButton").addEventListener("click", async () => {
@@ -5571,3 +5645,1364 @@ $("#printRoute").addEventListener("submit", async event => {
 init();
 schedulePoll();
 setInterval(tickClocks, 1000);
+
+// =========================================================================
+// MÓDULO OFICIAL: CENTRAL DE CONSULTAS & CRLV (SPEED FINANCEIRA & LAN HOUSE)
+// Catálogo completo com 24 serviços oficiais integrados à APIBrasil
+// Edição Supreme Enterprise: Grid/Table View, Omni-Search com Ctrl+K,
+// Dual Print (A4 Notarial + Cupom 80mm) e Exportação CSV
+// =========================================================================
+
+let lastCrlvIssued = null;
+let lastVeiculoResult = null;
+let lastFipeResult = null;
+let lastCpfResult = null;
+let lastCnpjResult = null;
+
+let crlvHistoryFullList = [];
+let crlvCurrentFilter = "all";
+let crlvSearchQuery = "";
+let activeVeiculoTipo = "veiculo";
+let crlvCurrentViewMode = "grid";
+
+// 1. Navegação de Categorias e Catálogo dos 24 Serviços
+const CRLV_CAT_MAP = {
+  // 8 Veículos
+  crlv: "veiculos", "dono-contatos": "veiculos", dono: "veiculos", veiculo: "veiculos", fipe: "veiculos", gravame: "veiculos",
+  leilao: "veiculos", multas: "veiculos", proprietarios: "veiculos", recall: "veiculos",
+  // 6 PF
+  cpf: "pf", "score-pf": "pf", "protesto-pf": "pf", antecedentes: "pf", "cnd-pf": "pf", beneficios: "pf",
+  // 6 PJ
+  cnpj: "pj", simples: "pj", sintegra: "pj", qsa: "pj", "score-pj": "pj", "protesto-pj": "pj",
+  // 4 Utilidades
+  obito: "util", eleitoral: "util", cep: "util", fgts: "util"
+};
+
+function selectCrlvCategory(catName, autoService = null) {
+  document.querySelectorAll("[data-crlv-cat]").forEach(b => {
+    b.classList.toggle("active", b.dataset.crlvCat === catName);
+  });
+  document.querySelectorAll(".crlvCatBlock").forEach(block => {
+    block.hidden = block.id !== `crlvCatBlock-${catName}`;
+  });
+
+  const defaultServices = { veiculos: "crlv", pf: "cpf", pj: "cnpj", util: "obito" };
+  const targetService = autoService || defaultServices[catName] || "crlv";
+  selectCrlvService(targetService, false);
+}
+
+function selectCrlvService(target, focusInput = false) {
+  // Sincroniza cards de serviço e linhas da tabela
+  document.querySelectorAll("[data-service-trigger]").forEach(c => {
+    c.classList.toggle("active", c.dataset.serviceTrigger === target);
+  });
+
+  // Garante que o bloco da categoria correta está visível
+  const cat = CRLV_CAT_MAP[target] || "veiculos";
+  document.querySelectorAll("[data-crlv-cat]").forEach(b => {
+    b.classList.toggle("active", b.dataset.crlvCat === cat);
+  });
+  document.querySelectorAll(".crlvCatBlock").forEach(block => {
+    block.hidden = block.id !== `crlvCatBlock-${cat}`;
+  });
+
+  // Mapeia para o painel de formulário apropriado
+  let activePanel = "crlv";
+  if (target === "crlv") {
+    activePanel = "crlv";
+  } else if (["veiculo", "dono-contatos", "dono", "gravame", "leilao", "multas", "proprietarios", "recall"].includes(target)) {
+    activePanel = "veiculo";
+    activeVeiculoTipo = target;
+    const labels = {
+      veiculo: "Dados do Veículo (Agregados)",
+      "dono-contatos": "Dono e Contatos (Localizador Veicular)",
+      dono: "Dono e Contatos (Localizador Veicular)",
+      gravame: "Restrições Financeiras & Gravame (SNG)",
+      leilao: "Histórico de Leilão, Sinistro & PT",
+      multas: "Multas & Infrações Renainf",
+      proprietarios: "Histórico de Proprietários",
+      recall: "Alerta de Recall da Montadora"
+    };
+    const titleEl = $("#subtab-veiculo h3") || $("#subtab-veiculo .crlvCardTopTitle h3");
+    if (titleEl) titleEl.textContent = labels[target] || "Consulta Veicular";
+    const btnEl = $("#veiculoSubmitBtn");
+    if (btnEl) btnEl.textContent = target === "dono-contatos" || target === "dono" ? "Localizar Dono e Contatos (R$ 2,90)" : `Consultar ${labels[target] || "Veículo"}`;
+  } else if (target === "fipe") {
+    activePanel = "fipe";
+  } else if (["cpf", "score-pf", "protesto-pf", "antecedentes", "cnd-pf", "beneficios"].includes(target)) {
+    activePanel = "cpf";
+    const labelsPf = {
+      cpf: "Consulta de CPF (Receita Federal)",
+      "score-pf": "Consulta CPF + Score de Crédito PF",
+      "protesto-pf": "Consulta Nacional de Protestos PF (Cartórios)",
+      antecedentes: "Certidão Negativa de Antecedentes Criminais",
+      "cnd-pf": "Certidão Negativa de Débitos Federais (PGFN)",
+      beneficios: "Consulta Benefícios Previdenciários (INSS)"
+    };
+    const titlePf = $("#subtab-cpf h3") || $("#subtab-cpf .crlvCardTopTitle h3");
+    if (titlePf) titlePf.textContent = labelsPf[target] || "Consulta de CPF";
+  } else if (["cnpj", "simples", "sintegra", "qsa", "score-pj", "protesto-pj"].includes(target)) {
+    activePanel = "cnpj";
+    const labelsPj = {
+      cnpj: "Cartão CNPJ Oficial (Receita Federal)",
+      simples: "Consulta Simples Nacional & MEI",
+      sintegra: "Inscrição Estadual & Cadastro Sintegra",
+      qsa: "Quadro de Sócios e Administradores (QSA)",
+      "score-pj": "Consulta Cadastral PJ + Score de Crédito",
+      "protesto-pj": "Consulta Nacional de Protestos PJ (Cartórios)"
+    };
+    const titlePj = $("#subtab-cnpj h3") || $("#subtab-cnpj .crlvCardTopTitle h3");
+    if (titlePj) titlePj.textContent = labelsPj[target] || "Consulta de CNPJ";
+  } else if (["obito", "eleitoral", "cep", "fgts"].includes(target)) {
+    if (target === "cep") {
+      activePanel = "cnpj";
+    } else {
+      activePanel = "cpf";
+    }
+  }
+
+  // Alterna painel do formulário
+  document.querySelectorAll(".crlvTabPanel").forEach(p => {
+    p.hidden = p.id !== `subtab-${activePanel}`;
+  });
+
+  // Sincroniza subtabs técnicas
+  document.querySelectorAll(".crlvSubTabs [data-subtab]").forEach(b => {
+    b.classList.toggle("active", b.dataset.subtab === activePanel);
+  });
+
+  if (focusInput) {
+    const inputMap = {
+      crlv: "#crlvPlaca",
+      veiculo: "#veiculoPlaca",
+      fipe: "#fipePlaca",
+      cpf: "#cpfDoc",
+      cnpj: "#cnpjDoc"
+    };
+    const input = $(inputMap[activePanel]);
+    if (input) {
+      setTimeout(() => {
+        input.focus();
+        input.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 50);
+    }
+  }
+}
+
+// Alternador de Visualização (Cards vs Tabela)
+function setCrlvViewMode(mode) {
+  crlvCurrentViewMode = mode;
+  const isGrid = mode === "grid";
+  document.querySelectorAll(".crlvDisplayGrid").forEach(el => el.hidden = !isGrid);
+  document.querySelectorAll(".crlvDisplayTable").forEach(el => el.hidden = isGrid);
+  $("#crlvViewGridBtn")?.classList.toggle("active", isGrid);
+  $("#crlvViewTableBtn")?.classList.toggle("active", !isGrid);
+}
+
+$("#crlvViewGridBtn")?.addEventListener("click", () => setCrlvViewMode("grid"));
+$("#crlvViewTableBtn")?.addEventListener("click", () => setCrlvViewMode("table"));
+
+// Listeners de Categoria e Serviços
+document.querySelectorAll("[data-crlv-cat]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    selectCrlvCategory(btn.dataset.crlvCat);
+  });
+});
+
+document.querySelectorAll("[data-service-trigger]").forEach(card => {
+  card.addEventListener("click", () => {
+    selectCrlvService(card.dataset.serviceTrigger, true);
+  });
+});
+
+document.querySelectorAll(".crlvSubTabs [data-subtab]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    selectCrlvService(btn.dataset.subtab, true);
+  });
+});
+
+// Atalho de Teclado Global: Ctrl+K ou / para focar no Omni-Search
+window.addEventListener("keydown", e => {
+  if ((e.ctrlKey && e.key.toLowerCase() === "k") || (e.key === "/" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA")) {
+    const omni = $("#crlvOmniInput");
+    if (omni && !$("#view-crlv").hidden) {
+      e.preventDefault();
+      omni.focus();
+      omni.select();
+    }
+  }
+});
+
+// 2. Omni-Search Inteligente com Filtro de Catálogo em Tempo Real
+const crlvOmniInput = $("#crlvOmniInput");
+const crlvOmniSuggestions = $("#crlvOmniSuggestions");
+const crlvSearchSummary = $("#crlvSearchSummary");
+
+if (crlvOmniInput) {
+  crlvOmniInput.addEventListener("input", () => {
+    const raw = crlvOmniInput.value.trim();
+    const cleanUpper = raw.toUpperCase().replace(/[^A-Z0-9]/g, "");
+
+    // Filtro instantâneo no catálogo por texto
+    if (raw.length >= 2 && !/^[A-Z0-9]{7}$/.test(cleanUpper) && !/^\d{11}$/.test(cleanUpper) && !/^\d{14}$/.test(cleanUpper)) {
+      const q = raw.toLowerCase();
+      let matchCount = 0;
+      document.querySelectorAll("[data-search-terms]").forEach(el => {
+        const terms = el.dataset.searchTerms || "";
+        const matches = terms.includes(q);
+        if (matches) matchCount++;
+        if (matches) {
+          el.removeAttribute("data-search-hidden");
+        } else {
+          el.setAttribute("data-search-hidden", "true");
+        }
+      });
+      if (crlvSearchSummary) {
+        crlvSearchSummary.hidden = false;
+        crlvSearchSummary.textContent = `${matchCount} serviço(s) correspondente(s) a "${raw}"`;
+      }
+    } else {
+      document.querySelectorAll("[data-search-hidden]").forEach(el => el.removeAttribute("data-search-hidden"));
+      if (crlvSearchSummary) crlvSearchSummary.hidden = true;
+    }
+
+    if (!cleanUpper) {
+      if (crlvOmniSuggestions) {
+        crlvOmniSuggestions.hidden = true;
+        crlvOmniSuggestions.innerHTML = "";
+      }
+      return;
+    }
+
+    const suggestions = [];
+
+    // Detecção de Placa (7 chars)
+    if (/^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(cleanUpper) || (cleanUpper.length === 7 && /^[A-Z0-9]+$/.test(cleanUpper))) {
+      suggestions.push({
+        label: `Emitir CRLV-e Digital da Placa ${cleanUpper}`,
+        badge: "CRLV-e A4",
+        action: "crlv",
+        val: cleanUpper
+      });
+      suggestions.push({
+        label: `Consultar Dados do Veículo (Agregados) da Placa ${cleanUpper}`,
+        badge: "Agregados",
+        action: "veiculo",
+        val: cleanUpper
+      });
+      suggestions.push({
+        label: `Cotação Tabela FIPE da Placa ${cleanUpper}`,
+        badge: "FIPE",
+        action: "fipe",
+        val: cleanUpper
+      });
+      suggestions.push({
+        label: `Restrições Financeiras & Gravame da Placa ${cleanUpper}`,
+        badge: "Gravame",
+        action: "gravame",
+        val: cleanUpper
+      });
+      suggestions.push({
+        label: `Histórico de Leilão & Sinistro da Placa ${cleanUpper}`,
+        badge: "Leilão",
+        action: "leilao",
+        val: cleanUpper
+      });
+    }
+
+    // Detecção de CPF (11 dígitos numéricos)
+    if (/^\d{11}$/.test(cleanUpper)) {
+      const formatted = cleanUpper.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+      suggestions.push({
+        label: `Consulta Cadastral CPF (Receita Federal) ${formatted}`,
+        badge: "Receita Federal",
+        action: "cpf",
+        val: formatted
+      });
+      suggestions.push({
+        label: `Consulta CPF + Score de Crédito ${formatted}`,
+        badge: "Score PF",
+        action: "score-pf",
+        val: formatted
+      });
+    }
+
+    // Detecção de CNPJ (14 dígitos numéricos)
+    if (/^\d{14}$/.test(cleanUpper)) {
+      const formatted = cleanUpper.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+      suggestions.push({
+        label: `Emissão Cartão CNPJ Oficial (Receita Federal) ${formatted}`,
+        badge: "Cartão CNPJ",
+        action: "cnpj",
+        val: formatted
+      });
+      suggestions.push({
+        label: `Consulta Simples Nacional & MEI ${formatted}`,
+        badge: "Simples/MEI",
+        action: "simples",
+        val: formatted
+      });
+    }
+
+    if (suggestions.length === 0) {
+      if (cleanUpper.length >= 3) {
+        suggestions.push({
+          label: `Buscar "${raw}" como Placa, CPF ou CNPJ`,
+          badge: "Busca Rápida",
+          action: "crlv",
+          val: raw
+        });
+      } else {
+        if (crlvOmniSuggestions) {
+          crlvOmniSuggestions.hidden = true;
+          crlvOmniSuggestions.innerHTML = "";
+        }
+        return;
+      }
+    }
+
+    if (crlvOmniSuggestions) {
+      crlvOmniSuggestions.innerHTML = suggestions.map(s => `
+        <div class="crlvOmniActionBtn" data-omni-act="${s.action}" data-omni-val="${s.val}">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#00a86b" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <strong>${s.label}</strong>
+          </div>
+          <span class="crlvGovBadge">${s.badge}</span>
+        </div>
+      `).join("");
+      crlvOmniSuggestions.hidden = false;
+
+      crlvOmniSuggestions.querySelectorAll(".crlvOmniActionBtn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          executeOmniAction(btn.dataset.omniAct, btn.dataset.omniVal);
+        });
+      });
+    }
+  });
+}
+
+function executeOmniAction(act, val) {
+  selectCrlvService(act, false);
+  if (act === "crlv") {
+    $("#crlvPlaca").value = val;
+    $("#crlvRenavam").focus();
+  } else if (["veiculo", "gravame", "leilao"].includes(act)) {
+    $("#veiculoPlaca").value = val;
+    $("#veiculoSubmitBtn").click();
+  } else if (act === "fipe") {
+    $("#fipePlaca").value = val;
+    $("#fipeSubmitBtn").click();
+  } else if (act === "cpf" || act === "score-pf") {
+    $("#cpfDoc").value = val;
+    applyCpfMask($("#cpfDoc"));
+    $("#cpfSubmitBtn").click();
+  } else if (act === "cnpj" || act === "simples") {
+    $("#cnpjDoc").value = val;
+    $("#cnpjSubmitBtn").click();
+  }
+  const s = $("#crlvOmniSuggestions");
+  if (s) s.hidden = true;
+}
+
+// 3. Sistema de Envio de Cobrança ao Caixa do Nexcafé
+function sendConsultationToCash(name, priceCents, category = "Serviços Digitais") {
+  const item = {
+    id: `crlv_${Date.now()}`,
+    name,
+    priceCents: Math.round(priceCents),
+    costCents: 0,
+    category,
+    quantity: 1,
+    active: true
+  };
+  if (typeof posItems !== "undefined" && Array.isArray(posItems)) {
+    posItems.push(item);
+    if (typeof renderPOSTable === "function") renderPOSTable();
+  } else if (typeof state !== "undefined" && state.cart) {
+    state.cart.items ||= [];
+    state.cart.items.push(item);
+    if (typeof renderPOSTicket === "function") renderPOSTicket();
+  }
+  view("cash");
+  toast(`Item "${name}" lançado no caixa! Pressione F2 para finalizar a venda.`);
+}
+
+// 4. Emissão Notarial de Comprovantes A4
+function openPrintWindow(title, bodyHtml) {
+  const win = window.open("", "_blank");
+  if (!win) {
+    toast("Pop-up bloqueado pelo navegador. Permita pop-ups para imprimir o comprovante.");
+    return;
+  }
+  win.document.open();
+  win.document.write(`<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>${title} · Speed Financeira & Lan House</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm 12mm; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; margin: 0; padding: 20px; background: #f8fafc; line-height: 1.5; position: relative; }
+    .no-print { max-width: 820px; margin: 0 auto 20px; padding: 14px 22px; background: #0f172a; color: #fff; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 25px rgba(15,23,42,0.25); }
+    .btn { cursor: pointer; padding: 10px 24px; font-weight: 700; font-size: 14px; border-radius: 8px; border: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.15s; }
+    .btn-primary { background: #00a86b; color: #fff; box-shadow: 0 4px 12px rgba(0,168,107,0.4); }
+    .btn-primary:hover { background: #008f5a; }
+    .btn-secondary { background: #334155; color: #f8fafc; }
+    .btn-secondary:hover { background: #475569; }
+    .doc-page { max-width: 820px; margin: 0 auto; border: 2.5px solid #0f172a; padding: 36px 42px; border-radius: 4px; background: #fff; box-shadow: 0 4px 24px rgba(15,23,42,0.06); position: relative; min-height: 980px; display: flex; flex-direction: column; justify-content: space-between; }
+    .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg); font-size: 38px; font-weight: 900; color: rgba(15, 23, 42, 0.035); letter-spacing: 6px; text-transform: uppercase; pointer-events: none; white-space: nowrap; z-index: 0; user-select: none; }
+    .doc-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2.5px double #0f172a; padding-bottom: 16px; margin-bottom: 22px; position: relative; z-index: 1; }
+    .brand-col h1 { margin: 0; font-size: 21px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px; text-transform: uppercase; }
+    .brand-col .sub { margin: 4px 0 0; font-size: 12px; color: #334155; font-weight: 600; }
+    .brand-col .address { margin: 2px 0 0; font-size: 11px; color: #64748b; }
+    .seal-col { display: flex; align-items: center; gap: 14px; }
+    .qr-box { width: 76px; height: 76px; border: 1.5px solid #cbd5e1; border-radius: 6px; padding: 4px; background: #fff; display: flex; align-items: center; justify-content: center; }
+    .qr-box img { width: 100%; height: 100%; object-fit: contain; }
+    .doc-title-banner { text-align: center; margin: 0 0 24px; position: relative; z-index: 1; }
+    .doc-title-banner h2 { margin: 0; font-size: 17px; font-weight: 900; text-transform: uppercase; letter-spacing: 1.5px; color: #0f172a; background: #f1f5f9; padding: 9px 18px; border-radius: 6px; display: inline-block; border: 1px solid #cbd5e1; }
+    .meta-strip { display: flex; justify-content: space-between; font-size: 11.5px; color: #475569; margin-top: 6px; font-weight: 600; }
+    .section-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #0f172a; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 4px; margin: 20px 0 10px; display: flex; align-items: center; gap: 6px; }
+    .table-data { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; position: relative; z-index: 1; }
+    .table-data td { padding: 9px 12px; border: 1px solid #e2e8f0; vertical-align: top; }
+    .table-data td.label { width: 34%; font-weight: 700; color: #334155; background: #f8fafc; text-transform: uppercase; font-size: 11px; letter-spacing: 0.4px; }
+    .table-data td.val { width: 66%; font-weight: 600; color: #0f172a; }
+    .table-data td.val.big { font-size: 15px; font-weight: 800; }
+    .status-stamp { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 900; font-size: 12px; letter-spacing: 0.8px; text-transform: uppercase; border: 2px solid #16a34a; color: #166534; background: #dcfce7; }
+    .status-stamp.blue { border-color: #2563eb; color: #1e40af; background: #eff6ff; }
+    .doc-footer { margin-top: 26px; border-top: 1px solid #cbd5e1; padding-top: 16px; position: relative; z-index: 1; }
+    .disclaimer { font-size: 10.5px; color: #64748b; line-height: 1.5; margin: 0 0 24px; text-align: justify; }
+    .sign-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 36px; padding: 0 20px; }
+    .sign-col { text-align: center; width: 44%; }
+    .sign-line { border-top: 1.5px solid #0f172a; margin-bottom: 6px; }
+    .sign-name { font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; }
+    .sign-role { font-size: 10.5px; color: #64748b; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .no-print { display: none !important; }
+      .doc-page { border: none; padding: 0; box-shadow: none; min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <div>
+      <strong style="font-size:15px; display:block;">Visualização Oficial para Impressão (Formato A4)</strong>
+      <span style="font-size:12px; opacity:0.85;">Speed Financeira & Lan House · Atendimento Balcão</span>
+    </div>
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-primary" onclick="window.print()">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir Comprovante A4
+      </button>
+      <button class="btn btn-secondary" onclick="window.close()">Fechar</button>
+    </div>
+  </div>
+  <div class="doc-page">
+    <div class="watermark">SPEED AUTENTICIDADE DIGITAL</div>
+    <div>
+      <div class="doc-header">
+        <div class="brand-col">
+          <h1>Speed Financeira &amp; Lan House</h1>
+          <div class="sub">Central de Soluções Financeiras, Digitais &amp; Gráfica Rápida</div>
+          <div class="address">Rua Santa Cruz, 696 · Centro · Varginha / MG · Tel/WhatsApp: (35) 3067-5017</div>
+        </div>
+        <div class="seal-col">
+          <div class="qr-box">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://speedfinanceira.com.br" alt="QR Code Oficial">
+          </div>
+        </div>
+      </div>
+      ${bodyHtml}
+    </div>
+    <div class="doc-footer">
+      <div class="disclaimer">
+        <strong>DECLARAÇÃO DE EMISSÃO E RESPONSABILIDADE:</strong> Documento emitido mediante solicitação presencial do titular ou representante devidamente autorizado na sede da Speed Financeira & Lan House. Os dados cadastrais constantes neste comprovante refletem fielmente as informações fornecidas e validadas perante os órgãos oficiais e bases públicas consultadas na data e horário de sua geração. A Speed atua como prestadora de serviços de auxílio digital e impressão em conformidade com as diretrizes vigentes.
+      </div>
+      <div class="sign-row">
+        <div class="sign-col">
+          <div class="sign-line"></div>
+          <div class="sign-name">Speed Financeira &amp; Lan House</div>
+          <div class="sign-role">Operador Responsável · Atendimento Balcão</div>
+        </div>
+        <div class="sign-col">
+          <div class="sign-line"></div>
+          <div class="sign-name">Titular / Solicitante</div>
+          <div class="sign-role">Conferido e Entregue</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    window.addEventListener("load", () => {
+      setTimeout(() => window.print(), 400);
+    });
+  <\/script>
+</body>
+</html>`);
+  win.document.close();
+}
+
+// 5. Emissão de Cupom Térmico (80mm) para Balcão da Loja
+function openThermalPrintWindow(title, detailsObj) {
+  const win = window.open("", "_blank");
+  if (!win) {
+    toast("Pop-up bloqueado pelo navegador.");
+    return;
+  }
+  const now = new Date().toLocaleString("pt-BR");
+  const protocol = `TCK-${Date.now().toString().slice(-7)}`;
+
+  const rowsHtml = Object.entries(detailsObj).map(([k, v]) => `
+    <div style="display:flex; justify-content:space-between; margin-bottom:3px; font-size:11px;">
+      <span style="font-weight:bold; color:#333;">${k}:</span>
+      <span style="text-align:right; font-family:monospace;">${v}</span>
+    </div>
+  `).join("");
+
+  win.document.open();
+  win.document.write(`<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Cupom ${title}</title>
+  <style>
+    @page { size: 80mm auto; margin: 2mm 3mm; }
+    body { font-family: 'Courier New', Courier, monospace; width: 72mm; margin: 0 auto; padding: 4px 2px; color: #000; font-size: 11px; line-height: 1.3; }
+    .center { text-align: center; }
+    .divider { border-bottom: 1px dashed #000; margin: 6px 0; }
+    .title { font-weight: bold; font-size: 12px; margin: 4px 0; }
+    .qr { text-align: center; margin: 8px 0; }
+    .qr img { width: 90px; height: 90px; }
+    .footer { font-size: 9px; text-align: center; margin-top: 8px; }
+    .no-print { margin-bottom: 10px; text-align: center; }
+    button { padding: 6px 14px; font-weight: bold; cursor: pointer; }
+    @media print { .no-print { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="no-print">
+    <button onclick="window.print()">Imprimir Cupom 80mm</button>
+  </div>
+  <div class="center">
+    <strong>SPEED FINANCEIRA &amp; LAN HOUSE</strong><br>
+    Rua Santa Cruz, 696 · Centro · Varginha/MG<br>
+    Tel/WhatsApp: (35) 3067-5017
+  </div>
+  <div class="divider"></div>
+  <div class="center title">COMPROVANTE DE CONSULTA DIGITAL</div>
+  <div class="center" style="font-size:10px;">${title}</div>
+  <div class="divider"></div>
+  <div style="font-size:10.5px; margin-bottom:4px;">
+    <strong>Protocolo:</strong> ${protocol}<br>
+    <strong>Data/Hora:</strong> ${now}<br>
+    <strong>Operador:</strong> Balcão Speed
+  </div>
+  <div class="divider"></div>
+  ${rowsHtml}
+  <div class="divider"></div>
+  <div class="qr">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://speedfinanceira.com.br" alt="QR">
+    <div style="font-size:9px; margin-top:2px;">Autenticação Digital Speed</div>
+  </div>
+  <div class="divider"></div>
+  <div class="footer">
+    Consulte regulamentos e certidões.<br>
+    Agradecemos a preferência!
+  </div>
+  <script>
+    window.addEventListener("load", () => {
+      setTimeout(() => window.print(), 350);
+    });
+  <\/script>
+</body>
+</html>`);
+  win.document.close();
+}
+
+// 6. Renderizadores de Comprovantes Oficiais (A4 Notarial)
+function generateCpfComprovanteHtml(d) {
+  const now = new Date().toLocaleString("pt-BR");
+  const protocol = `SPF-${Date.now().toString().slice(-8)}`;
+  return `
+    <div class="doc-title-banner">
+      <h2>Comprovante Oficial de Situação Cadastral no CPF</h2>
+      <div class="meta-strip">
+        <span>Órgão Consultor: Receita Federal do Brasil</span>
+        <span>Protocolo: ${protocol}</span>
+        <span>Data/Hora: ${now}</span>
+      </div>
+    </div>
+    <div class="section-title">Dados Cadastrais do Titular</div>
+    <table class="table-data">
+      <tr><td class="label">Nome Completo</td><td class="val big">${html(d.nome || "-")}</td></tr>
+      <tr><td class="label">Número do CPF</td><td class="val" style="font-family:monospace; font-size:15px; font-weight:800;">${html(d.cpf || "-")}</td></tr>
+      <tr><td class="label">Situação Cadastral</td><td class="val"><span class="status-stamp">${html(d.situacao || "REGULAR")}</span></td></tr>
+      <tr><td class="label">Data de Nascimento</td><td class="val">${html(d.nascimento || "-")}${d.idade ? ` (${d.idade} anos)` : ""}</td></tr>
+      <tr><td class="label">Nome da Mãe</td><td class="val">${html(d.mae || "-")}</td></tr>
+      <tr><td class="label">Sexo / Gênero</td><td class="val">${html(d.sexo || "-")}</td></tr>
+      <tr><td class="label">Protocolo de Consulta</td><td class="val" style="font-family:monospace;">${html(d.protocolo || protocol)}</td></tr>
+    </table>
+  `;
+}
+
+function generateCnpjComprovanteHtml(d) {
+  const now = new Date().toLocaleString("pt-BR");
+  const protocol = `SPJ-${Date.now().toString().slice(-8)}`;
+  return `
+    <div class="doc-title-banner">
+      <h2>Cartão de Inscrição e Situação Cadastral (CNPJ)</h2>
+      <div class="meta-strip">
+        <span>Órgão Emissor: Ministério da Fazenda / Receita Federal do Brasil</span>
+        <span>Protocolo: ${protocol}</span>
+        <span>Data/Hora: ${now}</span>
+      </div>
+    </div>
+    <div class="section-title">Identificação da Pessoa Jurídica</div>
+    <table class="table-data">
+      <tr><td class="label">Razão Social</td><td class="val big">${html(d.razao || "-")}</td></tr>
+      <tr><td class="label">Nome Fantasia</td><td class="val">${html(d.fantasia || "Não informado")}</td></tr>
+      <tr><td class="label">Número do CNPJ</td><td class="val" style="font-family:monospace; font-size:15px; font-weight:800;">${html(d.cnpj || "-")}</td></tr>
+      <tr><td class="label">Situação Cadastral</td><td class="val"><span class="status-stamp blue">${html(d.situacao || "ATIVA")}</span></td></tr>
+      <tr><td class="label">Data de Abertura</td><td class="val">${html(d.abertura || "-")}</td></tr>
+      <tr><td class="label">Atividade Principal (CNAE)</td><td class="val">${html(d.cnae || "-")}</td></tr>
+      <tr><td class="label">Natureza Jurídica</td><td class="val">${html(d.natureza || "-")}</td></tr>
+      <tr><td class="label">Capital Social</td><td class="val">${html(d.capital || "-")}</td></tr>
+      <tr><td class="label">Endereço Completo</td><td class="val">${html(d.endereco || "-")}</td></tr>
+    </table>
+  `;
+}
+
+function generateVeiculoComprovanteHtml(d) {
+  const now = new Date().toLocaleString("pt-BR");
+  const protocol = `SPV-${Date.now().toString().slice(-8)}`;
+  const isDono = activeVeiculoTipo === "dono-contatos" || activeVeiculoTipo === "dono";
+  const title = isDono ? "Relatório Oficial de Localização de Dono & Contatos" :
+                activeVeiculoTipo === "gravame" ? "Certidão de Restrições Financeiras & Gravame (SNG)" :
+                activeVeiculoTipo === "leilao" ? "Laudo de Histórico de Leilão, Sinistro & PT" :
+                "Espelho Cadastral Veicular Oficial (Agregados)";
+  return `
+    <div class="doc-title-banner">
+      <h2>${title}</h2>
+      <div class="meta-strip">
+        <span>Base Consultada: Senatran / Detran Nacional</span>
+        <span>Protocolo: ${protocol}</span>
+        <span>Data/Hora: ${now}</span>
+      </div>
+    </div>
+    <div class="section-title">Dados do Veículo</div>
+    <table class="table-data">
+      <tr><td class="label">Placa do Veículo</td><td class="val big" style="font-family:monospace; letter-spacing:1px;">${html(d.placa || "-")}</td></tr>
+      <tr><td class="label">Marca / Modelo</td><td class="val">${html(d.marcaModelo || d.modelo || "-")}</td></tr>
+      <tr><td class="label">Número do Chassi</td><td class="val" style="font-family:monospace;">${html(d.chassi || "-")}</td></tr>
+      <tr><td class="label">Número do Renavam</td><td class="val" style="font-family:monospace;">${html(d.renavam || "-")}</td></tr>
+      <tr><td class="label">Ano Fabricação / Modelo</td><td class="val">${html(d.anoFabricacao || "-")} / ${html(d.anoModelo || "-")}</td></tr>
+      <tr><td class="label">Cor Predominante</td><td class="val">${html(d.cor || "-")}</td></tr>
+      <tr><td class="label">Combustível</td><td class="val">${html(d.combustivel || "-")}</td></tr>
+      <tr><td class="label">Município / UF Emplacamento</td><td class="val">${html(d.municipio || "-")} / ${html(d.uf || "-")}</td></tr>
+      <tr><td class="label">Situação do Veículo</td><td class="val"><span class="status-stamp">${html(d.situacao || "CIRCULAÇÃO REGULAR")}</span></td></tr>
+    </table>
+  `;
+}
+
+function generateFipeComprovanteHtml(d) {
+  const now = new Date().toLocaleString("pt-BR");
+  const protocol = `SPFIPE-${Date.now().toString().slice(-8)}`;
+  return `
+    <div class="doc-title-banner">
+      <h2>Certidão de Cotação e Valor Médio de Mercado (Tabela FIPE)</h2>
+      <div class="meta-strip">
+        <span>Fonte Oficial: Fundação Instituto de Pesquisas Econômicas</span>
+        <span>Protocolo: ${protocol}</span>
+        <span>Data/Hora: ${now}</span>
+      </div>
+    </div>
+    <div class="section-title">Identificação do Veículo & Cotação</div>
+    <table class="table-data">
+      <tr><td class="label">Placa Consultada</td><td class="val big" style="font-family:monospace;">${html(d.placa || "-")}</td></tr>
+      <tr><td class="label">Marca do Fabricante</td><td class="val">${html(d.marca || "-")}</td></tr>
+      <tr><td class="label">Modelo de Referência</td><td class="val big">${html(d.modelo || "-")}</td></tr>
+      <tr><td class="label">Ano do Modelo</td><td class="val">${html(d.anoModelo || "-")}</td></tr>
+      <tr><td class="label">Código FIPE Oficial</td><td class="val" style="font-family:monospace; font-weight:800;">${html(d.codigoFipe || "-")}</td></tr>
+      <tr><td class="label">Mês de Referência</td><td class="val">${html(d.mesReferencia || "-")}</td></tr>
+      <tr><td class="label">Valor Médio de Mercado</td><td class="val big" style="color:#166534; font-size:18px; font-weight:900;">${html(d.precoMedio || "-")}</td></tr>
+    </table>
+  `;
+}
+
+function printHistoryItem(item) {
+  const t = (item.tipo || "").toLowerCase();
+  if (t.includes("cpf")) {
+    openPrintWindow("Comprovante de CPF", generateCpfComprovanteHtml({
+      nome: item.resultado?.nome || item.doc,
+      cpf: item.doc,
+      situacao: item.resultado?.situacao || "REGULAR",
+      nascimento: item.resultado?.nascimento || "-",
+      mae: item.resultado?.mae || "-",
+      sexo: item.resultado?.sexo || "-",
+      protocolo: item.id
+    }));
+  } else if (t.includes("cnpj")) {
+    openPrintWindow("Cartão CNPJ", generateCnpjComprovanteHtml({
+      razao: item.resultado?.razao || item.doc,
+      cnpj: item.doc,
+      situacao: item.resultado?.situacao || "ATIVA",
+      abertura: item.resultado?.abertura || "-",
+      cnae: item.resultado?.cnae || "-",
+      endereco: item.resultado?.endereco || "-"
+    }));
+  } else if (t.includes("fipe")) {
+    openPrintWindow("Cotação Tabela FIPE", generateFipeComprovanteHtml({
+      placa: item.placa || item.doc,
+      marca: item.resultado?.marca || "-",
+      modelo: item.resultado?.modelo || item.doc,
+      anoModelo: item.resultado?.anoModelo || "-",
+      codigoFipe: item.resultado?.codigoFipe || "-",
+      mesReferencia: item.resultado?.mesReferencia || "-",
+      precoMedio: item.resultado?.precoMedio || "-"
+    }));
+  } else {
+    openPrintWindow("Consulta Veicular", generateVeiculoComprovanteHtml({
+      placa: item.placa || item.doc,
+      modelo: item.resultado?.modelo || item.doc,
+      chassi: item.resultado?.chassi || "-",
+      renavam: item.resultado?.renavam || "-",
+      anoFabricacao: item.resultado?.anoFabricacao || "-",
+      anoModelo: item.resultado?.anoModelo || "-",
+      cor: item.resultado?.cor || "-",
+      combustivel: item.resultado?.combustivel || "-",
+      municipio: item.resultado?.municipio || "-",
+      uf: item.resultado?.uf || "-"
+    }));
+  }
+}
+
+// 7. Formulários de Consulta
+// --- FORM CRLV ---
+$("#crlvForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const placa = String($("#crlvPlaca")?.value || "").trim().toUpperCase();
+  const renavam = String($("#crlvRenavam")?.value || "").trim();
+  const doc = String($("#crlvCpf")?.value || "").trim();
+  const uf = String($("#crlvUf")?.value || "MG").trim();
+  const homolog = !!$("#crlvHomolog")?.checked;
+
+  if (!placa || placa.length !== 7) { toast("Informe a placa com 7 caracteres"); return; }
+  if (!renavam || renavam.length < 9) { toast("Informe o Renavam válido"); return; }
+
+  const submitBtn = $("#crlvSubmitBtn");
+  const origText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Emitindo documento...";
+
+  try {
+    const result = await api("/api/crlv/emitir", { placa, renavam, doc, uf, homolog });
+    lastCrlvIssued = result;
+    const card = $("#crlvResultCard");
+    if (card) {
+      card.hidden = false;
+      $("#crlvResultInfo").textContent = `CRLV-e da placa ${result.placa} emitido com sucesso!`;
+      $("#crlvResultDetails").innerHTML = `
+        <div class="crlvDataGrid">
+          <div class="crlvDataTile"><span class="crlvDataLabel">Placa</span><strong class="crlvDataValue font-mono">${html(result.placa)}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Renavam</span><strong class="crlvDataValue font-mono">${html(result.renavam)}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Estado (UF)</span><strong class="crlvDataValue">${html(result.uf)}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Status</span><span class="badge success">Oficial Senatran</span></div>
+        </div>
+      `;
+      const dlBtn = $("#crlvDownloadBtn");
+      if (dlBtn) dlBtn.href = result.pdfUrl || result.proxyUrl || "#";
+    }
+    toast(`CRLV-e da placa ${placa} emitido com sucesso!`);
+    loadCrlvStatus();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = origText;
+  }
+});
+
+$("#crlvClearBtn")?.addEventListener("click", () => {
+  $("#crlvPlaca").value = "";
+  $("#crlvRenavam").value = "";
+  $("#crlvCpf").value = "";
+  $("#crlvResultCard").hidden = true;
+});
+
+$("#crlvPrintBtn")?.addEventListener("click", () => {
+  const url = lastCrlvIssued?.pdfUrl || lastCrlvIssued?.proxyUrl;
+  if (url) window.open(url, "_blank");
+  else toast("Nenhum documento disponível para impressão");
+});
+
+$("#crlvThermalBtn")?.addEventListener("click", () => {
+  if (!lastCrlvIssued) { toast("Nenhum documento emitido"); return; }
+  openThermalPrintWindow("CRLV-e Digital", {
+    "Placa": lastCrlvIssued.placa,
+    "Renavam": lastCrlvIssued.renavam,
+    "Estado (UF)": lastCrlvIssued.uf,
+    "Situação": "Emitido Oficial Senatran"
+  });
+});
+
+$("#crlvCopyLinkBtn")?.addEventListener("click", async () => {
+  const url = lastCrlvIssued?.pdfUrl || lastCrlvIssued?.proxyUrl;
+  if (url) {
+    await navigator.clipboard.writeText(url);
+    toast("Link do PDF copiado para a área de transferência!");
+  }
+});
+
+$("#crlvChargeBtn")?.addEventListener("click", () => {
+  const placa = lastCrlvIssued?.placa || $("#crlvPlaca")?.value || "Veículo";
+  sendConsultationToCash(`Emissão CRLV-e (${placa})`, 3000, "Gráfica Rápida");
+});
+
+// --- FORM VEÍCULO ---
+$("#veiculoForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const placa = String($("#veiculoPlaca")?.value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!placa || placa.length !== 7) { toast("Informe a placa com 7 caracteres"); return; }
+
+  const submitBtn = $("#veiculoSubmitBtn");
+  const origText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Consultando...";
+
+  try {
+    const homolog = !!$("#crlvHomolog")?.checked;
+    const result = await api("/api/crlv/consulta", { tipo: activeVeiculoTipo || "veiculo", placa, homolog });
+    lastVeiculoResult = result;
+    const card = $("#veiculoResultCard");
+    if (card) {
+      card.hidden = false;
+      const d = result.dados || result;
+      if (activeVeiculoTipo === "dono-contatos" || activeVeiculoTipo === "dono") {
+        const prop = d.proprietario || {};
+        const veic = prop.veiculo || {};
+        const tels = (d.telefones || []).map(t => `<span style="display:inline-block; background:#fff; border:1px solid #cbd5e1; border-radius:4px; padding:3px 8px; font-size:11.5px; font-family:monospace; margin-right:4px; margin-bottom:4px;"><strong>${html(t.valor)}</strong> (${html(t.tipo || "celular")}, Base ${html(t.fonte || "A+B")})</span>`).join("");
+        const emails = (d.emails || []).map(e => `<span style="display:inline-block; background:#fff; border:1px solid #cbd5e1; border-radius:4px; padding:3px 8px; font-size:11.5px; margin-right:4px; margin-bottom:4px;">${html(e.valor)}</span>`).join("");
+        const enders = (d.enderecos || []).map(ed => `<div style="font-size:11.5px; color:#334155; margin-top:3px; line-height:1.4;">• ${html(ed.valor || "")}</div>`).join("");
+
+        $("#veiculoResultContent").innerHTML = `
+          <div class="crlvEntityHeader">
+            <div class="crlvEntityAvatar" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/></svg>
+            </div>
+            <div class="crlvEntityInfo">
+              <span class="crlvEntitySuper">Proprietário do Veículo</span>
+              <h4 class="crlvEntityTitle">${html(prop.nome || "Não informado")}</h4>
+              <div class="crlvEntitySub">Documento: ${html(prop.documento_mascarado || "***")} | Pessoa: ${html(prop.tipo_pessoa || "Física")}</div>
+            </div>
+            <div class="crlvStatusBadge" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">
+              <span class="crlvStatusDot" style="background:#15803d;"></span>
+              <span>Identificado</span>
+            </div>
+          </div>
+          <div class="crlvDataGrid">
+            <div class="crlvDataTile"><span class="crlvDataLabel">Placa</span><strong class="crlvDataValue font-mono">${html(d.placa || placa)}</strong></div>
+            <div class="crlvDataTile"><span class="crlvDataLabel">Marca / Modelo</span><strong class="crlvDataValue">${html(veic.marca_modelo || d.marcaModelo || "-")}</strong></div>
+            <div class="crlvDataTile"><span class="crlvDataLabel">Ano Fab / Mod</span><strong class="crlvDataValue">${html(veic.ano_fabricacao || "-")} / ${html(veic.ano_modelo || "-")}</strong></div>
+            <div class="crlvDataTile"><span class="crlvDataLabel">Cor / UF</span><strong class="crlvDataValue">${html(veic.cor || "-")} - ${html(veic.uf || "-")}</strong></div>
+          </div>
+          <div style="margin-top:12px; padding:12px; background:#f8fafc; border-radius:8px; border:1px solid #e2e8f0;">
+            <strong style="display:block; font-size:12px; color:#0f172a; margin-bottom:6px;">Telefones de Contato Localizados (${(d.telefones || []).length}):</strong>
+            <div>${tels || '<span style="color:#64748b; font-size:11.5px;">Nenhum telefone registrado nas bases.</span>'}</div>
+            <strong style="display:block; font-size:12px; color:#0f172a; margin:10px 0 6px;">Endereços do Proprietário (${(d.enderecos || []).length}):</strong>
+            <div>${enders || '<span style="color:#64748b; font-size:11.5px;">Nenhum endereço registrado nas bases.</span>'}</div>
+            <strong style="display:block; font-size:12px; color:#0f172a; margin:10px 0 6px;">E-mails Identificados (${(d.emails || []).length}):</strong>
+            <div>${emails || '<span style="color:#64748b; font-size:11.5px;">Nenhum e-mail registrado.</span>'}</div>
+          </div>
+        `;
+      } else {
+        $("#veiculoResultContent").innerHTML = `
+          <div class="crlvEntityHeader">
+          <div class="crlvEntityAvatar" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>
+          </div>
+          <div class="crlvEntityInfo">
+            <span class="crlvEntitySuper">Placa do Veículo</span>
+            <h4 class="crlvEntityTitle font-mono">${html(d.placa || placa)}</h4>
+            <div class="crlvEntitySub">${html(d.marcaModelo || d.modelo || "Modelo não informado")}</div>
+          </div>
+          <div class="crlvStatusBadge" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">
+            <span class="crlvStatusDot" style="background:#15803d;"></span>
+            <span>${html(d.situacao || "Regular")}</span>
+          </div>
+        </div>
+        <div class="crlvDataGrid">
+          <div class="crlvDataTile"><span class="crlvDataLabel">Chassi</span><strong class="crlvDataValue font-mono">${html(d.chassi || "-")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Renavam</span><strong class="crlvDataValue font-mono">${html(d.renavam || "-")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Ano Fab / Mod</span><strong class="crlvDataValue">${html(d.anoFabricacao || "-")} / ${html(d.anoModelo || "-")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Cor</span><strong class="crlvDataValue">${html(d.cor || "-")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Combustível</span><strong class="crlvDataValue">${html(d.combustivel || "-")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Município / UF</span><strong class="crlvDataValue">${html(d.municipio || "-")} / ${html(d.uf || "-")}</strong></div>
+        </div>
+      `;
+      }
+    }
+    toast(`Consulta veicular da placa ${placa} concluída!`);
+    loadCrlvStatus();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = origText;
+  }
+});
+
+$("#veiculoPrintBtn")?.addEventListener("click", () => {
+  if (!lastVeiculoResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastVeiculoResult.dados || lastVeiculoResult;
+  openPrintWindow("Consulta Veicular", generateVeiculoComprovanteHtml(d));
+});
+
+$("#veiculoThermalBtn")?.addEventListener("click", () => {
+  if (!lastVeiculoResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastVeiculoResult.dados || lastVeiculoResult;
+  openThermalPrintWindow("Consulta Veicular", {
+    "Placa": d.placa || "-",
+    "Modelo": d.marcaModelo || d.modelo || "-",
+    "Chassi": d.chassi || "-",
+    "Renavam": d.renavam || "-",
+    "Ano": `${d.anoFabricacao || ""}/${d.anoModelo || ""}`,
+    "Cor": d.cor || "-",
+    "Situação": d.situacao || "Regular"
+  });
+});
+
+$("#veiculoCopyBtn")?.addEventListener("click", async () => {
+  if (!lastVeiculoResult) return;
+  const d = lastVeiculoResult.dados || lastVeiculoResult;
+  const txt = `VEÍCULO: ${d.placa} | ${d.marcaModelo || d.modelo} | Chassi: ${d.chassi} | Renavam: ${d.renavam} | Cor: ${d.cor} | Ano: ${d.anoFabricacao}/${d.anoModelo}`;
+  await navigator.clipboard.writeText(txt);
+  toast("Resumo do veículo copiado para a área de transferência!");
+});
+
+$("#veiculoChargeBtn")?.addEventListener("click", () => {
+  const placa = lastVeiculoResult?.placa || $("#veiculoPlaca")?.value || "Veículo";
+  sendConsultationToCash(`Consulta Veicular Completa (${placa})`, 1500, "Serviços Digitais");
+});
+
+// --- FORM FIPE ---
+$("#fipeForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const placa = String($("#fipePlaca")?.value || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!placa || placa.length !== 7) { toast("Informe a placa com 7 caracteres"); return; }
+
+  const submitBtn = $("#fipeSubmitBtn");
+  const origText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Consultando...";
+
+  try {
+    const homolog = !!$("#crlvHomolog")?.checked;
+    const result = await api("/api/crlv/consulta", { tipo: "fipe", placa, homolog });
+    lastFipeResult = result;
+    const card = $("#fipeResultCard");
+    if (card) {
+      card.hidden = false;
+      const d = result.dados || result;
+      $("#fipeResultContent").innerHTML = `
+        <div class="crlvEntityHeader">
+          <div class="crlvEntityAvatar" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="crlvEntityInfo">
+            <span class="crlvEntitySuper">Cotação Oficial FIPE</span>
+            <h4 class="crlvEntityTitle font-mono">${html(d.placa || placa)}</h4>
+            <div class="crlvEntitySub">${html(d.marca || "")} ${html(d.modelo || "")}</div>
+          </div>
+          <div class="crlvStatusBadge" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">
+            <span class="crlvStatusDot" style="background:#15803d;"></span>
+            <span>${html(d.precoMedio || "Preço Médio")}</span>
+          </div>
+        </div>
+        <div class="crlvDataGrid">
+          <div class="crlvDataTile"><span class="crlvDataLabel">Código FIPE</span><strong class="crlvDataValue font-mono">${html(d.codigoFipe || "-")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Ano do Modelo</span><strong class="crlvDataValue">${html(d.anoModelo || "-")}</strong></div>
+          <div class="crlvDataTile span-2"><span class="crlvDataLabel">Mês de Referência</span><strong class="crlvDataValue">${html(d.mesReferencia || "-")}</strong></div>
+        </div>
+      `;
+    }
+    toast(`Cotação FIPE da placa ${placa} apurada!`);
+    loadCrlvStatus();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = origText;
+  }
+});
+
+$("#fipePrintBtn")?.addEventListener("click", () => {
+  if (!lastFipeResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastFipeResult.dados || lastFipeResult;
+  openPrintWindow("Cotação Tabela FIPE", generateFipeComprovanteHtml(d));
+});
+
+$("#fipeThermalBtn")?.addEventListener("click", () => {
+  if (!lastFipeResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastFipeResult.dados || lastFipeResult;
+  openThermalPrintWindow("Cotação FIPE", {
+    "Placa": d.placa || "-",
+    "Modelo": d.modelo || "-",
+    "Ano Modelo": d.anoModelo || "-",
+    "Código FIPE": d.codigoFipe || "-",
+    "Preço Médio": d.precoMedio || "-"
+  });
+});
+
+$("#fipeCopyBtn")?.addEventListener("click", async () => {
+  if (!lastFipeResult) return;
+  const d = lastFipeResult.dados || lastFipeResult;
+  const txt = `FIPE (${d.placa}): ${d.modelo} | Ano: ${d.anoModelo} | FIPE: ${d.codigoFipe} | Valor: ${d.precoMedio}`;
+  await navigator.clipboard.writeText(txt);
+  toast("Cotação FIPE copiada para a área de transferência!");
+});
+
+$("#fipeChargeBtn")?.addEventListener("click", () => {
+  const placa = $("#fipePlaca")?.value || "Veículo";
+  sendConsultationToCash(`Cotação Tabela FIPE (${placa})`, 500, "Serviços Digitais");
+});
+
+// --- FORM CPF ---
+function applyCpfMask(input) {
+  if (!input) return;
+  let v = input.value.replace(/\D/g, "");
+  if (v.length > 11) v = v.slice(0, 11);
+  if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, "$1.$2.$3-$4");
+  else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+  else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+  input.value = v;
+}
+
+$("#cpfDoc")?.addEventListener("input", e => applyCpfMask(e.target));
+
+$("#cpfForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const raw = String($("#cpfDoc")?.value || "").replace(/\D/g, "");
+  if (!raw || raw.length !== 11) { toast("Informe o CPF completo com 11 dígitos"); return; }
+
+  const submitBtn = $("#cpfSubmitBtn");
+  const origText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Consultando...";
+
+  try {
+    const homolog = !!$("#crlvHomolog")?.checked;
+    const result = await api("/api/crlv/consulta", { tipo: "cpf", cpf: raw, homolog });
+    lastCpfResult = result;
+    const card = $("#cpfResultCard");
+    if (card) {
+      card.hidden = false;
+      const d = result.dados || result;
+      $("#cpfResultContent").innerHTML = `
+        <div class="crlvEntityHeader">
+          <div class="crlvEntityAvatar" style="background:#ecfdf5; color:#15803d; border:1px solid #bbf7d0;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <div class="crlvEntityInfo">
+            <span class="crlvEntitySuper">Receita Federal do Brasil · Situação Cadastral</span>
+            <h4 class="crlvEntityTitle">${html(d.nome || "Nome não retornado")}</h4>
+            <div class="crlvEntitySub font-mono">CPF: ${html(d.cpf || raw.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"))}</div>
+          </div>
+          <div class="crlvStatusBadge" style="background:#ecfdf5; color:#15803d; border-color:#86efac;">
+            <span class="crlvStatusDot" style="background:#15803d;"></span>
+            <span>${html(d.situacao || "REGULAR")}</span>
+          </div>
+        </div>
+        <div class="crlvDataGrid">
+          <div class="crlvDataTile"><span class="crlvDataLabel">Nascimento</span><strong class="crlvDataValue">${html(d.nascimento || "-")}${d.idade ? ` (${d.idade} anos)` : ""}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Sexo</span><strong class="crlvDataValue">${html(d.sexo || "-")}</strong></div>
+          <div class="crlvDataTile span-2"><span class="crlvDataLabel">Nome da Mãe</span><strong class="crlvDataValue">${html(d.mae || "-")}</strong></div>
+        </div>
+      `;
+    }
+    toast("Consulta de CPF concluída com sucesso!");
+    loadCrlvStatus();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = origText;
+  }
+});
+
+$("#cpfPrintBtn")?.addEventListener("click", () => {
+  if (!lastCpfResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastCpfResult.dados || lastCpfResult;
+  openPrintWindow("Comprovante de CPF", generateCpfComprovanteHtml(d));
+});
+
+$("#cpfThermalBtn")?.addEventListener("click", () => {
+  if (!lastCpfResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastCpfResult.dados || lastCpfResult;
+  openThermalPrintWindow("Situação CPF (Receita)", {
+    "Titular": d.nome || "-",
+    "CPF": d.cpf || $("#cpfDoc")?.value || "-",
+    "Situação": d.situacao || "REGULAR",
+    "Nascimento": `${d.nascimento || "-"}${d.idade ? ` (${d.idade}a)` : ""}`,
+    "Nome da Mãe": d.mae || "-"
+  });
+});
+
+$("#cpfCopyBtn")?.addEventListener("click", async () => {
+  if (!lastCpfResult) return;
+  const d = lastCpfResult.dados || lastCpfResult;
+  const txt = `CPF: ${d.cpf} | ${d.nome} | Situação: ${d.situacao} | Nasc: ${d.nascimento} | Mãe: ${d.mae}`;
+  await navigator.clipboard.writeText(txt);
+  toast("Dados do CPF copiados para a área de transferência!");
+});
+
+$("#cpfChargeBtn")?.addEventListener("click", () => {
+  const doc = $("#cpfDoc")?.value || "CPF";
+  sendConsultationToCash(`Consulta CPF Receita Federal (${doc})`, 1000, "Serviços Digitais");
+});
+
+// --- FORM CNPJ ---
+function applyCnpjMask(input) {
+  if (!input) return;
+  let v = input.value.replace(/\D/g, "");
+  if (v.length > 14) v = v.slice(0, 14);
+  if (v.length > 12) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{1,2})/, "$1.$2.$3/$4-$5");
+  else if (v.length > 8) v = v.replace(/^(\d{2})(\d{3})(\d{3})(\d{1,4})/, "$1.$2.$3/$4");
+  else if (v.length > 5) v = v.replace(/^(\d{2})(\d{3})(\d{1,3})/, "$1.$2.$3");
+  else if (v.length > 2) v = v.replace(/^(\d{2})(\d{1,3})/, "$1.$2");
+  input.value = v;
+}
+
+$("#cnpjDoc")?.addEventListener("input", e => applyCnpjMask(e.target));
+
+$("#cnpjForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  const raw = String($("#cnpjDoc")?.value || "").replace(/\D/g, "");
+  if (!raw || raw.length !== 14) { toast("Informe o CNPJ completo com 14 dígitos"); return; }
+
+  const submitBtn = $("#cnpjSubmitBtn");
+  const origText = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = "Consultando...";
+
+  try {
+    const homolog = !!$("#crlvHomolog")?.checked;
+    const result = await api("/api/crlv/consulta", { tipo: "cnpj", cnpj: raw, homolog });
+    lastCnpjResult = result;
+    const card = $("#cnpjResultCard");
+    if (card) {
+      card.hidden = false;
+      const d = result.dados || result;
+      $("#cnpjResultContent").innerHTML = `
+        <div class="crlvEntityHeader">
+          <div class="crlvEntityAvatar" style="background:#eff6ff; color:#1e40af; border:1px solid #bfdbfe;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="9" y1="22" x2="9" y2="22.01"/><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01M8 18h.01M16 18h.01"/></svg>
+          </div>
+          <div class="crlvEntityInfo">
+            <span class="crlvEntitySuper">Cartão CNPJ Oficial · Ministério da Fazenda</span>
+            <h4 class="crlvEntityTitle">${html(d.razao || "Razão Social não retornada")}</h4>
+            <div class="crlvEntitySub font-mono">CNPJ: ${html(d.cnpj || raw.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5"))}</div>
+          </div>
+          <div class="crlvStatusBadge" style="background:#eff6ff; color:#1e40af; border-color:#93c5fd;">
+            <span class="crlvStatusDot" style="background:#1e40af;"></span>
+            <span>${html(d.situacao || "ATIVA")}</span>
+          </div>
+        </div>
+        <div class="crlvDataGrid">
+          <div class="crlvDataTile span-2"><span class="crlvDataLabel">Nome Fantasia</span><strong class="crlvDataValue">${html(d.fantasia || "Não informado")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Data Abertura</span><strong class="crlvDataValue">${html(d.abertura || "-")}</strong></div>
+          <div class="crlvDataTile"><span class="crlvDataLabel">Capital Social</span><strong class="crlvDataValue">${html(d.capital || "-")}</strong></div>
+          <div class="crlvDataTile span-2"><span class="crlvDataLabel">Atividade Principal (CNAE)</span><strong class="crlvDataValue">${html(d.cnae || "-")}</strong></div>
+          <div class="crlvDataTile span-2"><span class="crlvDataLabel">Endereço Completo</span><strong class="crlvDataValue">${html(d.endereco || "-")}</strong></div>
+        </div>
+      `;
+    }
+    toast("Consulta de CNPJ concluída com sucesso!");
+    loadCrlvStatus();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = origText;
+  }
+});
+
+$("#cnpjPrintBtn")?.addEventListener("click", () => {
+  if (!lastCnpjResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastCnpjResult.dados || lastCnpjResult;
+  openPrintWindow("Cartão CNPJ", generateCnpjComprovanteHtml(d));
+});
+
+$("#cnpjThermalBtn")?.addEventListener("click", () => {
+  if (!lastCnpjResult) { toast("Nenhum resultado para imprimir"); return; }
+  const d = lastCnpjResult.dados || lastCnpjResult;
+  openThermalPrintWindow("Cartão CNPJ Oficial", {
+    "Razão Social": d.razao || "-",
+    "CNPJ": d.cnpj || $("#cnpjDoc")?.value || "-",
+    "Situação": d.situacao || "ATIVA",
+    "Abertura": d.abertura || "-",
+    "CNAE Principal": d.cnae || "-"
+  });
+});
+
+$("#cnpjCopyBtn")?.addEventListener("click", async () => {
+  if (!lastCnpjResult) return;
+  const d = lastCnpjResult.dados || lastCnpjResult;
+  const txt = `CNPJ: ${d.cnpj} | ${d.razao} | Fantasia: ${d.fantasia} | Situação: ${d.situacao} | Abertura: ${d.abertura}`;
+  await navigator.clipboard.writeText(txt);
+  toast("Dados do CNPJ copiados para a área de transferência!");
+});
+
+$("#cnpjChargeBtn")?.addEventListener("click", () => {
+  const doc = $("#cnpjDoc")?.value || "CNPJ";
+  sendConsultationToCash(`Consulta Cartão CNPJ Empresa (${doc})`, 1500, "Serviços Digitais");
+});
+
+// 8. Filtros, Exportação CSV e Renderização do Histórico
+$("#crlvHistSearchInput")?.addEventListener("input", e => {
+  crlvSearchQuery = e.target.value.trim();
+  applyHistoryFilters();
+});
+
+document.querySelectorAll(".crlvHistPill").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".crlvHistPill").forEach(b => b.classList.toggle("active", b === btn));
+    crlvCurrentFilter = btn.dataset.filter || "all";
+    applyHistoryFilters();
+  });
+});
+
+$("#crlvExportCsvBtn")?.addEventListener("click", () => {
+  if (!crlvHistoryFullList || !crlvHistoryFullList.length) {
+    toast("Nenhuma consulta no histórico para exportar.");
+    return;
+  }
+  const headers = ["Data/Hora", "Tipo", "Documento/Placa", "Operador", "Custo API (R$)", "Status"];
+  const rows = crlvHistoryFullList.map(item => [
+    `"${new Date(item.at).toLocaleString("pt-BR")}"`,
+    `"${item.tipo || "CRLV"}"`,
+    `"${item.placa || item.doc || item.renavam || ""}"`,
+    `"${item.operator || "Sistema"}"`,
+    `"${String(item.valor ?? 8).replace(".", ",")}"`,
+    `"${item.status || "Concluído"}"`
+  ]);
+
+  const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map(r => r.join(";"))].join("\r\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const today = new Date().toISOString().slice(0, 10);
+  a.download = `consultas-speed-${today}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast("Histórico exportado em formato CSV com sucesso!");
+});
+
+function applyHistoryFilters() {
+  let list = crlvHistoryFullList.slice();
+  if (crlvCurrentFilter !== "all") {
+    list = list.filter(item => (item.tipo || "").toLowerCase().includes(crlvCurrentFilter.toLowerCase()));
+  }
+  if (crlvSearchQuery) {
+    const q = crlvSearchQuery.toLowerCase();
+    list = list.filter(item => 
+      (item.doc || "").toLowerCase().includes(q) ||
+      (item.placa || "").toLowerCase().includes(q) ||
+      (item.tipo || "").toLowerCase().includes(q) ||
+      (item.operator || "").toLowerCase().includes(q)
+    );
+  }
+  renderCrlvHistoryTableOnly(list);
+}
+
+function renderCrlvHistoryTableOnly(list) {
+  const tbody = $("#crlvHistoryBody");
+  if (!tbody) return;
+  if (!list || !list.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center; padding:18px;">Nenhuma consulta localizada com os filtros selecionados.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(item => `
+    <tr>
+      <td class="crlvColDate" style="font-size:12.5px; font-weight:600; color:#475569;">${new Date(item.at).toLocaleString("pt-BR")}</td>
+      <td class="crlvColType"><span class="badge" style="font-weight:700; background:#f1f5f9; color:#0f172a; padding:4px 8px; border-radius:6px;">${html(item.tipo || "CRLV")}</span></td>
+      <td class="crlvColDoc"><strong class="font-mono" style="font-size:14px; color:#0f172a;">${html(item.placa || item.doc || item.renavam || "")}</strong></td>
+      <td class="crlvColOp" style="font-weight:600; color:#334155;">${html(item.operator || "Sistema")}</td>
+      <td class="crlvColCost">R$ ${html(String(item.valor ?? 8))}</td>
+      <td class="crlvColStatus"><span class="badge success" style="background:#dcfce7; color:#15803d; padding:4px 10px; border-radius:9999px; font-size:11.5px; font-weight:800;">${html(item.status || "Concluído")}</span></td>
+      <td class="crlvColActions">
+        ${item.pdfUrl ? `
+          <a href="${html(item.pdfUrl || item.proxyUrl)}" target="_blank" class="secondaryBtn" style="padding:5px 10px; font-size:11.5px; text-decoration:none; display:inline-flex; align-items:center; gap:5px; font-weight:700;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            PDF
+          </a>
+        ` : `
+          <button type="button" class="secondaryBtn crlvPrintRowBtn" data-id="${html(item.id)}" style="padding:5px 10px; font-size:11.5px; display:inline-flex; align-items:center; gap:5px; font-weight:700;">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimir
+          </button>
+        `}
+      </td>
+    </tr>
+  `).join("");
+
+  tbody.querySelectorAll(".crlvPrintRowBtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      const item = list.find(x => x.id === id);
+      if (item) printHistoryItem(item);
+    });
+  });
+}
+
+function renderCrlvHistory(list) {
+  crlvHistoryFullList = Array.isArray(list) ? list : [];
+  const totalEl = $("#crlvHistTotal");
+  if (totalEl) totalEl.textContent = String(crlvHistoryFullList.length);
+  const countEl = $("#crlvCount");
+  if (countEl) countEl.textContent = String(crlvHistoryFullList.length);
+  applyHistoryFilters();
+}
+
+// 9. Carregamento de Saldo e Status da APIBrasil
+async function loadCrlvStatus() {
+  try {
+    const data = await api("/api/crlv/status");
+    const balanceEl = $("#crlvBalance");
+    const statusEl = $("#crlvBalanceStatus");
+    if (balanceEl) {
+      const num = typeof data.balance === "number" ? data.balance : parseFloat(data.balance) || 0;
+      balanceEl.textContent = `R$ ${num.toFixed(2).replace(".", ",")}`;
+      if (statusEl) {
+        if (num >= 15) {
+          statusEl.textContent = "Saudável";
+          statusEl.style.background = "#dcfce7";
+          statusEl.style.color = "#15803d";
+        } else if (num >= 5) {
+          statusEl.textContent = "Atenção";
+          statusEl.style.background = "#fef3c7";
+          statusEl.style.color = "#92400e";
+        } else {
+          statusEl.textContent = "Recarregar";
+          statusEl.style.background = "#fee2e2";
+          statusEl.style.color = "#b91c1c";
+        }
+      }
+    }
+    renderCrlvHistory(data.history || []);
+  } catch (err) {
+    console.error("Falha ao carregar status CRLV:", err);
+  }
+}
+
+$("#crlvRefreshBtn")?.addEventListener("click", () => {
+  loadCrlvStatus();
+  toast("Status e histórico da API atualizados com sucesso");
+});
+
+// Inicialização automática do módulo
+loadCrlvStatus();

@@ -1,0 +1,45 @@
+﻿ID;Camada;Diretório;Ficha / identificador;Situação;Severidade;Campos com problema;Ação recomendada;Canal;Acesso confirmado;Protocolo;Última verificação
+1;Terceiro;Bendito Guia;speed-financeira-e-lan-house-centro-varginha-mg;ERRO;P0;Telefone 3113-0458;Sugerir alteração para (35) 3067-5017;Portal (sugestão);A confirmar;;07/11/2026
+2;Terceiro;Brasil Locais;314988;ERRO;P0;Telefone 3113-0458;Reivindicar a ficha e corrigir telefone;Reivindicação;A confirmar;;07/11/2026
+3;Terceiro;Planeta Brasileiro (1);F1008C40E1CD645;ERRO;P0;Telefone 3113-0458 | horário 07:30-22:00 todos os dias | site no Spotway;Sugerir alteração nos 3 campos;Portal (sugestão);Não;;07/11/2026
+4;Terceiro;Planeta Brasileiro (2);Speed Lan House e Financeira;DUPLICADA;P1;Segunda ficha sem URL registrada;Pedir unificação com a ficha 1;Portal (sugestão);Não;;07/11/2026
+5;Terceiro;Página Amarela (2ª);13354263;DUPLICADA;P1;Duplicada da 13363568;Pedir fusão;Manual (bloqueia robô);A confirmar;;sem data
+6;Terceiro;Solutudo (1);23132000;OK-RESSALVA;P2;Horário 08:00-18:30 diverge do Google;Ajustar após decisão de horário;Painel;Sim;;07/11/2026
+7;Terceiro;Solutudo (2);22353545;ERRO;P0;Telefone 3113-0458 | sem horários | duplicada;Mesclar na 23132000;WhatsApp do suporte;Sim;;07/11/2026
+8;Terceiro;TeleListas (1);bu-21209255;OK-RESSALVA;P2;Horário 08:00-18:30;Ajustar após decisão de horário;Painel;Sim;;10/09/2026
+9;Terceiro;TeleListas (2);bu-20063351;ERRO;P1;Telefone 3067-4361 | duplicada;Reportar erro e mesclar na bu-21209255;Reporte público;Não;;10/09/2026
+10;Terceiro;Cylex (11934350);11934350;OK-RESSALVA;P2;Horário 08:00-18:30 / sáb 09:00-13:00;Ajustar após decisão de horário;Painel;Sim;;10/09/2026
+11;Terceiro;Cylex (12279811);12279811;OK-RESSALVA;P2;Duplicidade provável (conteúdo idêntico);Confirmar fusão com suporte;Painel;Sim;;10/09/2026
+12;Terceiro;Cylex (13008709);13008709;OK-RESSALVA;P1;Campo site aponta para o Localo;Trocar por https://speedfinanceira.com.br;Painel;Sim;;10/09/2026
+13;Terceiro;Cylex (13608995);não existe;INEXISTENTE;-;Retorna 404;Remover do plano;Nenhum;-;;10/09/2026
+14;Terceiro;eGuias;3548163;ERRO;P0;Imóvel 6969 (correto 696) e telefone 3113-0458;Corrigir e vincular conta;Botão público;Testar;;07/11/2026
+15;Terceiro;Página Amarela (1ª);13363568;OK-RESSALVA;P1;Nome de exibição antigo;Atualizar nome padrão (após decisão 7.1);Manual;A confirmar;;10/09/2026
+16;Terceiro;Cybo;listagem regional;NÃO VERIFICADA;P2;Ficha individual não localizada;Localizar na listagem antes de agir;Manual;A confirmar;;sem data
+17;Próprio;Google Perfil da Empresa;speedlanhouse;OK-RESSALVA;P1;Categorias | horários | fotos e WhatsApp a revisar;Revisar e ativar alerta de edição de terceiros;Painel;Sim;;sem data
+18;Próprio;Bing Places;9867ae2a-6d72-4ba5-ba86-5181c151e747;OK;P3;Sincronizado com o Google;Apenas monitorar;Painel;Sim;;sem data
+19;Próprio;Facebook;speedfinanceira;OK-RESSALVA;P2;Dados comerciais | categoria e vínculo com Instagram a revisar;Revisar;Painel;Sim;;10/09/2026
+20;Próprio;Instagram;speedfinanceira;ERRO;P0;Publicação divulga 3113-0458 | bio a trocar;Editar/apagar post e linkar wa.me/553530675017;Painel;Sim;;sem data
+21;Próprio;Apple Business (Maps);cadastro em andamento;EM ANDAMENTO;P2;Cadastro iniciado;Concluir (etapa 1 = nome jurídico);Painel;A criar;;sem data
+22;Próprio;Site oficial;speedfinanceira.com.br;CONFLITO;P1;CSV diz CEP correto | DOCX diz CEP 37010-000 + razão social divergente;Conferir rodapé e corrigir;Painel;Sim;;07/11/2026
+23;Terceiro;UENI;speedlanhouse.ueniweb.com;ERRO;P0;4 botões WhatsApp para 553531130458;Corrigir pelo painel ou retirar do ar;Painel UENI;Sim;;07/11/2026
+24;Terceiro;EmpresaFone;3271489;ERRO;P0;Telefone 3113-0458 | endereço e CEP corretos;Corrigir telefone no painel;Painel;Sim;;07/11/2026
+25;Terceiro;Zapia Digital;5421379;INCOMPLETA;P1;Sem telefone | horários "Confirmar" | categoria assistência técnica;Enviar e-mail pedindo telefone, horário e categoria;E-mail ao suporte;Não;;10/09/2026
+26;Terceiro;Lista Mais;cad_idfB0f5B9;OK-RESSALVA;P2;Horário 08:00-18:45 / sáb 09:00-13:45;Ajustar após decisão de horário;Manual;A confirmar;;07/11/2026
+27;Terceiro;Encontra Varginha;ficha da empresa;OK-RESSALVA;P2;Sem horários | descrição desatualizada;Preencher horários e reescrever descrição;Manual;A confirmar;;07/11/2026
+28;Terceiro;Localo;speed-financeira-emprestimo.localo.site;OK-RESSALVA;P2;Decidir se mantém no ar ou redireciona;Decisão do dono;Painel;Sim;;07/11/2026
+29;Terceiro;Wanderlog;14169269;OK;P3;Espelha Google (4,8 / 209 avaliações);Apenas monitorar;Manual;Não;;07/11/2026
+30;Terceiro;AppLocal;13365277;NÃO VERIFICADA;P2;Bloqueio de robô;Abrir manualmente, conferir e reivindicar gestão;Manual;A reivindicar;;sem data
+31;Terceiro;Spotway;link cai na home;INEXISTENTE;-;Não abre ficha;Procurar no site ou fechar o item;Manual;A confirmar;;10/09/2026
+32;Terceiro;Portal do Representante;52364;FORA DO PERFIL;P3;Sem telefone e sem endereço;Avaliar remoção;Manual;A confirmar;;10/09/2026
+33;Terceiro;YellowPages;BREN1971076;NÃO VERIFICADA;P2;Telefone 3221-5809 não retorna empresa em Varginha;Confirmar se a ficha é da Speed antes de corrigir;Manual;A confirmar;;sem data
+34;Terceiro;Moovit;site_263831496;NÃO VERIFICADA;P3;Ponto de referência no mapa;Conferir posição do alfinete;Manual;Não;;sem data
+35;Menção;Infobel;BR155940380;NÃO VERIFICADA;P2;Servidor bloqueia leitura;Verificar e reivindicar;Manual;A reivindicar;;sem data
+36;Menção;InfoisInfo;link de outra empresa;INEXISTENTE;-;Aponta para a Lan House Autorama (outra empresa);Buscar a Speed ou fechar o item;Manual;A confirmar;;sem data
+37;Menção;SmartScrapers;relatório regional;FORA DO PERFIL;P3;Base de terceiros;Apenas monitorar;Nenhum;-;;sem data
+38;Novo;Reclame Aqui;ausente;A CADASTRAR;P1;Marca ausente;Reivindicar/cadastrar antes de haver reclamação;Painel;A criar;;-
+39;Novo;Apontador;ausente;A CADASTRAR;P2;Ausente;Pesquisar e criar se não existir;Painel;A criar;;-
+40;Novo;Foursquare;ausente;A CADASTRAR;P2;Ausente;Criar ficha;Painel;A criar;;-
+41;Novo;Hotfrog;ausente;A CADASTRAR;P2;Ausente;Criar ficha gratuita;Painel;A criar;;-
+42;Novo;GuiaMais;ausente;A CADASTRAR;P2;Ausente;Verificar se aceita inserção gratuita;Painel;A criar;;-
+43;Novo;Guia Urbana;ausente;A CADASTRAR;P3;Ausente;Testar formulário de cadastro;Formulário;A criar;;-
+44;Novo;Yelp;ausente;A CADASTRAR;P3;Ausente;Baixo volume local, útil como autoridade de link;Painel;A criar;;-

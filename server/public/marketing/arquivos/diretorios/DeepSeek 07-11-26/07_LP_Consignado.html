@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<!--
+  RASCUNHO — LP de consignado da Speed Financeira.
+  Antes de publicar: revisar nome, horário, avisos legais e links.
+  Checklist completo em 16_Checklist_Publicacao.md.
+  Não prometer aprovação, taxa ou prazo. A análise é da instituição parceira.
+-->
+<html lang="pt-BR" data-status="rascunho">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Empréstimo consignado em Varginha | Speed Financeira</title>
+<meta name="description" content="Consignado INSS e CLT, antecipação do FGTS, portabilidade e crédito pessoal em Varginha/MG. Atendimento presencial e simulação pelo WhatsApp (35) 3067-5017.">
+<link rel="canonical" href="https://speedfinanceira.com.br/consignado.html">
+<meta property="og:title" content="Empréstimo consignado em Varginha | Speed Financeira">
+<meta property="og:description" content="Consignado INSS e CLT, FGTS e portabilidade com atendimento presencial no Centro de Varginha.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://speedfinanceira.com.br/consignado.html">
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f6f8f7; --branco:#fff;
+  --borda:#e2e8e4; --sombra:0 10px 30px rgba(20,35,27,.08); --raio:16px; --max:1080px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:var(--verde-escuro)}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:16px;top:16px;background:#fff;padding:10px 14px;border-radius:8px;z-index:99}
+
+header{background:#fff;border-bottom:1px solid var(--borda);position:sticky;top:0;z-index:20}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
+.marca{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tinta);font-weight:800}
+.marca .ponto{width:34px;height:34px;border-radius:10px;background:var(--verde);display:grid;place-items:center;color:#fff;font-weight:800}
+.marca small{display:block;font-size:11px;font-weight:600;color:#6b7d73;letter-spacing:.4px;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;background:var(--verde);color:#fff;
+  text-decoration:none;font-weight:700;padding:12px 18px;border-radius:999px;border:2px solid var(--verde);
+  transition:transform .15s ease,background .15s ease}
+.btn:hover{background:var(--verde-escuro);border-color:var(--verde-escuro);transform:translateY(-1px)}
+.btn.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.btn.sec:hover{background:#effaf4}
+.btn:focus-visible{outline:3px solid var(--amarelo);outline-offset:2px}
+
+.hero{background:
+  radial-gradient(900px 420px at 85% -10%, rgba(250,219,32,.28), transparent 60%),
+  linear-gradient(140deg,var(--verde-escuro),var(--verde));
+  color:#fff;padding:62px 0 54px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;inset:auto -60px -90px auto;width:340px;height:340px;
+  border:40px solid rgba(255,255,255,.08);border-radius:50%}
+.hero h1{font-size:clamp(30px,5vw,48px);line-height:1.1;letter-spacing:-1px;margin:0 0 16px;max-width:18ch}
+.hero p{font-size:clamp(16px,2vw,19px);max-width:58ch;margin:0 0 26px;color:#e8f5ee}
+.hero .acoes{display:flex;flex-wrap:wrap;gap:12px}
+.hero .btn{background:var(--amarelo);color:#25301f;border-color:var(--amarelo)}
+.hero .btn:hover{background:#ffd94a;border-color:#ffd94a}
+.hero .btn.sec{background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+.hero .btn.sec:hover{background:rgba(255,255,255,.12)}
+.selos{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.selo{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600}
+
+.legal{background:#fff8e1;border:1px solid #f0dc8a;border-radius:12px;padding:14px 18px;
+  font-size:13.5px;color:#5b4a00;margin:22px 0 0}
+.legal strong{color:#3f3400}
+
+section{padding:56px 0}
+h2{font-size:clamp(24px,3.4vw,34px);letter-spacing:-.6px;color:var(--tinta);margin:0 0 8px}
+.sub{color:#5d7066;margin:0 0 30px;max-width:66ch}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.card{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:22px;box-shadow:0 2px 6px rgba(20,35,27,.04)}
+.card h3{margin:0 0 8px;font-size:17px;color:var(--tinta)}
+.card p{margin:0;font-size:14.5px}
+.ico{width:40px;height:40px;border-radius:10px;background:#effaf4;color:var(--verde-escuro);display:grid;place-items:center;font-weight:800;margin-bottom:12px;font-size:15px}
+
+.passos{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));counter-reset:p}
+.passo{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:22px;position:relative}
+.passo:before{counter-increment:p;content:counter(p);position:absolute;top:-14px;left:20px;width:30px;height:30px;
+  border-radius:50%;background:var(--amarelo);color:#25301f;display:grid;place-items:center;font-weight:800;font-size:14px;border:3px solid var(--claro)}
+.passo h3{margin:8px 0 4px;font-size:16px;color:var(--tinta)}
+.passo p{margin:0;font-size:14px}
+
+.duas{display:grid;gap:18px;grid-template-columns:1fr 1fr}
+.bloco{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:24px}
+.bloco h3{margin:0 0 10px;color:var(--tinta);font-size:18px}
+.bloco ul{margin:0;padding-left:18px;font-size:14.5px}
+.bloco li{margin:7px 0}
+.bloco.alerta{background:#fef2f2;border-color:#f7c9c9}
+.bloco.alerta h3{color:#991b1b}
+.bloco.seguro{background:#effaf4;border-color:#bfe3d0}
+.bloco.seguro h3{color:var(--verde-escuro)}
+
+.faq{display:grid;gap:10px}
+details{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:0 18px}
+details[open]{box-shadow:var(--sombra)}
+summary{cursor:pointer;font-weight:700;color:var(--tinta);padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary:after{content:"+";color:var(--verde);font-size:20px;line-height:1}
+details[open] summary:after{content:"–"}
+details p{margin:0 0 16px;font-size:14.5px}
+
+.cta{background:linear-gradient(140deg,var(--verde-escuro),var(--verde));color:#fff;border-radius:20px;padding:38px;
+  display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+.cta h2{color:#fff;margin:0 0 6px}
+.cta p{margin:0;color:#dff1e7}
+.cta .btn{background:var(--amarelo);color:#25301f;border-color:var(--amarelo)}
+
+.local{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:26px;box-shadow:var(--sombra)}
+.local ul{margin:0;padding-left:18px;font-size:14.5px}
+.local li{margin:6px 0}
+.aviso{background:#fffbe6;border:1px solid #f3e08a;border-radius:12px;padding:12px 16px;font-size:13.5px;color:#5c4b00;margin-top:16px}
+
+footer{background:#0f1c15;color:#c9d8d0;padding:40px 0 90px;margin-top:20px;font-size:13.5px}
+footer a{color:#fff}
+footer .nap{font-style:normal;line-height:1.8}
+footer .fim{border-top:1px solid rgba(255,255,255,.12);margin-top:22px;padding-top:18px;color:#93a89c}
+
+.zap{position:fixed;right:18px;bottom:18px;background:var(--verde);color:#fff;text-decoration:none;padding:14px 20px;
+  border-radius:999px;font-weight:800;box-shadow:0 12px 24px rgba(1,150,82,.35);z-index:30}
+.zap:hover{background:var(--verde-escuro)}
+
+@media(max-width:760px){
+  .duas{grid-template-columns:1fr}
+  .hero{padding:44px 0 40px}
+  .bar .btn{display:none}
+  section{padding:42px 0}
+  footer{padding-bottom:100px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Ir para o conteúdo</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="marca" href="https://speedfinanceira.com.br">
+      <span class="ponto" aria-hidden="true">S</span>
+      <span>Speed<small>Financeira e Lan House</small></span>
+    </a>
+    <a class="btn" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20consignado%20e%20quero%20simular.%20%5BCONS%5D">Simular no WhatsApp</a>
+  </div>
+</header>
+
+<main id="conteudo">
+
+  <section class="hero">
+    <div class="wrap">
+      <h1>Consignado com atendimento presencial em Varginha</h1>
+      <p>Consignado INSS e CLT, antecipação do FGTS, portabilidade e crédito pessoal. Você fala com gente de verdade, no Centro de Varginha, e entende cada etapa antes de assinar.</p>
+      <div class="acoes">
+        <a class="btn" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20consignado%20e%20quero%20simular.%20%5BCONS%5D">Quero simular</a>
+        <a class="btn sec" href="https://www.google.com/maps/search/?api=1&amp;query=Rua+Santa+Cruz+696+Centro+Varginha+MG">Como chegar</a>
+      </div>
+      <div class="selos">
+        <span class="selo">Mais de 15 anos em Varginha</span>
+        <span class="selo">4,8 no Google</span>
+        <span class="selo">Atendimento presencial</span>
+      </div>
+      <div class="legal">
+        <strong>Importante:</strong> a Speed é correspondente bancário e não é instituição financeira. A aprovação, a taxa e o prazo são definidos pela instituição parceira, após análise. Não há garantia de aprovação.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>O que você pode simular</h2>
+      <p class="sub">Cada modalidade tem regra própria. A gente confere com você qual faz sentido antes de enviar qualquer proposta.</p>
+      <div class="grid">
+        <article class="card"><div class="ico" aria-hidden="true">IN</div><h3>Consignado INSS</h3><p>Para aposentados e pensionistas do INSS, com desconto no benefício.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">CL</div><h3>Consignado CLT</h3><p>Para trabalhadores com carteira assinada, conforme convênio da empresa.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">FG</div><h3>Antecipação do FGTS</h3><p>Antecipação do saque-aniversário, conforme as regras vigentes.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">PT</div><h3>Portabilidade</h3><p>Compare a proposta atual com outra instituição antes de decidir.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">CP</div><h3>Crédito pessoal</h3><p>Para quem precisa de valor e prefere parcela fixa.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">FV</div><h3>Financiamento de veículo</h3><p>Simulação com garantia do veículo, sujeita à análise.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#fff;border-block:1px solid var(--borda)">
+    <div class="wrap">
+      <h2>Como funciona</h2>
+      <p class="sub">Quatro passos, sem enrolação.</p>
+      <div class="passos">
+        <div class="passo"><h3>Você chama no WhatsApp</h3><p>Conta o que precisa e tira as primeiras dúvidas.</p></div>
+        <div class="passo"><h3>Conferimos o perfil</h3><p>Vemos a modalidade e os documentos necessários.</p></div>
+        <div class="passo"><h3>A instituição analisa</h3><p>A proposta é enviada ao parceiro, que decide.</p></div>
+        <div class="passo"><h3>Assinatura na loja</h3><p>Você lê as condições e assina com acompanhamento.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Antes de vir</h2>
+      <div class="duas">
+        <div class="bloco">
+          <h3>Documentos mais pedidos</h3>
+          <ul>
+            <li>RG e CPF (ou CNH)</li>
+            <li>Comprovante de residência atualizado</li>
+            <li>Extrato do benefício (INSS) ou holerite (CLT)</li>
+            <li>Comprovante de renda ou extrato bancário, quando solicitado</li>
+          </ul>
+          <p style="font-size:13.5px;color:#5d7066;margin:12px 0 0">A lista final depende da instituição e da modalidade. Confirme no WhatsApp antes de vir.</p>
+        </div>
+        <div class="bloco seguro">
+          <h3>Atendimento seguro</h3>
+          <ul>
+            <li>Atendimento presencial na Rua Santa Cruz, 696</li>
+            <li>CNPJ e endereço visíveis na loja e no site</li>
+            <li>Você recebe as condições antes de assinar</li>
+            <li>Nunca pedimos senha do INSS, do Gov.br ou do banco</li>
+          </ul>
+        </div>
+      </div>
+      <div class="bloco alerta" style="margin-top:18px">
+        <h3>Desconfie de quem pede pagamento antecipado</h3>
+        <p style="margin:0;font-size:14.5px">Não faça Pix, transferência ou pagamento para “liberar” análise, cadastro ou empréstimo. Se alguém pedir isso em nome da Speed, procure a loja ou ligue para (35) 3067-5017.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Perguntas frequentes</h2>
+      <div class="faq">
+        <details><summary>A aprovação é garantida?</summary><p>Não. A Speed é correspondente bancário. A instituição parceira analisa o perfil e decide se aprova, com qual taxa e prazo. Nenhum atendente pode prometer aprovação.</p></details>
+        <details><summary>Preciso pagar algo para simular?</summary><p>A simulação é gratuita. Desconfie de qualquer cobrança antecipada para análise, cadastro ou liberação.</p></details>
+        <details><summary>Posso quitar ou transferir um empréstimo?</summary><p>Sim, é possível avaliar portabilidade ou quitação. A condição depende da instituição e do contrato atual. Traga o extrato ou o contrato para comparar.</p></details>
+        <details><summary>O consignado INSS desconta direto do benefício?</summary><p>Sim, a parcela é descontada conforme a regra do benefício e o contrato. Antes de assinar, você vê o valor da parcela e o prazo.</p></details>
+        <details><summary>Vocês atendem por WhatsApp?</summary><p>Sim, para dúvidas e simulação inicial. A assinatura e a conferência de documentos são presenciais, na loja.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="local">
+        <h2>Onde estamos</h2>
+        <ul>
+          <li><strong>Endereço:</strong> Rua Santa Cruz, 696 — Centro — Varginha/MG</li>
+          <li><strong>CEP:</strong> 37002-090</li>
+          <li><strong>WhatsApp:</strong> (35) 3067-5017</li>
+          <li><strong>E-mail:</strong> speed.varginha@gmail.com</li>
+          <li><strong>Horário:</strong> confirme no WhatsApp antes de vir</li>
+        </ul>
+        <div class="aviso">O horário desta página será atualizado após a definição oficial. Até lá, confirme pelo WhatsApp.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="cta">
+        <div>
+          <h2>Tire a dúvida antes de decidir</h2>
+          <p>Simulação sem compromisso e sem cobrança antecipada.</p>
+        </div>
+        <a class="btn" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20consignado%20e%20quero%20simular.%20%5BCONS%5D">Falar no WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <address class="nap">
+      <strong>Speed Financeira e Lan House</strong><br>
+      Correspondente bancário · CNPJ 29.497.887/0001-57<br>
+      Rua Santa Cruz, 696 — Centro — Varginha/MG — CEP 37002-090<br>
+      Telefone e WhatsApp: <a href="tel:+553530675017">(35) 3067-5017</a><br>
+      E-mail: <a href="mailto:speed.varginha@gmail.com">speed.varginha@gmail.com</a>
+    </address>
+    <div class="fim">
+      A Speed Financeira é correspondente bancário e não é instituição financeira. Condições e aprovação dependem da análise da instituição parceira.
+      <br>© <span id="ano">2026</span> Speed Financeira e Lan House.
+    </div>
+  </div>
+</footer>
+
+<a class="zap" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20consignado%20e%20quero%20simular.%20%5BCONS%5D" aria-label="Falar no WhatsApp">WhatsApp</a>
+
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"A aprovação é garantida?","acceptedAnswer":{"@type":"Answer","text":"Não. A Speed é correspondente bancário. A instituição parceira analisa o perfil e decide se aprova, com qual taxa e prazo."}},
+    {"@type":"Question","name":"Preciso pagar algo para simular?","acceptedAnswer":{"@type":"Answer","text":"A simulação é gratuita. Desconfie de cobrança antecipada para análise, cadastro ou liberação."}},
+    {"@type":"Question","name":"Posso quitar ou transferir um empréstimo?","acceptedAnswer":{"@type":"Answer","text":"É possível avaliar portabilidade ou quitação, conforme a instituição e o contrato atual."}},
+    {"@type":"Question","name":"O consignado INSS desconta direto do benefício?","acceptedAnswer":{"@type":"Answer","text":"Sim, conforme a regra do benefício e o contrato. Antes de assinar, o cliente vê parcela e prazo."}},
+    {"@type":"Question","name":"Vocês atendem por WhatsApp?","acceptedAnswer":{"@type":"Answer","text":"Sim, para dúvidas e simulação inicial. A assinatura e a conferência de documentos são presenciais."}}
+  ]
+}
+</script>
+<script>document.getElementById('ano').textContent=new Date().getFullYear();</script>
+</body>
+</html>

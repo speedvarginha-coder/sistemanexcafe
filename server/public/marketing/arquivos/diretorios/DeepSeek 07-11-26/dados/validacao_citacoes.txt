@@ -1,0 +1,31 @@
+﻿VALIDACAO DE CITACOES - 2026-11-07 14:53
+Fonte de NAP: dados/nap.json
+Arquivos publicos analisados: 16
+
+[OK] 06_LP_Grafica.html
+[OK] 07_LP_Consignado.html
+[OK] paginas\abrir-mei.html
+[OK] paginas\carta-concessao.html
+[OK] paginas\conta-govbr.html
+[OK] paginas\curriculo.html
+[OK] paginas\extrato-cnis.html
+[OK] paginas\imprimir-crlv.html
+[OK] paginas\informatica.html
+[OK] paginas\meu-inss-varginha.html
+[OK] paginas\servicos-digitais.html
+[OK] artigos\como-imprimir-crlv-digital.html
+[OK] artigos\index.html
+[OK] artigos\meu-inss-sem-senha.html
+[OK] artigos\regularizar-mei.html
+[OK] artigos\revisao-de-curriculo.html
+
+=== TOTAIS ===
+Telefone correto: 16 de 16
+Endereco correto: 16 de 16
+CEP correto: 16 de 16
+Nome presente: 16 de 16
+Ocorrencias de telefone banido: 0
+
+Observacao: paginas de ferramenta (12, 21 a 24, 27, 29 e 32) nao entram nesta validacao porque nao sao publicas.
+Cobertura: LPs 06 e 07, paginas/ (9) e artigos/ (5).
+Nada foi publicado. Nada foi alterado nas paginas.

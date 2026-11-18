@@ -67,3 +67,12 @@ test("fila de posts: edicoes salvas prevalecem e posts novos entram no topo", ()
   assert.equal(posts[1].manchete, "editada");
   assert.equal(ctx.mesclar([], fila).length, 2);
 });
+
+test("dados do marketing lidos pelo servidor: a lista sai, mas o arquivo nao alcanca o processo do servidor", () => {
+  const { readMarketingList } = require("../server/app");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-mkt-dados-"));
+  const tentativa = alvo => `(function () { try { return typeof ${alvo}.constructor.constructor("return process")(); } catch (e) { return "bloqueado"; } })()`;
+  put(dir, "dados.js", `window.LISTA = [{ id: "a", pelaJanela: ${tentativa("window")}, peloGlobal: ${tentativa("this")}, direto: typeof process + typeof require }];\n// fim`);
+  assert.deepEqual(readMarketingList(path.join(dir, "dados.js"), "LISTA"), [{ id: "a", pelaJanela: "bloqueado", peloGlobal: "bloqueado", direto: "undefinedundefined" }]);
+  assert.deepEqual(readMarketingList(path.join(dir, "dados.js"), "NAO_EXISTE"), []);
+});

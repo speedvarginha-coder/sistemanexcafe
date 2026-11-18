@@ -46,14 +46,32 @@ async function syncMarketing({ source = DEFAULT_MARKETING_SOURCE, dest }) {
     for (const rel of files.filter(rule.match)) {
       const destRel = `${rule.to}/${rel}`;
       try {
-        const content = adapt(destRel, await fsp.readFile(path.join(from, rel)));
+        const srcPath = path.join(from, rel);
         const target = path.join(dest, destRel);
-        const current = await fsp.readFile(target).catch(() => null);
-        if (current && current.equals(content)) { result.unchanged++; continue; }
+        const [srcStat, targetStat] = await Promise.all([
+          fsp.stat(srcPath).catch(() => null),
+          fsp.stat(target).catch(() => null)
+        ]);
+        if (!srcStat) continue;
+
+        const isAdapted = /^speedgeo\/[^/]+\.html$/i.test(destRel);
+        if (!isAdapted && targetStat && targetStat.size === srcStat.size && Math.abs(targetStat.mtimeMs - srcStat.mtimeMs) < 2000) {
+          result.unchanged++;
+          continue;
+        }
+
+        const content = adapt(destRel, await fsp.readFile(srcPath));
+        const current = targetStat ? await fsp.readFile(target).catch(() => null) : null;
+        if (current && current.equals(content)) {
+          result.unchanged++;
+          await fsp.utimes(target, srcStat.atime, srcStat.mtime).catch(() => {});
+          continue;
+        }
         await fsp.mkdir(path.dirname(target), { recursive: true });
         // Grava ao lado e renomeia: o painel nunca le um arquivo pela metade.
         await fsp.writeFile(target + ".sync-tmp", content);
         await fsp.rename(target + ".sync-tmp", target);
+        await fsp.utimes(target, srcStat.atime, srcStat.mtime).catch(() => {});
         result.copied.push(destRel);
       } catch (cause) { result.errors.push(`${destRel}: ${cause.message}`); }
     }

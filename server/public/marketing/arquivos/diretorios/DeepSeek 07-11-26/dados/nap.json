@@ -1,0 +1,103 @@
+{
+  "versao": "2026-11-07",
+  "observacao": "Fonte unica de NAP do pacote DeepSeek 07-11-26. Nome e horario ainda dependem de aprovacao do dono (ver 03_Decisoes_Pendentes.md).",
+  "status_nome": "recomendado_pendente_aprovacao",
+  "nome_exibicao": "Speed Financeira e Lan House",
+  "nome_curto": "Speed Financeira",
+  "razao_social": "Gleison Kleber dos Santos",
+  "natureza_juridica": "Empresario individual",
+  "cnpj": "29.497.887/0001-57",
+  "endereco": {
+    "logradouro": "Rua Santa Cruz",
+    "numero": "696",
+    "complemento": "",
+    "bairro": "Centro",
+    "cidade": "Varginha",
+    "uf": "MG",
+    "cep": "37002-090",
+    "pais": "BR"
+  },
+  "telefone": {
+    "exibicao": "(35) 3067-5017",
+    "e164": "+553530675017",
+    "whatsapp": "553530675017"
+  },
+  "email": "speed.varginha@gmail.com",
+  "site": "https://speedfinanceira.com.br",
+  "horario": {
+    "status": "pendente_decisao",
+    "seg_sex": "08:00-18:00 (a confirmar)",
+    "sabado": "09:00-12:30 (a confirmar)",
+    "domingo": "fechado (a confirmar)"
+  },
+  "telefones_banidos": [
+    "(35) 3113-0458",
+    "(35) 3067-4361"
+  ],
+  "categorias": {
+    "principal_recomendada": "Correspondente bancario",
+    "alternativa": "Agencia de emprestimos",
+    "secundarias": [
+      "Lan house",
+      "Servico de impressao",
+      "Grafica",
+      "Loja de informatica",
+      "Servico de copia"
+    ]
+  },
+  "servicos": {
+    "financeiro": [
+      "Emprestimo consignado INSS",
+      "Consignado CLT",
+      "Antecipacao do FGTS",
+      "Portabilidade de credito",
+      "Troca de divida",
+      "Cartao consignado",
+      "Credito pessoal",
+      "Financiamento de veiculo"
+    ],
+    "grafica": [
+      "Impressao",
+      "Xerox",
+      "Digitalizacao",
+      "Plastificacao",
+      "Encadernacao",
+      "Foto 3x4",
+      "Impressao fotografica"
+    ],
+    "digital": [
+      "Meu INSS (auxilio presencial)",
+      "Gov.br (auxilio presencial)",
+      "Extrato CNIS",
+      "Carta de concessao",
+      "CRLV",
+      "MEI",
+      "Curriculo",
+      "Segunda via de documentos"
+    ],
+    "informatica": [
+      "Formatacao",
+      "Limpeza e manutencao",
+      "Upgrade de SSD e memoria",
+      "Remocao de virus",
+      "Backup e transferencia",
+      "Suporte a celular"
+    ]
+  },
+  "redes": {
+    "instagram": "https://www.instagram.com/speedfinanceira/",
+    "facebook": "https://www.facebook.com/speedfinanceira/"
+  },
+  "paginas": {
+    "meu_inss": "/meu-inss-varginha.html",
+    "cnis": "/extrato-cnis.html",
+    "carta": "/carta-concessao.html",
+    "govbr": "/conta-govbr.html",
+    "crlv": "/imprimir-crlv.html",
+    "mei": "/abrir-mei.html",
+    "informatica": "/informatica.html",
+    "digitais": "/servicos-digitais.html",
+    "grafica": "/grafica.html",
+    "consignado": "/consignado.html"
+  }
+}

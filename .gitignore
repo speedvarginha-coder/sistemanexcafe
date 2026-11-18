@@ -11,3 +11,8 @@ Pendrive-Preparado/LanHouseManager-Estacoes/
 # Chave do cofre e configuracao com chaves de API: nunca versionar
 server/public/marketing/speedgeo/config.json
 cofre.chave
+# Documentos gerados de clientes (CRLV etc.): nunca versionar
+server/public/crlv/
+# Copias manuais feitas antes de uma mudanca
+*.bak
+*.bak-*

@@ -1037,10 +1037,37 @@ function Get-PdfPageImage {
     }
 }
 
+function Get-PdfPageCountFromRawBytes {
+    param([string]$Path)
+    try {
+        $bytes = [System.IO.File]::ReadAllBytes($Path)
+        $text = [System.Text.Encoding]::ASCII.GetString($bytes)
+        $matches = [regex]::Matches($text, '/Type\s*/Page[^a-zA-Z]')
+        if ($matches.Count -gt 0) { return [int]$matches.Count }
+        $pagesCountMatch = [regex]::Match($text, '/Type\s*/Pages\b[^>]*?/Count\s+(\d+)')
+        if ($pagesCountMatch.Success) { return [int]$pagesCountMatch.Groups[1].Value }
+        $allCounts = [regex]::Matches($text, '/Count\s+(\d+)')
+        $maxCount = 0
+        foreach ($m in $allCounts) {
+            $val = [int]$m.Groups[1].Value
+            if ($val -gt $maxCount -and $val -le 500) { $maxCount = $val }
+        }
+        if ($maxCount -gt 0) { return $maxCount }
+    } catch { }
+    return 1
+}
+
 function Get-PdfPageCount {
     param([string]$Path)
-    $document = Open-PdfDocument -Path $Path
-    return [int]$document.PageCount
+    try {
+        $document = Open-PdfDocument -Path $Path
+        if ($document -and $document.PageCount -gt 0) {
+            return [int]$document.PageCount
+        }
+    } catch {
+        Write-AgentLog "WinRT indisponivel para contagem de paginas ($($_.Exception.Message)); usando contagem direta."
+    }
+    return Get-PdfPageCountFromRawBytes -Path $Path
 }
 
 function Show-PdfPrintReview {
@@ -1048,7 +1075,12 @@ function Show-PdfPrintReview {
     Add-Type -AssemblyName System.Windows.Forms
     Add-Type -AssemblyName System.Drawing
     [System.Windows.Forms.Application]::EnableVisualStyles()
-    $document = Open-PdfDocument -Path $Path
+    $document = $null
+    try {
+        $document = Open-PdfDocument -Path $Path
+    } catch {
+        Write-AgentLog "WinRT indisponivel para pre-visualizacao ($($_.Exception.Message)); exibindo painel simplificado."
+    }
     $dark = [Drawing.Color]::FromArgb(17, 29, 39)
     $panelColor = [Drawing.Color]::FromArgb(24, 42, 53)
     $teal = [Drawing.Color]::FromArgb(12, 137, 126)
@@ -1160,13 +1192,47 @@ function Show-PdfPrintReview {
     $form.Controls.Add($next)
 
     $loadPage = {
-        $newImage = Get-PdfPageImage -Document $document -Index $script:PrintPreviewIndex -Scale 1.0
+        if ($document) {
+            try {
+                $newImage = Get-PdfPageImage -Document $document -Index $script:PrintPreviewIndex -Scale 1.0
+                if ($script:PrintPreviewImage) { $script:PrintPreviewImage.Dispose() }
+                $script:PrintPreviewImage = $newImage
+                $preview.Image = $newImage
+                $position.Text = "Página $($script:PrintPreviewIndex + 1) de $Pages"
+                $prev.Enabled = ($script:PrintPreviewIndex -gt 0)
+                $next.Enabled = ($script:PrintPreviewIndex -lt ($Pages - 1))
+                return
+            } catch {
+                Write-AgentLog "Falha ao renderizar pagina do PDF ($($_.Exception.Message)); usando visualizacao direta."
+            }
+        }
+        $fallbackBmp = New-Object System.Drawing.Bitmap(635, 550)
+        $g = [System.Drawing.Graphics]::FromImage($fallbackBmp)
+        try {
+            $g.Clear([Drawing.Color]::FromArgb(240, 244, 248))
+            $fontTitle = New-Object Drawing.Font("Segoe UI", 16, [Drawing.FontStyle]::Bold)
+            $fontSub = New-Object Drawing.Font("Segoe UI", 11)
+            $fontNote = New-Object Drawing.Font("Segoe UI", 9)
+            $brushDark = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(33, 49, 60))
+            $brushMuted = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(100, 116, 139))
+            $sf = New-Object Drawing.StringFormat
+            $sf.Alignment = "Center"
+            $sf.LineAlignment = "Center"
+            $rectTitle = New-Object Drawing.RectangleF(20, 170, 595, 45)
+            $rectSub = New-Object Drawing.RectangleF(20, 220, 595, 60)
+            $rectNote = New-Object Drawing.RectangleF(20, 300, 595, 30)
+            $g.DrawString("Documento pronto para envio", $fontTitle, $brushDark, $rectTitle, $sf)
+            $g.DrawString("Total: $Pages página(s)`nEscolha Preto e Branco ou Colorido ao lado.", $fontSub, $brushMuted, $rectSub, $sf)
+            $g.DrawString("(A impressão física será processada normalmente pelo caixa)", $fontNote, $brushMuted, $rectNote, $sf)
+        } finally {
+            $g.Dispose()
+        }
         if ($script:PrintPreviewImage) { $script:PrintPreviewImage.Dispose() }
-        $script:PrintPreviewImage = $newImage
-        $preview.Image = $newImage
-        $position.Text = "Página $($script:PrintPreviewIndex + 1) de $Pages"
-        $prev.Enabled = ($script:PrintPreviewIndex -gt 0)
-        $next.Enabled = ($script:PrintPreviewIndex -lt ($Pages - 1))
+        $script:PrintPreviewImage = $fallbackBmp
+        $preview.Image = $fallbackBmp
+        $position.Text = "$Pages página(s) detectada(s)"
+        $prev.Enabled = $false
+        $next.Enabled = $false
     }
     $prev.Add_Click({ if ($script:PrintPreviewIndex -gt 0) { $script:PrintPreviewIndex--; & $loadPage } })
     $next.Add_Click({ if ($script:PrintPreviewIndex -lt ($Pages - 1)) { $script:PrintPreviewIndex++; & $loadPage } })
@@ -2108,6 +2174,13 @@ function Invoke-AgentRun {
                     try { $lockProcess = Start-LockScreenProcess; Start-Sleep -Milliseconds 500 }
                     catch { Write-AgentLog "Falha ao abrir a tela de bloqueio: $($_.Exception.Message)"; Send-AgentEvent -Config $config -Title "Falha ao abrir bloqueio" -Detail $_.Exception.Message }
                 }
+            } elseif ($lockProcess -and -not $lockProcess.HasExited) {
+                # A tela se fecha sozinha pelo timer dela. Se esse timer parar (falha no login do cliente,
+                # erro ao fechar as janelas), o mutex impede outra nascer e o cliente fica preso com a
+                # sessao correndo. Aqui o servidor manda: liberada e sem tela de bloqueio viva.
+                Write-AgentLog "Estacao liberada com a tela de bloqueio ainda aberta; fechando."
+                Stop-AgentUiProcesses -Actions @("LockScreen")
+                $lockProcess = $null
             }
 
             # Confirma ao servidor que a estacao abriu; sem isso o painel fica em "Liberando".
@@ -2737,7 +2810,8 @@ function New-ClientAccessCard {
             $result = Invoke-ClientLogin -Config $Config -Login $loginBox.Text.Trim() -Password $passBox.Text
             $messageLabel.ForeColor = $blue
             $messageLabel.Text = "Bem-vindo, $($result.clientName)! Liberando a estação..."
-            if ($script:Timer) { $script:Timer.Stop() }
+            # O timer segue rodando de proposito: se estes Close falharem, e ele quem fecha a tela
+            # no proximo tick ao ver locked=false. Parar o timer aqui deixava a estacao presa.
             foreach ($openForm in @($script:Forms)) {
                 if ($openForm -and -not $openForm.IsDisposed) { $openForm.Close() }
             }
@@ -2746,6 +2820,7 @@ function New-ClientAccessCard {
             $passBox.Clear()
             $passBox.Focus()
             $button.Enabled = $true
+        } finally {
             $script:LoginBusy = $false
         }
     }

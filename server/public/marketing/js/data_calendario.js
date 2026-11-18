@@ -6,38 +6,46 @@ window.SPEED_CALENDARIO_DATA = {
     {
       dia_indice: 1,
       dia_nome: "Segunda-feira",
-      foco_estrategico: "Início de Semana — Foco em Dinheiro Rápido no Pix",
-      foco_produto: "Saque-Aniversário FGTS no Pix",
-      icone: "fa-bolt",
-      cor_tema: "from-amber-500 to-yellow-500",
-      badge_cor: "bg-yellow-100 text-yellow-800 border-yellow-300",
-      post_fila_relacionado: "promo-credito-pessoal-091701",
+      foco_estrategico: "Início de Semana — Dinheiro para quem trabalha de Carteira Assinada",
+      foco_produto: "Consignado CLT & Antecipação FGTS",
+      icone: "fa-briefcase",
+      cor_tema: "from-emerald-600 to-teal-600",
+      badge_cor: "bg-emerald-100 text-emerald-800 border-emerald-300",
+      post_fila_relacionado: "ad-clt-01-troca-divida",
 
       // ─── CANAL 1: INSTAGRAM & FACEBOOK ─────────────────────────────────────
       social: {
         canal: "Instagram & Facebook",
         icone_canal: "fab fa-instagram text-pink-600",
-        tipo_formato: "Feed (Carrossel ou Imagem Estática) + Stories",
+        tipo_formato: "Feed / Carrossel Informativo + Stories",
         horario_recomendado: "11h30 às 13h30 (horário de almoço dos trabalhadores)",
-        titulo: "Dinheiro do FGTS liberado no Pix em minutos",
-        manchete_imagem: "Seu FGTS rende mais na sua conta do que parado na Caixa",
-        sub_imagem: "Antecipe até 5 parcelas do Saque-Aniversário sem consulta ao SPC",
-        legenda_pronta: `Segunda-feira começou e as contas não esperam? 💸
+        titulo: "Trabalhador CLT em Varginha: Antecipar FGTS ou fazer Consignado?",
+        manchete_imagem: "Trabalha de carteira assinada? Compare: FGTS ou Consignado CLT",
+        sub_imagem: "Duas formas regulamentadas de ter dinheiro na conta sem burocracia na Speed.",
+        legenda_pronta: `Segunda-feira começou e as contas apertaram? 💼💸
 
-Você não precisa esperar o mês do seu aniversário para usar o dinheiro que é SEU por direito. Com a Antecipação do Saque-Aniversário FGTS da Speed Financeira:
+Quem trabalha de carteira assinada (CLT) em Varginha tem DUAS formas seguras e regulamentadas de colocar dinheiro na conta na Speed Financeira:
 
-⚡ Dinheiro na sua conta via Pix em poucos minutos
-✅ Liberado inclusive para quem está negativado (sem consulta SPC/Serasa)
-✅ Não mexe na sua renda mensal (o desconto é direto no saldo do FGTS)
-✅ Processo 100% seguro e regulamentado
+1️⃣ CONSIGNADO CLT (Crédito do Trabalhador)
+✅ Desconto direto na folha de pagamento com juros muito menores que cheque especial e rotativo.
+✅ Você NÃO mexe no seu FGTS e mantém 100% do seu direito ao Saque-Rescisão se for demitido.
+✅ Parcela fixa e previsível que cabe no salário.
 
-📍 Atendimento presencial na Rua Santa Cruz, 696 — Centro, Varginha
-📲 Simule agora pelo WhatsApp: (35) 3067-5017 (link na bio!)
+2️⃣ ANTECIPAÇÃO DO SAQUE-ANIVERSÁRIO FGTS
+✅ Dinheiro liberado no Pix em minutos, inclusive para quem está negativado (sem consulta SPC/Serasa).
+✅ Não pesa no salário do mês: o desconto é anual e automático do saldo do FGTS.
+⚠️ Atualização recente importante: se você nunca foi do Saque-Aniversário e aderir agora, há uma carência de 90 dias exigida pela Caixa para a 1ª contratação. Quem já tinha aderido antecipa na hora!
 
-Speed Financeira — Correspondente Bancário Autorizado (Res. CMN 4.935/2021). Sem cobrança de taxa antecipada. Sujeito a aprovação cadastral e análise de crédito.
+💡 Qual é a melhor para o seu momento?
+Na Speed Financeira a gente simula as duas opções lado a lado para você escolher com transparência total.
 
-#fgts #saqueaniversario #varginha #creditolocal #dinheironahora #pix #speedfinanceira #suldeminas`,
-        dica_execucao: "Poste no feed às 12h e suba 3 stories: (1) Pergunta 'Tem saldo no FGTS?', (2) Print simulando Pix caindo, (3) Link direto pro WhatsApp (35) 3067-5017."
+📍 Atendimento presencial: Rua Santa Cruz, 696 — Centro, Varginha
+📲 Simule agora pelo WhatsApp: (35) 3067-5017
+
+Speed Financeira — Correspondente Bancário Autorizado (Res. CMN 4.935/2021). Sem cobrança de taxa antecipada. Sujeito à análise e aprovação cadastral.
+
+#clt #consignadoclt #fgts #saqueaniversario #varginha #creditolocal #speedfinanceira #suldeminas`,
+        dica_execucao: "Poste no feed às 12h e suba 3 stories: (1) Enquete 'Você é CLT e precisa de grana?', (2) Comparativo FGTS vs Consignado CLT, (3) Link direto pro WhatsApp (35) 3067-5017."
       },
 
       // ─── CANAL 2: GOOGLE MEU NEGÓCIO ───────────────────────────────────────

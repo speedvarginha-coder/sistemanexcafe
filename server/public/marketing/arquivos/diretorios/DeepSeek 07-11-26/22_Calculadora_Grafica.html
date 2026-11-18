@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<!--
+  Calculadora de precificação gráfica — uso interno.
+  Valores iniciais são EXEMPLOS. Ajuste com o custo real da loja.
+  Dados ficam no navegador (localStorage). Nada é enviado.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Calculadora gráfica — Speed Financeira</title>
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f4f7f5; --branco:#fff;
+  --borda:#dfe7e2; --cinza:#63766b; --vermelho:#b91c1c; --azul:#1d4ed8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5;font-size:14px}
+.wrap{max-width:1100px;margin:0 auto;padding:18px 20px 70px}
+header{background:linear-gradient(135deg,var(--verde-escuro),var(--verde));color:#fff;border-radius:14px;padding:24px;margin-bottom:16px}
+header h1{margin:0;font-size:clamp(21px,3vw,28px);letter-spacing:-.5px}
+header p{margin:6px 0 0;color:#dff1e7;font-size:13.5px;max-width:80ch}
+.aviso{background:#fffbe6;border:1px solid #f3e08a;border-radius:10px;padding:10px 14px;font-size:12.5px;color:#5c4b00;margin-bottom:14px}
+.card{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:18px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:17px;color:var(--tinta);letter-spacing:-.3px}
+.card .sub{margin:0 0 12px;font-size:12.5px;color:var(--cinza)}
+label{display:block;font-size:11.5px;font-weight:800;color:var(--tinta);margin-bottom:3px;text-transform:uppercase;letter-spacing:.3px}
+input,select{width:100%;padding:8px 10px;border:1px solid #cbd8d0;border-radius:8px;font:inherit;font-size:13.5px;background:#fff;color:var(--tinta)}
+input:focus,select:focus{outline:2px solid var(--verde);outline-offset:0}
+.campos{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+button{font:inherit;font-size:13px;font-weight:800;cursor:pointer;border-radius:8px;padding:9px 15px;border:2px solid transparent}
+.primario{background:var(--verde);color:#fff;border-color:var(--verde)}
+.primario:hover{background:var(--verde-escuro);border-color:var(--verde-escuro)}
+.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.sec:hover{background:#effaf4}
+.perigo{background:#fff;color:var(--vermelho);border-color:#f3c6c6}
+.mini{padding:4px 9px;font-size:11.5px;border-width:1px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--borda);text-align:right;white-space:nowrap}
+th{background:#f0f6f2;color:var(--tinta);font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+th:first-child,td:first-child{text-align:left}
+td input{padding:5px 7px;font-size:12.5px;min-width:70px}
+td input.nome{min-width:150px}
+tbody tr:hover{background:#fafdfb}
+.tabela-wrap{overflow-x:auto;border:1px solid var(--borda);border-radius:10px}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-top:12px}
+.kpi{border:1px solid var(--borda);border-radius:10px;padding:12px;background:#fbfdfc;border-left:4px solid var(--verde)}
+.kpi small{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--cinza);font-weight:800}
+.kpi strong{display:block;font-size:22px;color:var(--tinta);letter-spacing:-.5px;line-height:1.2;margin-top:2px}
+.kpi em{font-style:normal;font-size:11.5px;color:var(--cinza)}
+.kpi.amarelo{border-left-color:var(--amarelo)}
+.kpi.vermelho{border-left-color:var(--vermelho)}
+.msg{font-size:12.5px;font-weight:700;color:var(--verde-escuro);min-height:18px;margin-top:8px}
+.linha-total td{font-weight:800;background:#f7fbf9;color:var(--tinta);border-top:2px solid var(--verde)}
+.somente-orcamento{display:none}
+.orcamento{background:#fff;color:#14231b;padding:0}
+.orcamento .titulo-orcamento{font-size:22px;margin:0 0 2px;color:#016b3b;font-weight:800;letter-spacing:-.4px}
+.orcamento .nap{font-size:12px;line-height:1.6;color:#33443b}
+.orcamento .cab{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #019652;padding-bottom:12px;margin-bottom:14px}
+.orcamento .marca{font-size:13px;font-weight:800;color:#016b3b}
+.orcamento table{font-size:12.5px}
+.orcamento th{background:#effaf4;color:#14231b}
+.orcamento .total{font-size:16px;font-weight:800}
+.orcamento .obs{font-size:11.5px;color:#63766b;margin-top:12px;border-top:1px solid #dfe7e2;padding-top:8px}
+.orcamento .validade{font-size:12px;margin-top:10px}
+.rodape{font-size:11.5px;color:var(--cinza);margin-top:8px}
+@media(max-width:680px){
+  .wrap{padding:12px 12px 60px}
+  .card{padding:14px}
+  header{padding:18px}
+}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:10pt}
+  .wrap{max-width:none;padding:0}
+  .nao-imprime,header,.aviso,.acoes,.msg,.rodape{display:none!important}
+  .card{border:0;padding:0;margin:0;border-radius:0}
+  body.imprimir-orcamento .somente-orcamento{display:block}
+  body.imprimir-orcamento .tela{display:none!important}
+  body.imprimir-tabela .tela{display:block}
+  .tabela-wrap{border:1px solid #dfe7e2}
+  th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .orcamento .cab{border-bottom-color:#019652}
+  .orcamento{display:block!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="nao-imprime">
+  <h1>Calculadora gráfica</h1>
+  <p>Preço com custo na frente: material, tempo e custo fixo. Os valores que vêm na tela são <strong>exemplos</strong> — troque pelos números reais da loja antes de usar com cliente.</p>
+</header>
+
+<div class="aviso nao-imprime">
+  <strong>Exemplo, não tabela oficial.</strong> Material, preço e minutos estão preenchidos só para demonstrar o cálculo.
+  Ajuste a tabela e o custo fixo com os valores reais. O orçamento impresso é uma proposta interna; confirme o preço no balcão.
+</div>
+
+<section class="card nao-imprime tela">
+  <h2>1. Custo da loja</h2>
+  <p class="sub">O custo fixo mensal dividido pelas horas produtivas vira o custo fixo por hora. Some o valor da hora de trabalho para saber o custo real do tempo.</p>
+  <div class="campos">
+    <div>
+      <label for="custosFixos">Custos fixos por mês (R$)</label>
+      <input id="custosFixos" type="number" min="0" step="0.01" value="3200">
+    </div>
+    <div>
+      <label for="horasMes">Horas produtivas por mês</label>
+      <input id="horasMes" type="number" min="1" step="1" value="176">
+    </div>
+    <div>
+      <label for="valorHora">Valor da hora de trabalho (R$)</label>
+      <input id="valorHora" type="number" min="0" step="0.01" value="22">
+    </div>
+    <div>
+      <label for="fixoHora">Custo fixo por hora (R$)</label>
+      <input id="fixoHora" type="text" readonly tabindex="-1">
+    </div>
+    <div>
+      <label for="horaReal">Custo real da hora (R$)</label>
+      <input id="horaReal" type="text" readonly tabindex="-1">
+    </div>
+    <div>
+      <label for="margemAlvo">Margem alvo (%)</label>
+      <input id="margemAlvo" type="number" min="1" max="95" step="1" value="60">
+    </div>
+  </div>
+</section>
+
+<section class="card nao-imprime tela">
+  <h2>2. Tabela de itens</h2>
+  <p class="sub">Material é o custo direto por unidade (papel, tinta, laminado, espiral). Minutos é o tempo médio de produção. Preço é o que a loja cobra hoje.</p>
+  <div class="tabela-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Material (R$)</th>
+          <th>Preço (R$)</th>
+          <th>Minutos</th>
+          <th>Custo total</th>
+          <th>Margem</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="corpoItens"></tbody>
+    </table>
+  </div>
+  <div class="acoes">
+    <button class="sec" type="button" id="btnNovoItem">Adicionar item</button>
+    <button class="sec" type="button" id="btnRestaurar">Restaurar exemplos</button>
+    <button class="sec" type="button" id="btnExportarItens">Exportar tabela CSV</button>
+  </div>
+  <div class="msg" id="msgItens" role="status" aria-live="polite"></div>
+</section>
+
+<section class="card nao-imprime tela">
+  <h2>3. Montar orçamento</h2>
+  <p class="sub">Escolha o item, a quantidade e adicione. O cálculo usa o custo real da hora e mostra a margem de cada linha.</p>
+  <div class="campos">
+    <div>
+      <label for="itemSelect">Item</label>
+      <select id="itemSelect"></select>
+    </div>
+    <div>
+      <label for="qtdItem">Quantidade</label>
+      <input id="qtdItem" type="number" min="1" step="1" value="1">
+    </div>
+    <div>
+      <label for="desconto">Desconto no total (%)</label>
+      <input id="desconto" type="number" min="0" max="80" step="1" value="0">
+    </div>
+    <div>
+      <label for="cliente">Cliente (opcional)</label>
+      <input id="cliente" type="text" maxlength="80" placeholder="Nome para o orçamento">
+    </div>
+  </div>
+  <div class="acoes">
+    <button class="primario" type="button" id="btnAdicionar">Adicionar ao orçamento</button>
+    <button class="sec" type="button" id="btnLimparOrcamento">Limpar orçamento</button>
+  </div>
+
+  <div class="tabela-wrap" style="margin-top:12px">
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qtd.</th>
+          <th>Preço un.</th>
+          <th>Total</th>
+          <th>Custo</th>
+          <th>Lucro</th>
+          <th>Margem</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="corpoOrcamento"></tbody>
+      <tfoot id="rodapeOrcamento"></tfoot>
+    </table>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+
+  <div class="acoes">
+    <button class="primario" type="button" id="btnOrcamento">Imprimir orçamento</button>
+    <button class="sec" type="button" id="btnImprimirTabela">Imprimir tabela de preços</button>
+    <button class="sec" type="button" id="btnExportarOrcamento">Exportar orçamento CSV</button>
+  </div>
+</section>
+
+<section class="card nao-imprime tela">
+  <h2>4. Leitura rápida</h2>
+  <p class="sub">O que os números estão dizendo.</p>
+  <div id="diagnostico" class="sub" style="font-size:13.5px"></div>
+</section>
+
+<section class="somente-orcamento orcamento" id="folhaOrcamento">
+  <div class="cab">
+    <div>
+      <div class="titulo-orcamento">Orçamento</div>
+      <div class="marca">SPEED FINANCEIRA E LAN HOUSE</div>
+      <div class="nap">
+        CNPJ 29.497.887/0001-57<br>
+        Rua Santa Cruz, 696 — Centro — Varginha/MG — CEP 37002-090<br>
+        Telefone e WhatsApp: (35) 3067-5017<br>
+        speed.varginha@gmail.com · speedfinanceira.com.br
+      </div>
+    </div>
+    <div style="text-align:right;font-size:12px;min-width:200px">
+      <div><strong>Data:</strong> <span id="orcData"></span></div>
+      <div><strong>Validade:</strong> 7 dias</div>
+      <div><strong>Cliente:</strong> <span id="orcCliente">—</span></div>
+      <div><strong>Orçamento nº:</strong> <span id="orcNumero"></span></div>
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr><th>Item</th><th>Qtd.</th><th>Preço un.</th><th>Total</th></tr>
+    </thead>
+    <tbody id="orcCorpo"></tbody>
+    <tfoot id="orcRodape"></tfoot>
+  </table>
+  <div class="validade">
+    <strong>Total:</strong> <span id="orcTotal"></span>
+    <span id="orcDesconto"></span>
+  </div>
+  <div class="obs">
+    Valores válidos por 7 dias e sujeitos a confirmação no balcão. Serviços de impressão dependem do arquivo enviado e da conferência de tamanho, cor e quantidade.
+    Não emitimos documento oficial e não representamos órgão público. Este orçamento não é nota fiscal.
+  </div>
+</section>
+
+<div class="rodape nao-imprime">
+  Uso interno · dados salvos neste navegador · nenhum valor é enviado para a internet.
+  Para backup, exporte os CSVs. Não publicado no site.
+</div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CHAVE = 'speed_calc_grafica_v1';
+
+  var EXEMPLOS = [
+    { nome: 'Impressão P&B A4', material: 0.15, preco: 1.00, minutos: 1 },
+    { nome: 'Impressão colorida A4', material: 0.75, preco: 3.00, minutos: 1.5 },
+    { nome: 'Xerox P&B A4', material: 0.12, preco: 0.80, minutos: 0.7 },
+    { nome: 'Foto 3x4 (4 vias)', material: 0.60, preco: 10.00, minutos: 6 },
+    { nome: 'Plastificação A4', material: 0.90, preco: 5.00, minutos: 2 },
+    { nome: 'Encadernação espiral', material: 4.50, preco: 18.00, minutos: 8 },
+    { nome: 'Digitalização A4', material: 0.05, preco: 1.50, minutos: 1 },
+    { nome: 'Currículo impresso (2 vias)', material: 0.40, preco: 4.00, minutos: 2 },
+    { nome: 'Impressão fotográfica 10x15', material: 1.20, preco: 6.00, minutos: 3 },
+    { nome: 'Digitação de currículo', material: 0, preco: 25.00, minutos: 25 }
+  ];
+
+  var estado = {
+    custosFixos: 3200,
+    horasMes: 176,
+    valorHora: 22,
+    margemAlvo: 60,
+    itens: [],
+    orcamento: [],
+    desconto: 0,
+    cliente: ''
+  };
+
+  function $(id) { return document.getElementById(id); }
+
+  function num(v) {
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isFinite(n) ? n : 0;
+  }
+
+  function fmt(v) {
+    return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function pct(v) { return (v * 100).toFixed(1).replace('.', ',') + '%'; }
+
+  function custoFixoHora() {
+    var h = Math.max(1, num(estado.horasMes));
+    return num(estado.custosFixos) / h;
+  }
+
+  function custoHoraReal() {
+    return custoFixoHora() + num(estado.valorHora);
+  }
+
+  function custoItem(item) {
+    var material = num(item.material);
+    var tempo = (num(item.minutos) / 60) * custoHoraReal();
+    return material + tempo;
+  }
+
+  function margemItem(item) {
+    var custo = custoItem(item);
+    var preco = num(item.preco);
+    if (preco <= 0) return 0;
+    return (preco - custo) / preco;
+  }
+
+  function precoSugerido(item) {
+    var custo = custoItem(item);
+    var m = Math.min(95, Math.max(1, num(estado.margemAlvo))) / 100;
+    return custo / (1 - m);
+  }
+
+  function salvar() {
+    try {
+      localStorage.setItem(CHAVE, JSON.stringify(estado));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function carregar() {
+    var bruto;
+    try { bruto = localStorage.getItem(CHAVE); } catch (e) { return false; }
+    if (!bruto) return false;
+    var dados;
+    try { dados = JSON.parse(bruto); } catch (e) { return false; }
+    if (!dados || !Array.isArray(dados.itens)) return false;
+    estado = {
+      custosFixos: num(dados.custosFixos),
+      horasMes: num(dados.horasMes),
+      valorHora: num(dados.valorHora),
+      margemAlvo: num(dados.margemAlvo) || 60,
+      itens: dados.itens,
+      orcamento: Array.isArray(dados.orcamento) ? dados.orcamento : [],
+      desconto: num(dados.desconto),
+      cliente: dados.cliente || ''
+    };
+    return true;
+  }
+
+  function restaurarItens() {
+    estado.itens = EXEMPLOS.map(function (i) {
+      return { nome: i.nome, material: i.material, preco: i.preco, minutos: i.minutos };
+    });
+  }
+
+  function renderCustos() {
+    $('custosFixos').value = estado.custosFixos;
+    $('horasMes').value = estado.horasMes;
+    $('valorHora').value = estado.valorHora;
+    $('margemAlvo').value = estado.margemAlvo;
+    $('fixoHora').value = 'R$ ' + fmt(custoFixoHora());
+    $('horaReal').value = 'R$ ' + fmt(custoHoraReal());
+  }
+
+  function renderItens() {
+    var corpo = $('corpoItens');
+    corpo.textContent = '';
+
+    estado.itens.forEach(function (item, indice) {
+      var tr = document.createElement('tr');
+
+      function celulaInput(classe, valor, passo, largo) {
+        var td = document.createElement('td');
+        var input = document.createElement('input');
+        input.type = 'number';
+        input.min = '0';
+        input.step = passo;
+        input.value = valor;
+        if (classe) input.className = classe;
+        if (largo) input.style.minWidth = largo;
+        input.addEventListener('change', function () {
+          if (classe === 'nome') item.nome = input.value;
+          else if (classe === 'material') item.material = num(input.value);
+          else if (classe === 'preco') item.preco = num(input.value);
+          else if (classe === 'minutos') item.minutos = num(input.value);
+          salvar();
+          renderItens();
+          renderSelect();
+          renderOrcamento();
+        });
+        td.appendChild(input);
+        return td;
+      }
+
+      var tdNome = document.createElement('td');
+      var inputNome = document.createElement('input');
+      inputNome.type = 'text';
+      inputNome.className = 'nome';
+      inputNome.value = item.nome;
+      inputNome.style.minWidth = '170px';
+      inputNome.addEventListener('change', function () {
+        item.nome = inputNome.value;
+        salvar();
+        renderSelect();
+        renderOrcamento();
+      });
+      tdNome.appendChild(inputNome);
+      tr.appendChild(tdNome);
+
+      tr.appendChild(celulaInput('material', item.material, '0.01'));
+      tr.appendChild(celulaInput('preco', item.preco, '0.01'));
+      tr.appendChild(celulaInput('minutos', item.minutos, '0.1'));
+
+      var tdCusto = document.createElement('td');
+      tdCusto.textContent = 'R$ ' + fmt(custoItem(item));
+      tr.appendChild(tdCusto);
+
+      var tdMargem = document.createElement('td');
+      var m = margemItem(item);
+      tdMargem.textContent = pct(m);
+      tdMargem.style.color = m < 0.2 ? '#b91c1c' : (m < 0.4 ? '#8a6d00' : '#016b3b');
+      tdMargem.style.fontWeight = '700';
+      tr.appendChild(tdMargem);
+
+      var tdAcao = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'perigo mini';
+      btn.textContent = 'Excluir';
+      btn.addEventListener('click', function () {
+        estado.itens.splice(indice, 1);
+        salvar();
+        renderItens();
+        renderSelect();
+        renderOrcamento();
+      });
+      tdAcao.appendChild(btn);
+      tr.appendChild(tdAcao);
+
+      corpo.appendChild(tr);
+    });
+
+    if (!estado.itens.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 7;
+      td.textContent = 'Nenhum item. Adicione ou restaure os exemplos.';
+      td.style.textAlign = 'center';
+      td.style.padding = '22px';
+      tr.appendChild(td);
+      corpo.appendChild(tr);
+    }
+  }
+
+  function renderSelect() {
+    var select = $('itemSelect');
+    var atual = select.value;
+    select.textContent = '';
+    estado.itens.forEach(function (item, i) {
+      var op = document.createElement('option');
+      op.value = String(i);
+      op.textContent = item.nome + ' — R$ ' + fmt(item.preco);
+      select.appendChild(op);
+    });
+    if (atual && estado.itens[Number(atual)]) select.value = atual;
+  }
+
+  function linhaCusto(linha) {
+    var item = estado.itens[linha.indice];
+    if (!item) return { custo: 0, total: 0, lucro: 0, margem: 0 };
+    var custoUnit = custoItem(item);
+    var total = num(item.preco) * num(linha.qtd);
+    var custo = custoUnit * num(linha.qtd);
+    var lucro = total - custo;
+    return {
+      custo: custo,
+      total: total,
+      lucro: lucro,
+      margem: total > 0 ? lucro / total : 0
+    };
+  }
+
+  function totais() {
+    var receita = 0;
+    var custo = 0;
+    estado.orcamento.forEach(function (linha) {
+      var c = linhaCusto(linha);
+      receita += c.total;
+      custo += c.custo;
+    });
+    var desconto = Math.min(80, Math.max(0, num(estado.desconto))) / 100;
+    var receitaComDesconto = receita * (1 - desconto);
+    var lucro = receitaComDesconto - custo;
+    return {
+      receita: receita,
+      descontoValor: receita - receitaComDesconto,
+      receitaFinal: receitaComDesconto,
+      custo: custo,
+      lucro: lucro,
+      margem: receitaComDesconto > 0 ? lucro / receitaComDesconto : 0
+    };
+  }
+
+  function renderOrcamento() {
+    var corpo = $('corpoOrcamento');
+    corpo.textContent = '';
+
+    estado.orcamento.forEach(function (linha, indice) {
+      var item = estado.itens[linha.indice];
+      if (!item) return;
+      var c = linhaCusto(linha);
+      var tr = document.createElement('tr');
+
+      var tdNome = document.createElement('td');
+      tdNome.textContent = item.nome;
+      tr.appendChild(tdNome);
+
+      var tdQtd = document.createElement('td');
+      var inputQtd = document.createElement('input');
+      inputQtd.type = 'number';
+      inputQtd.min = '1';
+      inputQtd.step = '1';
+      inputQtd.value = linha.qtd;
+      inputQtd.style.width = '64px';
+      inputQtd.addEventListener('change', function () {
+        linha.qtd = Math.max(1, Math.round(num(inputQtd.value)));
+        salvar();
+        renderOrcamento();
+      });
+      tdQtd.appendChild(inputQtd);
+      tr.appendChild(tdQtd);
+
+      var tdPreco = document.createElement('td');
+      tdPreco.textContent = 'R$ ' + fmt(item.preco);
+      tr.appendChild(tdPreco);
+
+      var tdTotal = document.createElement('td');
+      tdTotal.textContent = 'R$ ' + fmt(c.total);
+      tr.appendChild(tdTotal);
+
+      var tdCusto = document.createElement('td');
+      tdCusto.textContent = 'R$ ' + fmt(c.custo);
+      tr.appendChild(tdCusto);
+
+      var tdLucro = document.createElement('td');
+      tdLucro.textContent = 'R$ ' + fmt(c.lucro);
+      tdLucro.style.color = c.lucro < 0 ? '#b91c1c' : '#016b3b';
+      tr.appendChild(tdLucro);
+
+      var tdMargem = document.createElement('td');
+      tdMargem.textContent = pct(c.margem);
+      tr.appendChild(tdMargem);
+
+      var tdAcao = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'perigo mini';
+      btn.textContent = 'Remover';
+      btn.addEventListener('click', function () {
+        estado.orcamento.splice(indice, 1);
+        salvar();
+        renderOrcamento();
+      });
+      tdAcao.appendChild(btn);
+      tr.appendChild(tdAcao);
+
+      corpo.appendChild(tr);
+    });
+
+    if (!estado.orcamento.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 8;
+      td.textContent = 'Orçamento vazio. Escolha um item acima e adicione.';
+      td.style.textAlign = 'center';
+      td.style.padding = '18px';
+      td.style.color = '#63766b';
+      tr.appendChild(td);
+      corpo.appendChild(tr);
+    }
+
+    var t = totais();
+    var rodape = $('rodapeOrcamento');
+    rodape.textContent = '';
+    var trf = document.createElement('tr');
+    trf.className = 'linha-total';
+    [['Total', ''], ['', ''], ['', ''], ['R$ ' + fmt(t.receita), ''], ['R$ ' + fmt(t.custo), ''], ['R$ ' + fmt(t.receita - t.custo), ''], [pct(t.receita > 0 ? (t.receita - t.custo) / t.receita : 0), ''], ['', '']].forEach(function (par) {
+      var td = document.createElement('td');
+      td.textContent = par[0];
+      trf.appendChild(td);
+    });
+    rodape.appendChild(trf);
+
+    renderKpis();
+    renderDiagnostico();
+    renderFolha();
+  }
+
+  function renderKpis() {
+    var t = totais();
+    var kpis = $('kpis');
+    kpis.textContent = '';
+
+    function kpi(rotulo, valor, detalhe, cor) {
+      var div = document.createElement('div');
+      div.className = 'kpi' + (cor ? ' ' + cor : '');
+      var small = document.createElement('small');
+      small.textContent = rotulo;
+      var strong = document.createElement('strong');
+      strong.textContent = valor;
+      var em = document.createElement('em');
+      em.textContent = detalhe || '';
+      div.appendChild(small);
+      div.appendChild(strong);
+      div.appendChild(em);
+      kpis.appendChild(div);
+    }
+
+    kpi('Receita', 'R$ ' + fmt(t.receitaFinal), estado.desconto > 0 ? 'com desconto de ' + num(estado.desconto) + '%' : 'sem desconto');
+    kpi('Custo', 'R$ ' + fmt(t.custo), 'material + tempo');
+    kpi('Lucro', 'R$ ' + fmt(t.lucro), 'receita - custo', t.lucro < 0 ? 'vermelho' : '');
+    kpi('Margem', pct(t.margem), 'sobre a receita', t.margem < 0.2 ? 'vermelho' : (t.margem < 0.4 ? 'amarelo' : ''));
+    kpi('Desconto dado', 'R$ ' + fmt(t.descontoValor), 'máximo seguro: R$ ' + fmt(Math.max(0, t.receita - t.custo)), 'amarelo');
+  }
+
+  function renderDiagnostico() {
+    var alvo = $('diagnostico');
+    var t = totais();
+    var linhas = [];
+
+    if (!estado.orcamento.length) {
+      alvo.textContent = 'Monte um orçamento para ver a leitura.';
+      return;
+    }
+
+    if (t.lucro < 0) {
+      linhas.push('<strong style="color:#b91c1c">Prejuízo.</strong> O desconto ou o preço está abaixo do custo. Reduza o desconto ou revise o preço antes de fechar.');
+    } else if (t.margem < 0.2) {
+      linhas.push('<strong style="color:#b91c1c">Margem apertada.</strong> Abaixo de 20% sobra pouco para erro, refação e imposto. O desconto seguro máximo é R$ ' + fmt(Math.max(0, t.receita - t.custo)) + '.');
+    } else if (t.margem < 0.4) {
+      linhas.push('<strong style="color:#8a6d00">Margem moderada.</strong> Entre 20% e 40% é operacional, mas limita crescimento. Compare com a margem alvo de ' + num(estado.margemAlvo) + '%.');
+    } else {
+      linhas.push('<strong style="color:#016b3b">Margem saudável.</strong> Acima de 40% com o custo atual. Confira se o tempo real de produção bate com os minutos da tabela.');
+    }
+
+    var pior = null;
+    estado.orcamento.forEach(function (linha) {
+      var item = estado.itens[linha.indice];
+      if (!item) return;
+      var m = linhaCusto(linha).margem;
+      if (!pior || m < pior.m) pior = { nome: item.nome, m: m };
+    });
+
+    if (pior && pior.m < 0.3) {
+      linhas.push('O item com pior margem é <strong>' + pior.nome + '</strong> (' + pct(pior.m) + '). Vale revisar preço ou tempo.');
+    }
+
+    var sugerido = 0;
+    estado.orcamento.forEach(function (linha) {
+      var item = estado.itens[linha.indice];
+      if (item) sugerido += precoSugerido(item) * num(linha.qtd);
+    });
+    if (sugerido > 0) {
+      linhas.push('Para a margem alvo de ' + num(estado.margemAlvo) + '%, o preço sugerido deste orçamento seria <strong>R$ ' + fmt(sugerido * (1 - num(estado.desconto) / 100)) + '</strong>.');
+    }
+
+    alvo.innerHTML = linhas.join('<br>');
+  }
+
+  function renderFolha() {
+    var t = totais();
+    $('orcData').textContent = new Date().toLocaleDateString('pt-BR');
+    $('orcCliente').textContent = estado.cliente || '—';
+    $('orcNumero').textContent = 'S-' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + '-' + String(estado.orcamento.length).padStart(2, '0');
+
+    var corpo = $('orcCorpo');
+    corpo.textContent = '';
+    estado.orcamento.forEach(function (linha) {
+      var item = estado.itens[linha.indice];
+      if (!item) return;
+      var c = linhaCusto(linha);
+      var tr = document.createElement('tr');
+      [item.nome, String(linha.qtd), 'R$ ' + fmt(item.preco), 'R$ ' + fmt(c.total)].forEach(function (txt) {
+        var td = document.createElement('td');
+        td.textContent = txt;
+        tr.appendChild(td);
+      });
+      corpo.appendChild(tr);
+    });
+
+    var rodape = $('orcRodape');
+    rodape.textContent = '';
+    var tr = document.createElement('tr');
+    tr.className = 'total';
+    var td1 = document.createElement('td');
+    td1.colSpan = 3;
+    td1.textContent = 'Total';
+    var td2 = document.createElement('td');
+    td2.textContent = 'R$ ' + fmt(t.receitaFinal);
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    rodape.appendChild(tr);
+
+    $('orcTotal').textContent = 'R$ ' + fmt(t.receitaFinal);
+    $('orcDesconto').textContent = t.descontoValor > 0 ? ' (desconto de R$ ' + fmt(t.descontoValor) + ')' : '';
+  }
+
+  function lerCustos() {
+    estado.custosFixos = num($('custosFixos').value);
+    estado.horasMes = Math.max(1, num($('horasMes').value));
+    estado.valorHora = num($('valorHora').value);
+    estado.margemAlvo = Math.min(95, Math.max(1, num($('margemAlvo').value)));
+    salvar();
+    renderCustos();
+    renderItens();
+    renderOrcamento();
+  }
+
+  function adicionarItem() {
+    var indice = Number($('itemSelect').value);
+    var qtd = Math.max(1, Math.round(num($('qtdItem').value)));
+    if (!estado.itens[indice]) {
+      $('msg').textContent = 'Selecione um item válido.';
+      return;
+    }
+    estado.orcamento.push({ indice: indice, qtd: qtd });
+    salvar();
+    renderOrcamento();
+    $('msg').textContent = 'Item adicionado ao orçamento.';
+  }
+
+  function csvSeguro(v) {
+    var s = String(v == null ? '' : v).replace(/"/g, '""');
+    return '"' + s + '"';
+  }
+
+  function baixar(nome, conteudo, tipo) {
+    var blob = new Blob([conteudo], { type: tipo || 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportarItens() {
+    var linhas = [['Item', 'Material', 'Preco', 'Minutos', 'Custo total', 'Margem %', 'Preco sugerido'].map(csvSeguro).join(';')];
+    estado.itens.forEach(function (item) {
+      linhas.push([
+        item.nome, fmt(num(item.material)), fmt(num(item.preco)), String(num(item.minutos)),
+        fmt(custoItem(item)), pct(margemItem(item)), fmt(precoSugerido(item))
+      ].map(csvSeguro).join(';'));
+    });
+    baixar('speed_tabela_precos.csv', '\uFEFF' + linhas.join('\r\n'));
+    $('msgItens').textContent = 'Tabela exportada.';
+  }
+
+  function exportarOrcamento() {
+    if (!estado.orcamento.length) {
+      $('msg').textContent = 'Monte o orçamento antes de exportar.';
+      return;
+    }
+    var t = totais();
+    var linhas = [
+      ['Cliente', estado.cliente || ''].map(csvSeguro).join(';'),
+      ['Data', new Date().toLocaleDateString('pt-BR')].map(csvSeguro).join(';'),
+      '',
+      ['Item', 'Qtd', 'Preco un.', 'Total', 'Custo', 'Lucro', 'Margem %'].map(csvSeguro).join(';')
+    ];
+    estado.orcamento.forEach(function (linha) {
+      var item = estado.itens[linha.indice];
+      if (!item) return;
+      var c = linhaCusto(linha);
+      linhas.push([
+        item.nome, String(linha.qtd), fmt(num(item.preco)), fmt(c.total),
+        fmt(c.custo), fmt(c.lucro), pct(c.margem)
+      ].map(csvSeguro).join(';'));
+    });
+    linhas.push('');
+    linhas.push(['Total', '', '', fmt(t.receitaFinal)].map(csvSeguro).join(';'));
+    linhas.push(['Custo', '', '', fmt(t.custo)].map(csvSeguro).join(';'));
+    linhas.push(['Lucro', '', '', fmt(t.lucro)].map(csvSeguro).join(';'));
+    linhas.push(['Margem %', '', '', pct(t.margem)].map(csvSeguro).join(';'));
+    baixar('speed_orcamento.csv', '\uFEFF' + linhas.join('\r\n'));
+    $('msg').textContent = 'Orçamento exportado.';
+  }
+
+  function imprimir(modo) {
+    var corpo = document.body;
+    corpo.classList.remove('imprimir-orcamento', 'imprimir-tabela');
+    corpo.classList.add(modo);
+    window.print();
+  }
+
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('imprimir-orcamento', 'imprimir-tabela');
+  });
+
+  // Eventos
+  ['custosFixos', 'horasMes', 'valorHora', 'margemAlvo'].forEach(function (id) {
+    $(id).addEventListener('change', lerCustos);
+  });
+
+  $('btnNovoItem').addEventListener('click', function () {
+    estado.itens.push({ nome: 'Novo item', material: 0, preco: 0, minutos: 1 });
+    salvar();
+    renderItens();
+    renderSelect();
+    renderOrcamento();
+  });
+
+  $('btnRestaurar').addEventListener('click', function () {
+    if (!confirm('Restaurar a tabela de exemplos? Os itens atuais serão substituídos.')) return;
+    restaurarItens();
+    estado.orcamento = [];
+    salvar();
+    renderItens();
+    renderSelect();
+    renderOrcamento();
+    $('msgItens').textContent = 'Exemplos restaurados. Ajuste com os valores reais.';
+  });
+
+  $('btnAdicionar').addEventListener('click', adicionarItem);
+
+  $('btnLimparOrcamento').addEventListener('click', function () {
+    estado.orcamento = [];
+    estado.desconto = 0;
+    $('desconto').value = 0;
+    salvar();
+    renderOrcamento();
+    $('msg').textContent = 'Orçamento limpo.';
+  });
+
+  $('desconto').addEventListener('change', function () {
+    estado.desconto = Math.min(80, Math.max(0, num($('desconto').value)));
+    $('desconto').value = estado.desconto;
+    salvar();
+    renderOrcamento();
+  });
+
+  $('cliente').addEventListener('change', function () {
+    estado.cliente = $('cliente').value.trim();
+    salvar();
+    renderFolha();
+  });
+
+  $('btnExportarItens').addEventListener('click', exportarItens);
+  $('btnExportarOrcamento').addEventListener('click', exportarOrcamento);
+  $('btnOrcamento').addEventListener('click', function () {
+    if (!estado.orcamento.length) {
+      $('msg').textContent = 'Monte o orçamento antes de imprimir.';
+      return;
+    }
+    imprimir('imprimir-orcamento');
+  });
+  $('btnImprimirTabela').addEventListener('click', function () {
+    imprimir('imprimir-tabela');
+  });
+
+  // Inicialização
+  var carregou = carregar();
+  if (!carregou) {
+    restaurarItens();
+  }
+  renderCustos();
+  renderItens();
+  renderSelect();
+  $('desconto').value = estado.desconto;
+  $('cliente').value = estado.cliente;
+  renderOrcamento();
+})();
+</script>
+</body>
+</html>

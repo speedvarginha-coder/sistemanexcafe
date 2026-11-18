@@ -23,7 +23,7 @@
 </head>
 <body class="min-h-screen flex flex-col dashboard-body">
 
-  <!-- CABEÇALHO PRINCIPAL -->
+  <!-- CABEÇALHO PRINCIPAL (Visível apenas quando aberto fora do NexCafé) -->
   <header class="header-speed text-white shadow relative z-30">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap justify-between items-center gap-3">
       <div class="flex items-center space-x-3 min-w-0 dashboard-brand">
@@ -45,45 +45,140 @@
     </div>
   </header>
 
-  <!-- BARRA DE NAVEGAÇÃO DE ABAS (FIXADA NO TOPO AO ROLAR) -->
-  <div class="sticky-tabs-bar bg-white border-b border-gray-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-1.5 sm:py-2 flex items-center gap-1.5 overflow-x-auto sm:overflow-visible sm:flex-wrap whitespace-nowrap" role="tablist" aria-label="Seções do dashboard">
-      <button id="tab-button-overview" type="button" role="tab" aria-selected="true" aria-controls="tab-overview" data-tab="overview" class="nav-tab-btn active">
-        <i class="fas fa-chart-pie"></i>
-        <span>Visão Geral</span>
-      </button>
-      <button id="tab-button-calendario" type="button" role="tab" aria-selected="false" aria-controls="tab-calendario" data-tab="calendario" class="nav-tab-btn">
-        <i class="fas fa-calendar-alt text-amber-500"></i>
-        <span>Calendário Semanal</span>
-      </button>
-      <button id="tab-button-social" type="button" role="tab" aria-selected="false" aria-controls="tab-social" data-tab="social" class="nav-tab-btn">
-        <i class="fab fa-instagram"></i>
-        <span>Social Mídia & Artes</span>
-      </button>
-      <button id="tab-button-marketing" type="button" role="tab" aria-selected="false" aria-controls="tab-marketing" data-tab="marketing" class="nav-tab-btn">
-        <i class="fas fa-bullhorn"></i>
-        <span>Marketing & WhatsApp</span>
-      </button>
-      <button id="tab-button-ads" type="button" role="tab" aria-selected="false" aria-controls="tab-ads" data-tab="ads" class="nav-tab-btn">
-        <i class="fas fa-ad"></i>
-        <span>Anúncios (Google & Meta)</span>
-      </button>
-      <button id="tab-button-gmb" type="button" role="tab" aria-selected="false" aria-controls="tab-gmb" data-tab="gmb" class="nav-tab-btn">
-        <i class="fab fa-google text-red-500"></i>
-        <span>Google & Raio-X Local</span>
-      </button>
+  <!-- BARRA DE NAVEGAÇÃO DE ABAS ÚNICA E LIMPA (FIXADA NO TOPO) -->
+  <div class="sticky-tabs-bar bg-white border-b border-gray-200 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap py-0.5" role="tablist" aria-label="Seções do dashboard">
+        <button id="tab-button-overview" type="button" role="tab" aria-selected="true" aria-controls="tab-overview" data-tab="overview" data-tab-quick="overview" class="nav-tab-btn quick-pill active" title="Visão Geral (Alt+1)">
+          <i class="fas fa-chart-pie text-emerald-600"></i>
+          <span>Visão Geral</span>
+          <kbd class="tab-kbd">Alt+1</kbd>
+        </button>
+        <button id="tab-button-calendario" type="button" role="tab" aria-selected="false" aria-controls="tab-calendario" data-tab="calendario" data-tab-quick="calendario" class="nav-tab-btn quick-pill" title="Calendário Semanal (Alt+2)">
+          <i class="fas fa-calendar-alt text-amber-500"></i>
+          <span>Calendário</span>
+          <kbd class="tab-kbd">Alt+2</kbd>
+        </button>
+        <button id="tab-button-social" type="button" role="tab" aria-selected="false" aria-controls="tab-social" data-tab="social" data-tab-quick="social" class="nav-tab-btn quick-pill" title="Social Mídia & Artes (Alt+3)">
+          <i class="fab fa-instagram text-pink-500"></i>
+          <span>Social & Artes</span>
+          <kbd class="tab-kbd">Alt+3</kbd>
+        </button>
+        <button id="tab-button-marketing" type="button" role="tab" aria-selected="false" aria-controls="tab-marketing" data-tab="marketing" data-tab-quick="marketing" class="nav-tab-btn quick-pill" title="WhatsApp & Copys (Alt+4)">
+          <i class="fab fa-whatsapp text-emerald-600"></i>
+          <span>WhatsApp & Copys</span>
+          <kbd class="tab-kbd">Alt+4</kbd>
+        </button>
+        <button id="tab-button-ads" type="button" role="tab" aria-selected="false" aria-controls="tab-ads" data-tab="ads" data-tab-quick="ads" class="nav-tab-btn quick-pill" title="Anúncios (Alt+5)">
+          <i class="fas fa-rectangle-ad text-blue-500"></i>
+          <span>Anúncios</span>
+          <kbd class="tab-kbd">Alt+5</kbd>
+        </button>
+        <button id="tab-button-gmb" type="button" role="tab" aria-selected="false" aria-controls="tab-gmb" data-tab="gmb" data-tab-quick="gmb" class="nav-tab-btn quick-pill" title="Google Meu Negócio (Alt+6)">
+          <i class="fab fa-google text-red-500"></i>
+          <span>Google Meu Negócio</span>
+          <span id="gmbSidebarBadge" class="tab-badge-alert hidden">1</span>
+          <kbd class="tab-kbd">Alt+6</kbd>
+        </button>
+        <button id="tab-button-palavras" type="button" role="tab" aria-selected="false" aria-controls="tab-palavras" data-tab="palavras" data-tab-quick="palavras" class="nav-tab-btn quick-pill" title="Palavras-chave (Alt+7)">
+          <i class="fas fa-key text-indigo-500"></i>
+          <span>Palavras-chave</span>
+          <kbd class="tab-kbd">Alt+7</kbd>
+        </button>
+      </div>
+
+      <div class="hidden lg:flex items-center gap-2 shrink-0">
+        <button type="button" onclick="location.reload()" class="bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-2xs" title="Atualizar dados do painel">
+          <i class="fas fa-rotate text-gray-400 text-[11px]"></i>
+          <span class="text-[11px]">Atualizar</span>
+        </button>
+        <a href="https://wa.me/553530675017" target="_blank" rel="noopener noreferrer" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 shadow-2xs whitespace-nowrap">
+          <i class="fab fa-whatsapp"></i><span>(35) 3067-5017</span>
+        </a>
+      </div>
     </div>
   </div>
 
-  <!-- CONTEÚDO PRINCIPAL -->
+  <!-- CONTEÚDO PRINCIPAL (100% DE LARGURA, ESPAÇOSO E SEM SEGUNDA SIDEBAR) -->
   <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-grow w-full">
 
     <!-- ======================================================== -->
     <!-- ABA 1: VISÃO GERAL (OVERVIEW)                            -->
     <!-- ======================================================== -->
     <section id="tab-overview" class="tab-panel" role="tabpanel" aria-labelledby="tab-button-overview">
+      <!-- Visão Geral (redesenho de 17/11/2026): primeiro o que fazer hoje, depois os números e a fila. -->
+      <section class="ov-hoje" aria-label="Hoje">
+        <!-- Pauta do dia (js/calendario.js, renderPautaDeHoje) -->
+        <div id="bannerPautaHoje" class="ov-pauta"></div>
+        <!-- O que espera decisão (js/app.js, renderOverview) -->
+        <div class="ov-decidir">
+          <h2 class="ov-titulo">Esperando você</h2>
+          <ul id="overview-pendencias" class="ov-pendencias"></ul>
+        </div>
+      </section>
+
+      <!-- Números da operação (js/app.js, renderOverview) -->
+      <dl class="ov-numeros" aria-label="Números da operação de marketing">
+        <div><dt>Posts na fila</dt><dd id="kpi-tot-posts">0</dd></div>
+        <div><dt>Prontos ou publicados</dt><dd id="kpi-tot-aprovados">0</dd></div>
+        <div><dt>Palavras nos anúncios</dt><dd id="kpi-tot-keywords">31</dd></div>
+        <div><dt>Mensagens de WhatsApp</dt><dd id="kpi-tot-copys">7</dd></div>
+        <div><dt>Checklist da ficha</dt><dd><button type="button" onclick="switchTab('gmb')" class="ov-numero-link" id="kpi-gmb-score" aria-label="Abrir o checklist da ficha do Google">—</button></dd></div>
+      </dl>
+
+      <!-- Esteira de posts da ficha no Google (js/gmb_plano.js, renderGmbCicloResumo) -->
+      <button type="button" id="gmbCicloResumo" onclick="switchTab('gmb')" class="card-premium ov-esteira" aria-label="Abrir a esteira de posts da ficha na guia Google"></button>
+
+      <div class="ov-colunas">
+        <section class="ov-bloco" aria-labelledby="ovFilaTitulo">
+          <div class="ov-bloco-cabeca">
+            <h2 id="ovFilaTitulo" class="ov-titulo">Fila de posts das redes</h2>
+            <button type="button" onclick="switchTab('social')" class="ov-link">Ver todos</button>
+          </div>
+          <div id="overview-recent-posts" class="ov-fila"></div>
+          <p class="ov-nota"><i class="fas fa-shield-alt" aria-hidden="true"></i> Rascunhos gerados pelo sistema: revise antes de publicar.</p>
+        </section>
+
+        <nav class="ov-bloco" aria-labelledby="ovFerramentasTitulo">
+          <h2 id="ovFerramentasTitulo" class="ov-titulo">Ferramentas</h2>
+          <ul class="ov-ferramentas">
+            <li><button type="button" onclick="switchTab('calendario')" class="ov-ferramenta">
+              <span class="ov-ferramenta-icone" aria-hidden="true"><i class="fas fa-calendar-alt"></i></span>
+              <span class="ov-ferramenta-texto"><strong>Calendário da semana</strong><span>O que postar de segunda a sábado no Instagram, Facebook e Google.</span></span>
+              <i class="fas fa-chevron-right ov-ferramenta-seta" aria-hidden="true"></i>
+            </button></li>
+            <li><button type="button" onclick="switchTab('social')" class="ov-ferramenta">
+              <span class="ov-ferramenta-icone" aria-hidden="true"><i class="fab fa-instagram"></i></span>
+              <span class="ov-ferramenta-texto"><strong>Revisar posts das redes</strong><span>Aprovar arte, legenda e hashtags com a prévia no celular.</span></span>
+              <i class="fas fa-chevron-right ov-ferramenta-seta" aria-hidden="true"></i>
+            </button></li>
+            <li><button type="button" onclick="switchTab('gmb')" class="ov-ferramenta">
+              <span class="ov-ferramenta-icone" aria-hidden="true"><i class="fab fa-google"></i></span>
+              <span class="ov-ferramenta-texto"><strong>Ficha do Google</strong><span>Checklist da ficha, posts da semana, fotos e respostas às avaliações.</span></span>
+              <i class="fas fa-chevron-right ov-ferramenta-seta" aria-hidden="true"></i>
+            </button></li>
+            <li><button type="button" onclick="switchTab('marketing')" class="ov-ferramenta">
+              <span class="ov-ferramenta-icone" aria-hidden="true"><i class="fas fa-calculator"></i></span>
+              <span class="ov-ferramenta-texto"><strong>Simulador de balcão</strong><span>FGTS e portabilidade, com o texto pronto para o WhatsApp.</span></span>
+              <i class="fas fa-chevron-right ov-ferramenta-seta" aria-hidden="true"></i>
+            </button></li>
+            <li><button type="button" onclick="switchTab('marketing')" class="ov-ferramenta">
+              <span class="ov-ferramenta-icone" aria-hidden="true"><i class="fab fa-whatsapp"></i></span>
+              <span class="ov-ferramenta-texto"><strong>Mensagens de WhatsApp</strong><span>Textos prontos de consignado, portabilidade e FGTS.</span></span>
+              <i class="fas fa-chevron-right ov-ferramenta-seta" aria-hidden="true"></i>
+            </button></li>
+            <li><button type="button" onclick="switchTab('ads')" class="ov-ferramenta">
+              <span class="ov-ferramenta-icone" aria-hidden="true"><i class="fas fa-chart-line"></i></span>
+              <span class="ov-ferramenta-texto"><strong>Calculadora de anúncios</strong><span>Orçamento, cliques, conversas e contratos esperados.</span></span>
+              <i class="fas fa-chevron-right ov-ferramenta-seta" aria-hidden="true"></i>
+            </button></li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- Resultado lançado à mão (js/resultados.js) -->
       <section class="card-premium results-panel p-6 mb-6" aria-labelledby="resultsTitle">
-        <div class="results-heading"><div><span class="results-eyebrow">DADOS REALIZADOS · LANÇAMENTO MANUAL</span><h2 id="resultsTitle">Resultado do marketing</h2><p>Números agregados por origem. Sem dados de clientes.</p></div><label>Período<select id="resultsPeriod" class="art-input"><option value="all">Todo o período</option></select></label></div>
+        <div class="results-heading"><div><span class="results-eyebrow">DADOS REALIZADOS · LANÇAMENTO MANUAL</span><h2 id="resultsTitle">Resultado do marketing</h2><p>Números agregados por origem. Sem dados de clientes.</p></div><div class="flex items-center gap-2"><button type="button" onclick="abrirFormularioResultado()" class="gmb-btn-primario text-xs flex items-center gap-1.5 shadow-sm"><i class="fas fa-plus" aria-hidden="true"></i> Lançamento rápido</button><label>Período<select id="resultsPeriod" class="art-input"><option value="all">Todo o período</option></select></label></div></div>
         <p id="resultsEmpty" class="results-empty">Nenhum resultado registrado. Adicione o primeiro lançamento para acompanhar o que gera contratos.</p>
         <div id="resultsContent" hidden>
           <div class="results-kpis"><div><span>Comissão recebida</span><strong id="resultsCommission">—</strong></div><div><span>Contratos</span><strong id="resultsContracts">—</strong></div><div><span>Mídia</span><strong id="resultsSpend">—</strong></div><div><span>Saldo após mídia</span><strong id="resultsBalance">—</strong></div><div><span>Custo por contrato</span><strong id="resultsCpa">—</strong></div></div>
@@ -103,157 +198,6 @@
         </div><div class="results-form-actions"><button type="submit">Salvar resultado</button><button type="button" id="resultsCancelEdit" hidden>Cancelar edição</button><span id="resultsFormStatus" role="status"></span></div></form></details>
         <div id="resultsRecords" class="results-records"></div>
       </section>
-      <h2 class="text-sm font-bold text-gray-700 mb-3">Operação de marketing</h2>
-      <!-- KPIs Rápidos -->
-      <div class="dashboard-kpi-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-lg shrink-0">
-            <i class="fas fa-images"></i>
-          </div>
-          <div class="min-w-0">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Posts na Esteira</p>
-            <p class="text-2xl font-black text-gray-900 tabular-nums" id="kpi-tot-posts">0</p>
-          </div>
-        </div>
-
-        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-green-50 text-green-700 flex items-center justify-center text-lg shrink-0">
-            <i class="fas fa-check-double"></i>
-          </div>
-          <div class="min-w-0">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Prontos / Publicados</p>
-            <p class="text-2xl font-black text-green-700 tabular-nums" id="kpi-tot-aprovados">0</p>
-          </div>
-        </div>
-
-        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center text-lg shrink-0">
-            <i class="fab fa-google"></i>
-          </div>
-          <div class="min-w-0">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Palavras Ads</p>
-            <p class="text-2xl font-black text-blue-700 tabular-nums" id="kpi-tot-keywords">31</p>
-          </div>
-        </div>
-
-        <div class="card-premium dashboard-kpi-card p-4 flex items-center gap-3">
-          <div class="w-11 h-11 rounded-xl bg-yellow-50 text-yellow-700 flex items-center justify-center text-lg shrink-0">
-            <i class="fab fa-whatsapp"></i>
-          </div>
-          <div class="min-w-0">
-            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Copys WhatsApp</p>
-            <p class="text-2xl font-black text-yellow-700 tabular-nums" id="kpi-tot-copys">7</p>
-          </div>
-        </div>
-
-        <button type="button" onclick="switchTab('gmb')" class="card-premium dashboard-kpi-card p-4 flex items-center gap-3 cursor-pointer hover:border-red-300 transition text-left w-full" aria-label="Abrir a guia Google e Raio-X Local">
-          <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center text-lg shrink-0">
-            <i class="fab fa-google"></i>
-          </div>
-          <div class="min-w-0">
-             <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Checklist local interno</p>
-             <p class="text-2xl font-black text-red-600 tabular-nums" id="kpi-gmb-score">—</p>
-          </div>
-        </button>
-      </div>
-
-      <!-- Esteira de posts da ficha no Google (js/gmb_plano.js, renderGmbCicloResumo) -->
-      <button type="button" id="gmbCicloResumo" onclick="switchTab('gmb')" class="card-premium p-4 mb-6 w-full text-left cursor-pointer hover:border-red-300 transition" aria-label="Abrir a esteira de posts da ficha na guia Google e Raio-X Local"></button>
-
-      <!-- Grid de Acesso Rápido e Atividades -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <!-- Coluna Esquerda: Ações Rápidas -->
-        <div class="lg:col-span-2 space-y-6">
-          <div class="card-premium p-6">
-            <h3 class="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
-              <i class="fas fa-rocket text-green-600"></i> Atalhos Operacionais da Loja
-            </h3>
-            <p class="text-xs text-gray-500 mb-4">Acesse as ferramentas essenciais de divulgação e comunicação diária com um clique.</p>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              <button onclick="switchTab('calendario')" class="p-4 rounded-xl border border-amber-200 bg-amber-50/30 hover:border-amber-500 hover:bg-amber-50/70 text-left transition flex items-start gap-3">
-                <div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
-                  <i class="fas fa-calendar-alt text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-gray-900">Régua Editorial Semanal</h4>
-                  <p class="text-[11px] text-gray-500 mt-0.5">O que postar de Seg a Sáb no Insta/Face e no Google Meu Negócio.</p>
-                </div>
-              </button>
-
-              <button onclick="switchTab('social')" class="p-4 rounded-xl border border-gray-200 hover:border-green-500 hover:bg-green-50/40 text-left transition flex items-start gap-3">
-                <div class="w-9 h-9 rounded-lg bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
-                  <i class="fab fa-instagram text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-gray-900">Revisar Posts de Redes</h4>
-                  <p class="text-[11px] text-gray-500 mt-0.5">Aprovar imagens, legendas e hashtags com mockup de smartphone.</p>
-                </div>
-              </button>
-
-              <button onclick="switchTab('gmb')" class="p-4 rounded-xl border border-gray-200 hover:border-red-400 hover:bg-red-50/30 text-left transition flex items-start gap-3">
-                <div class="w-9 h-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0">
-                  <i class="fab fa-google text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-gray-900">Google Meu Negócio</h4>
-                  <p class="text-[11px] text-gray-500 mt-0.5">Checklist da ficha, posts semanais GMB, fotos e respostas de reviews.</p>
-                </div>
-              </button>
-
-              <button onclick="switchTab('marketing')" class="p-4 rounded-xl border border-green-200 bg-green-50/30 hover:border-green-600 hover:bg-green-50/70 text-left transition flex items-start gap-3">
-                <div class="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
-                  <i class="fas fa-calculator text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-gray-900">Simulador de Balcão</h4>
-                  <p class="text-[11px] text-gray-500 mt-0.5">FGTS Pix e Portabilidade com cópia imediata para WhatsApp.</p>
-                </div>
-              </button>
-
-              <button onclick="switchTab('marketing')" class="p-4 rounded-xl border border-gray-200 hover:border-green-500 hover:bg-green-50/40 text-left transition flex items-start gap-3">
-                <div class="w-9 h-9 rounded-lg bg-green-100 text-green-700 flex items-center justify-center shrink-0">
-                  <i class="fab fa-whatsapp text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-gray-900">Copys Rápidas WhatsApp</h4>
-                  <p class="text-[11px] text-gray-500 mt-0.5">Mensagens de alta conversão de FGTS Pix, Consignado e Portabilidade.</p>
-                </div>
-              </button>
-
-              <button onclick="switchTab('ads')" class="p-4 rounded-xl border border-gray-200 hover:border-green-500 hover:bg-green-50/40 text-left transition flex items-start gap-3">
-                <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
-                  <i class="fas fa-chart-line text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="text-xs font-bold text-gray-900">Calculadora de ROI Ads</h4>
-                  <p class="text-[11px] text-gray-500 mt-0.5">Simulação de orçamento, cliques, conversas e contratos fechados.</p>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <!-- Banner Dinâmico da Pauta de Hoje (atualizado automaticamente via calendario.js) -->
-          <div id="bannerPautaHoje"></div>
-        </div>
-
-        <!-- Coluna Direita: Posts Recentes na Fila -->
-        <div class="card-premium p-5 flex flex-col justify-between">
-          <div>
-            <div class="flex items-center justify-between pb-3 border-b border-gray-100 mb-3">
-              <h3 class="text-sm font-bold text-gray-900">Últimos Posts Gerados</h3>
-              <button onclick="switchTab('social')" class="text-xs text-green-700 font-bold hover:underline">Ver todos</button>
-            </div>
-            <div class="space-y-2.5" id="overview-recent-posts"></div>
-          </div>
-
-          <div class="mt-4 pt-3 border-t border-gray-100 text-center">
-            <span class="text-[11px] text-gray-500 flex items-center justify-center gap-1">
-              <i class="fas fa-shield-alt text-green-600"></i> Checklist preliminar • revisão humana necessária
-            </span>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- ======================================================== -->
@@ -595,8 +539,18 @@
         <p class="text-xs text-gray-500">Mensagens testadas e validadas para prospecção, atendimento balcão e solicitação de avaliações 5 estrelas.</p>
       </div>
 
+      <!-- ATALHOS DE 1 CLIQUE NO MARKETING -->
+      <div class="tab-anchor-bar">
+        <span class="text-xs font-bold text-gray-500 mr-1"><i class="fas fa-bolt text-amber-500"></i> Atalhos:</span>
+        <a href="#simuladorBalcaoSec" class="tab-anchor-btn"><i class="fas fa-calculator text-emerald-600"></i> Simulador Balcão</a>
+        <a href="#marketingCopysSec" class="tab-anchor-btn"><i class="fab fa-whatsapp text-green-600"></i> Mensagens WhatsApp</a>
+        <a href="#marketingReviewsSec" class="tab-anchor-btn"><i class="fas fa-star text-amber-500"></i> Avaliação Google 5★</a>
+        <a href="#utmGeradorSec" class="tab-anchor-btn"><i class="fas fa-link text-blue-600"></i> Gerador Link UTM</a>
+      </div>
+
       <!-- Gerador de Links Rastreáveis com UTM -->
-      <div class="card-premium p-5 mb-8 bg-gradient-to-br from-white to-green-50/40">
+
+      <div id="utmGeradorSec" class="card-premium p-5 mb-8 bg-gradient-to-br from-white to-green-50/40">
         <div class="flex items-center gap-2 mb-2">
           <span class="w-7 h-7 rounded-lg bg-green-700 text-white flex items-center justify-center text-xs">
             <i class="fas fa-link"></i>
@@ -640,7 +594,8 @@
       </div>
 
       <!-- MINISIMULADOR DE BALCÃO PARA WHATSAPP (FGTS & PORTABILIDADE) -->
-      <div class="card-premium p-5 sm:p-6 mb-8 bg-gradient-to-br from-white via-green-50/20 to-white border-l-4 border-green-600">
+
+      <div id="simuladorBalcaoSec" class="card-premium p-5 sm:p-6 mb-8 bg-gradient-to-br from-white via-green-50/20 to-white border-l-4 border-green-600">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-gray-100 gap-2 mb-5">
           <div>
             <div class="flex items-center gap-2">
@@ -786,7 +741,21 @@
       </div>
 
       <!-- Grade de Copys WhatsApp -->
-      <div class="mb-8">
+      <div class="mb-8" id="marketingCopysSec">
+        <!-- Disparo Rápido com Telefone do Cliente em 1 Clique -->
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <span class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-sm shadow-sm"><i class="fab fa-whatsapp"></i></span>
+            <div>
+              <h4 class="text-xs font-bold text-emerald-950">Disparo Rápido para Cliente em 1 Clique</h4>
+              <p class="text-[11px] text-emerald-700">Digite o DDD + número do cliente para abrir a conversa já com o texto preenchido ao clicar no WhatsApp:</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="tel" id="quickWhatsappCliente" placeholder="Ex: 35999998888" class="art-input text-xs py-1.5 px-3 rounded-lg border border-emerald-300 w-44 bg-white" autocomplete="off">
+            <button type="button" onclick="document.getElementById('quickWhatsappCliente').value=''; mostrarToast('Telefone limpo');" class="text-xs text-emerald-700 hover:text-emerald-900 font-semibold px-2 py-1">Limpar</button>
+          </div>
+        </div>
         <h3 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
           <i class="fab fa-whatsapp text-green-600"></i> Mensagens prontas para WhatsApp
         </h3>
@@ -794,7 +763,8 @@
       </div>
 
       <!-- Pedidos de Avaliação no Google -->
-      <div>
+
+      <div id="marketingReviewsSec">
         <h3 class="text-base font-bold text-gray-900 mb-1 flex items-center gap-2">
           <i class="fas fa-star text-yellow-500"></i> Acelerador de Avaliações 5 Estrelas no Google Maps
         </h3>
@@ -812,8 +782,18 @@
         <p class="text-xs text-gray-500">Planejamento, simulação de retorno financeiro e palavras-chave de alta intenção para Varginha e região.</p>
       </div>
 
+      <!-- ATALHOS DE 1 CLIQUE EM ANÚNCIOS -->
+      <div class="tab-anchor-bar">
+        <span class="text-xs font-bold text-gray-500 mr-1"><i class="fas fa-bolt text-amber-500"></i> Atalhos:</span>
+        <a href="#adsRoiSec" class="tab-anchor-btn"><i class="fas fa-calculator text-emerald-600"></i> Calculadora ROI</a>
+        <a href="#googleAdsContainer" class="tab-anchor-btn"><i class="fab fa-google text-blue-600"></i> Campanhas Google Ads (A, B, C)</a>
+        <a href="#metaAdsContainer" class="tab-anchor-btn"><i class="fab fa-facebook text-indigo-600"></i> Meta Ads &amp; Criativos</a>
+        <a href="arquivos/google_ads_speed_financeira_importacao.csv" download class="tab-anchor-btn"><i class="fas fa-file-csv text-green-700"></i> Baixar CSV Google Ads</a>
+      </div>
+
       <!-- CALCULADORA DE ROI E ORÇAMENTO -->
-      <div class="card-premium p-6 mb-8 border-2 border-green-600/30">
+
+      <div id="adsRoiSec" class="card-premium p-6 mb-8 border-2 border-green-600/30">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-5">
           <div>
             <span class="bg-green-100 text-green-800 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Simulador Financeiro</span>
@@ -1008,39 +988,46 @@
     <!-- ABA 5: GOOGLE & RAIO-X LOCAL                             -->
     <!-- ======================================================== -->
     <section id="tab-gmb" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-gmb">
-      <!-- MENU DA ABA: atalhos para cada parte (a aba tem muitos cartões) -->
-      <nav class="gmb-menu" aria-label="Partes da aba Google">
-        <span class="gmb-menu-titulo">Ir para:</span>
-        <a href="#geogridPainel">Posição no Maps</a>
-        <a href="#gmbApiPainel">Conexão</a>
-        <a href="#fichaSaudePainel">Saúde da ficha</a>
-        <a href="#scPainel">Buscas do site</a>
-        <a href="#gmbSecPosts">Posts da ficha</a>
-        <a href="#gmbSecAvaliacoes">Avaliações</a>
-        <a href="#gmbSecRotina">Rotina e métricas</a>
-        <a href="#centralCorrecaoNap">Diretórios (NAP)</a>
-        <a href="#gmbSecChecklist">Checklist</a>
-        <a href="#gmbSecFotos">Fotos e perguntas</a>
-      </nav>
-
-      <div class="card-premium p-5 sm:p-6 mb-6 bg-gradient-to-r from-white via-blue-50/30 to-green-50/30">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <p class="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Inteligência local da loja</p>
-            <h2 class="text-xl sm:text-2xl font-black text-gray-900">Raio-X Local • Speed Financeira Varginha</h2>
-            <p class="text-xs text-gray-600 mt-1 max-w-3xl">Consolida consistência NAP, visibilidade em IA, concorrentes e oportunidades locais usando as coletas já existentes do projeto.</p>
+      <!-- Cabeçalho Executivo da Aba GMB -->
+      <div class="card-premium p-3.5 sm:p-4 mb-4 bg-white border border-slate-200 shadow-xs">
+        <div class="flex flex-col lg:flex-row justify-between lg:items-center gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="w-10 h-10 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center text-base font-black shrink-0 shadow-xs">
+              <i class="fab fa-google"></i>
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2">
+                <h2 class="text-sm sm:text-base font-bold text-gray-900 tracking-tight leading-none truncate">Google Meu Negócio & SEO Local</h2>
+                <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0">Ficha Ativa</span>
+              </div>
+              <p class="text-[11px] text-gray-500 mt-1 leading-snug truncate">Presença da Speed no Google Maps, buscas locais de Varginha e citações em IAs.</p>
+            </div>
           </div>
-          <span id="raioxAtualizado" class="text-[11px] font-bold text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-full max-w-full">Carregando dados...</span>
+
+          <div class="flex items-center gap-2 flex-wrap shrink-0">
+            <a href="https://business.google.com/" target="_blank" rel="noopener noreferrer" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300/80 font-semibold text-xs py-1.5 px-3 rounded-lg transition flex items-center gap-1.5 shadow-xs whitespace-nowrap" title="Acessar painel oficial do Google">
+              <i class="fab fa-google text-red-500"></i> Painel Google ↗
+            </a>
+            <a href="https://share.google/TYMb8tNCjBYdCTloP" target="_blank" rel="noopener noreferrer" class="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300/80 font-semibold text-xs py-1.5 px-3 rounded-lg transition flex items-center gap-1.5 shadow-xs whitespace-nowrap" title="Ver ficha no Google Maps">
+              <i class="fas fa-map-marked-alt text-emerald-600"></i> Ver no Maps ↗
+            </a>
+            <button onclick="copiarTexto('https://share.google/TYMb8tNCjBYdCTloP')" class="bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold text-xs py-1.5 px-3.5 rounded-lg transition shadow-xs flex items-center gap-1.5 whitespace-nowrap" title="Copiar link de 5 estrelas para enviar no WhatsApp">
+              <i class="fas fa-star text-amber-900"></i> Copiar Link de Review
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Consistência NAP</p><p id="raioxNap" class="text-2xl font-black text-red-600">—</p><p id="raioxNapMeta" class="text-[10px] text-gray-500 mt-1">Diretórios corretos</p></div>
-        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Visibilidade em IA</p><p id="raioxIa" class="text-2xl font-black text-blue-700">—</p><p id="raioxIaMeta" class="text-[10px] text-gray-500 mt-1">Citações monitoradas</p></div>
-        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Concorrentes diretos</p><p id="raioxConcorrentes" class="text-2xl font-black text-purple-700">—</p><p class="text-[10px] text-gray-500 mt-1">Perfis acompanhados</p></div>
-        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Temas monitorados</p><p id="raioxTemas" class="text-2xl font-black text-green-700">—</p><p class="text-[10px] text-gray-500 mt-1">Perguntas locais em IA</p></div>
+      <!-- BLOCO 1: COMO ESTOU AGORA -->
+      <div class="gmb-bloco-titulo" id="gmbBlocoAgora"><span>1</span><div><h2>Como estou agora</h2><p>Nota da ficha, posição no Maps contra os concorrentes e buscas do site. Dados atualizados sozinhos pelo servidor.</p></div></div>
+      <!-- SAÚDE DA FICHA: NOTA, ALTERAÇÕES, POTENCIAL E NAP (js/ficha_saude.js, adaptado do Local Ninja) -->
+      <div class="card-premium p-5 mb-8" id="fichaSaudePainel">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-heart-pulse text-green-700 mr-2"></i>Saúde da ficha no Google</h3><p class="text-[11px] text-gray-500 mt-1">Nota de 0 a 100 com 24 checagens, aviso quando a ficha muda, ações a mais por mês ao entrar no top 3 e conferência dos diretórios. O servidor confere sozinho todo dia; os diretórios, toda semana.</p></div>
+          <span id="fichaSaudeStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
+        </div>
+        <div id="fichaSaudeConteudo"></div>
       </div>
-
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
         <div class="card-premium p-5 lg:col-span-2" id="geogridPainel">
           <div class="flex items-start justify-between gap-3 mb-4">
@@ -1056,77 +1043,89 @@
           <div id="raioxConcorrentesLista" class="space-y-2 max-h-[390px] overflow-y-auto pr-1"></div>
         </div>
       </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="card-premium p-5">
-          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-bullseye text-orange-500 mr-2"></i>Melhorias estratégicas</h3>
-          <p class="text-[11px] text-gray-500 mb-4">Prioridades derivadas dos dados atuais.</p>
-          <div id="raioxOportunidades" class="space-y-3"></div>
+      <!-- BUSCAS DO SITE NO GOOGLE: SEARCH CONSOLE (js/search_console.js) -->
+      <div class="card-premium p-5 mb-8" id="scPainel">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-magnifying-glass-chart text-green-700 mr-2"></i>Buscas do site no Google (Search Console)</h3><p class="text-[11px] text-gray-500 mt-1">Quantas vezes cada página do site apareceu na busca, quantos cliques recebeu, em que posição e por quais buscas. Últimos 28 dias, lidos pelo servidor uma vez por dia.</p></div>
+          <span id="scStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
         </div>
-        <div class="card-premium p-5">
-          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-key text-yellow-500 mr-2"></i>Temas locais monitorados</h3>
-          <p class="text-[11px] text-gray-500 mb-4">Visibilidade da marca nas perguntas acompanhadas.</p>
-          <div id="raioxTemasLista" class="space-y-2"></div>
+        <div id="scConteudo"></div>
+      </div>
+      <!-- CONEXÃO DO SERVIDOR COM A FICHA: BUSINESS PROFILE API (js/gmb_api.js) -->
+      <div class="card-premium p-5 mb-8" id="gmbApiPainel">
+        <div class="flex items-start justify-between gap-3 mb-4">
+          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-plug text-green-700 mr-2"></i>Conexão com a ficha (API do Perfil da Empresa)</h3><p class="text-[11px] text-gray-500 mt-1">Liga o servidor do Nexcafe à ficha da Speed Financeira com a autorização da conta Google dela. Só esta ficha é usada; os outros perfis da conta ficam de fora.</p></div>
+          <span id="gmbApiStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
         </div>
+        <div id="gmbApiConteudo"></div>
       </div>
 
-      <div class="card-premium p-5 sm:p-6 mb-8">
-        <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+      <!-- BLOCO 2: O QUE FAZER ESTA SEMANA -->
+      <div class="gmb-bloco-titulo" id="gmbBlocoSemana"><span>2</span><div><h2>O que fazer esta semana</h2><p>Posts programados, respostas às avaliações, perguntas e fotos da ficha.</p></div></div>
+      <!-- SEÇÃO 2: ESTEIRA DE POSTS DA FICHA (js/data_gmb_posts.js + js/gmb_plano.js) -->
+      <div id="gmbSecPosts" class="card-premium p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
           <div>
-            <p class="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Diagnóstico para execução</p>
-            <h3 class="text-lg font-black text-gray-900">Plano de ação do Raio-X</h3>
-            <p class="text-xs text-gray-600 mt-1">Cada prioridade mostra a evidência, a ação e o que conferir na próxima coleta. Registrar execução não altera os números medidos.</p>
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-bullhorn text-yellow-500"></i> Esteira de posts da ficha no Google
+            </h3>
+            <p class="text-xs text-gray-500">3 posts por semana, só serviços financeiros. Ciclo de cada mês: pauta até o dia 20, textos até o 22, artes até o 24, aprovação e programação na ficha (às 9h) até o 25 do mês anterior; toda segunda, conferir se o Google recusou algum post. O texto não leva telefone: o contato vai no botão.</p>
           </div>
-          <span id="raioxPlanoProgresso" class="text-xs font-bold text-green-800 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">Carregando ações...</span>
+          <div class="flex flex-col items-start sm:items-end gap-2 shrink-0">
+            <span id="gmbPostsResumo" class="status-badge bg-gray-100 text-gray-700 text-[10px]">—</span>
+            <label class="text-[11px] font-semibold text-gray-600 flex items-center gap-1.5">Mostrar <select id="gmbPostsFiltro" class="art-input gmb-filtro"><option value="todos">Todos</option><option value="pendentes">Falta aprovar ou programar</option><option value="programado">Programados</option><option value="publicado">Publicados</option><option value="recusado">Recusados</option></select></label>
+          </div>
         </div>
-        <div id="raioxDetalhado" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
-      </div>
 
-      <div class="card-premium p-5 sm:p-6 mb-8">
-        <h3 class="text-base font-bold text-gray-900 mb-2">Prioridades da busca local em 2026</h3>
-        <p class="text-xs text-gray-600 mb-4">A pesquisa da Whitespark reúne opiniões de especialistas. Use estas frentes para orientar ações e acompanhe os resultados com medições reais por termo e região.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-700">
-          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Perfil da Empresa</strong>Validar categoria principal e adicionais, serviços predefinidos, horário real, endereço e localização do pino.</div>
-          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Avaliações e experiência</strong>Acompanhar nota, volume, recência, respostas, fotos reais, cliques para ligar e rotas.</div>
-          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Site e presença local</strong>Conferir NAP indexável, páginas úteis por serviço, referências locais e cadastros consistentes.</div>
-          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Medição e integridade</strong>Medir posições em GeoGrid antes e depois das ações. Manter nome e horário verdadeiros, sem avaliações artificiais ou conteúdo repetitivo.</div>
-        </div>
-      </div>
-      <div class="flex items-center gap-3 my-8" aria-hidden="true">
-        <div class="h-px bg-gray-200 flex-grow"></div>
-        <span class="text-[10px] font-black uppercase tracking-widest text-gray-500">Gestão operacional do perfil</span>
-        <div class="h-px bg-gray-200 flex-grow"></div>
-      </div>
+        <div id="gmbPostsEtapas" class="mb-6"></div>
 
-      <!-- Cabeçalho da Aba GMB -->
-      <div class="card-premium p-4 sm:p-5 mb-5 bg-gradient-to-r from-white via-red-50/15 to-white">
-        <div class="flex flex-col md:flex-row justify-between md:items-center gap-3">
+        <div id="gmbPostsContainer"></div>
+      </div>
+      <!-- SEÇÃO 3: CENTRAL DE RESPOSTA A AVALIAÇÕES (REVIEWS) -->
+      <div id="gmbSecAvaliacoes" class="card-premium p-6 mb-8">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
           <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center text-sm font-black shrink-0">
-                <i class="fab fa-google"></i>
-              </span>
-              <h2 class="text-base sm:text-lg font-bold text-gray-900 leading-snug">Gestão do Google Meu Negócio & Ficha Local</h2>
-            </div>
-            <p class="text-xs text-gray-500 max-w-3xl leading-relaxed">Otimize a presença da Speed Financeira no Google Maps e na busca de Varginha para atrair clientes de rua, ligações e citações em IAs.</p>
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-star text-yellow-500"></i> Modelos de Resposta para Avaliações no Google
+            </h3>
+            <p class="text-xs text-gray-500">Responder todas as avaliações (positivas e negativas) em até 48h é o fator nº 1 de confiança no Google Maps.</p>
           </div>
+          <button onclick="copiarTexto('https://share.google/TYMb8tNCjBYdCTloP')" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-1.5 px-3 rounded-lg transition flex items-center gap-1">
+            <i class="fas fa-link text-green-700"></i> Link da Ficha para Clientes
+          </button>
+        </div>
 
-          <div class="flex items-center gap-2 flex-wrap shrink-0">
-            <a href="https://business.google.com/" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
-              <i class="fab fa-google text-red-500"></i> Painel Google
-            </a>
-            <a href="https://share.google/TYMb8tNCjBYdCTloP" target="_blank" rel="noopener noreferrer" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-2 px-3 rounded-lg transition flex items-center gap-1.5 shadow-sm whitespace-nowrap">
-              <i class="fas fa-map-marked-alt text-green-700"></i> Ver Ficha no Google
-            </a>
-            <button onclick="copiarTexto('https://share.google/TYMb8tNCjBYdCTloP')" class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold text-xs py-2 px-3.5 rounded-lg transition shadow flex items-center gap-1.5 whitespace-nowrap">
-              <i class="fas fa-star text-yellow-800"></i> Copiar Link de Review
-            </button>
+        <div id="gmbAvaliacoesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+      </div>
+      <!-- SEÇÃO 4 & 5: Q&A E FOTOS -->
+      <div id="gmbSecFotos" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <!-- Q&A do Google -->
+        <div class="card-premium p-6">
+          <div class="pb-3 border-b border-gray-100 mb-4">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-question-circle text-blue-600"></i> Perguntas & Respostas Frequentes (Q&A)
+            </h3>
+            <p class="text-xs text-gray-500 mt-0.5">Adicione você mesmo essas perguntas na sua ficha para esclarecer dúvidas antes do cliente chamar.</p>
           </div>
+          <div id="gmbQAContainer" class="space-y-3 max-h-[500px] overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- Checklist de Fotos -->
+        <div class="card-premium p-6">
+          <div class="pb-3 border-b border-gray-100 mb-4">
+            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
+              <i class="fas fa-camera text-purple-600"></i> Checklist de Fotos da Loja para o Google
+            </h3>
+            <p class="text-xs text-gray-500 mt-0.5">Empresas com fotos reais de fachada, equipe e interior recebem 42% mais pedidos de rota no Maps.</p>
+          </div>
+          <div id="gmbFotosContainer" class="max-h-[500px] overflow-y-auto pr-1"></div>
         </div>
       </div>
 
+      <!-- BLOCO 3: ROTINA E DIRETÓRIOS -->
+      <div class="gmb-bloco-titulo" id="gmbBlocoRotina"><span>3</span><div><h2>Rotina e diretórios</h2><p>Tarefas recorrentes, métricas do mês e correção de nome, endereço e telefone nos diretórios.</p></div></div>
       <!-- PLANO DO PERFIL: ROTINA RECORRENTE E MÉTRICAS MENSAIS (js/gmb_plano.js) -->
-      <div class="card-premium id="gmbSecRotina" p-5 mb-6">
+      <div id="gmbSecRotina" class="card-premium p-5 mb-6">
         <div class="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
           <div>
             <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2"><i class="fas fa-calendar-check text-green-700"></i> Rotina da ficha no Google</h3>
@@ -1136,7 +1135,6 @@
         </div>
         <div id="gmbRotinaContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
       </div>
-
       <div class="card-premium p-5 mb-6">
         <div class="mb-3">
           <h3 class="text-sm font-bold text-gray-900 flex items-center gap-2"><i class="fas fa-chart-line text-green-700"></i> Métricas da ficha mês a mês</h3>
@@ -1162,7 +1160,6 @@
         </details>
         <div id="gmbMetricasContainer" class="mt-4"></div>
       </div>
-
       <!-- PAINEL DE SCORE E SAÚDE DA FICHA (3 CARDS COM ALTURAS EQUILIBRADAS) -->
       <div id="gmbSecScore" class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5 mb-6 items-stretch">
         <!-- Score Circular -->
@@ -1254,7 +1251,6 @@
           </button>
         </div>
       </div>
-
       <!-- CENTRAL DE CORREÇÃO NAP (9 TELEFONES INCORRETOS) -->
       <div id="centralCorrecaoNap" class="card-premium p-5 sm:p-6 mb-8 border-l-4 border-red-500">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-gray-100 gap-2 mb-4">
@@ -1281,8 +1277,60 @@
         <div id="centralCorrecaoNapContainer" class="space-y-3"></div>
       </div>
 
+      <!-- BLOCO 4: REFERÊNCIA (recolhido por padrão) -->
+      <details class="gmb-referencia" id="gmbBlocoReferencia">
+        <summary><span>4</span><div><h2>Referência</h2><p>Raio-X de setembro, melhorias estratégicas, prioridades de 2026 e checklist. Clique para abrir.</p></div></summary>
+      <div class="card-premium p-5 sm:p-6 mb-6 bg-gradient-to-r from-white via-blue-50/30 to-green-50/30">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Inteligência local da loja</p>
+            <h2 class="text-xl sm:text-2xl font-black text-gray-900">Raio-X Local • Speed Financeira Varginha</h2>
+            <p class="text-xs text-gray-600 mt-1 max-w-3xl">Consolida consistência NAP, visibilidade em IA, concorrentes e oportunidades locais usando as coletas já existentes do projeto.</p>
+          </div>
+          <span id="raioxAtualizado" class="text-[11px] font-bold text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-full max-w-full">Carregando dados...</span>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Consistência NAP</p><p id="raioxNap" class="text-2xl font-black text-red-600">—</p><p id="raioxNapMeta" class="text-[10px] text-gray-500 mt-1">Diretórios corretos</p></div>
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Visibilidade em IA</p><p id="raioxIa" class="text-2xl font-black text-blue-700">—</p><p id="raioxIaMeta" class="text-[10px] text-gray-500 mt-1">Citações monitoradas</p></div>
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Concorrentes diretos</p><p id="raioxConcorrentes" class="text-2xl font-black text-purple-700">—</p><p class="text-[10px] text-gray-500 mt-1">Perfis acompanhados</p></div>
+        <div class="card-premium p-4 min-w-0"><p class="text-[10px] font-bold uppercase text-gray-500">Temas monitorados</p><p id="raioxTemas" class="text-2xl font-black text-green-700">—</p><p class="text-[10px] text-gray-500 mt-1">Perguntas locais em IA</p></div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="card-premium p-5">
+          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-bullseye text-orange-500 mr-2"></i>Melhorias estratégicas</h3>
+          <p class="text-[11px] text-gray-500 mb-4">Prioridades derivadas dos dados atuais.</p>
+          <div id="raioxOportunidades" class="space-y-3"></div>
+        </div>
+        <div class="card-premium p-5">
+          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-key text-yellow-500 mr-2"></i>Temas locais monitorados</h3>
+          <p class="text-[11px] text-gray-500 mb-4">Visibilidade da marca nas perguntas acompanhadas.</p>
+          <div id="raioxTemasLista" class="space-y-2"></div>
+        </div>
+      </div>
+      <div class="card-premium p-5 sm:p-6 mb-8">
+        <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-1">Diagnóstico para execução</p>
+            <h3 class="text-lg font-black text-gray-900">Plano de ação do Raio-X</h3>
+            <p class="text-xs text-gray-600 mt-1">Cada prioridade mostra a evidência, a ação e o que conferir na próxima coleta. Registrar execução não altera os números medidos.</p>
+          </div>
+          <span id="raioxPlanoProgresso" class="text-xs font-bold text-green-800 bg-green-50 border border-green-200 px-3 py-1.5 rounded-full">Carregando ações...</span>
+        </div>
+        <div id="raioxDetalhado" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+      </div>
+      <div class="card-premium p-5 sm:p-6 mb-8">
+        <h3 class="text-base font-bold text-gray-900 mb-2">Prioridades da busca local em 2026</h3>
+        <p class="text-xs text-gray-600 mb-4">A pesquisa da Whitespark reúne opiniões de especialistas. Use estas frentes para orientar ações e acompanhe os resultados com medições reais por termo e região.</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-700">
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Perfil da Empresa</strong>Validar categoria principal e adicionais, serviços predefinidos, horário real, endereço e localização do pino.</div>
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Avaliações e experiência</strong>Acompanhar nota, volume, recência, respostas, fotos reais, cliques para ligar e rotas.</div>
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Site e presença local</strong>Conferir NAP indexável, páginas úteis por serviço, referências locais e cadastros consistentes.</div>
+          <div class="rounded-xl border border-gray-200 p-3"><strong class="block text-gray-900 mb-1">Medição e integridade</strong>Medir posições em GeoGrid antes e depois das ações. Manter nome e horário verdadeiros, sem avaliações artificiais ou conteúdo repetitivo.</div>
+        </div>
+      </div>
       <!-- SEÇÃO 1: CHECKLIST INTERNO ORIENTADO PELA PESQUISA WHITESPARK 2026 -->
-      <div class="card-premium id="gmbSecChecklist" p-5 sm:p-6 mb-8">
+      <div id="gmbSecChecklist" class="card-premium p-5 sm:p-6 mb-8">
         <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-3 border-b border-gray-100 gap-2 mb-4">
           <div>
             <div class="flex items-center gap-2">
@@ -1319,94 +1367,92 @@
 
         <div id="gmbChecklistContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-3"></div>
       </div>
-
-      <!-- CONEXÃO DO SERVIDOR COM A FICHA: BUSINESS PROFILE API (js/gmb_api.js) -->
-      <div class="card-premium p-5 mb-8" id="gmbApiPainel">
-        <div class="flex items-start justify-between gap-3 mb-4">
-          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-plug text-green-700 mr-2"></i>Conexão com a ficha (API do Perfil da Empresa)</h3><p class="text-[11px] text-gray-500 mt-1">Liga o servidor do Nexcafe à ficha da Speed Financeira com a autorização da conta Google dela. Só esta ficha é usada; os outros perfis da conta ficam de fora.</p></div>
-          <span id="gmbApiStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
-        </div>
-        <div id="gmbApiConteudo"></div>
+      </details>
+    </section>
+    <!-- ======================================================== -->
+    <!-- ABA: ESTUDO DE PALAVRAS-CHAVE                            -->
+    <!-- ======================================================== -->
+    <section id="tab-palavras" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-palavras">
+      <div class="card-premium p-6 mb-6">
+        <p class="text-[11px] font-bold text-green-700 uppercase tracking-wider">Estudo de palavras-chave</p>
+        <h2 class="text-xl font-black text-gray-900 mt-1">O que as pessoas procuram e quanto procuram</h2>
+        <p class="text-xs text-gray-600 mt-1 max-w-3xl">Três fontes lado a lado. As duas primeiras são buscas reais, medidas pelo Google na ficha e no site. A terceira é o estudo de volume, que mostra o tamanho de cada termo e ajuda a escolher pautas e anúncios.</p>
+        <div id="palavrasResumo" class="palavras-resumo mt-4"></div>
       </div>
 
-      <!-- SAÚDE DA FICHA: NOTA, ALTERAÇÕES, POTENCIAL E NAP (js/ficha_saude.js, adaptado do Local Ninja) -->
-      <div class="card-premium p-5 mb-8" id="fichaSaudePainel">
-        <div class="flex items-start justify-between gap-3 mb-4">
-          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-heart-pulse text-green-700 mr-2"></i>Saúde da ficha no Google</h3><p class="text-[11px] text-gray-500 mt-1">Nota de 0 a 100 com 24 checagens, aviso quando a ficha muda, ações a mais por mês ao entrar no top 3 e conferência dos diretórios. O servidor confere sozinho todo dia; os diretórios, toda semana.</p></div>
-          <span id="fichaSaudeStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="card-premium p-6">
+          <div class="flex items-start justify-between gap-3 mb-2">
+            <div>
+              <h3 class="text-base font-bold text-gray-900">O que digitam para achar a ficha</h3>
+              <p class="text-[11px] text-gray-600">Desempenho da ficha no Google, últimos 3 meses. Número de pessoas por termo.</p>
+            </div>
+            <span id="palavrasFichaStatus" class="status-badge text-[10px] whitespace-nowrap bg-gray-100 text-gray-700">Carregando</span>
+          </div>
+          <div id="palavrasFicha"><p class="text-[11px] text-gray-600">Carregando...</p></div>
         </div>
-        <div id="fichaSaudeConteudo"></div>
+        <div class="card-premium p-6">
+          <div class="flex items-start justify-between gap-3 mb-2">
+            <div>
+              <h3 class="text-base font-bold text-gray-900">Buscas que mostram o site</h3>
+              <p class="text-[11px] text-gray-600">Search Console: quantas vezes o site apareceu no Google para cada busca.</p>
+            </div>
+            <span id="palavrasSiteStatus" class="status-badge text-[10px] whitespace-nowrap bg-gray-100 text-gray-700">Carregando</span>
+          </div>
+          <div id="palavrasSite"><p class="text-[11px] text-gray-600">Carregando...</p></div>
+        </div>
       </div>
 
-      <!-- BUSCAS DO SITE NO GOOGLE: SEARCH CONSOLE (js/search_console.js) -->
-      <div class="card-premium p-5 mb-8" id="scPainel">
-        <div class="flex items-start justify-between gap-3 mb-4">
-          <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-magnifying-glass-chart text-green-700 mr-2"></i>Buscas do site no Google (Search Console)</h3><p class="text-[11px] text-gray-500 mt-1">Quantas vezes cada página do site apareceu na busca, quantos cliques recebeu, em que posição e por quais buscas. Últimos 28 dias, lidos pelo servidor uma vez por dia.</p></div>
-          <span id="scStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
-        </div>
-        <div id="scConteudo"></div>
+      <div class="card-premium p-6 mb-6">
+        <h3 class="text-base font-bold text-gray-900">Mais buscadas por produto</h3>
+        <p class="text-[11px] text-gray-600 mb-3">Os 3 termos de maior volume em Minas Gerais de cada produto, pelo estudo de volume.</p>
+        <div id="palavrasDestaques" class="palavras-destaques"></div>
       </div>
 
-      <!-- SEÇÃO 2: ESTEIRA DE POSTS DA FICHA (js/data_gmb_posts.js + js/gmb_plano.js) -->
-      <div class="card-premium id="gmbSecPosts" p-6 mb-8">
-        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
+      <div class="card-premium p-6 mb-8">
+        <div class="flex flex-wrap items-end justify-between gap-3 mb-3">
           <div>
-            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-              <i class="fas fa-bullhorn text-yellow-500"></i> Esteira de posts da ficha no Google
-            </h3>
-            <p class="text-xs text-gray-500">3 posts por semana, só serviços financeiros. Ciclo de cada mês: pauta até o dia 20, textos até o 22, artes até o 24, aprovação e programação na ficha (às 9h) até o 25 do mês anterior; toda segunda, conferir se o Google recusou algum post. O texto não leva telefone: o contato vai no botão.</p>
+            <h3 class="text-base font-bold text-gray-900">Banco de palavras-chave</h3>
+            <p id="palavrasFonte" class="text-[11px] text-gray-600"></p>
           </div>
-          <div class="flex flex-col items-start sm:items-end gap-2 shrink-0">
-            <span id="gmbPostsResumo" class="status-badge bg-gray-100 text-gray-700 text-[10px]">—</span>
-            <label class="text-[11px] font-semibold text-gray-600 flex items-center gap-1.5">Mostrar <select id="gmbPostsFiltro" class="art-input gmb-filtro"><option value="todos">Todos</option><option value="pendentes">Falta aprovar ou programar</option><option value="programado">Programados</option><option value="publicado">Publicados</option><option value="recusado">Recusados</option></select></label>
-          </div>
+          <a href="arquivos/palavras-chave/" class="text-xs font-bold text-green-700 hover:underline">Abrir as planilhas do estudo</a>
         </div>
-
-        <div id="gmbPostsEtapas" class="mb-6"></div>
-
-        <div id="gmbPostsContainer"></div>
-      </div>
-
-      <!-- SEÇÃO 3: CENTRAL DE RESPOSTA A AVALIAÇÕES (REVIEWS) -->
-      <div class="card-premium id="gmbSecAvaliacoes" p-6 mb-8">
-        <div class="flex flex-col sm:flex-row justify-between sm:items-center pb-4 border-b border-gray-100 gap-2 mb-4">
-          <div>
-            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-              <i class="fas fa-star text-yellow-500"></i> Modelos de Resposta para Avaliações no Google
-            </h3>
-            <p class="text-xs text-gray-500">Responder todas as avaliações (positivas e negativas) em até 48h é o fator nº 1 de confiança no Google Maps.</p>
+        <!-- Filtros Rápidos de 1 Clique por Produto -->
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b border-gray-100">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-xs font-bold text-gray-500 mr-1"><i class="fas fa-filter text-indigo-500"></i> Filtro Rápido:</span>
+            <button type="button" onclick="filtrarProdutoRapido('')" class="pal-quick-btn active text-xs font-bold px-2.5 py-1 rounded-full border bg-green-700 text-white" data-prod="">Todos</button>
+            <button type="button" onclick="filtrarProdutoRapido('INSS')" class="pal-quick-btn text-xs font-bold px-2.5 py-1 rounded-full border bg-white text-gray-700 hover:bg-gray-50" data-prod="INSS">INSS</button>
+            <button type="button" onclick="filtrarProdutoRapido('CLT')" class="pal-quick-btn text-xs font-bold px-2.5 py-1 rounded-full border bg-white text-gray-700 hover:bg-gray-50" data-prod="CLT">CLT</button>
+            <button type="button" onclick="filtrarProdutoRapido('FGTS')" class="pal-quick-btn text-xs font-bold px-2.5 py-1 rounded-full border bg-white text-gray-700 hover:bg-gray-50" data-prod="FGTS">FGTS</button>
+            <button type="button" onclick="filtrarProdutoRapido('Portabilidade e refin')" class="pal-quick-btn text-xs font-bold px-2.5 py-1 rounded-full border bg-white text-gray-700 hover:bg-gray-50" data-prod="Portabilidade e refin">Portabilidade</button>
+            <button type="button" onclick="filtrarProdutoRapido('Veículos')" class="pal-quick-btn text-xs font-bold px-2.5 py-1 rounded-full border bg-white text-gray-700 hover:bg-gray-50" data-prod="Veículos">Veículos</button>
+            <button type="button" onclick="filtrarProdutoRapido('Marca e loja')" class="pal-quick-btn text-xs font-bold px-2.5 py-1 rounded-full border bg-white text-gray-700 hover:bg-gray-50" data-prod="Marca e loja">Loja / Balcão</button>
           </div>
-          <button onclick="copiarTexto('https://share.google/TYMb8tNCjBYdCTloP')" class="bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold text-xs py-1.5 px-3 rounded-lg transition flex items-center gap-1">
-            <i class="fas fa-link text-green-700"></i> Link da Ficha para Clientes
+          <button type="button" onclick="copiarPalavrasFiltradas()" class="gmb-btn-primario text-xs flex items-center gap-1.5 shadow-sm" title="Copiar todas as palavras do filtro atual com volumes para colar no Excel ou Google Ads">
+            <i class="fas fa-copy"></i> Copiar Palavras Deste Filtro
           </button>
         </div>
 
-        <div id="gmbAvaliacoesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-      </div>
-
-      <!-- SEÇÃO 4 & 5: Q&A E FOTOS -->
-      <div id="gmbSecFotos" class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <!-- Q&A do Google -->
-        <div class="card-premium p-6">
-          <div class="pb-3 border-b border-gray-100 mb-4">
-            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-              <i class="fas fa-question-circle text-blue-600"></i> Perguntas & Respostas Frequentes (Q&A)
-            </h3>
-            <p class="text-xs text-gray-500 mt-0.5">Adicione você mesmo essas perguntas na sua ficha para esclarecer dúvidas antes do cliente chamar.</p>
-          </div>
-          <div id="gmbQAContainer" class="space-y-3 max-h-[500px] overflow-y-auto pr-1"></div>
+        <div class="palavras-filtros">
+          <label>Buscar<input id="palavrasBusca" type="search" placeholder="ex.: consignado" autocomplete="off"></label>
+          <label>Produto<select id="palavrasProduto"></select></label>
+          <label>Intenção<select id="palavrasIntencao"></select></label>
+          <label>Ordenar por<select id="palavrasOrdem">
+            <option value="mg">Volume em MG</option>
+            <option value="brasil">Volume no Brasil</option>
+            <option value="regiao">Volume na região</option>
+            <option value="cpc">CPC máximo</option>
+            <option value="termo">Ordem alfabética</option>
+          </select></label>
+          <label class="palavras-check"><input id="palavrasMaxima" type="checkbox"> Só prioridade máxima</label>
         </div>
-
-        <!-- Checklist de Fotos -->
-        <div class="card-premium p-6">
-          <div class="pb-3 border-b border-gray-100 mb-4">
-            <h3 class="text-base font-bold text-gray-900 flex items-center gap-2">
-              <i class="fas fa-camera text-purple-600"></i> Checklist de Fotos da Loja para o Google
-            </h3>
-            <p class="text-xs text-gray-500 mt-0.5">Empresas com fotos reais de fachada, equipe e interior recebem 42% mais pedidos de rota no Maps.</p>
-          </div>
-          <div id="gmbFotosContainer" class="max-h-[500px] overflow-y-auto pr-1"></div>
-        </div>
+        <p id="palavrasContagem" class="text-[11px] text-gray-600 my-2"></p>
+        <div class="overflow-x-auto"><table class="ficha-tabela palavras-tabela">
+          <thead><tr><th>Palavra-chave</th><th>Produto</th><th>Intenção</th><th class="text-right">Brasil/mês</th><th class="text-right">MG/mês</th><th class="text-right">Região/mês</th><th>Varginha (Planner)</th><th class="text-right">CPC</th><th>Concorrência</th><th>Prioridade</th></tr></thead>
+          <tbody id="palavrasTabela"></tbody>
+        </table></div>
+        <p class="text-[10px] text-gray-500 mt-3">Volumes de Brasil, MG e região: estudo em planilha, sem conferência recente no Keyword Planner. A coluna Varginha é a faixa real do Keyword Planner com Varginha como local (11/09/2026). O Google só mostra faixa, como "10 a 100", para contas sem gasto contínuo em anúncios.</p>
       </div>
     </section>
 
@@ -1526,8 +1572,14 @@
   <script src="js/gmb_api.js"></script>
   <script src="js/ficha_saude.js"></script>
   <script src="js/search_console.js"></script>
+  <script src="js/data_palavras.js"></script>
+  <script src="js/palavras.js"></script>
   <script src="js/app.js"></script>
   <script src="js/resultados.js"></script>
   <script src="js/criador_artes.js"></script>
+  <!-- Botão Flutuante de Retorno Rápido ao Topo (1-Clique) -->
+  <button id="btnVoltarTopo" class="btn-floating-top" type="button" title="Voltar ao topo (1-Clique)" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Voltar ao topo da página">
+    <i class="fas fa-arrow-up"></i>
+  </button>
 </body>
 </html>

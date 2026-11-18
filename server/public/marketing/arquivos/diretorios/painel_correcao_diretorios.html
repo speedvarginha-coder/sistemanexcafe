@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle Geral de Diretórios (44 Fichas) | Speed Financeira</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #019652;
+            --primary-dark: #016b3b;
+            --accent: #FADB20;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --border: #e5e7eb;
+            --red: #ef4444;
+            --red-bg: #fef2f2;
+            --green: #10b981;
+            --green-bg: #ecfdf5;
+            --yellow: #f59e0b;
+            --yellow-bg: #fffbeb;
+            --blue: #3b82f6;
+            --blue-bg: #eff6ff;
+            --purple: #8b5cf6;
+            --purple-bg: #f5f3ff;
+            --gray-bg: #f3f4f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: #f3f4f6; color: var(--dark); padding-bottom: 80px; }
+        header { background: linear-gradient(135deg, #016b3b, #019652); color: white; padding: 26px 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .container { max-width: 1180px; margin: 0 auto; padding: 0 16px; }
+        h1 { font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .subtitle { font-size: 14px; opacity: 0.9; margin-top: 6px; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin: 20px 0; }
+        .stat-card { background: white; padding: 16px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .stat-num { font-size: 24px; font-weight: 800; }
+        .stat-label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+        
+        .nap-box { background: white; border: 2px solid var(--primary); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+        .nap-box h2 { font-size: 17px; margin-bottom: 12px; color: var(--primary-dark); display: flex; justify-content: space-between; }
+        .data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+        .data-item { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+        .data-label { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; }
+        .data-value { font-size: 13px; font-weight: 600; color: #111827; }
+        .btn-copy { background: white; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; transition: 0.2s; font-weight: 700; }
+        .btn-copy:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Tabs / Filter buttons */
+        .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; background: white; padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
+        .filter-btn { background: #f3f4f6; border: 1px solid #d1d5db; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* Badges */
+        .badge { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .badge-red { background: var(--red-bg); color: var(--red); border: 1px solid #fecaca; }
+        .badge-yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid #fde68a; }
+        .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid #a7f3d0; }
+        .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe; }
+        .badge-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid #ddd6fe; }
+        .badge-gray { background: #f3f4f6; color: #6b7280; border: 1px solid #e5e7eb; }
+
+        /* Card */
+        .dir-card { background: white; border-radius: 10px; border: 1px solid var(--border); padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: 0.2s; }
+        .dir-card:hover { border-color: #9ca3af; }
+        .dir-card.completed { opacity: 0.5; background: #fafafa; border-style: dashed; }
+        .dir-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .dir-name { font-size: 16px; font-weight: 700; color: #111827; margin-top: 4px; }
+        .dir-detail { background: #f9fafb; border-left: 3px solid #9ca3af; padding: 10px 12px; font-size: 13px; color: #374151; margin-bottom: 12px; border-radius: 0 6px 6px 0; }
+        .dir-card.filtro-erro .dir-detail { background: var(--red-bg); border-left-color: var(--red); color: #991b1b; }
+        .dir-card.filtro-duplicada .dir-detail { background: var(--yellow-bg); border-left-color: var(--yellow); color: #92400e; }
+        
+        .dir-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+        .btn-open { background: var(--primary); color: white; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 700; font-size: 12px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-open:hover { background: var(--primary-dark); }
+        .btn-sec { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; padding: 7px 12px; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; }
+        .btn-sec:hover { background: #e5e7eb; }
+        .check-box { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .check-box input { width: 17px; height: 17px; cursor: pointer; accent-color: var(--primary); }
+
+        #toast { position: fixed; bottom: 20px; right: 20px; background: #111827; color: white; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transform: translateY(100px); opacity: 0; transition: 0.3s; z-index: 1000; }
+        #toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="container">
+        <h1>Painel Completo de Diretórios: Todas as 44 Fichas</h1>
+        <div class="subtitle">Speed Financeira & Lan House · Varginha/MG · Controle Atualizado em 07/11/2026</div>
+    </div>
+</header>
+
+<div class="container" style="margin-top: 20px;">
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-num" style="color: var(--primary);">44</div>
+            <div class="stat-label">Total de Diretórios Mapeados</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" style="color: var(--red);">9</div>
+            <div class="stat-label">Erros Críticos (Telefone Desativado)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" style="color: var(--yellow);">11</div>
+            <div class="stat-label">Duplicidades / Fusões</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" style="color: var(--green);">10</div>
+            <div class="stat-label">Fichas 100% Corretas (OK)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-num" style="color: var(--blue);">7</div>
+            <div class="stat-label">Cadastros Novos a Criar</div>
+        </div>
+    </div>
+
+    <!-- Official NAP Data Quick Copy -->
+    <div class="nap-box">
+        <h2>
+            <span>Dados Oficiais Oficiais da Loja (NAP)</span>
+            <span style="font-size: 13px; color: #6b7280;">Copie e cole em qualquer cadastro</span>
+        </h2>
+        <div class="data-grid">
+            <div class="data-item">
+                <div>
+                    <div class="data-label">Telefone Único / WhatsApp</div>
+                    <div class="data-value">(35) 3067-5017</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('(35) 3067-5017')">Copiar</button>
+            </div>
+            <div class="data-item">
+                <div>
+                    <div class="data-label">Link WhatsApp</div>
+                    <div class="data-value">https://wa.me/553530675017</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('https://wa.me/553530675017')">Copiar</button>
+            </div>
+            <div class="data-item">
+                <div>
+                    <div class="data-label">Nome Padrão</div>
+                    <div class="data-value">Speed Financeira – Empréstimo Consignado e Financiamento em Varginha</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha')">Copiar</button>
+            </div>
+            <div class="data-item">
+                <div>
+                    <div class="data-label">Endereço</div>
+                    <div class="data-value">Rua Santa Cruz, 696 – Centro – Varginha/MG</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('Rua Santa Cruz, 696 – Centro – Varginha/MG')">Copiar</button>
+            </div>
+            <div class="data-item">
+                <div>
+                    <div class="data-label">CEP Oficial (Receita)</div>
+                    <div class="data-value">37002-090</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('37002-090')">Copiar</button>
+            </div>
+            <div class="data-item">
+                <div>
+                    <div class="data-label">CNPJ</div>
+                    <div class="data-value">29.497.887/0001-57</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('29.497.887/0001-57')">Copiar</button>
+            </div>
+            <div class="data-item">
+                <div>
+                    <div class="data-label">Site Oficial</div>
+                    <div class="data-value">https://speedfinanceira.com.br</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('https://speedfinanceira.com.br')">Copiar</button>
+            </div>
+            <div class="data-item">
+                <div>
+                    <div class="data-label">E-mail</div>
+                    <div class="data-value">speed.varginha@gmail.com</div>
+                </div>
+                <button class="btn-copy" onclick="copyText('speed.varginha@gmail.com')">Copiar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Buttons -->
+    <div class="filter-bar">
+        <button class="filter-btn active" onclick="filtrar('todos', this)">Todos os Diretórios (44)</button>
+        <button class="filter-btn" onclick="filtrar('filtro-erro', this)">Erros Confirmados (9)</button>
+        <button class="filter-btn" onclick="filtrar('filtro-duplicada', this)">Duplicadas a Mesclar (11)</button>
+        <button class="filter-btn" onclick="filtrar('filtro-proprio', this)">Canais Próprios (6)</button>
+        <button class="filter-btn" onclick="filtrar('filtro-corrigir', this)">Fichas a Ajustar/Monitorar (12)</button>
+        <button class="filter-btn" onclick="filtrar('filtro-cadastrar', this)">Cadastros Novos (7)</button>
+        <button class="filter-btn" onclick="filtrar('filtro-mencoes', this)">Menções Públicas (3)</button>
+    </div>
+
+    <!-- Directory Cards -->
+    <div id="cards-container">
+        
+    <div class="dir-card filtro-erro" id="card-dir_1">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Descobertas</span>
+                <div class="dir-name">Bendito Guia</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_1', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO em 07/11/2026: publica o telefone 3113-0458. Usar canal de sugestão para trocar por (35) 3067-5017.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://www.benditoguia.com.br/" target="_blank" style="color:var(--primary);">https://www.benditoguia.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.benditoguia.com.br/empresa/speed-financeira-e-lan-house-centro-varginha-mg" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_2">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Descobertas</span>
+                <div class="dir-name">Brasil Locais</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_2', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO: telefone 3113-0458. Tem 2 avaliações de clientes, então vale reivindicar em vez de ignorar.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://brasillocais.com/" target="_blank" style="color:var(--primary);">https://brasillocais.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://brasillocais.com/minas-gerais/speed-financeira-e-lan-house-314988" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_3">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Descobertas</span>
+                <div class="dir-name">Planeta Brasileiro (1)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_3', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO: telefone 3113-0458, horário 07:30 às 22:00 todos os dias inclusive domingo, e site apontando para o Spotway. Usar 'Sugerir uma alteração'.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Não | <strong>Portal:</strong> <a href="https://www.planetabrasileiro.com/" target="_blank" style="color:var(--primary);">https://www.planetabrasileiro.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.planetabrasileiro.com/speed-financeira-e-lan-house-F1008C40E1CD645" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_4">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-yellow">Duplicada</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Descobertas</span>
+                <div class="dir-name">Planeta Brasileiro (2)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_4', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Duplicidade dentro do mesmo diretório. Localizar pela busca do site e pedir unificação com a ficha 1.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Não | <strong>Portal:</strong> <a href="https://www.planetabrasileiro.com/" target="_blank" style="color:var(--primary);">https://www.planetabrasileiro.com/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">Segunda ficha: Speed Lan House e Financeira</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_5">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Descobertas</span>
+                <div class="dir-name">Página Amarela (2ª ficha)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_5', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Segunda ficha, além da 13363568 que o documento antigo já tinha. O site bloqueia leitura automatizada, conferir manualmente e pedir fusão.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://paginaamarela.com.br/" target="_blank" style="color:var(--primary);">https://paginaamarela.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://paginaamarela.com.br/empresa/speed-financeira-e-lan-house/varginha/mg/13354263" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_6">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Solutudo (ficha 1)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_6', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 07/11/2026: ficha matriz com telefone (35) 3067-5017 e CEP corretos. Manter como matriz.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.solutudo.com.br/" target="_blank" style="color:var(--primary);">https://www.solutudo.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.solutudo.com.br/empresas/mg/varginha/financeiras-emprestimos/speed-financeira-emprestimo-financiamento-seguro-portabilidade-varginha-mg-23132000" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_7">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Solutudo (ficha 2)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_7', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO em 07/11/2026: duplicada ativa exibindo 3113-0458. Pedir mesclagem urgente pelo WhatsApp do suporte.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.solutudo.com.br/" target="_blank" style="color:var(--primary);">https://www.solutudo.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.solutudo.com.br/empresas/mg/varginha/lan-house/speed-lan-house-servicos-digitais-e-financeira-22353545" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('Olá. Sou responsável pela empresa Speed Financeira, CNPJ 29.497.887/0001-57, em Varginha MG. Existem duas fichas nossas no Solutudo. A ficha 23132000 está correta e deve ser mantida. A ficha 22353545 exibe o telefone (35) 3113-0458, que foi desativado, e precisa ser mesclada com a 23132000. Telefone oficial único: (35) 3067-5017. Endereço: Rua Santa Cruz, 696, Centro, Varginha MG, CEP 37002-090. Podem confirmar o protocolo, por favor?')">Copiar Mensagem Solutudo</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_8">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">TeleListas (ficha 1)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_8', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: telefone e CEP corretos, horário seg a sex 08:00–18:30. Manter como matriz.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.telelistas.net/" target="_blank" style="color:var(--primary);">https://www.telelistas.net/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.telelistas.net/locais/mg/varginha/correspondentes%2Bde%2Binstituicoes%2Bfinanceiras/bu-21209255/speed%2Bfinanceira%2Be%2Blan%2Bhouse%2Bem%2Bcentro" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_9">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">TeleListas (ficha 2)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_9', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO em 10/09: telefone 3067-4361 no ar. Reportar erro e pedir unificação com a bu-21209255.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Não (reporte público) | <strong>Portal:</strong> <a href="https://www.telelistas.net/" target="_blank" style="color:var(--primary);">https://www.telelistas.net/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.telelistas.net/locais/mg/varginha/impressao%2Beletronica%2Be%2Bdigital/bu-20063351/speed%2Blan%2Bhouse%2Bem%2Bcentro?amp=1" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('A ficha bu-20063351 exibe o telefone (35) 3067-4361, que foi desativado. O telefone correto é (35) 3067-5017. Esta ficha é duplicada da bu-21209255, da mesma empresa, no mesmo endereço, Rua Santa Cruz, 696, Centro, Varginha MG, CEP 37002-090, CNPJ 29.497.887/0001-57. Peço a unificação das duas.')">Copiar Reporte TeleListas</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_10">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Cylex (11934350)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_10', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: telefone, CEP, site e e-mail corretos. Horário 08:00–18:30, sáb 09:00–13:00. Serve como ficha sobrevivente.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.cylex.com.br/" target="_blank" style="color:var(--primary);">https://www.cylex.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.cylex.com.br/varginha/speed-lan-house-11934350.html" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_11">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Cylex (12279811)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_11', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: conteúdo idêntico à 11934350, provavelmente já mesclada. Confirmar com o suporte se são o mesmo registro.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.cylex.com.br/" target="_blank" style="color:var(--primary);">https://www.cylex.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.cylex.com.br/varginha/speed-lan-house-e-financeira-12279811.html" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('Olá. Sou responsável pela Speed Financeira, CNPJ 29.497.887/0001-57, Rua Santa Cruz, 696, Centro, Varginha MG, CEP 37002-090. Existem fichas duplicadas no Cylex (11934350, 12279811, 13008709). Peço a fusão no registro 11934350. Na ficha 13008709 o site deve ser corrigido para https://speedfinanceira.com.br. Telefone oficial: (35) 3067-5017.')">Copiar Mensagem Cylex</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_12">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Cylex (13008709)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_12', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: telefone e CEP corretos, ao contrário do que dizia o documento antigo. Único defeito: o campo site aponta para o Localo. Trocar pelo domínio próprio.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.cylex.com.br/" target="_blank" style="color:var(--primary);">https://www.cylex.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.cylex.com.br/varginha/speed-lan-house-13008709.html" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('Olá. Sou responsável pela Speed Financeira, CNPJ 29.497.887/0001-57, Rua Santa Cruz, 696, Centro, Varginha MG, CEP 37002-090. Existem fichas duplicadas no Cylex (11934350, 12279811, 13008709). Peço a fusão no registro 11934350. Na ficha 13008709 o site deve ser corrigido para https://speedfinanceira.com.br. Telefone oficial: (35) 3067-5017.')">Copiar Mensagem Cylex</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_13">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-gray">Remover</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Cylex (13608995)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_13', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: retorna 404. Era a ficha que o documento antigo mandava reivindicar como principal. Remover do plano.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> — | <strong>Portal:</strong> <a href="https://www.cylex.com.br/" target="_blank" style="color:var(--primary);">https://www.cylex.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">Não existe</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_14">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">eGuias</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_14', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO em 07/11/2026: imóvel nº 6969 e telefone 3113-0458 no título. Corrigir para 696 e (35) 3067-5017.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Testar | <strong>Portal:</strong> <a href="https://eguias.net/" target="_blank" style="color:var(--primary);">https://eguias.net/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://eguias.net/empresa/speed-financeira-e-lan-house/varginha/mg/3548163" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('Solicito a correção do cadastro 3548163, Speed Financeira e Lan House, Varginha MG. O número do imóvel está como 6969 e o correto é 696. O telefone está como (35) 3113-0458, desativado, e o correto é (35) 3067-5017. Endereço completo: Rua Santa Cruz, 696, Centro, Varginha MG, CEP 37002-090, CNPJ 29.497.887/0001-57.')">Copiar Correção eGuias</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_15">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Página Amarela (1ª ficha)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_15', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: telefone, endereço e CEP corretos. Verificada pelo portal em 30/01/2025. Atualizar nome de exibição para "Speed Financeira – Empréstimo Consignado e Financiamento em Varginha".
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://paginaamarela.com.br/" target="_blank" style="color:var(--primary);">https://paginaamarela.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://paginaamarela.com.br/empresa/speed-financeira-e-lan-house/varginha/mg/13363568" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-duplicada" id="card-dir_16">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Duplicadas</span>
+                <div class="dir-name">Cybo</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_16', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Não conferido. Localizar a ficha individual da Speed dentro da listagem.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://paginasamarelas.cybo.com/" target="_blank" style="color:var(--primary);">https://paginasamarelas.cybo.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://paginasamarelas.cybo.com/BR/tr%C3%AAs-cora%C3%A7%C3%B5es/empresas-empr%C3%A9stimos" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-proprio" id="card-dir_17">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Canais próprios</span>
+                <div class="dir-name">Google Perfil da Empresa</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_17', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Canal matriz. Já tem 4.8 de média com 209 a 212 avaliações, segundo Wanderlog e Localo. Revisar categorias, horários, fotos e WhatsApp. Ativar alerta de sugestão de edição de terceiros.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://business.google.com/" target="_blank" style="color:var(--primary);">https://business.google.com/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">Identificador encontrado: speedlanhouse</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-proprio" id="card-dir_18">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Canais próprios</span>
+                <div class="dir-name">Bing Places</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_18', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Publicada e sincronizada com o Google. Só monitorar.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.bingplaces.com/" target="_blank" style="color:var(--primary);">https://www.bingplaces.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.bing.com/forbusiness/singleEntity?bizid=9867ae2a-6d72-4ba5-ba86-5181c151e747" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-proprio" id="card-dir_19">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Canais próprios</span>
+                <div class="dir-name">Facebook</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_19', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Perfil localizado em 10/09. Revisar dados comerciais, categoria e vínculo com o Instagram.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.facebook.com/speedfinanceira/" target="_blank" style="color:var(--primary);">https://www.facebook.com/speedfinanceira/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.facebook.com/speedfinanceira/" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_20">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Canais próprios</span>
+                <div class="dir-name">Instagram</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_20', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO: há publicação do perfil divulgando o telefone 3113-0458. Revisar posts fixados e bio, e trocar o link para wa.me/553530675017.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.instagram.com/speedfinanceira/" target="_blank" style="color:var(--primary);">https://www.instagram.com/speedfinanceira/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.instagram.com/speedfinanceira/" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-proprio" id="card-dir_21">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Canais próprios</span>
+                <div class="dir-name">Apple Business (Maps)</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_21', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Etapa 1 pede o nome jurídico: Gleison Kleber dos Santos. O nome de exibição entra depois.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim (criar conta) | <strong>Portal:</strong> <a href="https://business.apple.com/" target="_blank" style="color:var(--primary);">https://business.apple.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://business.apple.com/signup" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-proprio" id="card-dir_22">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Canais próprios</span>
+                <div class="dir-name">Site oficial</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_22', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 07/11/2026: site no ar em https://speedfinanceira.com.br com telefone (35) 3067-5017 e CEP 37002-090 corretos. Status OK.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://speedfinanceira.com.br" target="_blank" style="color:var(--primary);">https://speedfinanceira.com.br</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://speedfinanceira.com.br" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_23">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">UENI</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_23', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO em 07/11/2026 (URGENTE): continua no ar com botões apontando para o WhatsApp desativado 553531130458. Corrigir pelo painel ou retirar do ar.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://ueniweb.com/" target="_blank" style="color:var(--primary);">https://ueniweb.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://speedlanhouse.ueniweb.com/" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('https://wa.me/553530675017')">Copiar Link WhatsApp Correto</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-erro" id="card-dir_24">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-red">Erro confirmado</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">EmpresaFone</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_24', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> CONFIRMADO ERRO em 07/11/2026: telefone 3113-0458 no ar. Trocar no painel para (35) 3067-5017.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.empresafone.com.br/" target="_blank" style="color:var(--primary);">https://www.empresafone.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.empresafone.com.br/empresa/speed-lan-house-e-financeira-lan-house-financeiras-correspondentes-de-instituicoes-financeiras-centro-3271489" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_25">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Zapia Digital</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_25', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: telefone não aparece, todos os horários estão como 'Confirmar' e a categoria é assistência técnica de informática. Pedir por e-mail telefone, horários e troca de categoria.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Não (e-mail ao suporte) | <strong>Portal:</strong> <a href="https://www.zapia.digital/" target="_blank" style="color:var(--primary);">https://www.zapia.digital/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.zapia.digital/varginha-mg/centro/assistencia-tecnica-para-informatica/speed-lan-house/5421379" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_26">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Lista Mais</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_26', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 07/11/2026: telefone (35) 3067-5017 e CEP corretos.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://www.listamais.com.br/" target="_blank" style="color:var(--primary);">https://www.listamais.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.listamais.com.br/local/cad_idfB0f5B9/speed-financeira-emprestimo-consignado-financiamento-seguro-portabilidade-varginha-mg-financeiras-em-varginha-mg" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_27">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Encontra Varginha</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_27', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 07/11/2026: telefone (35) 3067-5017 e CEP corretos.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://www.encontravarginha.com.br/" target="_blank" style="color:var(--primary);">https://www.encontravarginha.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.encontravarginha.com.br/empresas/speed-lan-house-e-financeira/" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_28">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Localo</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_28', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 07/11/2026: telefone (35) 3067-5017 correto.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://speed-financeira-emprestimo.localo.site/" target="_blank" style="color:var(--primary);">https://speed-financeira-emprestimo.localo.site/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://speed-financeira-emprestimo.localo.site/" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_29">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-green">Conferido OK</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Wanderlog</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_29', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 07/11/2026: dados corretos, espelha Google Perfil.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Não | <strong>Portal:</strong> <a href="https://wanderlog.com/" target="_blank" style="color:var(--primary);">https://wanderlog.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://wanderlog.com/place/details/14169269/speed-financeira--empr%C3%A9stimo-consignado-e-financiamento-em-varginha" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_30">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">AppLocal</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_30', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Não conferido: o site bloqueia leitura automatizada com verificação de robô. Abrir manualmente, conferir telefone e reivindicar a gestão.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim (reivindicar) | <strong>Portal:</strong> <a href="https://applocal.com.br/" target="_blank" style="color:var(--primary);">https://applocal.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://applocal.com.br/empresa/speed-financeira-e-lan-house/varginha/mg/13365277" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_31">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Spotway</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_31', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: o endereço não abre ficha, cai na home do Spotway. Ou a ficha saiu do ar ou a URL está errada. Procurar pelo nome no site antes de tratar como cadastro ativo.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://spotway.com.br/" target="_blank" style="color:var(--primary);">https://spotway.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://spotway.com.br/empresas/speed-financeira-e-solucoes-digitais" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_32">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Portal do Representante</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_32', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Conferido 10/09: traz o nome Gleison Kleber como contato, sem telefone nem endereço. Cadastro de representante comercial, pouco relacionado ao negócio. Avaliar remoção.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://portaldorepresentante.com.br/" target="_blank" style="color:var(--primary);">https://portaldorepresentante.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://portaldorepresentante.com.br/representantes-comerciais/52364-speed-lan-house-/" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_33">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">YellowPages</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_33', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Não conferido: bloqueio de robô. ATENÇÃO: a busca pelo telefone 3221-5809 só retorna empresas de outras cidades, nenhuma em Varginha. Antes de corrigir, confirmar se esta ficha é mesmo da Speed.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://www.yellowpages.cr/" target="_blank" style="color:var(--primary);">https://www.yellowpages.cr/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.yellowpages.cr/phone-55-3532215809-tienda-de-cd-Varginha-BREN1971076.html" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-corrigir" id="card-dir_34">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Corrigir</span>
+                <div class="dir-name">Moovit</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_34', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Não conferido. Ponto de referência no mapa, conferir a posição do alfinete.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Não | <strong>Portal:</strong> <a href="https://moovitapp.com/" target="_blank" style="color:var(--primary);">https://moovitapp.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://moovitapp.com/index/pt-br/transporte_p%C3%BAblico-Speed_Lan_House-Varginha-site_263831496-4975" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-mencoes" id="card-dir_35">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Menções</span>
+                <div class="dir-name">Infobel</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_35', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Não conferido: o servidor recusa leitura automatizada. Abrir manualmente e verificar se a ficha é da Speed antes de reivindicar.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim (reivindicar) | <strong>Portal:</strong> <a href="https://www.infobel.com/pt/brazil" target="_blank" style="color:var(--primary);">https://www.infobel.com/pt/brazil</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://www.infobel.com/pt/brazil/prime_financial/varginha/BR155940380/businessdetails.aspx" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-mencoes" id="card-dir_36">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Menções</span>
+                <div class="dir-name">InfoisInfo</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_36', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> O link herdado apontava para a Lan House Autorama, em Santa Bárbara do Leste. Não é a Speed. Buscar pelo endereço ou fechar o item.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://www.infoisinfo-br.com/" target="_blank" style="color:var(--primary);">https://www.infoisinfo-br.com/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">Link antigo era de outra empresa</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-mencoes" id="card-dir_37">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Menções</span>
+                <div class="dir-name">SmartScrapers</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_37', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Base de terceiros. Apenas monitorar.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Não | <strong>Portal:</strong> <a href="https://rentechdigital.com/" target="_blank" style="color:var(--primary);">https://rentechdigital.com/</a>
+        </div>
+        <div class="dir-actions">
+            <a href="https://rentechdigital.com/smartscraper/business-report-details/brazil/minas-gerais/list-of-financial-institutions-in-varginha" target="_blank" class="btn-open">Abrir Link ↗</a>
+            <button class="btn-sec" onclick="copyText('(35) 3067-5017')">Copiar Telefone (35) 3067-5017</button>
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-cadastrar" id="card-dir_38">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Cadastrar</span>
+                <div class="dir-name">Reclame Aqui</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_38', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> PRIORIDADE ALTA. Aparece na busca pelo nome da marca e é onde a reputação de financeira se decide. Reivindicar antes de existir reclamação.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.reclameaqui.com.br/" target="_blank" style="color:var(--primary);">https://www.reclameaqui.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">A cadastrar</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-cadastrar" id="card-dir_39">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Cadastrar</span>
+                <div class="dir-name">Apontador</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_39', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Alimenta base de localização usada em aplicativos de trânsito. Pesquisar antes, pode já existir ficha importada.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.apontador.com.br/" target="_blank" style="color:var(--primary);">https://www.apontador.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">A cadastrar</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-cadastrar" id="card-dir_40">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Cadastrar</span>
+                <div class="dir-name">Foursquare</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_40', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Alimenta apps de GPS. Pesquisar por nome e endereço antes de criar.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://business.foursquare.com/" target="_blank" style="color:var(--primary);">https://business.foursquare.com/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">A cadastrar</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-cadastrar" id="card-dir_41">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Cadastrar</span>
+                <div class="dir-name">Hotfrog</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_41', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Guia comercial indexado. Criar ficha gratuita com os dados da seção 1.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://www.hotfrog.com.br/" target="_blank" style="color:var(--primary);">https://www.hotfrog.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">A cadastrar</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-cadastrar" id="card-dir_42">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Cadastrar</span>
+                <div class="dir-name">GuiaMais</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_42', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Verificar se ainda aceita inserção gratuita.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://www.guiamais.com.br/" target="_blank" style="color:var(--primary);">https://www.guiamais.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">A cadastrar</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-cadastrar" id="card-dir_43">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Cadastrar</span>
+                <div class="dir-name">Guia Urbana</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_43', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Testar se o formulário de cadastro funciona.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> A confirmar | <strong>Portal:</strong> <a href="https://www.guiaurbana.com.br/" target="_blank" style="color:var(--primary);">https://www.guiaurbana.com.br/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">A cadastrar</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    <div class="dir-card filtro-cadastrar" id="card-dir_44">
+        <div class="dir-header">
+            <div>
+                <span class="badge badge-purple">A Confirmar</span>
+                <span style="font-size:12px; color:#6b7280; margin-left:8px; font-weight:600;">Seção: Cadastrar</span>
+                <div class="dir-name">Yelp</div>
+            </div>
+            <label class="check-box">
+                <input type="checkbox" onchange="toggleDone('dir_44', this)"> Marcar Concluído
+            </label>
+        </div>
+        <div class="dir-detail">
+            <strong>Ajuste / Situação:</strong> Baixo volume em Varginha. Útil como autoridade de link.
+        </div>
+        <div style="font-size:12px; color:#4b5563; margin-bottom:12px;">
+            <strong>Exige login:</strong> Sim | <strong>Portal:</strong> <a href="https://business.yelp.com/" target="_blank" style="color:var(--primary);">https://business.yelp.com/</a>
+        </div>
+        <div class="dir-actions">
+            <span style="font-size:12px; color:#6b7280; font-style:italic;">A cadastrar</span>
+            
+            <button class="btn-sec" onclick="copyText('Speed Financeira – Empréstimo Consignado e Financiamento em Varginha | Rua Santa Cruz, 696, Centro, Varginha/MG | WhatsApp: (35) 3067-5017 | https://speedfinanceira.com.br')">Copiar Dados NAP</button>
+        </div>
+    </div>
+    
+    </div>
+</div>
+
+<div id="toast">Copiado!</div>
+
+<script>
+    function copyText(txt) {
+        navigator.clipboard.writeText(txt).then(() => {
+            const toast = document.getElementById('toast');
+            toast.innerText = 'Copiado: ' + txt.substring(0, 40) + '...';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2200);
+        });
+    }
+
+    function toggleDone(id, el) {
+        const card = document.getElementById('card-' + id);
+        if (el.checked) {
+            card.classList.add('completed');
+            localStorage.setItem('nap_' + id, 'true');
+        } else {
+            card.classList.remove('completed');
+            localStorage.removeItem('nap_' + id);
+        }
+    }
+
+    function filtrar(classe, btn) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        const cards = document.querySelectorAll('.dir-card');
+        cards.forEach(card => {
+            if (classe === 'todos' || card.classList.contains(classe)) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    window.onload = function() {
+        document.querySelectorAll('.dir-card').forEach(card => {
+            const id = card.id.replace('card-', '');
+            if (localStorage.getItem('nap_' + id) === 'true') {
+                card.classList.add('completed');
+                const cb = card.querySelector('input[type="checkbox"]');
+                if (cb) cb.checked = true;
+            }
+        });
+    }
+</script>
+</body>
+</html>

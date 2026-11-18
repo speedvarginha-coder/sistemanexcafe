@@ -59,7 +59,7 @@
       "tipo": "Correspondente Local Varginha",
       "presenca_varginha": "Loja de rua tradicional com bom ranqueamento local",
       "estrategia_local": "Captação orgânica local de aposentados e consignado",
-      "diferencial_speed": "Atendimento digital 100% integrado ao WhatsApp oficial (35) 3067-5017 com liberação imediata via Pix"
+      "diferencial_speed": "Atendimento digital 100% integrado ao WhatsApp oficial (35) 3067-5017 com pagamento via Pix"
     },
     {
       "id": "crefisa",
@@ -140,7 +140,7 @@
       "pautas": [
         {
           "slug": "como-antecipar-fgts-varginha-pix-imediato",
-          "titulo": "Como antecipar o Saque-Aniversário do FGTS em Varginha com liberação imediata via Pix",
+          "titulo": "Como antecipar o Saque-Aniversário do FGTS em Varginha com pagamento via Pix",
           "data_programada": "2026-09-24T09:00:00-03:00",
           "meta_description": "Precisa de dinheiro rápido? Veja como antecipar o Saque-Aniversário do FGTS em Varginha: até 5 saques anuais (regra até 31/10/2026; 3 saques a partir de nov/2026) com liberação via Pix na Speed Financeira.",
           "pergunta_ia": "Como funciona a antecipação do FGTS em Varginha?",
@@ -148,7 +148,7 @@
           "pontos_obrigatorios": [
             "Como funciona a modalidade saque-aniversário",
             "Não desconta do salário mensal (débito anual direto na conta do FGTS)",
-            "Disponível para negativados (sem consulta ao SPC/Serasa)",
+            "Disponível para negativados (negativado pode pedir análise)",
             "Passo a passo no app do FGTS autorizando o banco parceiro",
             "Recebimento em poucos minutos no Pix da sua conta"
           ]
@@ -247,7 +247,7 @@
           "pontos_obrigatorios": [
             "Como funciona a alienação fiduciária: o carro fica como garantia mas você continua usando",
             "Quanto libera: até 80% do valor da tabela FIPE",
-            "Aceita negativados (sem consulta SPC/Serasa)",
+            "Aceita negativados (negativado pode pedir análise)",
             "Prazo e taxas menores que o crédito pessoal",
             "Simulação na Speed Financeira sem compromisso"
           ]

@@ -83,6 +83,15 @@ test("operacao completa: login, agente, tempo, caixa, produto e relatorio", asyn
     assert.equal((await request("/api/leads", { name: "Maria", product: "Consignado INSS" })).status, 400, "telefone obrigatorio");
     const lead = (await request("/api/leads", { name: "Maria", phone: "35999990000", product: "Consignado INSS", source: "Serviço da loja", sourceDetail: "Meu INSS senha", campaign: "INSS10" })).payload.lead;
     assert.equal(lead.stage, "new");
+    // Mensagem colada do WhatsApp vinda do site: origem, cidade, guia e produto saem dela; escolha manual prevalece.
+    const doGuia = (await request("/api/leads", { name: "Ana", phone: "35988880000", product: "", source: "", message: "Olá! Li o guia sobre Como antecipar o Saque-Aniversário do FGTS em Três Pontas com pagamento via Pix no site e gostaria de fazer uma simulação gratuita." })).payload.lead;
+    assert.deepEqual([doGuia.source, doGuia.city, doGuia.product], ["Site", "Três Pontas", "Antecipação FGTS"]);
+    assert.match(doGuia.sourceDetail, /^Guia: Como antecipar/);
+    const daCidade = (await request("/api/leads", { name: "Rui", phone: "35977770000", product: "Consignado CLT", source: "", message: "Olá, sou de Boa Esperança e quero simular um empréstimo." })).payload.lead;
+    assert.deepEqual([daCidade.source, daCidade.city, daCidade.product], ["Site", "Boa Esperança", "Consignado CLT"]);
+    const semSite = (await request("/api/leads", { name: "Lia", phone: "35966660000", product: "", source: "", message: "oi, quero saber de empréstimo" })).payload.lead;
+    assert.deepEqual([semSite.source, semSite.city], ["Outro", ""]);
+    assert.equal((await request(`/api/leads/${semSite.id}`, { city: "Alfenas" })).payload.lead.city, "Alfenas");
     assert.equal((await request(`/api/leads/${lead.id}`, { stage: "won" })).status, 400, "contrato exige comissao");
     assert.equal((await request(`/api/leads/${lead.id}`, { stage: "won", commission: "250" })).payload.lead.commissionCents, 25000);
     const mkFin = (await request("/api/marketing/results")).payload;
@@ -381,6 +390,9 @@ test("login do cliente por saldo: recarga, uso exclusivo e devolucao do tempo", 
     await request("/api/machines/pc-31/maintenance", {});
     assert.equal((await request("/api/client/pc-31/login", { login: "joao", password: "1234" }, t2)).status, 409, "cliente nao entra durante manutencao");
     assert.equal((await request("/api/client/pc-31/login", { login: "joao", password: "errada" }, t2)).status, 401);
+    // Oito erros seguidos na mesma estacao travam o login dela, mesmo com a senha certa.
+    for (let i = 0; i < 7; i++) assert.equal((await request("/api/client/pc-31/login", { login: "joao", password: "errada" }, t2)).status, 401);
+    assert.equal((await request("/api/client/pc-31/login", { login: "joao", password: "1234" }, t2)).status, 429, "estacao travada apos 8 senhas erradas");
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 

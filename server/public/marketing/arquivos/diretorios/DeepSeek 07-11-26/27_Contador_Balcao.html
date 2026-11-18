@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<!--
+  Contador de balcão — uso interno da Speed.
+  Registra atendimento presencial por serviço e origem, no próprio navegador.
+  Não publicar. Nada é enviado para a internet.
+-->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Contador de balcão — Speed Financeira</title>
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f4f7f5; --branco:#fff;
+  --borda:#dfe7e2; --cinza:#63766b; --vermelho:#b91c1c; --azul:#1d4ed8;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.5;font-size:14px}
+.wrap{max-width:1080px;margin:0 auto;padding:16px 18px 70px}
+header.topo{background:linear-gradient(135deg,var(--verde-escuro),var(--verde));color:#fff;border-radius:14px;padding:22px 24px;margin-bottom:14px}
+header.topo .titulo{margin:0;font-size:clamp(21px,3vw,27px);letter-spacing:-.4px;font-weight:800}
+header.topo p{margin:6px 0 0;color:#dff1e7;font-size:13px;max-width:78ch}
+.card{background:#fff;border:1px solid var(--borda);border-radius:14px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 3px;font-size:16.5px;color:var(--tinta);letter-spacing:-.2px}
+.card .sub{margin:0 0 12px;font-size:12.5px;color:var(--cinza)}
+label{display:block;font-size:10.5px;font-weight:800;color:var(--tinta);margin-bottom:3px;text-transform:uppercase;letter-spacing:.4px}
+input,select{width:100%;padding:8px 9px;border:1px solid #cbd8d0;border-radius:8px;font:inherit;font-size:13.5px;background:#fff;color:var(--tinta)}
+input:focus,select:focus{outline:2px solid var(--verde);outline-offset:0}
+.campos{display:grid;gap:10px;grid-template-columns:1.4fr 1.2fr .8fr .9fr .7fr}
+button{font:inherit;font-size:13px;font-weight:800;cursor:pointer;border-radius:8px;padding:9px 14px;border:2px solid transparent}
+.primario{background:var(--verde);color:#fff;border-color:var(--verde)}
+.primario:hover{background:var(--verde-escuro);border-color:var(--verde-escuro)}
+.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.sec:hover{background:#effaf4}
+.perigo{background:#fff;color:var(--vermelho);border-color:#f3c6c6}
+.mini{padding:4px 8px;font-size:11.5px;border-width:1px}
+.registrar{display:flex;gap:8px;margin-top:12px;align-items:stretch}
+.registrar button{font-size:15px;padding:12px 22px;flex:1}
+.registrar .hint{flex:0 0 auto;display:grid;place-items:center;font-size:11.5px;color:var(--cinza);text-align:center;max-width:150px}
+.rapidos{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-top:12px}
+.rapidos button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:#f7fbf9;border:1px solid var(--borda);color:var(--tinta);padding:10px 12px;text-align:left;border-radius:10px}
+.rapidos button:hover{border-color:var(--verde);background:#effaf4}
+.rapidos strong{font-size:13.5px}
+.rapidos span{font-size:10.5px;color:var(--cinza);text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+.kpis{display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));margin:4px 0 0}
+.kpi{border:1px solid var(--borda);border-radius:10px;padding:10px 12px;background:#fbfdfc;border-left:4px solid var(--verde)}
+.kpi small{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--cinza);font-weight:800}
+.kpi strong{display:block;font-size:20px;color:var(--tinta);letter-spacing:-.4px;line-height:1.2;margin-top:1px}
+.kpi em{font-style:normal;font-size:10.5px;color:var(--cinza)}
+.kpi.amarelo{border-left-color:var(--amarelo)}
+.kpi.vermelho{border-left-color:var(--vermelho)}
+.kpi.azul{border-left-color:var(--azul)}
+.filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:end;margin-top:4px}
+.filtros > div{flex:0 0 auto;min-width:130px}
+.tabela-wrap{overflow-x:auto;border:1px solid var(--borda);border-radius:10px;margin-top:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:7px 9px;border-bottom:1px solid var(--borda);text-align:left;white-space:nowrap}
+th{background:#f0f6f2;color:var(--tinta);font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+tbody tr:hover{background:#fafdfb}
+td.num{text-align:right}
+.vazio{text-align:center;color:var(--cinza);padding:24px}
+.msg{font-size:12.5px;font-weight:700;color:var(--verde-escuro);min-height:18px;margin-top:8px}
+.msg.erro{color:var(--vermelho)}
+.acoes{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.duas{display:grid;gap:12px;grid-template-columns:1fr 1fr}
+.barra{height:8px;background:#eef4f0;border-radius:999px;overflow:hidden;margin-top:4px}
+.barra i{display:block;height:100%;background:var(--verde);border-radius:999px}
+.resumo-linha{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:4px 0;border-bottom:1px dashed #e7eee9}
+.resumo-linha:last-child{border-bottom:0}
+.resumo-linha strong{color:var(--tinta)}
+.rodape{font-size:11.5px;color:var(--cinza);margin-top:8px}
+.somente-impressao{display:none}
+.folha{background:#fff;padding:0}
+.folha h1{font-size:19px;margin:0 0 2px;color:var(--verde-escuro)}
+.folha .nap{font-size:11px;line-height:1.6}
+.folha .cab{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid var(--verde);padding-bottom:10px;margin-bottom:12px}
+.folha table{font-size:11px}
+.folha th,.folha td{padding:4px 6px}
+.folha .total{font-size:13px;font-weight:800}
+@media(max-width:760px){
+  .campos{grid-template-columns:1fr 1fr}
+  .campos > div:nth-child(1),.campos > div:nth-child(2){grid-column:span 2}
+  .duas{grid-template-columns:1fr}
+  .registrar{flex-direction:column}
+  .registrar .hint{max-width:none}
+}
+@media print{
+  @page{size:A4;margin:12mm}
+  body{background:#fff;font-size:10pt}
+  .wrap{max-width:none;padding:0}
+  .nao-imprime,header.topo,.acoes,.msg,.rodape{display:none!important}
+  .card{border:0;padding:0;margin:0 0 8px;border-radius:0}
+  .somente-impressao{display:block}
+  .tela{display:none!important}
+  table{font-size:9pt}
+  th{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="topo nao-imprime">
+  <div class="titulo">Contador de balcão</div>
+  <p>Um toque por atendimento. Serve para medir visita identificada, comparar com o WhatsApp e saber qual serviço traz gente à loja. Os dados ficam neste navegador.</p>
+</header>
+
+<section class="card nao-imprime">
+  <h2>Registrar atendimento</h2>
+  <p class="sub">Escolha o serviço e a origem. O campo de valor é opcional e serve para acompanhar o ticket do balcão.</p>
+  <div class="campos">
+    <div>
+      <label for="servico">Serviço</label>
+      <select id="servico"></select>
+    </div>
+    <div>
+      <label for="origem">Origem</label>
+      <select id="origem">
+        <option value="Passou na frente">Passou na frente</option>
+        <option value="WhatsApp">WhatsApp</option>
+        <option value="Google">Google / Perfil</option>
+        <option value="Instagram">Instagram / Facebook</option>
+        <option value="Indicação">Indicação</option>
+        <option value="Cliente antigo">Cliente antigo</option>
+        <option value="Não identificado">Não identificado</option>
+      </select>
+    </div>
+    <div>
+      <label for="valor">Valor (R$)</label>
+      <input id="valor" type="number" min="0" step="0.01" placeholder="opcional">
+    </div>
+    <div>
+      <label for="data">Data</label>
+      <input id="data" type="date">
+    </div>
+    <div>
+      <label for="hora">Hora</label>
+      <input id="hora" type="time">
+    </div>
+  </div>
+  <div class="registrar">
+    <button class="primario" type="button" id="btnRegistrar">Registrar atendimento</button>
+    <div class="hint">Enter também registra.<br>Ctrl+Z desfaz o último.</div>
+  </div>
+  <div class="rapidos" id="rapidos"></div>
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+</section>
+
+<section class="card nao-imprime">
+  <h2>Resumo</h2>
+  <p class="sub">Hoje, últimos 7 dias e mês corrente.</p>
+  <div class="kpis" id="kpis"></div>
+  <div class="duas" style="margin-top:12px">
+    <div>
+      <h3 style="font-size:13px;margin:0 0 6px;color:var(--tinta)">Por origem (mês)</h3>
+      <div id="porOrigem"></div>
+    </div>
+    <div>
+      <h3 style="font-size:13px;margin:0 0 6px;color:var(--tinta)">Por serviço (mês)</h3>
+      <div id="porServico"></div>
+    </div>
+  </div>
+</section>
+
+<section class="card nao-imprime">
+  <h2>Atendimentos</h2>
+  <p class="sub">Filtre por período e origem. A exclusão remove só o registro selecionado.</p>
+  <div class="filtros">
+    <div>
+      <label for="filtroPeriodo">Período</label>
+      <select id="filtroPeriodo">
+        <option value="hoje">Hoje</option>
+        <option value="7">Últimos 7 dias</option>
+        <option value="30">Últimos 30 dias</option>
+        <option value="mes" selected>Mês corrente</option>
+        <option value="tudo">Tudo</option>
+      </select>
+    </div>
+    <div>
+      <label for="filtroOrigem">Origem</label>
+      <select id="filtroOrigem"><option value="">Todas</option></select>
+    </div>
+    <div>
+      <label for="filtroServico">Serviço</label>
+      <select id="filtroServico"><option value="">Todos</option></select>
+    </div>
+    <button class="sec" type="button" id="btnLimparFiltro">Limpar filtro</button>
+  </div>
+  <div class="tabela-wrap">
+    <table>
+      <thead>
+        <tr><th>Data</th><th>Hora</th><th>Serviço</th><th>Origem</th><th class="num">Valor</th><th></th></tr>
+      </thead>
+      <tbody id="corpo"></tbody>
+    </table>
+  </div>
+  <div class="acoes">
+    <button class="primario" type="button" id="btnFechamento">Imprimir fechamento do dia</button>
+    <button class="sec" type="button" id="btnExportar">Exportar atendimentos CSV</button>
+    <button class="sec" type="button" id="btnExportarResumo">Exportar resumo mensal CSV</button>
+    <button class="sec" type="button" id="btnCopiarVisitas">Copiar visitas do mês</button>
+    <button class="perigo" type="button" id="btnApagarTudo">Apagar todos os dados</button>
+  </div>
+  <div class="msg" id="msg2" role="status" aria-live="polite"></div>
+</section>
+
+<!-- ===================== FOLHA DE FECHAMENTO ===================== -->
+<section class="somente-impressao folha" id="folha">
+  <div class="cab">
+    <div>
+      <h1>Fechamento de balcão</h1>
+      <div class="nap">
+        <strong>Speed Financeira e Lan House</strong> · CNPJ 29.497.887/0001-57<br>
+        Rua Santa Cruz, 696 — Centro — Varginha/MG · (35) 3067-5017
+      </div>
+    </div>
+    <div style="text-align:right;font-size:11px">
+      <div><strong>Dia:</strong> <span id="fDia"></span></div>
+      <div><strong>Emitido:</strong> <span id="fEmitido"></span></div>
+    </div>
+  </div>
+  <div id="fResumo" class="total" style="margin-bottom:8px"></div>
+  <table>
+    <thead><tr><th>Hora</th><th>Serviço</th><th>Origem</th><th style="text-align:right">Valor</th></tr></thead>
+    <tbody id="fCorpo"></tbody>
+    <tfoot><tr><td colspan="3" style="text-align:right"><strong>Total do dia</strong></td><td style="text-align:right"><strong id="fTotal"></strong></td></tr></tfoot>
+  </table>
+  <p style="font-size:9.5pt;color:#63766b;margin-top:10px">
+    Documento interno de conferência. Não é nota fiscal. Valores lançados manualmente no contador de balcão.
+  </p>
+</section>
+
+<div class="rodape nao-imprime">
+  Uso interno · dados salvos neste navegador · nenhum registro é enviado para a internet.
+  Para backup, exporte os CSVs. Não publicado no site.
+</div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var CHAVE = 'speed_balcao_v1';
+  var SERVICOS = [
+    { grupo: 'Gráfica', nome: 'Impressão P&B' },
+    { grupo: 'Gráfica', nome: 'Impressão colorida' },
+    { grupo: 'Gráfica', nome: 'Xerox' },
+    { grupo: 'Gráfica', nome: 'Foto 3x4' },
+    { grupo: 'Gráfica', nome: 'Plastificação' },
+    { grupo: 'Gráfica', nome: 'Encadernação' },
+    { grupo: 'Gráfica', nome: 'Impressão fotográfica' },
+    { grupo: 'Gráfica', nome: 'Currículo' },
+    { grupo: 'Financeiro', nome: 'Consignado INSS' },
+    { grupo: 'Financeiro', nome: 'Consignado CLT' },
+    { grupo: 'Financeiro', nome: 'FGTS' },
+    { grupo: 'Financeiro', nome: 'Financiamento de veículo' },
+    { grupo: 'Financeiro', nome: 'Crédito pessoal' },
+    { grupo: 'Digital', nome: 'Meu INSS' },
+    { grupo: 'Digital', nome: 'Gov.br' },
+    { grupo: 'Digital', nome: 'CNIS' },
+    { grupo: 'Digital', nome: 'CRLV' },
+    { grupo: 'Digital', nome: 'MEI' },
+    { grupo: 'Digital', nome: 'Outro documento' },
+    { grupo: 'Informática', nome: 'Suporte de informática' },
+    { grupo: 'Informática', nome: 'Suporte de celular' },
+    { grupo: 'Outros', nome: 'Outro serviço' }
+  ];
+  var RAPIDOS = ['Impressão P&B', 'Xerox', 'Foto 3x4', 'Meu INSS', 'Consignado INSS', 'Suporte de informática'];
+
+  var registros = [];
+
+  function $(id) { return document.getElementById(id); }
+
+  function hojeISO() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function horaAgora() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function num(v) {
+    var n = parseFloat(String(v).replace(',', '.'));
+    return isFinite(n) ? n : 0;
+  }
+
+  function fmt(v) {
+    return v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmt0(v) {
+    return v.toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+  }
+
+  function dataBR(iso) {
+    if (!iso || iso.indexOf('-') === -1) return iso || '';
+    var p = iso.split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+
+  function salvar() {
+    try { localStorage.setItem(CHAVE, JSON.stringify(registros)); return true; }
+    catch (e) { return false; }
+  }
+
+  function carregar() {
+    var bruto;
+    try { bruto = localStorage.getItem(CHAVE); } catch (e) { return; }
+    if (!bruto) return;
+    try {
+      var dados = JSON.parse(bruto);
+      if (Array.isArray(dados)) registros = dados.filter(function (r) { return r && r.data && r.servico; });
+    } catch (e) {}
+  }
+
+  function inicioSemana() {
+    var d = new Date();
+    var diff = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - diff);
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function inicioMes() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+  }
+
+  function somar(lista) {
+    return lista.reduce(function (s, r) { return s + num(r.valor); }, 0);
+  }
+
+  function contarPor(lista, campo) {
+    var mapa = {};
+    lista.forEach(function (r) { mapa[r[campo]] = (mapa[r[campo]] || 0) + 1; });
+    return Object.keys(mapa).map(function (k) { return { nome: k, total: mapa[k] }; })
+      .sort(function (a, b) { return b.total - a.total; });
+  }
+
+  function renderSelects() {
+    var select = $('servico');
+    var atual = select.value;
+    select.textContent = '';
+    var grupos = {};
+    SERVICOS.forEach(function (s) {
+      if (!grupos[s.grupo]) {
+        grupos[s.grupo] = document.createElement('optgroup');
+        grupos[s.grupo].label = s.grupo;
+        select.appendChild(grupos[s.grupo]);
+      }
+      var op = document.createElement('option');
+      op.value = s.nome;
+      op.textContent = s.nome;
+      grupos[s.grupo].appendChild(op);
+    });
+    if (atual) select.value = atual;
+
+    ['filtroOrigem', 'filtroServico'].forEach(function (id) {
+      var el = $(id);
+      var valor = el.value;
+      var campo = id === 'filtroOrigem' ? 'origem' : 'servico';
+      el.textContent = '';
+      var todas = document.createElement('option');
+      todas.value = '';
+      todas.textContent = campo === 'origem' ? 'Todas' : 'Todos';
+      el.appendChild(todas);
+      var lista = id === 'filtroOrigem'
+        ? Array.from($('origem').options).map(function (o) { return o.value; })
+        : SERVICOS.map(function (s) { return s.nome; });
+      lista.forEach(function (v) {
+        var op = document.createElement('option');
+        op.value = v;
+        op.textContent = v;
+        el.appendChild(op);
+      });
+      el.value = valor;
+    });
+  }
+
+  function renderRapidos() {
+    var box = $('rapidos');
+    box.textContent = '';
+    RAPIDOS.forEach(function (nome) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = '<strong>' + nome + '</strong><span>+1 atendimento</span>';
+      b.addEventListener('click', function () {
+        $('servico').value = nome;
+        registrar();
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function periodoFiltro() {
+    var p = $('filtroPeriodo').value;
+    if (p === 'tudo') return null;
+    if (p === 'hoje') return { de: hojeISO(), ate: hojeISO() };
+    if (p === 'mes') return { de: inicioMes(), ate: '9999-12-31' };
+    var dias = Number(p) || 7;
+    var d = new Date();
+    d.setDate(d.getDate() - (dias - 1));
+    var de = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return { de: de, ate: hojeISO() };
+  }
+
+  function filtrados() {
+    var faixa = periodoFiltro();
+    var origem = $('filtroOrigem').value;
+    var servico = $('filtroServico').value;
+    return registros.filter(function (r) {
+      if (faixa && (r.data < faixa.de || r.data > faixa.ate)) return false;
+      if (origem && r.origem !== origem) return false;
+      if (servico && r.servico !== servico) return false;
+      return true;
+    }).sort(function (a, b) {
+      return (b.data + b.hora).localeCompare(a.data + a.hora);
+    });
+  }
+
+  function renderKpis() {
+    var hoje = hojeISO();
+    var sete = (function () {
+      var d = new Date(); d.setDate(d.getDate() - 6);
+      return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    })();
+    var mes = inicioMes();
+    var doDia = registros.filter(function (r) { return r.data === hoje; });
+    var daSemana = registros.filter(function (r) { return r.data >= sete && r.data <= hoje; });
+    var doMes = registros.filter(function (r) { return r.data >= mes; });
+
+    var k = $('kpis');
+    k.textContent = '';
+
+    function kpi(rotulo, valor, detalhe, cor) {
+      var div = document.createElement('div');
+      div.className = 'kpi' + (cor ? ' ' + cor : '');
+      var small = document.createElement('small'); small.textContent = rotulo;
+      var strong = document.createElement('strong'); strong.textContent = valor;
+      var em = document.createElement('em'); em.textContent = detalhe || '';
+      div.appendChild(small); div.appendChild(strong); div.appendChild(em);
+      k.appendChild(div);
+    }
+
+    kpi('Hoje', fmt0(doDia.length), 'atendimentos', 'amarelo');
+    kpi('7 dias', fmt0(daSemana.length), 'atendimentos');
+    kpi('Mês', fmt0(doMes.length), 'atendimentos');
+    kpi('Valor do mês', 'R$ ' + fmt(somar(doMes)), 'lançado no balcão', 'azul');
+    kpi('Ticket médio', 'R$ ' + fmt(doMes.length ? somar(doMes) / doMes.length : 0), 'mês', 'azul');
+    kpi('Origem líder', (contarPor(doMes, 'origem')[0] || { nome: '—' }).nome, 'no mês', '');
+
+    function listar(container, lista, total) {
+      container.textContent = '';
+      if (!lista.length) {
+        var v = document.createElement('div');
+        v.className = 'resumo-linha';
+        v.textContent = 'Sem registros no mês.';
+        container.appendChild(v);
+        return;
+      }
+      lista.slice(0, 7).forEach(function (item) {
+        var linha = document.createElement('div');
+        linha.className = 'resumo-linha';
+        var nome = document.createElement('span'); nome.textContent = item.nome;
+        var qtd = document.createElement('strong'); qtd.textContent = fmt0(item.total);
+        linha.appendChild(nome); linha.appendChild(qtd);
+        container.appendChild(linha);
+        var barra = document.createElement('div');
+        barra.className = 'barra';
+        var i = document.createElement('i');
+        i.style.width = Math.max(3, (item.total / Math.max(1, total)) * 100) + '%';
+        barra.appendChild(i);
+        container.appendChild(barra);
+      });
+    }
+
+    listar($('porOrigem'), contarPor(doMes, 'origem'), doMes.length);
+    listar($('porServico'), contarPor(doMes, 'servico'), doMes.length);
+  }
+
+  function renderTabela() {
+    var corpo = $('corpo');
+    corpo.textContent = '';
+    var lista = filtrados();
+
+    if (!lista.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 6;
+      td.className = 'vazio';
+      td.textContent = 'Nenhum atendimento no filtro atual.';
+      tr.appendChild(td);
+      corpo.appendChild(tr);
+      return;
+    }
+
+    lista.forEach(function (r) {
+      var tr = document.createElement('tr');
+      [dataBR(r.data), r.hora || '', r.servico, r.origem].forEach(function (txt) {
+        var td = document.createElement('td');
+        td.textContent = txt;
+        tr.appendChild(td);
+      });
+      var tdValor = document.createElement('td');
+      tdValor.className = 'num';
+      tdValor.textContent = num(r.valor) > 0 ? 'R$ ' + fmt(num(r.valor)) : '—';
+      tr.appendChild(tdValor);
+      var tdAcao = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'perigo mini';
+      btn.textContent = 'Excluir';
+      btn.addEventListener('click', function () {
+        var i = registros.indexOf(r);
+        if (i > -1) registros.splice(i, 1);
+        salvar();
+        renderTudo();
+        $('msg2').textContent = 'Registro excluído.';
+      });
+      tdAcao.appendChild(btn);
+      tr.appendChild(tdAcao);
+      corpo.appendChild(tr);
+    });
+  }
+
+  function registrar() {
+    var servico = $('servico').value;
+    if (!servico) {
+      $('msg').textContent = 'Escolha o serviço.';
+      $('msg').className = 'msg erro';
+      return;
+    }
+    var data = $('data').value || hojeISO();
+    var hora = $('hora').value || horaAgora();
+    var origem = $('origem').value;
+    var valor = num($('valor').value);
+    registros.push({ id: Date.now() + '-' + Math.random().toString(16).slice(2, 6), data: data, hora: hora, servico: servico, origem: origem, valor: valor });
+    salvar();
+    $('valor').value = '';
+    $('data').value = hojeISO();
+    $('hora').value = horaAgora();
+    renderTudo();
+    $('msg').className = 'msg';
+    $('msg').textContent = servico + ' registrado às ' + hora + ' (' + origem + ').';
+  }
+
+  function desfazer() {
+    if (!registros.length) { $('msg').textContent = 'Nada para desfazer.'; return; }
+    var ultimo = registros[registros.length - 1];
+    registros.pop();
+    salvar();
+    renderTudo();
+    $('msg').textContent = 'Desfeito: ' + ultimo.servico + ' de ' + dataBR(ultimo.data) + '.';
+  }
+
+  function csvValor(v) {
+    return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  }
+
+  function baixar(nome, conteudo) {
+    var blob = new Blob(['\uFEFF' + conteudo], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportarAtendimentos() {
+    var lista = filtrados();
+    if (!lista.length) { $('msg2').textContent = 'Nada para exportar no filtro atual.'; return; }
+    var linhas = [['Data', 'Hora', 'Servico', 'Origem', 'Valor'].map(csvValor).join(';')];
+    lista.slice().reverse().forEach(function (r) {
+      linhas.push([dataBR(r.data), r.hora || '', r.servico, r.origem, fmt(num(r.valor))].map(csvValor).join(';'));
+    });
+    baixar('speed_balcao_atendimentos.csv', linhas.join('\r\n'));
+    $('msg2').textContent = lista.length + ' atendimento(s) exportado(s).';
+  }
+
+  function exportarResumo() {
+    var mes = inicioMes();
+    var doMes = registros.filter(function (r) { return r.data >= mes; });
+    if (!doMes.length) { $('msg2').textContent = 'Sem atendimentos no mês para resumir.'; return; }
+    var mapa = {};
+    doMes.forEach(function (r) {
+      var k = r.servico + '|' + r.origem;
+      if (!mapa[k]) mapa[k] = { servico: r.servico, origem: r.origem, total: 0, valor: 0 };
+      mapa[k].total++;
+      mapa[k].valor += num(r.valor);
+    });
+    var linhas = [['Mes', 'Servico', 'Origem', 'Atendimentos', 'Valor'].map(csvValor).join(';')];
+    Object.keys(mapa).sort().forEach(function (k) {
+      var m = mapa[k];
+      linhas.push([mes.slice(0, 7), m.servico, m.origem, String(m.total), fmt(m.valor)].map(csvValor).join(';'));
+    });
+    baixar('speed_balcao_resumo_mensal.csv', linhas.join('\r\n'));
+    $('msg2').textContent = 'Resumo mensal exportado.';
+  }
+
+  function copiarVisitas() {
+    var mes = inicioMes();
+    var total = registros.filter(function (r) { return r.data >= mes; }).length;
+    var texto = String(total);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(function () {
+        $('msg2').textContent = 'Visitas do mês copiadas: ' + texto + '.';
+      }).catch(function () {
+        $('msg2').textContent = 'Visitas do mês: ' + texto + ' (copie manualmente).';
+      });
+    } else {
+      $('msg2').textContent = 'Visitas do mês: ' + texto + ' (copie manualmente).';
+    }
+  }
+
+  function fechamento() {
+    var dia = $('data').value || hojeISO();
+    var doDia = registros.filter(function (r) { return r.data === dia; })
+      .sort(function (a, b) { return (a.hora || '').localeCompare(b.hora || ''); });
+
+    $('fDia').textContent = dataBR(dia);
+    $('fEmitido').textContent = new Date().toLocaleString('pt-BR');
+    $('fResumo').textContent = doDia.length + ' atendimento(s) · total R$ ' + fmt(somar(doDia));
+
+    var corpo = $('fCorpo');
+    corpo.textContent = '';
+    doDia.forEach(function (r) {
+      var tr = document.createElement('tr');
+      [r.hora || '', r.servico, r.origem].forEach(function (txt) {
+        var td = document.createElement('td'); td.textContent = txt; tr.appendChild(td);
+      });
+      var td = document.createElement('td');
+      td.style.textAlign = 'right';
+      td.textContent = num(r.valor) > 0 ? 'R$ ' + fmt(num(r.valor)) : '—';
+      tr.appendChild(td);
+      corpo.appendChild(tr);
+    });
+    if (!doDia.length) {
+      var tr = document.createElement('tr');
+      var td = document.createElement('td');
+      td.colSpan = 4;
+      td.style.textAlign = 'center';
+      td.textContent = 'Nenhum atendimento registrado neste dia.';
+      tr.appendChild(td);
+      corpo.appendChild(tr);
+    }
+    $('fTotal').textContent = 'R$ ' + fmt(somar(doDia));
+
+    document.body.classList.add('imprimir-fechamento');
+    window.print();
+  }
+
+  window.addEventListener('afterprint', function () {
+    document.body.classList.remove('imprimir-fechamento');
+  });
+
+  function renderTudo() {
+    renderKpis();
+    renderTabela();
+    var lista = filtrados();
+    $('msg2').textContent = lista.length + ' registro(s) no filtro.';
+  }
+
+  function inicializar() {
+    $('data').value = hojeISO();
+    $('hora').value = horaAgora();
+    renderSelects();
+    renderRapidos();
+    renderTudo();
+
+    $('btnRegistrar').addEventListener('click', registrar);
+    $('btnFechamento').addEventListener('click', fechamento);
+    $('btnExportar').addEventListener('click', exportarAtendimentos);
+    $('btnExportarResumo').addEventListener('click', exportarResumo);
+    $('btnCopiarVisitas').addEventListener('click', copiarVisitas);
+
+    ['filtroPeriodo', 'filtroOrigem', 'filtroServico'].forEach(function (id) {
+      $(id).addEventListener('change', renderTudo);
+    });
+
+    $('btnLimparFiltro').addEventListener('click', function () {
+      $('filtroPeriodo').value = 'mes';
+      $('filtroOrigem').value = '';
+      $('filtroServico').value = '';
+      renderTudo();
+    });
+
+    $('btnApagarTudo').addEventListener('click', function () {
+      if (!confirm('Apagar TODOS os atendimentos deste navegador? Exporte o CSV antes.')) return;
+      registros = [];
+      salvar();
+      renderTudo();
+      $('msg2').textContent = 'Todos os registros foram apagados.';
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+        var alvo = document.activeElement;
+        if (alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'SELECT')) return;
+        e.preventDefault();
+        desfazer();
+      }
+    });
+
+    ['servico', 'origem', 'valor', 'data', 'hora'].forEach(function (id) {
+      $(id).addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); registrar(); }
+      });
+    });
+  }
+
+  carregar();
+  inicializar();
+})();
+</script>
+</body>
+</html>

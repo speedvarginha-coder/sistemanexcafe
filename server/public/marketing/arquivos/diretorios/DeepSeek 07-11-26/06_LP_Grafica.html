@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<!--
+  RASCUNHO — LP de gráfica da Speed Financeira.
+  Antes de publicar: revisar horário (decisão pendente), nome aprovado e links.
+  Checklist completo em 16_Checklist_Publicacao.md.
+-->
+<html lang="pt-BR" data-status="rascunho">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gráfica rápida no Centro de Varginha | Speed</title>
+<meta name="description" content="Impressão, xerox, digitalização, plastificação, encadernação e foto 3x4 no Centro de Varginha. Atendimento presencial e orçamento pelo WhatsApp (35) 3067-5017.">
+<link rel="canonical" href="https://speedfinanceira.com.br/grafica.html">
+<meta property="og:title" content="Gráfica rápida no Centro de Varginha | Speed">
+<meta property="og:description" content="Impressão, xerox, foto 3x4 e encadernação no Centro de Varginha. Orçamento pelo WhatsApp.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://speedfinanceira.com.br/grafica.html">
+<style>
+:root{
+  --verde:#019652; --verde-escuro:#016b3b; --amarelo:#FADB20;
+  --tinta:#14231b; --texto:#33443b; --claro:#f6f8f7; --branco:#fff;
+  --borda:#e2e8e4; --sombra:0 10px 30px rgba(20,35,27,.08);
+  --raio:16px; --max:1080px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--claro);color:var(--texto);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased}
+img{max-width:100%}
+a{color:var(--verde-escuro)}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 20px}
+.skip{position:absolute;left:-9999px}
+.skip:focus{left:16px;top:16px;background:#fff;padding:10px 14px;border-radius:8px;z-index:99}
+
+/* Header */
+header{background:var(--branco);border-bottom:1px solid var(--borda);position:sticky;top:0;z-index:20}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0}
+.marca{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--tinta);font-weight:800;letter-spacing:-.2px}
+.marca .ponto{width:34px;height:34px;border-radius:10px;background:var(--verde);display:grid;place-items:center;color:#fff;font-size:15px;font-weight:800}
+.marca small{display:block;font-size:11px;font-weight:600;color:#6b7d73;letter-spacing:.4px;text-transform:uppercase}
+.btn{display:inline-flex;align-items:center;gap:8px;justify-content:center;
+  background:var(--verde);color:#fff;text-decoration:none;font-weight:700;
+  padding:12px 18px;border-radius:999px;border:2px solid var(--verde);
+  transition:transform .15s ease, background .15s ease}
+.btn:hover{background:var(--verde-escuro);border-color:var(--verde-escuro);transform:translateY(-1px)}
+.btn.sec{background:#fff;color:var(--verde-escuro);border-color:var(--verde)}
+.btn.sec:hover{background:#effaf4}
+.btn:focus-visible{outline:3px solid var(--amarelo);outline-offset:2px}
+
+/* Hero */
+.hero{background:
+  radial-gradient(900px 420px at 85% -10%, rgba(250,219,32,.30), transparent 60%),
+  linear-gradient(140deg,var(--verde-escuro),var(--verde));
+  color:#fff;padding:64px 0 56px;position:relative;overflow:hidden}
+.hero:after{content:"";position:absolute;inset:auto -60px -90px auto;width:340px;height:340px;
+  border:40px solid rgba(255,255,255,.08);border-radius:50%}
+.hero h1{font-size:clamp(30px,5vw,50px);line-height:1.1;letter-spacing:-1px;margin:0 0 16px;max-width:16ch}
+.hero p{font-size:clamp(16px,2vw,19px);max-width:58ch;margin:0 0 28px;color:#e8f5ee}
+.hero .acoes{display:flex;flex-wrap:wrap;gap:12px}
+.hero .btn{background:var(--amarelo);color:#25301f;border-color:var(--amarelo)}
+.hero .btn:hover{background:#ffd94a;border-color:#ffd94a}
+.hero .btn.sec{background:transparent;color:#fff;border-color:rgba(255,255,255,.55)}
+.hero .btn.sec:hover{background:rgba(255,255,255,.12)}
+.selos{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
+.selo{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+  padding:7px 12px;border-radius:999px;font-size:13px;font-weight:600}
+
+/* Sections */
+section{padding:56px 0}
+h2{font-size:clamp(24px,3.4vw,34px);letter-spacing:-.6px;color:var(--tinta);margin:0 0 8px}
+.sub{color:#5d7066;margin:0 0 30px;max-width:62ch}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.card{background:var(--branco);border:1px solid var(--borda);border-radius:var(--raio);
+  padding:22px;box-shadow:0 2px 6px rgba(20,35,27,.04);transition:box-shadow .15s ease, transform .15s ease}
+.card:hover{box-shadow:var(--sombra);transform:translateY(-2px)}
+.card h3{margin:0 0 24px;font-size:17px;color:var(--tinta)}
+.card p{margin:0;font-size:14.5px}
+.ico{width:40px;height:40px;border-radius:10px;background:#effaf4;color:var(--verde-escuro);
+  display:grid;place-items:center;font-weight:800;margin-bottom:12px;font-size:16px}
+
+/* Passos */
+.passos{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));counter-reset:p}
+.passo{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:20px;position:relative}
+.passo:before{counter-increment:p;content:counter(p);position:absolute;top:-14px;left:20px;
+  width:30px;height:30px;border-radius:50%;background:var(--amarelo);color:#25301f;
+  display:grid;place-items:center;font-weight:800;font-size:14px;border:3px solid var(--claro)}
+.passo h3{margin:8px 0 4px;font-size:16px;color:var(--tinta)}
+.passo p{margin:0;font-size:14px}
+
+/* FAQ */
+.faq{display:grid;gap:10px}
+details{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:0 18px}
+details[open]{box-shadow:var(--sombra)}
+summary{cursor:pointer;font-weight:700;color:var(--tinta);padding:16px 0;list-style:none;display:flex;justify-content:space-between;gap:12px}
+summary::-webkit-details-marker{display:none}
+summary:after{content:"+";color:var(--verde);font-size:20px;line-height:1}
+details[open] summary:after{content:"–"}
+details p{margin:0 0 16px;font-size:14.5px}
+
+/* Local */
+.local{background:#fff;border:1px solid var(--borda);border-radius:var(--raio);padding:26px;
+  display:grid;gap:22px;grid-template-columns:1.2fr .8fr;box-shadow:var(--sombra)}
+.local h2{font-size:22px;margin-bottom:10px}
+.local ul{margin:0;padding-left:18px;font-size:14.5px}
+.local li{margin:6px 0}
+.mapa{background:#effaf4;border:1px dashed #b9d9c8;border-radius:12px;display:grid;place-items:center;
+  min-height:180px;text-align:center;padding:18px;color:var(--verde-escuro);font-weight:600}
+.aviso{background:#fffbe6;border:1px solid #f3e08a;border-radius:12px;padding:12px 16px;font-size:13.5px;color:#5c4b00;margin-top:16px}
+
+/* CTA final */
+.cta{background:linear-gradient(140deg,var(--verde-escuro),var(--verde));color:#fff;border-radius:20px;
+  padding:38px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+.cta h2{color:#fff;margin:0 0 6px}
+.cta p{margin:0;color:#dff1e7}
+.cta .btn{background:var(--amarelo);color:#25301f;border-color:var(--amarelo)}
+
+/* Footer */
+footer{background:#0f1c15;color:#c9d8d0;padding:40px 0 90px;margin-top:20px;font-size:13.5px}
+footer a{color:#fff}
+footer .nap{font-style:normal;line-height:1.8}
+footer .fim{border-top:1px solid rgba(255,255,255,.12);margin-top:22px;padding-top:18px;color:#93a89c}
+
+/* Flutuante */
+.zap{position:fixed;right:18px;bottom:18px;background:var(--verde);color:#fff;text-decoration:none;
+  padding:14px 20px;border-radius:999px;font-weight:800;box-shadow:0 12px 24px rgba(1,150,82,.35);z-index:30}
+.zap:hover{background:var(--verde-escuro)}
+
+@media(max-width:760px){
+  .local{grid-template-columns:1fr}
+  .hero{padding:44px 0 40px}
+  .bar .btn{display:none}
+  section{padding:42px 0}
+  footer{padding-bottom:100px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#conteudo">Ir para o conteúdo</a>
+
+<header>
+  <div class="wrap bar">
+    <a class="marca" href="https://speedfinanceira.com.br">
+      <span class="ponto" aria-hidden="true">S</span>
+      <span>Speed<small>Financeira e Lan House</small></span>
+    </a>
+    <a class="btn" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20gr%C3%A1fica%20e%20quero%20um%20or%C3%A7amento.%20%5BGRAF%5D">Orçamento no WhatsApp</a>
+  </div>
+</header>
+
+<main id="conteudo">
+
+  <section class="hero">
+    <div class="wrap">
+      <h1>Impressão, xerox e foto 3x4 no Centro de Varginha</h1>
+      <p>Resolva na hora o que você precisa imprimir, copiar, plastificar ou encadernar. Atendimento presencial na Rua Santa Cruz, 696, e orçamento rápido pelo WhatsApp.</p>
+      <div class="acoes">
+        <a class="btn" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20gr%C3%A1fica%20e%20quero%20um%20or%C3%A7amento.%20%5BGRAF%5D">Pedir orçamento</a>
+        <a class="btn sec" href="https://www.google.com/maps/search/?api=1&amp;query=Rua+Santa+Cruz+696+Centro+Varginha+MG">Como chegar</a>
+      </div>
+      <div class="selos">
+        <span class="selo">Mais de 15 anos em Varginha</span>
+        <span class="selo">4,8 no Google</span>
+        <span class="selo">Retirada na loja</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>O que você resolve aqui</h2>
+      <p class="sub">Serviços de gráfica rápida para o dia a dia: documento, trabalho, currículo, foto e material de empresa.</p>
+      <div class="grid">
+        <article class="card"><div class="ico" aria-hidden="true">P</div><h3>Impressão</h3><p>Documentos, trabalhos, contratos e arquivos enviados pelo celular.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">X</div><h3>Xerox</h3><p>Cópias simples e frente e verso, em preto e branco ou colorida.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">D</div><h3>Digitalização</h3><p>Transforme papel em PDF para enviar por e-mail ou WhatsApp.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">L</div><h3>Plastificação</h3><p>Proteja documentos, certificados, crachás e receitas.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">E</div><h3>Encadernação</h3><p>Trabalhos, apostilas e materiais com acabamento.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">3x4</div><h3>Foto 3x4</h3><p>Foto para documento, currículo, cadastro e prova.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">F</div><h3>Impressão fotográfica</h3><p>Imprima a foto que está só no celular.</p></article>
+        <article class="card"><div class="ico" aria-hidden="true">S</div><h3>Serviços digitais</h3><p>Meu INSS, Gov.br, currículo e documentos, com auxílio presencial.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section style="background:#fff;border-block:1px solid var(--borda)">
+    <div class="wrap">
+      <h2>Como funciona</h2>
+      <p class="sub">Sem cadastro e sem complicação.</p>
+      <div class="passos">
+        <div class="passo"><h3>Envie ou traga o arquivo</h3><p>Pode mandar pelo WhatsApp ou levar o papel na loja.</p></div>
+        <div class="passo"><h3>Confirme o orçamento</h3><p>Você aprova o valor e o prazo antes de imprimir.</p></div>
+        <div class="passo"><h3>Retire na loja</h3><p>Rua Santa Cruz, 696, Centro. Pronto para usar.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Perguntas frequentes</h2>
+      <div class="faq">
+        <details><summary>Preciso levar o arquivo em pendrive?</summary><p>Não. Você pode enviar pelo WhatsApp antes de vir. Se preferir, traga no pendrive ou no celular.</p></details>
+        <details><summary>Vocês imprimem na hora?</summary><p>Na maioria dos casos, sim. Trabalhos grandes ou com acabamento podem ter prazo, que é informado no orçamento.</p></details>
+        <details><summary>Fazem foto 3x4 para documento?</summary><p>Sim. A foto é feita na loja, no formato exigido para documentos e cadastros.</p></details>
+        <details><summary>Onde fica e qual o horário?</summary><p>Rua Santa Cruz, 696, Centro, Varginha/MG. O horário pode ser confirmado no WhatsApp (35) 3067-5017 antes de você sair de casa.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="local">
+        <div>
+          <h2>Onde estamos</h2>
+          <ul>
+            <li><strong>Endereço:</strong> Rua Santa Cruz, 696 — Centro — Varginha/MG</li>
+            <li><strong>CEP:</strong> 37002-090</li>
+            <li><strong>WhatsApp:</strong> (35) 3067-5017</li>
+            <li><strong>E-mail:</strong> speed.varginha@gmail.com</li>
+            <li><strong>Horário:</strong> confirme no WhatsApp antes de vir</li>
+          </ul>
+          <div class="aviso">O horário desta página será atualizado após a definição oficial. Até lá, confirme pelo WhatsApp.</div>
+        </div>
+        <div class="mapa">
+          <div>
+            <div style="font-size:32px;line-height:1" aria-hidden="true">◎</div>
+            Rua Santa Cruz, 696<br>Centro — Varginha/MG
+            <div style="margin-top:12px"><a class="btn sec" href="https://www.google.com/maps/search/?api=1&amp;query=Rua+Santa+Cruz+696+Centro+Varginha+MG">Abrir no mapa</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="cta">
+        <div>
+          <h2>Manda o arquivo que eu te digo o valor</h2>
+          <p>Orçamento sem compromisso, direto com quem vai imprimir.</p>
+        </div>
+        <a class="btn" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20gr%C3%A1fica%20e%20quero%20um%20or%C3%A7amento.%20%5BGRAF%5D">Chamar no WhatsApp</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <address class="nap">
+      <strong>Speed Financeira e Lan House</strong><br>
+      Correspondente bancário · CNPJ 29.497.887/0001-57<br>
+      Rua Santa Cruz, 696 — Centro — Varginha/MG — CEP 37002-090<br>
+      Telefone e WhatsApp: <a href="tel:+553530675017">(35) 3067-5017</a><br>
+      E-mail: <a href="mailto:speed.varginha@gmail.com">speed.varginha@gmail.com</a>
+    </address>
+    <div class="fim">
+      Serviços de gráfica e digitais prestados por empresa privada. Não somos órgão público e não representamos INSS, Gov.br ou Detran.
+      <br>© <span id="ano">2026</span> Speed Financeira e Lan House.
+    </div>
+  </div>
+</footer>
+
+<a class="zap" href="https://wa.me/553530675017?text=Ol%C3%A1!%20Vim%20pela%20p%C3%A1gina%20de%20gr%C3%A1fica%20e%20quero%20um%20or%C3%A7amento.%20%5BGRAF%5D" aria-label="Falar no WhatsApp">WhatsApp</a>
+
+<script type="application/ld+json">
+{
+  "@context":"https://schema.org",
+  "@type":"FAQPage",
+  "mainEntity":[
+    {"@type":"Question","name":"Preciso levar o arquivo em pendrive?","acceptedAnswer":{"@type":"Answer","text":"Não. Você pode enviar pelo WhatsApp antes de vir. Se preferir, traga no pendrive ou no celular."}},
+    {"@type":"Question","name":"Vocês imprimem na hora?","acceptedAnswer":{"@type":"Answer","text":"Na maioria dos casos, sim. Trabalhos grandes ou com acabamento podem ter prazo, informado no orçamento."}},
+    {"@type":"Question","name":"Fazem foto 3x4 para documento?","acceptedAnswer":{"@type":"Answer","text":"Sim. A foto é feita na loja, no formato exigido para documentos e cadastros."}},
+    {"@type":"Question","name":"Onde fica e qual o horário?","acceptedAnswer":{"@type":"Answer","text":"Rua Santa Cruz, 696, Centro, Varginha/MG. Confirme o horário no WhatsApp (35) 3067-5017."}}
+  ]
+}
+</script>
+<script>document.getElementById('ano').textContent=new Date().getFullYear();</script>
+</body>
+</html>
