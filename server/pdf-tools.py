@@ -6,6 +6,7 @@ Comandos:
   unlock <entrada> <saida> <senha>          abre PDF com senha do cliente e grava copia limpa
   grid <saida_pdf> <img1> [img2] [img3]...  junta de 1 a 4 imagens numa folha A4 em grade 9x13 cm
   rotate <imagem> [graus]                   gira imagem (padrao 90 graus horario)
+  nup <entrada> <saida> [por_folha]         junta 2 paginas por folha A4 paisagem (padrao 2)
 
 Responde sempre uma linha JSON em stdout.
 """
@@ -16,7 +17,7 @@ import sys
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from PIL import Image, ImageOps
-from pypdf import PdfReader, PdfWriter
+from pypdf import PdfReader, PdfWriter, Transformation
 
 
 def respond(payload):
@@ -108,6 +109,48 @@ def rotate_image(img_path, degrees=90):
         respond({"ok": False, "error": f"Erro ao girar imagem: {e}"})
 
 
+def compose_nup(src_pdf, out_pdf, per_sheet=2):
+    # 2 paginas por folha A4 paisagem: 28 paginas viram 14 folhas, cobradas como 14.
+    if int(per_sheet) != 2:
+        respond({"ok": False, "error": "So 2 paginas por folha por enquanto."})
+    if not os.path.exists(src_pdf):
+        respond({"ok": False, "error": f"Arquivo nao encontrado: {src_pdf}"})
+    try:
+        reader = PdfReader(src_pdf)
+        if reader.is_encrypted:
+            respond({"ok": False, "encrypted": True, "error": "PDF protegido por senha: informe a senha do cliente na impressao comum."})
+        total = len(reader.pages)
+        if total < 1:
+            respond({"ok": False, "error": "O documento nao tem paginas."})
+        # A4 paisagem em pontos (1/72 pol).
+        out_w, out_h = 842, 595
+        margem = 7  # meio centimetro de respiro entre as duas paginas
+        writer = PdfWriter()
+        sheets = 0
+        for i in range(0, total, 2):
+            dest = writer.add_blank_page(width=out_w, height=out_h)
+            for j in range(2):
+                if i + j >= total:
+                    break
+                page = reader.pages[i + j]
+                pw = float(page.mediabox.width)
+                ph = float(page.mediabox.height)
+                # Cada pagina ocupa metade da folha, sem cortar e sem esticar.
+                scale = min((out_w / 2 - margem) / pw, (out_h - margem) / ph)
+                tx = j * out_w / 2 + (out_w / 2 - pw * scale) / 2
+                ty = (out_h - ph * scale) / 2
+                dest.merge_transformed_page(page, Transformation().scale(scale, scale).translate(tx, ty))
+            sheets += 1
+        os.makedirs(os.path.dirname(os.path.abspath(out_pdf)), exist_ok=True)
+        with open(out_pdf, "wb") as target:
+            writer.write(target)
+        respond({"ok": True, "pages": total, "sheets": sheets, "output": out_pdf})
+    except SystemExit:
+        raise
+    except Exception as e:
+        respond({"ok": False, "error": f"Erro ao montar 2 por folha: {e}"})
+
+
 def main():
     if len(sys.argv) < 3:
         respond({"ok": False, "error": "Comando invalido. Uso: pdf-tools.py <repair|unlock|grid|rotate> ..."})
@@ -125,6 +168,12 @@ def main():
         img_path = sys.argv[2]
         degrees = int(sys.argv[3]) if len(sys.argv) > 3 else 90
         rotate_image(img_path, degrees)
+
+    elif command == "nup":
+        if len(sys.argv) < 4:
+            respond({"ok": False, "error": "Uso: pdf-tools.py nup <entrada_pdf> <saida_pdf> [por_folha]"})
+        per_sheet = int(sys.argv[4]) if len(sys.argv) > 4 else 2
+        compose_nup(sys.argv[2], sys.argv[3], per_sheet)
 
     elif command in ("repair", "unlock"):
         if len(sys.argv) < 4:

@@ -40,6 +40,7 @@ test("search-console: acha o site na conta, consulta e explica falta de autoriza
   assert.equal(dados.site, "https://speedfinanceira.com.br/");
   assert.deepEqual(dados.total, { cliques: 9, impressoes: 300, posicao: 14.3 });
   assert.equal(dados.buscas[0].busca, "empréstimo consignado varginha");
+  assert.deepEqual(dados.buscasComCliques, [{ busca: "empréstimo consignado varginha", cliques: 3, impressoes: 50, posicao: 6 }]);
   assert.ok(pedidos.some(p => p.url.includes(encodeURIComponent("https://speedfinanceira.com.br/")) && p.body?.startDate === "2026-10-06"));
 
   const semEscopo = async () => ({ ok: false, status: 403, json: async () => ({ error: { message: "Request had insufficient authentication scopes." } }) });

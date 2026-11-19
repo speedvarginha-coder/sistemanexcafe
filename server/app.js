@@ -513,6 +513,8 @@ const defaultPrintRunner = {
 
   rotate: (file, degrees) => runPdfTool(["rotate", file, String(degrees || 90)], 30000),
 
+  nup: (file, outFile, perSheet) => runPdfTool(["nup", file, outFile, String(perSheet || 2)], 180000),
+
 };
 
 const DEFAULT_DATA_DIR = path.join(__dirname, "data");
@@ -5747,8 +5749,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     if (p === "/api/print/inbox/fatura-preview" && req.method === "POST") {
 
-      // Fatura de banco/operadora: o atendente ve a folha identificada como a do boleto
-      // e autoriza antes de gastar papel. Nao imprime nada aqui.
+      // Cartao de conferencia de paginas: todo PDF de 2 a 10 paginas mostra miniatura
+      // de cada folha e o atendente marca o que sai antes de gastar papel. Nao imprime nada aqui.
       const input = await readBody(req);
 
       const name = path.basename(String(input.name || ""));
@@ -5768,20 +5770,23 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       if (!info || !info.ok || info.valid === false) throw err(400, (info && info.problem) || "Nao foi possivel ler o documento");
 
-      const pages = await faturaPrintPages(file, info, "");
+      // 1 pagina nao tem o que escolher; acima de 10 a conferencia fica lenta (trabalho escolar).
+      if (!Number.isInteger(info.pages) || info.pages < 2 || info.pages > 10) return send(res, 200, { ok: true, fatura: false, totalPages: Number.isInteger(info.pages) ? info.pages : null });
 
-      if (!pages) return send(res, 200, { ok: true, fatura: false, totalPages: Number.isInteger(info.pages) ? info.pages : null });
+      // Sugestao: se so algumas paginas tem codigo de barras de boleto, elas vem marcadas;
+      // senao todas vem marcadas (documento comum: um clique autoriza e sai inteiro).
+      const suggested = await faturaPrintPages(file, info, "");
 
-      // Pre-render de cada folha do boleto para o cartao de autorizacao.
+      // Miniatura de cada folha com a marcacao de codigo de barras.
       const previews = [];
 
-      for (const page of pages.slice(0, 4)) {
+      for (let page = 1; page <= info.pages; page++) {
 
         try {
 
           const img = await printRunner.pageImage(file, page);
 
-          if (img && img.ok && img.image) previews.push({ page, image: `data:image/jpeg;base64,${img.image}` });
+          if (img && img.ok && img.image) previews.push({ page, image: `data:image/jpeg;base64,${img.image}`, barcode: !!(suggested && suggested.includes(page)) });
 
         } catch { }
 
@@ -5791,17 +5796,15 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       const copies = number(input.copies ?? 1, 1, 20, "Copias");
 
-      const unitCents = db.settings.printBWCents;
-
       const receipt = receiptProduct();
 
       return send(res, 200, {
-        ok: true, fatura: true, name,
-        printPages: previews.map(row => row.page),
-        totalPages: info.pages,
+        ok: true, name, totalPages: info.pages,
+        fatura: !!suggested,
+        suggested: suggested || previews.map(row => row.page),
         previews,
-        copies, unitCents,
-        printCents: previews.length * copies * unitCents,
+        copies,
+        unitCents: db.settings.printBWCents,
         receiptCents: receipt ? receipt.priceCents : 0
       });
 
@@ -6211,6 +6214,150 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       save();
 
       return send(res, 200, { ok: true, jobId: printJob.id, name: displayName, files: fileNames, pages, color: billedColor, noColor, amountCents, unitCents: billedColor ? db.settings.printColorCents : db.settings.printBWCents, printer });
+
+    }
+
+    if (p === "/api/print/inbox/print-nup" && req.method === "POST") {
+
+      // 2 paginas por folha A4 paisagem: 28 paginas viram 14 folhas, cobradas como 14.
+      // Fica no painel (registro no caixa e cobranca) em vez da janela do Windows.
+      const input = await readBody(req);
+
+      const name = path.basename(String(input.name || ""));
+
+      if (!name || name !== String(input.name || "")) throw err(400, "Nome de arquivo invalido");
+
+      const file = inboxPath(name);
+
+      let stat = null;
+
+      try { stat = fs.statSync(file); } catch { throw err(404, "Arquivo nao encontrado na pasta de recebimento"); }
+
+      if (!stat.isFile()) throw err(404, "Arquivo nao encontrado na pasta de recebimento");
+
+      if (path.extname(name).toLowerCase() !== ".pdf") throw err(400, "So PDF pode ser impresso 2 por folha");
+
+      const color = input.mode === "color";
+
+      const printer = color ? db.settings.printColorPrinter : db.settings.printBlackPrinter;
+
+      if (!printer) throw err(409, `Impressora ${color ? "colorida" : "preto e branco"} nao configurada no Atendimento`);
+
+      const info = await printRunner.info(file, "");
+
+      if (!info || !info.ok || info.valid === false) throw err(400, (info && info.problem) || "Nao foi possivel ler o documento");
+
+      if (!Number.isInteger(info.pages) || info.pages < 2) throw err(400, "Documento de 1 pagina sai melhor na impressao comum");
+
+      // Trava propria do 2 por folha: imprimir comum depois disso (ou antes) nao bloqueia.
+      const fileKey = `${name}|${stat.size}|nup2`;
+
+      if (input.reprint !== true) {
+
+        const done = db.printJobs.find(row => row.source === "counter" && row.fileKey === fileKey && row.state === "printed");
+
+        if (done) {
+
+          const when = new Date(done.at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+
+          throw err(409, `Este arquivo ja foi impresso 2 por folha em ${when}.`);
+
+        }
+
+      }
+
+      const copies = number(input.copies ?? 1, 1, 20, "Copias");
+
+      const outDir = path.join(process.env.LOCALAPPDATA || path.join(__dirname, "data"), "Nexcafe", "inbox-nup");
+
+      fs.mkdirSync(outDir, { recursive: true });
+
+      const nupPdf = path.join(outDir, `nup-${uuid()}.pdf`);
+
+      const resNup = await printRunner.nup(file, nupPdf, 2);
+
+      if (!resNup || !resNup.ok) throw err(502, (resNup && resNup.error) || "Falha ao montar 2 paginas por folha");
+
+      const sheets = Math.ceil(info.pages / 2);
+
+      const displayName = `${name} (2 por folha)`;
+
+      const printJob = { id: uuid(), at: now(), source: "counter", machineId: "balcao", fileName: displayName, fileKey, fileBytes: stat.size, printer, pages: 0, copies, duplex: false, color, mode: "nup", nupPages: info.pages, amountCents: 0, state: "printing", operator: user.name };
+
+      db.printJobs.unshift(printJob);
+
+      db.printJobs.length = Math.min(db.printJobs.length, 300);
+
+      save();
+
+      const quality = color ? (db.settings.printColorQuality || "High") : (db.settings.printBWQuality || "High");
+
+      const run = () => printRunner.print({ file: nupPdf, printer, color, quality, margin: 25, copies, duplex: false });
+
+      const result = await (printQueue = printQueue.then(run, run));
+
+      if (!result || !result.ok) {
+
+        printJob.state = "failed"; printJob.error = label(result && result.error ? result.error : "Falha desconhecida", 200);
+
+        event("balcao", "Impressao 2 por folha falhou", `${displayName}: ${printJob.error}`, user.name); save();
+
+        throw err(502, `Nao foi possivel imprimir: ${printJob.error}`);
+
+      }
+
+      // Cobranca pelas folhas que sairam: 28 paginas a 2 por folha = 14 folhas x copias.
+      const pages = Number.isInteger(result.pages) && result.pages > 0 ? result.pages : sheets * copies;
+
+      const noColor = color && result.hasColor === false;
+
+      const billedColor = color && !noColor;
+
+      const amountCents = pages * (billedColor ? db.settings.printColorCents : db.settings.printBWCents);
+
+      Object.assign(printJob, { pages, noColor, billedColor, amountCents, state: "printed", printedAt: now() });
+
+      event("balcao", "Impressao 2 por folha", `${displayName}: ${pages} folha(s) com ${info.pages} paginas ${billedColor ? "colorida" : "P&B"} (${printer})`, user.name);
+
+      save();
+
+      return send(res, 200, { ok: true, jobId: printJob.id, name: displayName, totalPages: info.pages, perSheet: 2, pages, color: billedColor, noColor, amountCents, unitCents: billedColor ? db.settings.printColorCents : db.settings.printBWCents, printer });
+
+    }
+
+    if (p === "/api/print/inbox/manual" && req.method === "POST") {
+
+      // Impressao pela janela do Windows ("Escolher"): o lancamento nao vem sozinho.
+      // O atendente informa quantas folhas sairam e o sistema cria o trabalho para abrir a cobranca.
+      const input = await readBody(req);
+
+      const name = path.basename(String(input.name || ""));
+
+      if (!name || name !== String(input.name || "")) throw err(400, "Nome de arquivo invalido");
+
+      const file = inboxPath(name);
+
+      if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw err(404, "Arquivo nao encontrado na pasta de recebimento");
+
+      const sheets = number(input.sheets ?? 1, 1, 500, "Folhas");
+
+      const color = input.mode === "color";
+
+      const amountCents = sheets * (color ? db.settings.printColorCents : db.settings.printBWCents);
+
+      const printJob = { id: uuid(), at: now(), source: "counter", machineId: "balcao", fileName: `${name} (janela do Windows)`, fileKey: `${name}|manual|${now()}`, fileBytes: 0, printer: color ? db.settings.printColorPrinter : db.settings.printBlackPrinter, pages: sheets, copies: 1, duplex: false, color, mode: "manual", amountCents, state: "printed", printedAt: now(), operator: user.name };
+
+      db.printJobs.unshift(printJob);
+
+      db.printJobs.length = Math.min(db.printJobs.length, 300);
+
+      save();
+
+      event("balcao", "Impressao registrada a mao", `${name}: ${sheets} folha(s) ${color ? "colorida" : "P&B"} pela janela do Windows`, user.name);
+
+      save();
+
+      return send(res, 200, { ok: true, jobId: printJob.id, name: printJob.fileName, pages: sheets, color, noColor: false, amountCents, unitCents: color ? db.settings.printColorCents : db.settings.printBWCents, printer: printJob.printer || "janela do Windows" });
 
     }
 

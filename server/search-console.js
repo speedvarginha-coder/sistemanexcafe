@@ -10,7 +10,7 @@ async function call(fetchImpl, url, accessToken, body) {
   let response;
   try {
     response = await fetchImpl(url, {
-      method: body ? "POST" : "GET",
+      method: body ? "POST" : "GET", signal: AbortSignal.timeout(20000),
       headers: { authorization: `Bearer ${accessToken}`, ...(body ? { "content-type": "application/json" } : {}) },
       body: body ? JSON.stringify(body) : undefined
     });
@@ -61,6 +61,13 @@ function resumirBuscas(rows, limite = 30) {
     .filter(r => r.busca).sort((a, b) => b.impressoes - a.impressoes).slice(0, limite);
 }
 
+// Buscas que trouxeram clique, mais clicadas primeiro: busca de marca tem pouca impressao
+// e alto CTR, ficando fora do topo por impressoes — aqui ela aparece.
+function buscasComCliques(rows, limite = 15) {
+  return (rows || []).map(r => ({ busca: r.keys?.[0] || "", cliques: r.clicks || 0, impressoes: r.impressions || 0, posicao: Math.round((r.position || 0) * 10) / 10 }))
+    .filter(r => r.busca && r.cliques > 0).sort((a, b) => b.cliques - a.cliques || b.impressoes - a.impressoes).slice(0, limite);
+}
+
 async function lerSite({ accessToken, fetchImpl = fetch, now = new Date(), site }) {
   let siteUrl = site;
   if (!siteUrl) {
@@ -81,8 +88,15 @@ async function lerSite({ accessToken, fetchImpl = fetch, now = new Date(), site 
     site: siteUrl, inicio, fim,
     total: { cliques: t.clicks || 0, impressoes: t.impressions || 0, posicao: t.position ? Math.round(t.position * 10) / 10 : null },
     paginas: resumir(porPagina.rows),
-    buscas: resumirBuscas(porBusca.rows)
+    buscas: resumirBuscas(porBusca.rows),
+    buscasComCliques: buscasComCliques(porBusca.rows)
   };
 }
 
-module.exports = { lerSite, resumir, resumirBuscas, periodo };
+async function inspecionar(url, site, accessToken, fetchImpl) {
+  const resposta = await call(fetchImpl, "https://searchconsole.googleapis.com/v1/urlInspection/index:inspect",
+    accessToken, { inspectionUrl: url, siteUrl: site, languageCode: "pt-BR" });
+  return resposta.inspectionResult?.indexStatusResult;
+}
+
+module.exports = { inspecionar, lerSite, resumir, resumirBuscas, buscasComCliques, periodo };

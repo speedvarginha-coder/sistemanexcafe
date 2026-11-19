@@ -183,6 +183,12 @@
 
         <!-- GRUPO 2: RETAGUARDA & GESTÃO (Speed Financeira, Finanças e Marketing) -->
         <div class="navGroupRetaguarda" id="navGroupRetaguarda">
+
+          <button data-view="gestao" data-admin-only>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <span>Painel da Loja</span>
+          </button>
+
           <div class="navLabel">Speed Financeira</div>
 
           <button data-view="leads">
@@ -1528,6 +1534,74 @@
         </section>
 
         <!-- Visão: Central Executiva, DRE & Relatórios -->
+
+        <!-- Visão: Painel da Loja (gestão do dono) -->
+        <section id="view-gestao" class="view" hidden>
+
+          <div class="gestaoBoard">
+
+            <div class="gestaoMain">
+
+              <article class="cupomCard" id="gestaoCupom" aria-label="Balanço de hoje">
+
+                <div class="cupomHead">
+                  <span class="cupomStore">Nexcafé · Speed Financeira</span>
+                  <span class="cupomStamp" id="gestaoCupomStamp">—</span>
+                </div>
+
+                <div class="cupomTear"></div>
+
+                <dl class="cupomLines" id="gestaoCupomLines"></dl>
+
+                <div class="cupomTear"></div>
+
+                <div class="cupomPunch" id="gestaoCupomPunch">—</div>
+
+                <p class="cupomFoot">Balanço interno da loja · não é documento fiscal</p>
+
+              </article>
+
+              <div class="gestaoBills">
+                <div class="gestaoCardHead">
+                  <h3>Contas chegando</h3>
+                  <button type="button" class="secondaryBtn" data-view-go="expenses">Ver despesas</button>
+                </div>
+                <ul class="gestaoBillsList" id="gestaoBillsList"></ul>
+              </div>
+
+            </div>
+
+            <div class="gestaoSide">
+
+              <article class="gestaoGoalCard">
+                <div class="gestaoGoalTop"><span>Meta do dia</span><strong id="gestaoDayTarget">—</strong></div>
+                <div class="gestaoGoalBar"><div id="gestaoDayBar"></div></div>
+                <div class="gestaoGoalMeta"><span id="gestaoDayActual">—</span><span id="gestaoDayPct">—</span></div>
+              </article>
+
+              <article class="gestaoGoalCard month">
+                <div class="gestaoGoalTop"><span>Meta do mês</span><strong id="gestaoMonthTarget">—</strong></div>
+                <div class="gestaoGoalBar"><div id="gestaoMonthBar" class="month"></div></div>
+                <div class="gestaoGoalMeta"><span id="gestaoMonthActual">—</span><span id="gestaoMonthPct">—</span></div>
+              </article>
+
+              <article class="gestaoAlerts" id="gestaoAlerts" hidden></article>
+
+              <nav class="gestaoShortcuts" aria-label="Atalhos da gestão">
+                <span class="gestaoShortcutsLabel">Ir para</span>
+                <button type="button" data-view-go="reports">Relatórios</button>
+                <button type="button" data-view-go="expenses">Despesas</button>
+                <button type="button" data-view-go="plan">Plano de ação</button>
+                <button type="button" data-view-go="leads">Financeira</button>
+                <button type="button" data-view-go="products">Catálogo</button>
+                <button type="button" data-view-go="marketing">Marketing</button>
+              </nav>
+
+            </div>
+
+          </div>
+
+        </section>
 
         <section id="view-reports" class="view" hidden>
 
@@ -6682,7 +6756,7 @@
 
         <div>
 
-          <h2>Fatura identificada</h2>
+          <h2>Conferir impressão</h2>
 
           <p id="faturaPreviewSummary">-</p>
 
@@ -6741,7 +6815,12 @@
       }
 
       btnBalcao?.addEventListener('click', () => setMode('balcao'));
-      btnGestao?.addEventListener('click', () => setMode('gestao'));
+      btnGestao?.addEventListener('click', () => {
+        setMode('gestao');
+        // Dono entra na gestao direto no Painel da Loja (o botao fica oculto para atendentes).
+        const painelBtn = document.querySelector('[data-view="gestao"]');
+        if (painelBtn && !painelBtn.hidden) painelBtn.click();
+      });
 
       btnExpand?.addEventListener('click', () => {
         if (groupRetaguarda) {
@@ -6756,7 +6835,7 @@
         const btn = e.target.closest('[data-view]');
         if (!btn) return;
         const targetView = btn.dataset.view;
-        const gestaoViews = ['leads', 'vault', 'reports', 'plan', 'expenses', 'marketing', 'settings', 'users'];
+        const gestaoViews = ['gestao', 'leads', 'vault', 'reports', 'plan', 'expenses', 'marketing', 'settings', 'users'];
         if (gestaoViews.includes(targetView) && sidebar?.classList.contains('is-mode-balcao')) {
           groupRetaguarda?.classList.add('open');
           const arrow = btnExpand?.querySelector('.arrowIcon');

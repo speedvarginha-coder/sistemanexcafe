@@ -16,7 +16,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.8,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "empréstimo consignado inss",
@@ -44,7 +45,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 6.5,
    "cpcMax": 14.2,
    "concorrencia": "Alta (84%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financiamento de veículos",
@@ -73,7 +75,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.0,
    "cpcMax": 12.0,
    "concorrencia": "Alta (86%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Curta"
   },
   {
    "termo": "antecipar fgts",
@@ -86,7 +89,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.8,
    "cpcMax": 12.5,
    "concorrencia": "Alta (82%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Curta"
   },
   {
    "termo": "empréstimo para bpc loas",
@@ -131,7 +135,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 7.0,
    "cpcMax": 16.5,
    "concorrencia": "Alta (85%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "empréstimo consignado clt",
@@ -144,7 +149,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.0,
    "cpcMax": 11.5,
    "concorrencia": "Alta (80%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "cartão benefício inss rcc",
@@ -205,7 +211,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.8,
    "cpcMax": 6.2,
    "concorrencia": "Média (60%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "margem consignável inss 2026",
@@ -218,7 +225,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.9,
    "cpcMax": 4.1,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "simulador empréstimo consignado inss",
@@ -262,7 +270,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.2,
    "cpcMax": 2.5,
    "concorrencia": "Baixa (30%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "como antecipar saque aniversário fgts",
@@ -275,7 +284,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.8,
    "concorrencia": "Média (60%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "refinanciamento de veículos",
@@ -304,7 +314,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.9,
    "cpcMax": 4.2,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts banco pan",
@@ -317,7 +328,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.5,
    "cpcMax": 10.2,
    "concorrencia": "Alta (78%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "simulador antecipação fgts caixa",
@@ -330,7 +342,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 6.8,
    "concorrencia": "Alta (72%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "teto de juros empréstimo consignado inss",
@@ -343,7 +356,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 3.8,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts itaú",
@@ -356,7 +370,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.8,
    "cpcMax": 11.0,
    "concorrencia": "Alta (80%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "antecipação fgts cai na hora pix",
@@ -385,7 +400,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.2,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo em varginha",
@@ -414,7 +430,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.2,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "melhores taxas consignado inss",
@@ -442,7 +459,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.2,
    "cpcMax": 9.8,
    "concorrencia": "Alta (75%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "regras saque aniversário fgts 2026",
@@ -455,7 +473,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.4,
    "cpcMax": 3.0,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts negativado",
@@ -484,7 +503,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.9,
    "cpcMax": 6.5,
    "concorrencia": "Alta (70%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "desbloquear benefício inss para empréstimo",
@@ -497,7 +517,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.0,
    "cpcMax": 4.8,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo bpc loas representante legal",
@@ -510,7 +531,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.5,
    "concorrencia": "Média (52%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "portabilidade de consignado com troco",
@@ -523,7 +545,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 7.5,
    "cpcMax": 17.2,
    "concorrencia": "Alta (87%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts c6 bank",
@@ -536,7 +559,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.0,
    "cpcMax": 9.2,
    "concorrencia": "Alta (73%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo com garantia de fgts como funciona",
@@ -549,7 +573,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.2,
    "cpcMax": 4.8,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo fgts negativado rápido",
@@ -562,7 +587,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.2,
    "cpcMax": 11.2,
    "concorrencia": "Alta (75%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "margem consignável clt como calcular",
@@ -575,7 +601,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.1,
    "cpcMax": 4.2,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "refinanciar veículo quitado troco na mão",
@@ -588,7 +615,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.8,
    "cpcMax": 12.8,
    "concorrencia": "Alta (78%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "tabela de antecipação saque aniversário fgts",
@@ -601,7 +629,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.5,
    "concorrencia": "Média (52%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "aposentado por invalidez pode fazer consignado",
@@ -614,7 +643,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 3.9,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "como desbloquear consignado no meu inss",
@@ -627,7 +657,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 4.0,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "refinanciamento consignado inss",
@@ -655,7 +686,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.8,
    "concorrencia": "Média (48%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar 10 anos de fgts",
@@ -668,7 +700,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.0,
    "cpcMax": 10.8,
    "concorrencia": "Alta (77%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts bmg",
@@ -681,7 +714,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.1,
    "cpcMax": 9.5,
    "concorrencia": "Alta (74%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "antecipar fgts pelo whatsapp",
@@ -710,7 +744,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 8.0,
    "concorrencia": "Média (65%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipação fgts desconta do salário",
@@ -723,7 +758,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.6,
    "cpcMax": 3.5,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado clt para negativado",
@@ -752,7 +788,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.2,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipação fgts menor taxa de juros",
@@ -765,7 +802,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.5,
    "cpcMax": 9.8,
    "concorrencia": "Alta (72%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financeira em varginha",
@@ -794,7 +832,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.5,
    "cpcMax": 9.2,
    "concorrencia": "Média (62%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "prazo carência 90 dias novo benefício inss",
@@ -807,7 +846,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.6,
    "cpcMax": 3.5,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "quanto tempo demora pro fgts cair na conta",
@@ -820,7 +860,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 3.9,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "idade máxima para empréstimo consignado inss",
@@ -833,7 +874,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.7,
    "cpcMax": 3.8,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "quanto tempo demora portabilidade inss",
@@ -846,7 +888,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.2,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "refinanciamento de consignado com troco",
@@ -859,7 +902,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.5,
    "cpcMax": 9.8,
    "concorrencia": "Alta (75%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts sábado e domingo",
@@ -872,7 +916,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.2,
    "cpcMax": 9.2,
    "concorrencia": "Média (65%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipação fgts para quem foi demitido",
@@ -885,7 +930,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 3.9,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "como funciona empréstimo com garantia de carro",
@@ -898,7 +944,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.8,
    "cpcMax": 6.0,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo pouso alegre mg",
@@ -911,7 +958,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.2,
    "cpcMax": 9.5,
    "concorrencia": "Média (60%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "quantos anos posso antecipar do fgts",
@@ -924,7 +972,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.0,
    "cpcMax": 4.5,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "simular empréstimo consignado clt",
@@ -937,7 +986,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.2,
    "concorrencia": "Alta (72%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "valor mínimo para antecipar fgts",
@@ -950,7 +1000,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.9,
    "cpcMax": 4.0,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo com garantia de imóvel menor taxa",
@@ -963,7 +1014,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 7.5,
    "cpcMax": 18.0,
    "concorrencia": "Alta (75%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo consignado inss 84 vezes parcelas",
@@ -976,7 +1028,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.8,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar 12 anos fgts",
@@ -989,7 +1042,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.8,
    "cpcMax": 10.2,
    "concorrencia": "Alta (74%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "bloqueio saldo fgts após antecipação",
@@ -1002,7 +1056,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.1,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "como funciona o crédito com garantia de casa",
@@ -1015,7 +1070,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 6.8,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "como transferir o fgts antecipado para nubank",
@@ -1028,7 +1084,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.4,
    "cpcMax": 3.0,
    "concorrencia": "Baixa (32%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "crédito consignado privado",
@@ -1041,7 +1098,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.2,
    "cpcMax": 11.0,
    "concorrencia": "Alta (74%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "financiar veículo de leilão é possível",
@@ -1054,7 +1112,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.1,
    "cpcMax": 4.5,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "qual melhor financeira para antecipar fgts",
@@ -1067,7 +1126,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.5,
    "concorrencia": "Média (60%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "speed financeira varginha",
@@ -1096,7 +1156,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.2,
    "cpcMax": 9.5,
    "concorrencia": "Alta (70%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts sem conta corrente",
@@ -1109,7 +1170,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.5,
    "concorrencia": "Média (58%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "continua com o carro no empréstimo com garantia",
@@ -1122,7 +1184,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.2,
    "cpcMax": 4.9,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "diferença consignado clt e empréstimo pessoal",
@@ -1135,7 +1198,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 3.9,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "posso antecipar fgts tendo empréstimo ativo",
@@ -1148,7 +1212,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.0,
    "cpcMax": 4.2,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "trocar financiamento de carro de banco",
@@ -1161,7 +1226,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.5,
    "cpcMax": 9.8,
    "concorrencia": "Média (60%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipação fgts é golpe?",
@@ -1174,7 +1240,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.2,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "como conseguir empréstimo consignado carteira assinada",
@@ -1187,7 +1254,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.2,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo três corações mg",
@@ -1200,7 +1268,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.2,
    "concorrencia": "Média (52%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "percentual da fipe liberado auto equity",
@@ -1213,7 +1282,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.2,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "speed financeira telefone whatsapp",
@@ -1226,7 +1296,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.2,
    "cpcMax": 2.8,
    "concorrencia": "Baixa (20%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "trocar dívida de cartão por consignado clt",
@@ -1239,7 +1310,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.5,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "imóvel financiado serve como garantia",
@@ -1252,7 +1324,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.0,
    "cpcMax": 6.5,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado clt empresa privada menores taxas",
@@ -1265,7 +1338,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.5,
    "cpcMax": 9.8,
    "concorrencia": "Alta (70%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "crédito consignado privado empresa conveniada",
@@ -1278,7 +1352,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.8,
    "cpcMax": 10.5,
    "concorrencia": "Média (65%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo consignado inss varginha",
@@ -1307,7 +1382,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.8,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "taxa antecipação fgts permitida bacen",
@@ -1320,7 +1396,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.6,
    "cpcMax": 3.4,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "tempo de empresa para pedir consignado clt",
@@ -1333,7 +1410,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.6,
    "cpcMax": 3.5,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "home equity 240 meses para pagar",
@@ -1346,7 +1424,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 6.8,
    "cpcMax": 16.5,
    "concorrencia": "Média (60%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo são lourenço mg",
@@ -1359,7 +1438,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.8,
    "concorrencia": "Média (48%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "avaliação de imóvel para empréstimo bancário",
@@ -1372,7 +1452,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.5,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Média"
+   "prioridade": "Média",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts varginha",
@@ -1417,7 +1498,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.1,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo para aposentado varginha",
@@ -1462,7 +1544,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.2,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo elói mendes mg",
@@ -1475,7 +1558,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.0,
    "cpcMax": 6.9,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financeira perto de mim centro varginha",
@@ -1488,7 +1572,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.0,
    "cpcMax": 8.0,
    "concorrencia": "Média (55%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts pouso alegre mg",
@@ -1501,7 +1586,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.5,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financeira três pontas",
@@ -1514,7 +1600,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.0,
    "cpcMax": 6.8,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "financiamento de moto varginha",
@@ -1543,7 +1630,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.2,
    "cpcMax": 9.8,
    "concorrencia": "Média (58%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "correspondente bancário em varginha",
@@ -1571,7 +1659,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.9,
    "cpcMax": 6.4,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "empréstimo para pensionista inss varginha",
@@ -1584,7 +1673,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.2,
    "cpcMax": 9.8,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "speed financeira antecipação fgts",
@@ -1597,7 +1687,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.5,
    "cpcMax": 3.0,
    "concorrencia": "Baixa (25%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo bpc loas em varginha",
@@ -1642,7 +1733,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.9,
    "cpcMax": 6.5,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "melhor financeira de empréstimos varginha",
@@ -1655,7 +1747,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.5,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "carro sem entrada varginha financiamento",
@@ -1668,7 +1761,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.5,
    "concorrencia": "Média (58%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado inss itaú varginha",
@@ -1681,7 +1775,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.5,
    "concorrencia": "Média (58%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo com garantia de veículo em varginha",
@@ -1710,7 +1805,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.5,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financeira antecipação fgts em varginha mg",
@@ -1723,7 +1819,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.2,
    "concorrencia": "Média (55%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "promotora de crédito no sul de minas",
@@ -1736,7 +1833,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.0,
    "cpcMax": 6.8,
    "concorrencia": "Baixa (35%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "speed financeira empréstimo aposentado varginha",
@@ -1749,7 +1847,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 3.5,
    "concorrencia": "Baixa (25%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financeira elói mendes",
@@ -1762,7 +1861,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.8,
    "cpcMax": 6.2,
    "concorrencia": "Baixa (38%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "score baixo financia carro em varginha",
@@ -1775,7 +1875,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.8,
    "cpcMax": 8.2,
    "concorrencia": "Média (58%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts três corações mg",
@@ -1788,7 +1889,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.8,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado inss banco bmg varginha",
@@ -1801,7 +1903,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 8.0,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo pensionista inss três corações",
@@ -1814,7 +1917,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.9,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financiar carro particular em varginha",
@@ -1827,7 +1931,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.0,
    "cpcMax": 9.0,
    "concorrencia": "Média (52%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "portabilidade consignado inss varginha",
@@ -1840,7 +1945,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.8,
    "cpcMax": 11.5,
    "concorrencia": "Média (58%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "refinanciar carro em varginha",
@@ -1853,7 +1959,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 4.5,
    "cpcMax": 10.2,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "speed financeira financiamento de veículos varginha",
@@ -1866,7 +1973,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.9,
    "cpcMax": 4.0,
    "concorrencia": "Baixa (25%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "ajuda com meu inss em varginha presencial",
@@ -1879,7 +1987,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.0,
    "cpcMax": 4.5,
    "concorrencia": "Baixa (30%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts três pontas",
@@ -1892,7 +2001,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.5,
    "concorrencia": "Média (48%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipação fgts são lourenço mg",
@@ -1905,7 +2015,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.2,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado inss banco pan varginha",
@@ -1918,7 +2029,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.5,
    "concorrencia": "Média (52%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado inss banco safra varginha",
@@ -1931,7 +2043,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.4,
    "cpcMax": 7.8,
    "concorrencia": "Média (54%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo consignado inss três pontas",
@@ -1944,7 +2057,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.5,
    "concorrencia": "Média (48%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo garantia moto quitada varginha",
@@ -1957,7 +2071,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 7.8,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financeira que antecipa fgts na hora centro varginha",
@@ -1970,7 +2085,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.9,
    "cpcMax": 8.5,
    "concorrencia": "Média (55%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "financiamento de caminhão e utilitários varginha",
@@ -1983,7 +2099,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 5.0,
    "cpcMax": 11.5,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "speed financeira consignado clt varginha",
@@ -1996,7 +2113,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 1.8,
    "cpcMax": 3.8,
    "concorrencia": "Baixa (25%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts boa esperança mg",
@@ -2009,7 +2127,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.1,
    "cpcMax": 7.2,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado inss boa esperança",
@@ -2022,7 +2141,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.1,
    "cpcMax": 7.2,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado inss c6 bank varginha",
@@ -2035,7 +2155,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.1,
    "cpcMax": 7.2,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo com garantia de imóvel varginha",
@@ -2048,7 +2169,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 8.5,
    "cpcMax": 22.0,
    "concorrencia": "Média (55%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "empréstimo desconto em folha empresa privada varginha",
@@ -2061,7 +2183,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.5,
    "cpcMax": 8.0,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "fgts antecipação em varginha rua santa cruz",
@@ -2074,7 +2197,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.5,
    "cpcMax": 5.0,
    "concorrencia": "Baixa (30%)",
-   "prioridade": "Máxima"
+   "prioridade": "Máxima",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipar fgts elói mendes",
@@ -2087,7 +2211,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.0,
    "cpcMax": 7.0,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado carteira assinada três corações",
@@ -2100,7 +2225,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.2,
    "cpcMax": 7.5,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado inss elói mendes",
@@ -2113,7 +2239,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.0,
    "cpcMax": 7.0,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "home equity sul de minas taxas",
@@ -2126,7 +2253,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 8.0,
    "cpcMax": 20.0,
    "concorrencia": "Média (50%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipação fgts cambuquira",
@@ -2139,7 +2267,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.8,
    "cpcMax": 6.5,
    "concorrencia": "Baixa (40%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Média"
   },
   {
    "termo": "capital de giro com garantia de imóvel varginha",
@@ -2152,7 +2281,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 7.0,
    "cpcMax": 17.5,
    "concorrencia": "Baixa (45%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "consignado carteira assinada três pontas",
@@ -2165,7 +2295,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 3.0,
    "cpcMax": 7.0,
    "concorrencia": "Baixa (42%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "speed financeira crédito garantia de imóvel",
@@ -2178,7 +2309,8 @@ window.SPEED_PALAVRAS = {
    "cpcMin": 2.0,
    "cpcMax": 4.5,
    "concorrencia": "Baixa (20%)",
-   "prioridade": "Alta"
+   "prioridade": "Alta",
+   "cauda": "Cauda Longa"
   },
   {
    "termo": "antecipação fgts",

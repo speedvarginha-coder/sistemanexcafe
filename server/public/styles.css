@@ -5045,6 +5045,18 @@ tr.mutedRow td { color: var(--text-muted); }
   color: #fff;
 }
 
+.printInboxActions .printNupBtn {
+  font-weight: 600;
+  border-color: #7c3aed;
+  color: #7c3aed;
+  white-space: nowrap;
+}
+
+.printInboxActions .printNupBtn:hover {
+  background: #7c3aed;
+  color: #fff;
+}
+
 .printGridCopies {
   display: inline-flex;
   align-items: center;
@@ -5075,14 +5087,68 @@ tr.mutedRow td { color: var(--text-muted); }
 .faturaPreviewPages figure {
   margin: 0;
   text-align: center;
+  position: relative;
 }
 
-.faturaPreviewPages img {
+.faturaPagePick {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.faturaPagePick input {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+  z-index: 2;
+}
+
+.faturaPagePick img {
+  display: block;
   max-height: 340px;
   max-width: 100%;
-  border: 1px solid var(--border-subtle);
-  border-radius: 6px;
   background: #fff;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+}
+
+/* Pagina desmarcada: fica apagada até o atendente marcar. */
+.faturaPagePick:has(input:not(:checked)) img {
+  filter: grayscale(0.9);
+  opacity: 0.55;
+}
+
+.faturaPagePick:has(input:checked) {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.faturaPagePick:hover {
+  border-color: var(--border-hover);
+}
+
+.pageBarcodeTag {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 2;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
 }
 
 .faturaPreviewPages figcaption {
@@ -5207,4 +5273,423 @@ tr.mutedRow td { color: var(--text-muted); }
   background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   border-color: var(--primary-hover);
   color: #ffffff;
+}
+
+/* ==========================================================================
+   Painel da Loja (gestao do dono): o dia num relance
+   Assinatura: o balanco de hoje como cupom de fechamento - papel, picote,
+   digitos mono alinhados. Tudo o resto fica quieto no padrao do sistema.
+   ========================================================================== */
+.gestaoBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 380px);
+  gap: 18px;
+  align-items: start;
+  max-width: 1180px;
+}
+
+.gestaoMain {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.gestaoSide {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* --- Cupom de hoje (assinatura) ------------------------------------------- */
+.cupomCard {
+  position: relative;
+  background: #fffef9;
+  border: 1px solid var(--border);
+  border-radius: 8px 8px 0 0;
+  box-shadow: 0 10px 24px -18px rgba(9, 19, 29, 0.35);
+  padding: 18px 22px 26px;
+  font-family: var(--font-mono);
+  margin-bottom: 7px;
+}
+
+/* Picote de papel na base do cupom */
+.cupomCard::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -7px;
+  height: 7px;
+  background:
+    linear-gradient(45deg, #fffef9 4px, transparent 4.5px) 0 0 / 14px 7px repeat-x,
+    linear-gradient(-45deg, #fffef9 4px, transparent 4.5px) 7px 0 / 14px 7px repeat-x;
+}
+
+.cupomHead {
+  text-align: center;
+  display: grid;
+  gap: 3px;
+  padding: 2px 0 10px;
+}
+
+.cupomStore {
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-main);
+}
+
+.cupomStamp {
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.cupomTear {
+  border-top: 2px dashed #d7dbe0;
+  margin: 4px 0 12px;
+}
+
+.cupomLines {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+.cupomLine {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.cupomLine dt {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.cupomLine dt::after {
+  content: "";
+  flex: 1;
+  border-bottom: 2px dotted #c7ccd3;
+  transform: translateY(-3px);
+  min-width: 24px;
+}
+
+.cupomLine dd {
+  margin: 0;
+  font-weight: 700;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cupomPunch {
+  text-align: center;
+  font-weight: 800;
+  font-size: 14.5px;
+  letter-spacing: 0.05em;
+  padding: 10px 8px;
+  border-radius: 6px;
+  background: #fdf6d5;
+  border: 1px dashed #e5c733;
+  color: #7a5b00;
+}
+
+.cupomPunch.ok {
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border);
+  color: #076331;
+}
+
+.cupomFoot {
+  margin: 12px 0 0;
+  text-align: center;
+  font-size: 10.5px;
+  color: var(--text-subtle);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  #view-gestao:not([hidden]) .cupomCard {
+    animation: cupomPrint 0.45s ease-out;
+  }
+  @keyframes cupomPrint {
+    from { clip-path: inset(0 0 100% 0); transform: translateY(-8px); }
+    to   { clip-path: inset(0 0 -8px 0); transform: none; }
+  }
+}
+
+/* --- Contas chegando ------------------------------------------------------- */
+.gestaoBills {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.gestaoCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.gestaoCardHead h3 {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+.gestaoBillsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.gestaoBillsList li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 13px;
+  padding: 7px 10px;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+}
+
+.gestaoBillsList li.late {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+}
+
+.gestaoBillName {
+  font-weight: 600;
+  color: var(--text-main);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gestaoBillDue {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.gestaoBillsList li.late .gestaoBillDue {
+  color: var(--danger-text);
+  font-weight: 700;
+}
+
+.gestaoBillsList li strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-main);
+}
+
+.gestaoBillsEmpty {
+  justify-self: start;
+  color: var(--text-muted);
+  background: none !important;
+  border: none !important;
+  padding: 2px 0 !important;
+}
+
+/* --- Metas compactas -------------------------------------------------------- */
+.gestaoGoalCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 13px 16px;
+  display: grid;
+  gap: 9px;
+}
+
+.gestaoGoalTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.gestaoGoalTop strong {
+  color: var(--text-main);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gestaoGoalBar {
+  height: 8px;
+  border-radius: 999px;
+  background: #e8edf3;
+  overflow: hidden;
+}
+
+.gestaoGoalBar > div {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  transition: width 0.4s ease;
+}
+
+.gestaoGoalBar > div.month {
+  background: var(--inuse-accent);
+}
+
+.gestaoGoalBar > div.done {
+  background: var(--primary);
+  box-shadow: inset 0 0 0 100px rgba(245, 197, 24, 0.35);
+}
+
+.gestaoGoalMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.gestaoGoalMeta span:first-child {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* --- Precisa de voce -------------------------------------------------------- */
+.gestaoAlerts {
+  display: grid;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 13px 14px;
+}
+
+.gestaoAlerts::before {
+  content: "Precisa de voc�";
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.gestaoAlert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  color: var(--warn-text);
+}
+
+.gestaoAlert.danger {
+  background: var(--danger-bg);
+  border-color: var(--danger-border);
+  color: var(--danger-text);
+}
+
+.gestaoAlert button {
+  min-height: 26px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #fff;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gestaoAlert button:hover {
+  opacity: 0.85;
+}
+
+/* --- Atalhos ------------------------------------------------------------------ */
+.gestaoShortcuts {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.gestaoShortcutsLabel {
+  width: 100%;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.gestaoShortcuts button {
+  min-height: 30px;
+  padding: 0 13px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.gestaoShortcuts button:hover {
+  background: var(--primary-light);
+  border-color: var(--primary-border);
+  color: #076331;
+}
+
+.gestaoShortcuts button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* --- Telas menores ------------------------------------------------------------ */
+@media (max-width: 1080px) {
+  .gestaoBoard {
+    grid-template-columns: 1fr;
+  }
+  .gestaoSide {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+  }
+  .gestaoShortcuts, .gestaoAlerts {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 680px) {
+  .gestaoSide {
+    grid-template-columns: 1fr;
+  }
+  .cupomCard {
+    padding: 14px 14px 22px;
+  }
+  .cupomLine {
+    font-size: 12.5px;
+  }
 }

@@ -4214,10 +4214,98 @@ function renderDashboardCockpit() {
   }
 }
 
+// Painel da Loja: o dia inteiro num relance, na linguagem do balcao (cupom de fechamento).
+function renderGestaoHome() {
+  if (!state) return;
+  const cs = state.cashSummary || {};
+  const todaySalesCents = cs.todaySalesCents || 0;
+  const dailyGoalCents = cs.dailyGoalCents || 50000;
+  const fiadoCents = (state.openCharges || []).reduce((sum, c) => sum + (c.amountCents || 0) - (c.paidCents || 0), 0);
+  const bills = state.billsDue || [];
+  const today = expToday();
+  const billsToday = bills.filter(b => expDay(b) === today);
+  const billsLate = bills.filter(b => expDay(b) < today);
+  const payTodayCents = billsToday.reduce((sum, b) => sum + (b.amountCents || 0), 0);
+  const lateCents = billsLate.reduce((sum, b) => sum + (b.amountCents || 0), 0);
+
+  // Cabecalho do cupom: dia, hora e a situacao do caixa.
+  const stamp = $("#gestaoCupomStamp");
+  if (stamp) {
+    const when = new Date().toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+    stamp.textContent = `${when} · caixa ${state.cashShift ? "aberto" : "fechado"}`;
+  }
+
+  // Linhas do cupom: rotulo ..... valor, digitos mono alinhados a direita.
+  const lines = [
+    ["Vendas de hoje", currency(todaySalesCents)],
+    ["Dinheiro na gaveta", currency(cs.expectedCashCents || 0)],
+    ["Fiado aberto", currency(fiadoCents)],
+    ...(billsLate.length ? [["Contas vencidas", `${currency(lateCents)} (${billsLate.length})`]] : []),
+    ["Contas a pagar hoje", billsToday.length ? `${currency(payTodayCents)} (${billsToday.length})` : "R$ 0,00"],
+  ];
+  const linesEl = $("#gestaoCupomLines");
+  if (linesEl) linesEl.innerHTML = lines.map(([label, value]) => `<div class="cupomLine"><dt>${html(label)}</dt><dd>${html(value)}</dd></div>`).join("");
+
+  // Fecho do cupom: a meta do dia em uma linha so.
+  const punch = $("#gestaoCupomPunch");
+  if (punch) {
+    if (todaySalesCents >= dailyGoalCents) {
+      punch.textContent = "META DO DIA BATIDA";
+      punch.classList.add("ok");
+    } else {
+      punch.textContent = `FALTAM ${currency(dailyGoalCents - todaySalesCents)} PARA A META DO DIA`;
+      punch.classList.remove("ok");
+    }
+  }
+
+  // Metas (dia e mes) em barras finas.
+  const dayPct = dailyGoalCents > 0 ? Math.min(100, Math.round((todaySalesCents / dailyGoalCents) * 100)) : 100;
+  setTextSafe("#gestaoDayTarget", currency(dailyGoalCents));
+  setTextSafe("#gestaoDayActual", `Hoje: ${currency(todaySalesCents)}`);
+  setTextSafe("#gestaoDayPct", `${dayPct}%`);
+  const dayBar = $("#gestaoDayBar");
+  if (dayBar) { dayBar.style.width = `${dayPct}%`; dayBar.classList.toggle("done", dayPct >= 100); }
+
+  const monthGoalCents = cs.monthGoalCents || 0;
+  const monthSalesCents = cs.monthSalesCents || 0;
+  const monthPct = monthGoalCents > 0 ? Math.min(100, Math.round((monthSalesCents / monthGoalCents) * 100)) : 0;
+  setTextSafe("#gestaoMonthTarget", monthGoalCents ? currency(monthGoalCents) : "sem meta");
+  setTextSafe("#gestaoMonthActual", `Acumulado: ${currency(monthSalesCents)}`);
+  setTextSafe("#gestaoMonthPct", monthGoalCents ? `${monthPct}%` : "configure na tela de Relatórios");
+  const monthBar = $("#gestaoMonthBar");
+  if (monthBar) { monthBar.style.width = `${monthPct}%`; monthBar.classList.toggle("done", monthPct >= 100); }
+
+  // Precisa de voce: o que pede acao hoje.
+  const alertsEl = $("#gestaoAlerts");
+  if (alertsEl) {
+    const ha = state.hudAlerts || {};
+    const items = [];
+    if (ha.overdueBillsCount > 0) items.push(`<div class="gestaoAlert danger"><span><strong>${ha.overdueBillsCount} ${ha.overdueBillsCount === 1 ? "conta vencida" : "contas vencidas"}</strong> (${currency(ha.overdueBillsCents || 0)})</span><button type="button" data-view-go="expenses" data-pending="late">Ver vencidas</button></div>`);
+    if (ha.zeroStockCount > 0) items.push(`<div class="gestaoAlert warn"><span><strong>${ha.zeroStockCount} ${ha.zeroStockCount === 1 ? "produto com estoque zerado" : "produtos com estoque zerado ou negativo"}</strong></span><button type="button" data-view-go="products" data-pending="stock">Ver estoque</button></div>`);
+    if (ha.lateDebtsCount > 0) items.push(`<div class="gestaoAlert warn"><span><strong>${ha.lateDebtsCount} ${ha.lateDebtsCount === 1 ? "fiado aberto" : "fiados abertos"} há mais de 30 dias</strong> (${currency(ha.lateDebtsCents || 0)})</span><button type="button" data-view-go="clients" data-pending="debt">Ver clientes</button></div>`);
+    alertsEl.hidden = !items.length;
+    alertsEl.innerHTML = items.join("");
+  }
+
+  // Contas chegando: vencidas primeiro, no maximo 6.
+  const billsEl = $("#gestaoBillsList");
+  if (billsEl) {
+    const rows = bills.slice().sort((a, b) => String(expDay(a)).localeCompare(String(expDay(b)))).slice(0, 6);
+    billsEl.innerHTML = rows.length
+      ? rows.map(b => {
+          const late = expDay(b) < today;
+          const due = new Date(b.at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
+          return `<li class="${late ? "late" : ""}"><span class="gestaoBillName">${html(b.description || "Conta")}</span><span class="gestaoBillDue">${late ? "vencida" : "vence"} ${due}</span><strong>${currency(b.amountCents || 0)}</strong></li>`;
+        }).join("")
+      : `<li class="gestaoBillsEmpty">Nenhuma conta vencendo por agora — folga no caixa.</li>`;
+  }
+}
+
 function render() {
   if (!state) return;
   renderBillsBanner();
   renderDashboardCockpit();
+  renderGestaoHome();
   renderPosMachineDue();
   document.querySelectorAll("[data-admin-only]").forEach(el => { el.hidden = state.user.role !== "admin"; });
   renderMachines();
@@ -4499,7 +4587,7 @@ function view(name) {
   if (mktSub) mktSub.classList.toggle("open", name === "marketing");
   // O submenu abre no fim do menu (que rola por dentro): traz os itens dele para a vista.
   if (mktSub && name === "marketing") requestAnimationFrame(() => mktSub.scrollIntoView({ block: "nearest" }));
-  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação", leads: "Financeira", crlv: "Consultas & CRLV", print: "Impressão" };
+  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação", leads: "Financeira", crlv: "Consultas & CRLV", print: "Impressão", gestao: "Painel da Loja" };
   const label = titles[name] || "Painel";
   $("#pageTitle").textContent = label;
   document.title = `${label} · Nexcafé`;
@@ -7162,6 +7250,7 @@ function renderPrintInbox() {
           <input class="printCopies" type="number" min="1" max="20" value="1" title="Cópias deste documento" aria-label="Cópias de ${html(file.name)}">
           <button type="button" class="printDuplex" title="Frente e verso (aperte para ligar neste arquivo)">FV</button>
           ${file.kind === "image" ? `<button class="docBtn" data-print-file="${html(file.name)}" data-print-mode="doc9x13" style="font-weight:600;color:#0284c7;" title="Imprime no formato documento (9×13 cm) no topo da folha sem esticar">Doc 9×13</button><button type="button" class="printRotate" data-rotate-file="${html(file.name)}" title="Girar foto 90° no sentido horário">⟳</button>` : ""}
+          ${file.kind === "pdf" && (file.pages || 0) >= 2 ? `<button type="button" class="printNupBtn" data-nup-file="${html(file.name)}" title="Duas páginas por folha em A4 paisagem: 28 páginas viram 14 folhas, cobradas como 14">2 por folha</button>` : ""}
           <button data-print-file="${html(file.name)}" data-print-mode="bw">P&amp;B</button>
           <button data-print-file="${html(file.name)}" data-print-mode="color">Cor</button>
           <button data-print-file="${html(file.name)}" data-print-mode="special">Especial</button>
@@ -7211,51 +7300,86 @@ function renderPrintDaySummary(day) {
     ${day.missingJobs ? `<span class="printDayWarn"><strong>${day.missingJobs}</strong> sem cobrança (${currency(day.missingCents)})</span>` : ""}`;
 }
 
-// Fatura identificada: o atendente ve a folha do boleto e autoriza antes de imprimir.
-// Resolve "authorize" (so as folhas do pagamento), "full" (PDF inteiro) ou "cancel".
+// Cartao de conferencia de paginas: o atendente ve cada folha do PDF, marca o que
+// sai e autoriza antes de gastar papel. Resolve {acao:"authorize",pages}, {acao:"full"} ou {acao:"cancel"}.
 let faturaPreviewResolve = null;
+let faturaPreviewData = null;
+
+function faturaPreviewSelection() {
+  return [...document.querySelectorAll("#faturaPreviewPages input[data-page]:checked")].map(el => parseInt(el.dataset.page, 10)).sort((a, b) => a - b);
+}
+
+function updateFaturaPreviewCharge() {
+  const data = faturaPreviewData;
+  if (!data) return;
+  const selected = faturaPreviewSelection();
+  const folhas = selected.length * data.copies;
+  const printCents = folhas * data.unitCents;
+  const authorize = $("#faturaPreviewAuthorize");
+  if (authorize) authorize.disabled = !selected.length;
+  $("#faturaPreviewHint").textContent = selected.length
+    ? (data.receiptCents
+      ? `Cobrança: ${selected.length} ${selected.length === 1 ? "página" : "páginas"} × ${data.copies} ${data.copies === 1 ? "cópia" : "cópias"} × ${currency(data.unitCents)} = ${currency(printCents)} + recebimento ${currency(data.receiptCents)} (total ${currency(printCents + data.receiptCents)}). O cartão de cobrança abre depois de imprimir.`
+      : `Cobrança: ${selected.length} ${selected.length === 1 ? "página" : "páginas"} × ${data.copies} ${data.copies === 1 ? "cópia" : "cópias"} × ${currency(data.unitCents)} = ${currency(printCents)}. O cartão de cobrança abre depois de imprimir.`)
+    : "Nenhuma página marcada: marque ao menos uma para imprimir.";
+}
 
 function openFaturaPreview(fatura) {
   return new Promise(resolve => {
     const dialog = $("#faturaPreviewDialog");
-    if (!dialog || !fatura || !Array.isArray(fatura.previews) || !fatura.previews.length) { resolve("cancel"); return; }
+    if (!dialog || !fatura || !Array.isArray(fatura.previews) || !fatura.previews.length) { resolve({ acao: "cancel" }); return; }
     faturaPreviewResolve = resolve;
-    const folhas = fatura.printPages.length * fatura.copies;
-    $("#faturaPreviewSummary").textContent = `${fatura.name}: ${fatura.totalPages} ${fatura.totalPages === 1 ? "página" : "páginas"}; o código de barras está na ${fatura.printPages.length === 1 ? "página" : "páginas"} ${fatura.printPages.join(" e ")}. Sai ${folhas} ${folhas === 1 ? "folha" : "folhas"}.`;
-    $("#faturaPreviewHint").textContent = fatura.receiptCents
-      ? `Cobrança: ${folhas} × ${currency(fatura.unitCents)} = ${currency(fatura.printCents)} + recebimento ${currency(fatura.receiptCents)} (total ${currency(fatura.printCents + fatura.receiptCents)}). O cartão de cobrança abre depois de imprimir.`
-      : `Cobrança: ${folhas} × ${currency(fatura.unitCents)} = ${currency(fatura.printCents)}. O cartão de cobrança abre depois de imprimir.`;
-    $("#faturaPreviewPages").innerHTML = fatura.previews.map(row => `<figure><img src="${row.image}" alt="Página ${row.page} da fatura"><figcaption>Página ${row.page} de ${fatura.totalPages} · folha do pagamento</figcaption></figure>`).join("");
+    faturaPreviewData = fatura;
+    $("#faturaPreviewSummary").textContent = fatura.fatura
+      ? `${fatura.name}: ${fatura.totalPages} ${fatura.totalPages === 1 ? "página" : "páginas"} — código de barras na ${fatura.suggested.length === 1 ? "página" : "páginas"} ${fatura.suggested.join(" e ")}. Desmarque o que não precisa sair.`
+      : `${fatura.name}: ${fatura.totalPages} ${fatura.totalPages === 1 ? "página" : "páginas"} — marque as que vão sair na impressora.`;
+    $("#faturaPreviewPages").innerHTML = fatura.previews.map(row => `<figure class="${row.barcode ? "hasBarcode" : ""}">
+        <label class="faturaPagePick" title="Marcar/desmarcar esta página">
+          <input type="checkbox" data-page="${row.page}" ${fatura.suggested.includes(row.page) ? "checked" : ""}>
+          <img src="${row.image}" alt="Página ${row.page}">
+          ${row.barcode ? `<span class="pageBarcodeTag">boleto</span>` : ""}
+        </label>
+        <figcaption>Página ${row.page} de ${fatura.totalPages}</figcaption>
+      </figure>`).join("");
+    updateFaturaPreviewCharge();
     if (!dialog.open) dialog.showModal();
   });
 }
 
 function closeFaturaPreview(acao) {
   const dialog = $("#faturaPreviewDialog");
+  const pages = acao === "authorize" ? faturaPreviewSelection() : [];
   if (dialog?.open) dialog.close();
-  if (faturaPreviewResolve) { const resolve = faturaPreviewResolve; faturaPreviewResolve = null; resolve(acao); }
+  if (faturaPreviewResolve) {
+    const resolve = faturaPreviewResolve;
+    faturaPreviewResolve = null;
+    resolve(acao === "authorize" ? { acao: "authorize", pages: pages.length ? pages : [] } : { acao });
+  }
+  faturaPreviewData = null;
 }
 
-$("#faturaPreviewForm")?.addEventListener("submit", event => { event.preventDefault(); closeFaturaPreview("authorize"); });
+$("#faturaPreviewForm")?.addEventListener("submit", event => { event.preventDefault(); if (faturaPreviewSelection().length) closeFaturaPreview("authorize"); });
+$("#faturaPreviewPages")?.addEventListener("change", updateFaturaPreviewCharge);
 $("#faturaPreviewFull")?.addEventListener("click", () => closeFaturaPreview("full"));
 $("#faturaPreviewCancel")?.addEventListener("click", () => closeFaturaPreview("cancel"));
 $("#faturaPreviewClose")?.addEventListener("click", () => closeFaturaPreview("cancel"));
 $("#faturaPreviewDialog")?.addEventListener("close", () => { if (faturaPreviewResolve) closeFaturaPreview("cancel"); });
 
 async function printInboxFile(name, mode, reprint, password, copies, duplex, escolha) {
-  // Fatura de banco/operadora: cartao de autorizacao mostra a folha identificada
-  // como a do boleto antes de imprimir. Autorizou: imprime so ela. Nao e fatura: fluxo direto.
+  // PDF de varias paginas: cartao de conferencia mostra cada folha, o atendente
+  // marca o que sai e autoriza antes de gastar papel. Nao e multi-pagina: fluxo direto.
   const opt = escolha || {};
   if (!reprint && !opt.printPages && !opt.fullDoc && (mode === "bw" || mode === "color") && !password) {
     const cached = printInboxCache.files.find(file => file.name === name);
     if (cached && cached.kind === "pdf" && (cached.pages || 0) > 1) {
       const qty = Math.min(20, Math.max(1, parseInt(copies, 10) || 1));
+      toast("Conferindo as páginas do PDF...");
       let fatura = null;
       try { fatura = await api("/api/print/inbox/fatura-preview", { name, copies: qty }); } catch { }
-      if (fatura && fatura.fatura) {
-        const acao = await openFaturaPreview(fatura);
-        if (acao === "authorize") return printInboxFile(name, mode, false, null, qty, duplex === true, { printPages: fatura.printPages });
-        if (acao === "full") return printInboxFile(name, mode, false, null, qty, duplex === true, { fullDoc: true });
+      if (fatura && Array.isArray(fatura.previews) && fatura.previews.length) {
+        const escolhaCartao = await openFaturaPreview(fatura);
+        if (escolhaCartao.acao === "authorize" && escolhaCartao.pages.length) return printInboxFile(name, mode, false, null, qty, duplex === true, { printPages: escolhaCartao.pages });
+        if (escolhaCartao.acao === "full") return printInboxFile(name, mode, false, null, qty, duplex === true, { fullDoc: true });
         return; // atendente cancelou: nenhuma folha gasta.
       }
     }
@@ -7271,10 +7395,37 @@ async function printInboxFile(name, mode, reprint, password, copies, duplex, esc
   }
   const quantity = Math.min(20, Math.max(1, parseInt(copies, 10) || 1));
   const frenteVerso = duplex === true;
+  // Janela do Windows nao lança no caixa: avisa antes e aponta o caminho com registro.
+  if (mode === "choose") {
+    const seguir = confirm("A janela do Windows NÃO registra o lançamento no caixa.\n\nPara cópias, use o campo \"Cópias\" da linha com o botão P&B: imprime 2 e abre a cobrança sozinho.\n\nContinuar com a janela do Windows mesmo assim?");
+    if (!seguir) return toast("Cancelado. Para cópias, use o campo \"Cópias\" com o botão P&B.");
+  }
   toast(mode === "choose" ? "Abrindo a janela de impressão do Windows..." : frenteVerso ? "Enviando para a impressora (frente e verso)..." : quantity > 1 ? `Enviando ${quantity} cópias para a impressora...` : "Enviando para a impressora...");
   try {
     const result = await api("/api/print/inbox/print", { name, mode, reprint: reprint === true, copies: quantity, duplex: frenteVerso, ...(password ? { password } : {}), ...(opt.printPages ? { printPages: opt.printPages } : {}), ...(opt.fullDoc ? { fullDoc: true } : {}) });
-    if (result.opened) { toast("Arquivo aberto no Windows: escolha a impressora na janela."); return; }
+    if (result.opened) {
+      // Saiu pela janela do Windows: o atendente conta as folhas e o caixa nao fica furado.
+      const resposta = prompt("O arquivo abriu na janela do Windows.\n\nQuantas folhas saíram na impressora?\n(O lançamento abre com esse número — cancele se nada saiu.)");
+      if (resposta === null) return toast("Nada registrado. Se saiu folha, registre pelo botão Cobrar da linha.");
+      const folhas = Math.max(1, Math.min(500, parseInt(resposta, 10) || 1));
+      try {
+        const manual = await api("/api/print/inbox/manual", { name, sheets: folhas, mode: "bw" });
+        pendingPrintCharge = {
+          jobId: manual.jobId,
+          jobIds: [manual.jobId],
+          name: manual.name,
+          pages: manual.pages,
+          color: manual.color,
+          noColor: manual.noColor,
+          amountCents: manual.amountCents,
+          unitCents: manual.unitCents,
+          printer: manual.printer
+        };
+        openPrintChargeDialog(pendingPrintCharge);
+        toast("Lançamento aberto: confira o valor pelas folhas que saíram.");
+      } catch (cause) { toast(cause.message); }
+      return;
+    }
     if (result.printPages) toast(`Fatura: saiu só a folha do pagamento (pág. ${result.printPages.join(", ")} de ${result.totalPages}).`);
     const cached = printInboxCache.files.find(file => file.name === name);
     if (cached) {
@@ -7398,6 +7549,42 @@ async function printInboxGrid(reprint = false) {
   }
 }
 
+// 2 por folha: 28 paginas viram 14 folhas A4 paisagem, cobradas como 14. Tudo dentro
+// do painel, com registro no caixa — sem a janela de impressao do Windows.
+async function printInboxNup(name, copies, reprint = false) {
+  const qty = Math.min(20, Math.max(1, parseInt(copies, 10) || 1));
+  toast("Montando 2 páginas por folha...");
+  try {
+    const result = await api("/api/print/inbox/print-nup", { name, mode: "bw", copies: qty, ...(reprint ? { reprint: true } : {}) });
+    const cached = printInboxCache.files.find(file => file.name === name);
+    if (cached) {
+      cached.printedAt = new Date().toISOString();
+      cached.jobId = result.jobId;
+      cached.jobPages = result.pages;
+      cached.jobColor = result.color;
+      cached.jobAmountCents = result.amountCents;
+    }
+    renderPrintInbox();
+    pendingPrintCharge = {
+      jobId: result.jobId,
+      jobIds: [result.jobId],
+      name: result.name,
+      pages: result.pages,
+      color: result.color,
+      noColor: result.noColor,
+      amountCents: result.amountCents,
+      unitCents: result.unitCents,
+      printer: result.printer
+    };
+    openPrintChargeDialog(pendingPrintCharge);
+  } catch (cause) {
+    if (!reprint && /já foi impresso/i.test(cause.message) && confirm(`${cause.message}\n\nImprimir 2 por folha de novo?`)) {
+      return printInboxNup(name, qty, true);
+    }
+    toast(cause.message);
+  }
+}
+
 // Preco do servico "Recebimento de Arquivos" (#20): vale mesmo fora da aba Impressao (auto-abertura).
 function printReceiptCents() {
   if (printInboxCache.receiptCents) return printInboxCache.receiptCents;
@@ -7480,6 +7667,16 @@ document.addEventListener("click", event => {
     const copies = parseInt(cell?.querySelector(".printCopies")?.value, 10) || 1;
     const duplex = cell?.querySelector(".printDuplex")?.classList.contains("active") === true;
     printInboxFile(printButton.dataset.printFile, printButton.dataset.printMode, false, null, copies, duplex);
+    return;
+  }
+
+  // 2 paginas por folha: o documento sai inteiro em metade das folhas e abre a cobranca.
+  const nupButton = event.target.closest("[data-nup-file]");
+  if (nupButton) {
+    const cell = nupButton.closest(".printInboxActions");
+    const copies = parseInt(cell?.querySelector(".printCopies")?.value, 10) || 1;
+    printInboxNup(nupButton.dataset.nupFile, copies);
+    return;
   }
 });
 

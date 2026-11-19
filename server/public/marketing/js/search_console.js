@@ -51,6 +51,10 @@ function renderSc() {
     <details class="mt-3"><summary class="ficha-subtitulo cursor-pointer">Buscas que mais mostraram o site (${s.buscas.length})</summary>
       <table class="ficha-tabela mt-1"><thead><tr><th>Busca</th><th>Aparições</th><th>Cliques</th><th>Posição</th></tr></thead><tbody>${s.buscas.map(b => `<tr><td>${escaparHtml(b.busca)}</td><td class="text-center">${scNum(b.impressoes)}</td><td class="text-center">${scNum(b.cliques)}</td><td class="text-center">${b.posicao}</td></tr>`).join('')}</tbody></table>
     </details>
+    ${(s.buscasComCliques || []).length ? `<details class="mt-3" open><summary class="ficha-subtitulo cursor-pointer">Buscas que trouxeram clique (${s.buscasComCliques.length})</summary>
+      <p class="text-[10px] text-gray-500 mt-1 mb-1">Quem clicou procurou isto — começa aqui para repetir o que já funciona. Busca de marca costuma ter pouca aparição e não aparece na lista de cima.</p>
+      <table class="ficha-tabela mt-1"><thead><tr><th>Busca</th><th>Cliques</th><th>Aparições</th><th>Posição</th></tr></thead><tbody>${s.buscasComCliques.map(b => `<tr><td>${escaparHtml(b.busca)}</td><td class="text-center font-bold text-green-800">${scNum(b.cliques)}</td><td class="text-center">${scNum(b.impressoes)}</td><td class="text-center">${b.posicao}</td></tr>`).join('')}</tbody></table>
+    </details>` : ''}
     <p class="text-[10px] text-gray-500 mt-2">Posição média: 1 é o primeiro resultado; abaixo de 10 costuma ser a primeira página. CTR é a parte das aparições que virou clique.</p>`;
 }
 

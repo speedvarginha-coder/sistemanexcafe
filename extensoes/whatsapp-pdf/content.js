@@ -1,12 +1,13 @@
-// Baixa automaticamente PDFs recebidos em conversas INDIVIDUAIS do WhatsApp Web.
+// Baixa automaticamente PDFs e IMAGENS recebidos em conversas INDIVIDUAIS do WhatsApp Web.
 //
 // Como funciona: roda no mundo da propria pagina para usar o objeto WPP que a
 // extensao WaSpeed ja carrega no WhatsApp Web. O WPP avisa quando chega mensagem
-// nova; aqui filtramos PDF, ignoramos grupos e mensagens enviadas por nos,
-// baixamos o arquivo salvando com o NOME DO CLIENTE na frente
-// ("Maria - boleto.pdf"), para a fila de impressao do Nexcafe mostrar de quem e.
-// O Chrome salva na pasta de downloads configurada
-// (L:\Meu Drive\Rotina Diaria\Recebimento de Arquivos).
+// nova; aqui filtramos PDF e imagem (JPEG, PNG, WebP — foto de documento, RG,
+// CNH, comprovante), ignoramos grupos, figurinhas (sticker), GIF e mensagens
+// enviadas por nos, e baixamos o arquivo salvando com o NOME DO CLIENTE na
+// frente ("Maria - boleto.pdf", "Beatriz - foto (1).jpeg"), para a fila de
+// impressao do Nexcafe mostrar de quem e. O Chrome salva na pasta de downloads
+// configurada (L:\Meu Drive\Rotina Diaria\Recebimento de Arquivos).
 (() => {
   "use strict";
   if (window.__nexcafePdfAtivo) return;
@@ -15,9 +16,12 @@
   const vistos = new Set();
   const espera = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+  const IMAGEM_MIME = /^image\/(jpeg|jpg|png|webp)$/i;
+  const ARQUIVO_EXT = /\.(pdf|jpe?g|png|webp)$/i;
+
   function nomeSeguro(nome) {
     const limpo = String(nome || "").replace(/[\\/:*?"<>|]+/g, "-").trim().replace(/[.\s]+$/, "").slice(0, 120);
-    return /\.pdf$/i.test(limpo) ? limpo : `${limpo || "documento"}.pdf`;
+    return ARQUIVO_EXT.test(limpo) ? limpo : `${limpo || "arquivo"}.pdf`;
   }
 
   // Nome do cliente da conversa: a fila de impressao mostra de quem e o arquivo.
@@ -42,23 +46,34 @@
   }
 
   function nomeDoArquivo(msg) {
-    return msg.mediaData?.filename || msg.filename || msg.body || `whatsapp-${Date.now()}.pdf`;
+    return msg.mediaData?.filename || msg.filename || msg.body || `whatsapp-${Date.now()}`;
   }
 
-  function parecePdf(msg) {
+  // PDF ou foto do cliente: documento anexado, imagem solta (menos figurinha e GIF,
+  // que nao sao coisa de imprimir).
+  function pareceImprimivel(msg) {
     const mimetype = String(msg.mimetype || msg.mediaData?.mimetype || "").toLowerCase();
     const nome = String(nomeDoArquivo(msg));
-    return msg.type === "document" || mimetype === "application/pdf" || /\.pdf$/i.test(nome);
+    if (/^image\/(gif|tiff)$/i.test(mimetype)) return false;
+    if (msg.type === "sticker" || msg.type === "video" || msg.type === "audio") return false;
+    if (msg.type === "document" || msg.type === "image") return true;
+    return mimetype === "application/pdf" || IMAGEM_MIME.test(mimetype) || ARQUIVO_EXT.test(nome);
   }
 
-  async function ehBlobPdf(blob, nome) {
-    if (/pdf/i.test(String(blob.type || "")) || /\.pdf$/i.test(String(nome || ""))) return true;
+  async function ehBlobImprimivel(blob, nome) {
+    const tipo = String(blob.type || "").toLowerCase();
+    if (/pdf/i.test(tipo) || /\.pdf$/i.test(String(nome || ""))) return true;
+    if (IMAGEM_MIME.test(tipo) || /\.(jpe?g|png|webp)$/i.test(String(nome || ""))) return true;
     try {
       const cabecalho = new Uint8Array(await blob.slice(0, 4).arrayBuffer());
-      return cabecalho[0] === 0x25 && cabecalho[1] === 0x50 && cabecalho[2] === 0x44 && cabecalho[3] === 0x46;
+      if (cabecalho[0] === 0x25 && cabecalho[1] === 0x50 && cabecalho[2] === 0x44 && cabecalho[3] === 0x46) return true; // %PDF
+      if (cabecalho[0] === 0xff && cabecalho[1] === 0xd8) return true; // JPEG
+      if (cabecalho[0] === 0x89 && cabecalho[1] === 0x50 && cabecalho[2] === 0x4e && cabecalho[3] === 0x47) return true; // PNG
+      if (cabecalho[0] === 0x52 && cabecalho[1] === 0x49 && cabecalho[2] === 0x46 && cabecalho[3] === 0x46) return true; // RIFF (WebP)
     } catch {
       return false;
     }
+    return false;
   }
 
   function ehGrupo(msg) {
@@ -72,7 +87,7 @@
       id = msg.id?._serialized || String(msg.id || "");
       if (!id || vistos.has(id)) return;
       const deMim = Boolean(msg.fromMe ?? msg.id?.fromMe);
-      if (deMim || ehGrupo(msg) || !parecePdf(msg)) return;
+      if (deMim || ehGrupo(msg) || !pareceImprimivel(msg)) return;
 
       // Marca antes de baixar para nao repetir quando o WhatsApp reenvia o evento.
       vistos.add(id);
@@ -84,12 +99,12 @@
         try {
           const blob = await window.WPP.chat.downloadMedia(id);
           if (blob && blob.size > 0) {
-            if (!(await ehBlobPdf(blob, nome))) {
-              console.log(`[Nexcafe] ignorado (nao e PDF): ${nome}`);
+            if (!(await ehBlobImprimivel(blob, nome))) {
+              console.log(`[Nexcafe] ignorado (nao e PDF nem foto): ${nome}`);
               return;
             }
             salvar(blob, nomeFinal);
-            console.log(`[Nexcafe] PDF baixado: ${nomeFinal} (${blob.size} bytes)`);
+            console.log(`[Nexcafe] arquivo baixado: ${nomeFinal} (${blob.size} bytes)`);
             return;
           }
         } catch (erro) {
@@ -105,7 +120,7 @@
   function iniciar() {
     if (!window.WPP?.on || !window.WPP?.chat?.downloadMedia) return false;
     window.WPP.on("chat.new_message", baixar);
-    console.log("[Nexcafe] download automatico de PDF ativo (somente conversas individuais).");
+    console.log("[Nexcafe] download automatico de PDF e fotos ativo (somente conversas individuais).");
     return true;
   }
 

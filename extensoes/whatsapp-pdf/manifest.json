@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Nexcafe - Baixar PDFs do WhatsApp",
-  "version": "1.0.0",
-  "description": "Baixa automaticamente os PDFs recebidos em conversas individuais do WhatsApp Web, para o sistema de impressao do Nexcafe.",
+  "name": "Nexcafe - Baixar PDFs e fotos do WhatsApp",
+  "version": "1.1.0",
+  "description": "Baixa automaticamente PDFs e imagens (JPEG, PNG, WebP) recebidos em conversas individuais do WhatsApp Web, para a fila de impressao do Nexcafe.",
   "content_scripts": [
     {
       "matches": ["https://web.whatsapp.com/*"],

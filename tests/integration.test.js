@@ -1623,7 +1623,12 @@ test("fatura: cartao de autorizacao mostra a folha do boleto e imprime so o que 
     info: async () => ({ ok: true, pages: 3, kind: "pdf", valid: true }),
     barcode: async () => ({ ok: true, total: 3, pages: [1] }),
     pageImage: async (file, page) => ({ ok: true, page, total: 3, image: Buffer.from("imagem-jpg-fake").toString("base64") }),
-    print: async job => { printed.push(job); return { ok: true, pages: job.pages === "1" ? 1 : 3 }; },
+    print: async job => {
+      printed.push(job);
+      // O spooler devolve as paginas reais que sairam: as pedidas ou todas.
+      const count = job.pages ? String(job.pages).split(",").length : 3;
+      return { ok: true, pages: count };
+    },
   };
   const server = createApp({ dataDir, printRunner });
   await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
@@ -1641,31 +1646,127 @@ test("fatura: cartao de autorizacao mostra a folha do boleto e imprime so o que 
     const login = await fetch(`${base}/api/login`, { method: "POST", headers: { "content-type": "application/json", origin: base }, body: JSON.stringify({ name: "admin", password: "senha-teste-123" }) });
     cookie = login.headers.get("set-cookie").split(";")[0];
     assert.equal((await request("/api/settings/print-route", { black: "HP Laser MFP 432 PCL6", color: "HP Laser MFP 432 PCL6", inboxDir })).status, 200);
-    // Cartao de autorizacao: identifica a folha 1 de 3, devolve a imagem e os centavos.
+    // Cartao de conferencia: 3 paginas, boleto na 1; devolve miniatura de TODAS e a sugestao.
     const preview = await request("/api/print/inbox/fatura-preview", { name: "Fatura_Itau_3pag.pdf", copies: 1 });
     assert.equal(preview.status, 200);
     assert.equal(preview.payload.fatura, true);
-    assert.deepEqual(preview.payload.printPages, [1]);
+    assert.deepEqual(preview.payload.suggested, [1]);
     assert.equal(preview.payload.totalPages, 3);
-    assert.equal(preview.payload.previews.length, 1);
+    assert.equal(preview.payload.previews.length, 3, "mostra todas as paginas para o atendente escolher");
+    assert.equal(preview.payload.previews[0].barcode, true);
+    assert.equal(preview.payload.previews[1].barcode, false);
     assert.match(preview.payload.previews[0].image, /^data:image\/jpeg;base64,/);
-    assert.equal(preview.payload.printCents, 100);
-    // Autorizado: imprime so a pagina autorizada, sem redetectar nada.
+    // Fatura: autorizou a sugestao, imprime so a folha do boleto, sem redetectar nada.
     const autorizado = await request("/api/print/inbox/print", { name: "Fatura_Itau_3pag.pdf", mode: "bw", copies: 1, printPages: [1] });
     assert.equal(autorizado.status, 200);
     assert.equal(autorizado.payload.pages, 1);
     assert.equal(autorizado.payload.amountCents, 100);
     assert.deepEqual(autorizado.payload.printPages, [1]);
     assert.equal(printed[0].pages, "1", "imprime apenas a folha autorizada");
+    // Cliente queria so as paginas 1 e 2 de 3: atendente marcou as duas, saem as duas.
+    const parcial = await request("/api/print/inbox/print", { name: "Fatura_Itau_3pag.pdf", mode: "bw", copies: 1, reprint: true, printPages: [1, 2] });
+    assert.equal(parcial.status, 200);
+    assert.deepEqual(parcial.payload.printPages, [1, 2]);
+    assert.equal(parcial.payload.pages, 2);
+    assert.equal(parcial.payload.amountCents, 200, "cobra as folhas que sairam");
+    assert.equal(printed[1].pages, "1,2", "imprime exatamente as paginas marcadas");
     // Atendente escolheu o PDF inteiro: respeita, mesmo com boleto na pagina 1.
     const inteiro = await request("/api/print/inbox/print", { name: "Fatura_Itau_3pag.pdf", mode: "bw", copies: 1, reprint: true, fullDoc: true });
     assert.equal(inteiro.status, 200);
     assert.equal(inteiro.payload.pages, 3);
     assert.equal(inteiro.payload.amountCents, 300);
-    assert.equal(printed[1].pages, undefined, "fullDoc imprime o documento inteiro");
+    assert.equal(printed[2].pages, undefined, "fullDoc imprime o documento inteiro");
     // Pagina autorizada fora do total: ignora e cai na deteccao automatica.
     const fora = await request("/api/print/inbox/print", { name: "Fatura_Itau_3pag.pdf", mode: "bw", copies: 1, reprint: true, printPages: [9] });
     assert.equal(fora.status, 200);
     assert.equal(fora.payload.pages, 1, "pagina inexistente ignora e detecta o boleto");
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test("2 por folha: 28 paginas viram 14 folhas cobradas e abre a cobranca", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-nup-"));
+  const inboxDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-nup-inbox-"));
+  fs.writeFileSync(path.join(inboxDir, "Trabalho_28pag.pdf"), Buffer.concat([Buffer.from("%PDF-1.4 teste"), Buffer.alloc(8)]));
+  const printed = [];
+  const printRunner = {
+    list: async () => ({ ok: true, printers: ["HP Laser MFP 432 PCL6"] }),
+    info: async () => ({ ok: true, pages: 28, kind: "pdf", valid: true }),
+    nup: async (file, outFile) => {
+      fs.writeFileSync(outFile, Buffer.from("%PDF-1.4 2porfolha"));
+      return { ok: true, pages: 28, sheets: 14, output: outFile };
+    },
+    print: async job => { printed.push(job); return { ok: true, pages: job.copies ? 14 * job.copies : 14 }; },
+  };
+  const server = createApp({ dataDir, printRunner });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    const login = await fetch(`${base}/api/login`, { method: "POST", headers: { "content-type": "application/json", origin: base }, body: JSON.stringify({ name: "admin", password: "senha-teste-123" }) });
+    cookie = login.headers.get("set-cookie").split(";")[0];
+    assert.equal((await request("/api/settings/print-route", { black: "HP Laser MFP 432 PCL6", color: "HP Laser MFP 432 PCL6", inboxDir })).status, 200);
+    const primeiro = await request("/api/print/inbox/print-nup", { name: "Trabalho_28pag.pdf", mode: "bw", copies: 1 });
+    assert.equal(primeiro.status, 200);
+    assert.equal(primeiro.payload.pages, 14, "28 paginas viram 14 folhas");
+    assert.equal(primeiro.payload.amountCents, 1400, "cobra as 14 folhas que sairam");
+    assert.equal(primeiro.payload.name.includes("2 por folha"), true);
+    assert.equal(printed.length, 1);
+    // Mesmo arquivo 2 por folha de novo: pede confirmacao (409) e nao gasta folha.
+    const repetido = await request("/api/print/inbox/print-nup", { name: "Trabalho_28pag.pdf", mode: "bw", copies: 1 });
+    assert.equal(repetido.status, 409);
+    assert.match(repetido.payload.error, /ja foi impresso 2 por folha/i);
+    assert.equal(printed.length, 1, "bloqueado nao imprime");
+    // Confirmado: sai de novo.
+    assert.equal((await request("/api/print/inbox/print-nup", { name: "Trabalho_28pag.pdf", mode: "bw", copies: 1, reprint: true })).status, 200);
+    assert.equal(printed.length, 2);
+    // 2 copias: 14 folhas x 2 = 28 folhas cobradas.
+    const copias = await request("/api/print/inbox/print-nup", { name: "Trabalho_28pag.pdf", mode: "bw", copies: 2, reprint: true });
+    assert.equal(copias.payload.pages, 28);
+    assert.equal(copias.payload.amountCents, 2800);
+  } finally { await new Promise(resolve => server.close(resolve)); }
+});
+
+test("janela do Windows: atendente informa as folhas e o caixa nao fica furado", async () => {
+  const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-manual-"));
+  const inboxDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-manual-inbox-"));
+  fs.writeFileSync(path.join(inboxDir, "Juliana - declaracao.pdf"), Buffer.concat([Buffer.from("%PDF-1.4 teste"), Buffer.alloc(8)]));
+  const printRunner = { list: async () => ({ ok: true, printers: ["HP Laser MFP 432 PCL6"] }) };
+  const server = createApp({ dataDir, printRunner });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  let cookie = "";
+  async function request(route, data) {
+    const headers = {};
+    if (cookie) headers.cookie = cookie;
+    if (data !== undefined) { headers["content-type"] = "application/json"; headers.origin = base; }
+    const response = await fetch(base + route, { method: data === undefined ? "GET" : "POST", headers, body: data === undefined ? undefined : JSON.stringify(data) });
+    return { status: response.status, payload: await response.json() };
+  }
+  try {
+    await request("/api/setup", { name: "admin", password: "senha-teste-123" });
+    const login = await fetch(`${base}/api/login`, { method: "POST", headers: { "content-type": "application/json", origin: base }, body: JSON.stringify({ name: "admin", password: "senha-teste-123" }) });
+    cookie = login.headers.get("set-cookie").split(";")[0];
+    assert.equal((await request("/api/settings/print-route", { black: "HP Laser MFP 432 PCL6", color: "HP Laser MFP 432 PCL6", inboxDir })).status, 200);
+    // Duas folhas pela janela do Windows: job manual com cobranca de 2 folhas.
+    const manual = await request("/api/print/inbox/manual", { name: "Juliana - declaracao.pdf", sheets: 2, mode: "bw" });
+    assert.equal(manual.status, 200);
+    assert.equal(manual.payload.pages, 2);
+    assert.equal(manual.payload.amountCents, 200, "cobra as 2 folhas que sairam");
+    assert.match(manual.payload.name, /janela do Windows/);
+    // A cobranca do trabalho manual entra no caixa como qualquer outra.
+    const cobrado = await request("/api/print/inbox/charge", { jobId: manual.payload.jobId, amountCents: 200, receipt: false, target: "pending" });
+    assert.equal(cobrado.status, 201);
+    assert.equal(cobrado.payload.charge.items[0].quantity, 2, "2 folhas no cupom");
+    // Sem arquivo na pasta: recusa.
+    const sumido = await request("/api/print/inbox/manual", { name: "nao-existe.pdf", sheets: 1, mode: "bw" });
+    assert.equal(sumido.status, 404);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });

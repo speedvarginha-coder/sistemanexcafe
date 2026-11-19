@@ -56,6 +56,12 @@ def produto(termo, grupo):
     return grupo
 
 
+def cauda_por_palavras(termo):
+    """Cauda pelo tamanho da frase: 1-2 palavras = curta, 3 = media, 4 ou mais = longa."""
+    palavras = len(re.sub(r"[^\w\s]", " ", str(termo)).split())
+    return "Cauda Curta" if palavras <= 2 else ("Cauda Média" if palavras == 3 else "Cauda Longa")
+
+
 def main():
     termos = {}
     for linha in linhas("Speed_Financeira_Pesquisa_Palavras_Chave_Completa.xlsx", "Palavras-Chave Mestras", "Termo de Busca / Palavra-Chave"):
@@ -90,6 +96,12 @@ def main():
         tendencia = str(linha["Mud. YoY"] or "").strip()
         if tendencia and tendencia != "0%":
             item["tendencia"] = tendencia
+
+    # Cauda que faltava (termos da planilha mestra, sem o tipo da Matriz 50):
+    # classificados pelo tamanho da frase — 1-2 palavras = curta, 3 = media, 4 ou mais = longa.
+    for item in termos.values():
+        if not item.get("cauda"):
+            item["cauda"] = cauda_por_palavras(item["termo"])
 
     lista = sorted(termos.values(), key=lambda t: (-(t.get("mg") or 0), t["termo"]))
     dados = {
