@@ -46,7 +46,15 @@
   }
 
   function nomeDoArquivo(msg) {
-    return msg.mediaData?.filename || msg.filename || msg.body || `whatsapp-${Date.now()}`;
+    const nome = String(msg.mediaData?.filename || msg.filename || "").trim();
+    // Foto do WhatsApp vem sem nome de arquivo: o body carrega o base64 (comeca com /9j/, iVBOR ou data:).
+    // Nesse caso inventa um nome limpo com dia e hora, como o atendente chamaria.
+    if (nome && !/^data:|^\/9j\/|^iVBOR/i.test(nome)) return nome;
+    if (msg.type === "image") {
+      const agora = new Date();
+      return `foto ${agora.toLocaleDateString("en-CA")} ${agora.toTimeString().slice(0, 5).replace(":", "h")}.jpeg`;
+    }
+    return `arquivo-${Date.now()}.pdf`;
   }
 
   // PDF ou foto do cliente: documento anexado, imagem solta (menos figurinha e GIF,
