@@ -56,7 +56,9 @@
 
       </div>
 
-      <form id="authForm" class="authForm">
+      <!-- method="post": se o formulário for enviado antes do app.js assumir o login, a senha não vai para o endereço. -->
+      <script>if (/[?&]password=/.test(location.search)) history.replaceState(null, "", location.pathname + location.hash);</script>
+      <form id="authForm" class="authForm" method="post" action="/">
 
         <label>
 
@@ -132,144 +134,130 @@
 
       <nav aria-label="Navegação principal">
 
-        <div class="navLabel">Operação</div>
+        <!-- Alternador de Modo: Balcão vs Gestão/Marketing -->
+        <div class="sidebarModeToggle" id="sidebarModeToggle">
+          <button type="button" class="modeBtn active" id="btnModeBalcao">Balcão</button>
+          <button type="button" class="modeBtn" id="btnModeGestao">Gestão &amp; Mkt</button>
+        </div>
 
-        <button data-view="machines" class="active">
+        <!-- GRUPO 1: OPERAÇÃO DE BALCÃO (Acesso Imediato) -->
+        <div class="navGroupBalcao" id="navGroupBalcao">
+          <div class="navLabel">Operação Balcão</div>
 
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-
-          <span>Atendimento</span>
-
-        </button>
-
-        <button data-view="cash">
-
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-
-          <span>Caixa e vendas</span>
-
-        </button>
-
-        <button data-view="clients">
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-
-          <span>Clientes</span>
-
-        </button>
-
-        <button data-view="leads">
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18l-7 9v6l-4 3v-9z"/></svg>
-
-          <span>Financeira</span>
-
-        </button>
-
-        <button data-view="products">
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-
-          <span>Catálogo e estoque</span>
-
-        </button>
-
-        <button data-view="crlv">
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-
-          <span>Consultas &amp; CRLV</span>
-
-        </button>
-
-        <div class="navLabel">Gestão</div>
-
-        <button data-view="reports">
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-
-          <span>Relatórios</span>
-
-        </button>
-
-        <button data-view="plan" data-admin-only>
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>
-
-          <span>Plano de ação</span>
-
-        </button>
-
-        <button data-view="expenses" data-admin-only>
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-2-2-2 2-3-2-3 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg>
-
-          <span>Despesas</span>
-
-        </button>
-
-        <div class="navLabel">Administração</div>
-
-        <button data-view="settings">
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-
-          <span>Configurações</span>
-
-        </button>
-
-        <button data-view="users">
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-
-          <span>Operadores</span>
-
-        </button>
-
-        <button data-view="vault" data-admin-only>
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-
-          <span>Logins bancários</span>
-
-        </button>
-
-        <button data-view="marketing" data-admin-only>
-
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
-
-          <span>Speed Marketing</span>
-
-        </button>
-
-        <div id="marketingSubMenu" class="sidebar-sub-menu">
-          <button type="button" class="sub-nav-btn active" data-mkt-tab="overview">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-            <span>Visão Geral</span>
+          <button data-view="machines" class="active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>Atendimento</span>
           </button>
-          <button type="button" class="sub-nav-btn" data-mkt-tab="calendario">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span>Calendário</span>
+
+          <button data-view="cash">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+            <span>Caixa e vendas</span>
           </button>
-          <button type="button" class="sub-nav-btn" data-mkt-tab="social">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-            <span>Social & Artes</span>
+
+          <button data-view="print">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            <span>Impressão</span>
           </button>
-          <button type="button" class="sub-nav-btn" data-mkt-tab="marketing">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <span>WhatsApp & Copys</span>
+
+          <button data-view="clients">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Clientes</span>
           </button>
-          <button type="button" class="sub-nav-btn" data-mkt-tab="ads">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-            <span>Anúncios</span>
+
+          <button data-view="products">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>Catálogo e estoque</span>
           </button>
-          <button type="button" class="sub-nav-btn" data-mkt-tab="gmb">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            <span>Google Meu Negócio</span>
+
+          <button data-view="crlv">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <span>Consultas &amp; CRLV</span>
           </button>
-          <button type="button" class="sub-nav-btn" data-mkt-tab="palavras">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            <span>Palavras-chave</span>
+
+          <!-- Botão expansor discreto para a retaguarda no modo balcão -->
+          <button type="button" class="btnExpandRetaguarda" id="btnExpandRetaguarda">
+            <span>📁 Retaguarda &amp; Gestão</span>
+            <span class="arrowIcon">▼</span>
+          </button>
+        </div>
+
+        <!-- GRUPO 2: RETAGUARDA & GESTÃO (Speed Financeira, Finanças e Marketing) -->
+        <div class="navGroupRetaguarda" id="navGroupRetaguarda">
+          <div class="navLabel">Speed Financeira</div>
+
+          <button data-view="leads">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18l-7 9v6l-4 3v-9z"/></svg>
+            <span>Financeira (Leads)</span>
+          </button>
+
+          <button data-view="vault" data-admin-only>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span>Logins bancários</span>
+          </button>
+
+          <div class="navLabel">Gestão &amp; Finanças</div>
+
+          <button data-view="reports">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span>Relatórios</span>
+          </button>
+
+          <button data-view="plan" data-admin-only>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4"/><path d="M4 4h12l-2 4 2 4H4"/></svg>
+            <span>Plano de ação</span>
+          </button>
+
+          <button data-view="expenses" data-admin-only>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-2-2-2 2-3-2-3 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="12" y2="15"/></svg>
+            <span>Despesas</span>
+          </button>
+
+          <div class="navLabel">Marketing &amp; Admin</div>
+
+          <button data-view="marketing" data-admin-only>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+            <span>Speed Marketing</span>
+          </button>
+
+          <div id="marketingSubMenu" class="sidebar-sub-menu">
+            <button type="button" class="sub-nav-btn active" data-mkt-tab="overview">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+              <span>Visão Geral</span>
+            </button>
+            <button type="button" class="sub-nav-btn" data-mkt-tab="calendario">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Calendário</span>
+            </button>
+            <button type="button" class="sub-nav-btn" data-mkt-tab="social">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              <span>Social & Artes</span>
+            </button>
+            <button type="button" class="sub-nav-btn" data-mkt-tab="marketing">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span>WhatsApp & Copys</span>
+            </button>
+            <button type="button" class="sub-nav-btn" data-mkt-tab="ads">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <span>Anúncios</span>
+            </button>
+            <button type="button" class="sub-nav-btn" data-mkt-tab="gmb">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>Google Meu Negócio</span>
+            </button>
+            <button type="button" class="sub-nav-btn" data-mkt-tab="palavras">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span>Pesquisa SEO</span>
+            </button>
+          </div>
+
+          <button data-view="settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span>Configurações</span>
+          </button>
+
+          <button data-view="users">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Operadores</span>
           </button>
         </div>
 
@@ -379,6 +367,7 @@
 
         <section id="view-machines" class="view">
 
+          <div id="fleetNotice" class="fleetNotice" hidden></div>
           <div id="dashAlertsHud" class="dashAlertsHud" hidden></div>
 
           <div class="goalRow">
@@ -469,7 +458,7 @@
 
           <div class="metrics" id="machineMetrics"></div>
 
-          <div id="fleetNotice" class="fleetNotice" hidden></div>
+          
 
           <!-- Barra de Filtros de Frota & Alternância de Visualização -->
 
@@ -1331,11 +1320,64 @@
 
           <div class="filterRow">
 
+            <label><input type="checkbox" id="clientLateOnly"> Fiado aberto há mais de 30 dias</label>
             <input id="clientSearch" type="search" placeholder="Localizar por nome, telefone ou login de acesso...">
 
           </div>
 
           <div id="clientList" class="tableWrap"></div>
+
+        </section>
+
+        <!-- Visão: Impressão (fila da pasta de recebimento) -->
+
+        <section id="view-print" class="view" hidden>
+
+          <div class="sectionHead">
+
+            <div>
+
+              <h2>Impressão</h2>
+
+              <p>Arquivos que chegaram pelo WhatsApp e pela internet. Um clique imprime na impressora certa e já prepara a cobrança.</p>
+
+            </div>
+
+            <button id="printInboxRefresh" type="button" class="secondaryBtn">Atualizar pasta</button>
+
+            <button id="printInboxPrefs" type="button" class="secondaryBtn">Preferências da colorida</button>
+
+            <button id="printBatchBtn" type="button" class="primary" disabled title="Marque a caixa de cada arquivo e imprima tudo de uma vez">Imprimir selecionados</button>
+
+            <button id="printDocGridBtn" type="button" class="primary" disabled style="background:#0284c7;border-color:#0284c7;" title="Junta as fotos selecionadas (1 a 4) em 1 única folha no formato documento 9x13 cm">Juntar Documento (Grade 9×13)</button>
+
+            <label class="printGridCopies">Cópias da folha <input id="printDocGridCopies" type="number" min="1" max="20" value="1" title="Quantas cópias da folha montada sairão na impressora (confira antes de imprimir para não desperdiçar)" aria-label="Cópias da folha de documentos"></label>
+
+            <label class="printAutoToggle"><input type="checkbox" id="printAutoBoleto"> Boleto de 1 página imprime sozinho</label>
+
+          </div>
+
+          <div class="printInboxRoute">
+
+            <span>P&amp;B: <strong id="printInboxBlack">-</strong></span>
+
+            <span>Colorida: <strong id="printInboxColor">-</strong></span>
+
+            <span id="printInboxFolder" class="printInboxFolder">-</span>
+
+          </div>
+
+          <div id="printDaySummary" class="printDaySummary" hidden></div>
+
+          <div class="filterRow">
+
+            <input id="printInboxSearch" type="search" placeholder="Buscar arquivo pelo nome...">
+
+            <label><input type="checkbox" id="printInboxOnlyNew" checked> Só o que ainda não foi cobrado</label>
+
+          </div>
+
+          <div id="printInboxList" class="tableWrap"></div>
 
         </section>
 
@@ -5709,7 +5751,7 @@
 
                 <select id="expFilterCategory"><option value="">Todas as categorias</option></select>
 
-                <select id="expFilterStatus"><option value="">Todas</option><option value="open">A pagar</option><option value="late">Vencidas</option><option value="paid">Pagas</option></select>
+                <select id="expFilterStatus"><option value="">Todas</option><option value="open">A pagar</option><option value="late">Vencidas no mês</option><option value="lateAll">Vencidas em todos os meses</option><option value="paid">Pagas</option></select>
 
                 <input id="expSearch" type="search" placeholder="Buscar descrição">
 
@@ -6500,6 +6542,8 @@
 
     </div>
 
+  </dialog>
+
   <!-- Diálogo Rápido de Lançamento de Impressão / PDF -->
 
   <dialog id="posPrintLaunchDialog" class="saleDialog">
@@ -6552,12 +6596,178 @@
 
   </dialog>
 
+  <!-- Diálogo de cobrança da impressão do balcão -->
+
+  <dialog id="printChargeDialog" class="saleDialog">
+
+    <form id="printChargeForm">
+
+      <div class="modalHead">
+
+        <div>
+
+          <h2>Impressão pronta</h2>
+
+          <p id="printChargeSummary">-</p>
+
+        </div>
+
+        <button type="button" id="printChargeClose" class="iconButton closeBtn" title="Fechar (Esc)">&#215;</button>
+
+      </div>
+
+      <div class="printChargeGrid">
+
+        <label>
+
+          <span>Impressão (R$)</span>
+
+          <input id="printChargeAmount" inputmode="decimal" style="font-size:20px; padding:10px;">
+
+        </label>
+
+        <label>
+
+          <span>Destino</span>
+
+          <select id="printChargeTarget">
+
+            <option value="cupom">Lançar no cupom (Caixa e vendas)</option>
+
+            <option value="machine">Juntar na máquina</option>
+
+            <option value="pending">Deixar pendente</option>
+
+          </select>
+
+        </label>
+
+        <label id="printChargeReceiptField" class="printChargeCheck">
+
+          <span>Recebimento do arquivo</span>
+
+          <label class="printChargeCheckRow"><input type="checkbox" id="printChargeReceipt" checked> <span id="printChargeReceiptText">+ R$ 1,00</span></label>
+
+        </label>
+
+        <label id="printChargeMachineField" hidden>
+
+          <span>Máquina / comanda</span>
+
+          <select id="printChargeMachine"></select>
+
+        </label>
+
+      </div>
+
+      <p class="printChargeHint" id="printChargeHint"></p>
+
+      <div class="modalActions">
+
+        <button type="button" id="printChargeCancel">Cancelar</button>
+
+        <button type="submit" class="primary">Confirmar cobrança</button>
+
+      </div>
+
+    </form>
+
+  </dialog>
+
+  <dialog id="faturaPreviewDialog" class="saleDialog">
+
+    <form id="faturaPreviewForm">
+
+      <div class="modalHead">
+
+        <div>
+
+          <h2>Fatura identificada</h2>
+
+          <p id="faturaPreviewSummary">-</p>
+
+        </div>
+
+        <button type="button" id="faturaPreviewClose" class="iconButton closeBtn" title="Fechar (Esc)">&#215;</button>
+
+      </div>
+
+      <p id="faturaPreviewHint" class="printChargeHint"></p>
+
+      <div id="faturaPreviewPages" class="faturaPreviewPages"></div>
+
+      <div class="modalActions">
+
+        <button type="button" id="faturaPreviewFull">Imprimir PDF inteiro</button>
+
+        <button type="button" id="faturaPreviewCancel">Cancelar</button>
+
+        <button type="submit" class="primary" id="faturaPreviewAuthorize">Autorizar e imprimir</button>
+
+      </div>
+
+    </form>
+
+  </dialog>
+
   <!-- Toast Notification Flutuante -->
 
   <div id="toast" role="status" class="toast" hidden></div>
 
   <script src="/app.js"></script>
+  <script>
+    (function initSidebarMode() {
+      const sidebar = document.querySelector('.sidebar');
+      const btnBalcao = document.getElementById('btnModeBalcao');
+      const btnGestao = document.getElementById('btnModeGestao');
+      const btnExpand = document.getElementById('btnExpandRetaguarda');
+      const groupRetaguarda = document.getElementById('navGroupRetaguarda');
 
+      function setMode(mode) {
+        if (!sidebar) return;
+        localStorage.setItem('nex_sidebar_mode', mode);
+        if (mode === 'gestao') {
+          sidebar.classList.remove('is-mode-balcao');
+          sidebar.classList.add('is-mode-gestao');
+          btnBalcao?.classList.remove('active');
+          btnGestao?.classList.add('active');
+          if (groupRetaguarda) groupRetaguarda.classList.remove('open');
+        } else {
+          sidebar.classList.remove('is-mode-gestao');
+          sidebar.classList.add('is-mode-balcao');
+          btnBalcao?.classList.add('active');
+          btnGestao?.classList.remove('active');
+        }
+      }
+
+      btnBalcao?.addEventListener('click', () => setMode('balcao'));
+      btnGestao?.addEventListener('click', () => setMode('gestao'));
+
+      btnExpand?.addEventListener('click', () => {
+        if (groupRetaguarda) {
+          const isOpen = groupRetaguarda.classList.toggle('open');
+          const arrow = btnExpand.querySelector('.arrowIcon');
+          if (arrow) arrow.textContent = isOpen ? '▲' : '▼';
+        }
+      });
+
+      // Se clicar em um botão de retaguarda vindo de atalhos, abre a retaguarda automaticamente
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-view]');
+        if (!btn) return;
+        const targetView = btn.dataset.view;
+        const gestaoViews = ['leads', 'vault', 'reports', 'plan', 'expenses', 'marketing', 'settings', 'users'];
+        if (gestaoViews.includes(targetView) && sidebar?.classList.contains('is-mode-balcao')) {
+          groupRetaguarda?.classList.add('open');
+          const arrow = btnExpand?.querySelector('.arrowIcon');
+          if (arrow) arrow.textContent = '▲';
+        }
+      });
+
+      const initialMode = localStorage.getItem('nex_sidebar_mode') || 'balcao';
+      setMode(initialMode);
+    })();
+  </script>
 </body>
 
 </html>

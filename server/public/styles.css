@@ -4871,3 +4871,340 @@ tr.mutedRow td { color: var(--text-muted); }
   }
   .sideFooter { flex-shrink: 0; }
 }
+
+/* Identidade operacional da loja, compartilhada por todas as áreas. */
+@media screen {
+  :root {
+    --bg-app: #edf2f1;
+    --bg-card-subtle: #f4f8f7;
+    --text-main: #152e32;
+    --text-muted: #50656a;
+    --border: #d3dfdd;
+    --primary: #08745f;
+    --primary-hover: #075d50;
+    --border-focus: #08745f;
+  }
+  .sidebar { background: #123936; border-right: 1px solid #214a46; }
+  .sidebar .navLabel, .sidebar .brandSubtitle { color: #b5d0c9; }
+  .sidebar nav button { border-radius: 7px; }
+  .sidebar nav button.active { background: #24574d; }
+  .sidebar nav button.active::before { background: #f1c569; }
+  .topbar { background: #fff; border-bottom: 1px solid #cddcd9; box-shadow: 0 3px 12px rgb(24 58 55 / 4%); }
+  .sectionHead { padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .sectionHead h2 { font-size: clamp(17px, 1.45vw, 22px); letter-spacing: -.025em; }
+  .marketingTabs { background: #e5efeb; border-bottom: 1px solid #bdcfc9; gap: 4px; }
+  .marketingTabs button { border-color: transparent; color: #294c47; }
+  .marketingTabs button.active { background: #124b42; color: white; border-color: #124b42; }
+  .marketingTabs a { color: #15594e; }
+  .tableWrap { border-radius: 10px; }
+  .tableWrap th { background: #edf4f1; color: #344f4c; }
+  .tableWrap td { font-variant-numeric: tabular-nums; }
+  :where(button,a,input,select,textarea):focus-visible { outline: 3px solid #ac731b; outline-offset: 2px; }
+  @media (max-width: 720px) {
+    .marketingTabs { flex-wrap: nowrap; overflow-x: auto; }
+    .marketingTabs > * { flex-shrink: 0; }
+  }
+}
+/* Funil da Financeira: pedido de avaliação no Google depois do contrato fechado (18/11/2026). */
+.leadReviewBtn { margin-top: 6px; width: 100%; min-height: 0; padding: 6px 10px; font-size: 12px; font-weight: 600; color: #0b6b3a; background: #ecf8f1; border: 1px solid #b7e4c9; border-radius: 8px; box-shadow: none; justify-content: center; }
+.leadReviewBtn:hover { background: #d9f1e4; }
+.leadReviewPreview { margin: 0; padding: 12px; font-size: 13px; line-height: 1.5; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; white-space: pre-line; }
+
+/* ==========================================================================
+   Modo Balcao vs Modo Gestao / Retaguarda (Novo Layout)
+   ========================================================================== */
+.sidebarModeToggle {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 3px;
+  border-radius: 8px;
+  margin: 10px 0 12px 0;
+  gap: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.sidebarModeToggle .modeBtn {
+  flex: 1;
+  padding: 6px 4px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #b5d0c9;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+  min-height: 28px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebarModeToggle .modeBtn:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+.sidebarModeToggle .modeBtn.active {
+  background: #f1c569;
+  color: #123936;
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+.btnExpandRetaguarda {
+  margin-top: 12px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.22) !important;
+  color: #b5d0c9 !important;
+  font-size: 12px !important;
+  padding: 10px 12px !important;
+  justify-content: space-between !important;
+  border-radius: 8px !important;
+  min-height: 38px !important;
+  cursor: pointer;
+}
+.btnExpandRetaguarda:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.sidebar.is-mode-balcao .navGroupRetaguarda {
+  display: none;
+}
+.sidebar.is-mode-balcao .navGroupRetaguarda.open {
+  display: grid;
+  gap: 3px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+}
+
+.sidebar.is-mode-gestao .navGroupBalcao {
+  display: none;
+}
+.sidebar.is-mode-gestao .btnExpandRetaguarda {
+  display: none;
+}
+.sidebar.is-mode-gestao .navGroupRetaguarda {
+  display: grid;
+  gap: 3px;
+}
+
+/* ==========================================================================
+   Fila de impressao do balcao
+   ========================================================================== */
+
+.printInboxRoute {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 20px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.printInboxRoute strong {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.printInboxFolder {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.8;
+  word-break: break-all;
+}
+
+.printInboxActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.printInboxActions button {
+  min-height: 28px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.printInboxActions .printRotate {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.printInboxActions .docBtn {
+  font-weight: 600;
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+.printInboxActions .docBtn:hover {
+  background: #0284c7;
+  color: #fff;
+}
+
+.printGridCopies {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.printGridCopies input {
+  width: 58px;
+  min-height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.faturaPreviewPages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
+  margin: 10px 0 4px;
+}
+
+.faturaPreviewPages figure {
+  margin: 0;
+  text-align: center;
+}
+
+.faturaPreviewPages img {
+  max-height: 340px;
+  max-width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.faturaPreviewPages figcaption {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.printInboxBadge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.printInboxBadge.ok { color: var(--primary); }
+
+.printInboxBadge.warn { color: var(--danger-accent); }
+
+.printChargeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.printChargeHint {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.printAutoToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.printAutoToggle input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.printChargeCheck span {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.printChargeCheckRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.printChargeCheckRow input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.printCopies {
+  width: 54px;
+  min-height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+/* Resumo do dia da impressao de balcao */
+.printDaySummary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.printDaySummary strong {
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.printDaySummary .printDayWarn strong {
+  color: var(--danger-accent);
+}
+
+/* Selecao para impressao em lote e frente e verso */
+.printInboxActions .printSelect {
+  width: 16px;
+  height: 16px;
+  margin-right: 2px;
+  cursor: pointer;
+}
+
+.printInboxActions .printDuplex {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.printInboxActions .printDuplex.active {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  border-color: var(--primary-hover);
+  color: #ffffff;
+}

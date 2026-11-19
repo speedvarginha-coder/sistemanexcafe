@@ -16,3 +16,5 @@ server/public/crlv/
 # Copias manuais feitas antes de uma mudanca
 *.bak
 *.bak-*
+# Cache do Python (pdf-tools.py roda sob demanda)
+__pycache__/

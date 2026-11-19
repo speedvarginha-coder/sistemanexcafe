@@ -201,6 +201,8 @@ async function loadState() {
     }
 
     render();
+    checkPrintedForCharge();
+    checkInboxNews();
     if (!printRouteLoaded) loadPrintRoute();
   } catch (cause) {
     pollDelay = Math.min(30000, pollDelay * 2);
@@ -760,8 +762,8 @@ function renderMachines() {
 
   $("#printQueue").innerHTML = table(["Máquina", "Impressão", "Situação", "Valor", ""], (state.printJobs || []).slice().sort((a, b) => ((state.openCharges || []).some(c => c.printJobId === b.id) - (state.openCharges || []).some(c => c.printJobId === a.id))).slice(0, 8).map(job => {
     const charge = (state.openCharges || []).find(row => row.printJobId === job.id);
-    const label = { pending: "Aguardando cliente", printing: "Imprimindo no caixa", failed: "Falhou", confirmed: "Enviada à impressora", cancelled: "Cancelada" }[job.state] || job.state;
-    return `<tr><td>${html(machineLabel(job.machineId))}</td><td>${job.pages} pág · ${job.color ? "Colorida" : "P&B"}</td><td>${label}</td><td class="money">${currency(job.amountCents)}</td><td>${charge ? `<button class="primary" data-action="pay" data-id="${html(charge.id)}" ${state.cashShift ? "" : "disabled"}>Receber</button>` : "-"}</td></tr>`;
+    const label = { pending: "Aguardando cliente", printing: "Imprimindo no caixa", printed: "Impressa no balcão", failed: "Falhou", confirmed: "Enviada à impressora", cancelled: "Cancelada" }[job.state] || job.state;
+    return `<tr><td>${html(job.source === "counter" ? "Balcão" : machineLabel(job.machineId))}</td><td>${job.pages} pág · ${job.color ? "Colorida" : "P&B"}</td><td>${label}</td><td class="money">${currency(job.amountCents)}</td><td>${charge ? `<button class="primary" data-action="pay" data-id="${html(charge.id)}" ${state.cashShift ? "" : "disabled"}>Receber</button>` : "-"}</td></tr>`;
   }), "Nenhuma impressão recente.");
 
   $("#events").innerHTML = state.events.length ? state.events.slice(0, 20).map(item => `<div class="activity"><time>${dateTime(item.at)}</time><span class="source">${html(machineLabel(item.machineId))}</span><span><strong>${txt(item.title)}</strong>${item.detail ? ` · ${txt(item.detail)}` : ""}</span></div>`).join("") : empty("Nenhuma atividade recente.");
@@ -1726,7 +1728,13 @@ async function submitPOSSale() {
         payload.paymentMethod = posActiveMethod;
       }
 
+      // Impressao do balcao que esta neste cupom: a venda fecha e o trabalho sai de "falta cobrar".
+      const linkedPrintJobs = [...posPrintJobs.entries()].filter(([, info]) => posCart.has(info.key)).map(([id]) => id);
+      if (linkedPrintJobs.length) payload.printJobIds = linkedPrintJobs;
+
       await api("/api/sales", payload);
+
+      for (const id of linkedPrintJobs) posPrintJobs.delete(id);
     }
 
     // 3. Emite comprovante térmico
@@ -2482,9 +2490,12 @@ function packageButtons(client) {
   const pending = (client.printPackages || []).reduce((sum, p) => sum + p.pages - p.delivered, 0);
   return `<button data-action="sellPackage" data-id="${client.id}">Pacote</button>${pending ? `<button data-action="deliverPackage" data-id="${client.id}">Entregar páginas (${pending})</button>` : ""}`;
 }
+$("#clientLateOnly").addEventListener("change", renderClients);
 function renderClients() {
   const term = $("#clientSearch").value.trim().toLowerCase();
-  const items = state.clients.filter(item => !term || `${item.name} ${item.phone} ${item.login || ""}`.toLowerCase().includes(term));
+  const lateOnly = $("#clientLateOnly").checked;
+  const lateClients = lateOnly ? new Set((state.openCharges || []).filter(c => Date.now() - Date.parse(c.at) > 30 * 86400000).map(c => c.clientId)) : null;
+  const items = state.clients.filter(item => !lateOnly || lateClients.has(item.id)).filter(item => !term || `${item.name} ${item.phone} ${item.login || ""}`.toLowerCase().includes(term));
   const dueOf = id => (state.openCharges || []).filter(c => c.clientId === id).reduce((s, c) => s + c.amountCents - c.paidCents, 0);
   // Saldo aparece sempre; sem login o cliente usa o saldo pelo balcao (modalidade "Usar saldo").
   $("#clientList").innerHTML = table(["Nome", "Login da estação", "Saldo de tempo", "Deve", "Telefone", "Status", "Ação"], items.map(item => { const due = dueOf(item.id); return `<tr><td>${html(item.name)}</td><td>${item.login ? html(item.login) : '<span class="muted">sem login</span>'}</td><td>${item.creditSeconds ? `<strong>${formatCredit(item.creditSeconds)}</strong>` : '<span class="muted">0min</span>'}${item.creditSeconds && !item.login ? '<br><small class="muted">crie o login em Editar para usar na estação</small>' : ""}</td><td>${due ? `<strong class="bad">${currency(due)}</strong>` : '<span class="muted">-</span>'}</td><td>${html(item.phone || "-")}</td><td>${item.active ? "Ativo" : "Inativo"}</td><td class="actionsCell"><button data-action="editClient" data-id="${item.id}">Editar</button><button data-action="rechargeClient" data-id="${item.id}">Recarregar</button><button data-action="debtClient" data-id="${item.id}">Fiado</button>${packageButtons(item)}${due ? `<button data-action="debtsView" data-id="${item.id}">Ver dívidas</button>` : ""}</td></tr>`; }), "Nenhum cliente cadastrado.");
@@ -3535,8 +3546,8 @@ function renderExpenses() {
   setHtml("#expSuppliers", sup.length ? sup.map(([name, value]) => `<div class="rpRow"><div class="rpRowHead"><strong>${html(name)}</strong><span>${currency(value)} (${pctText(value, total)})</span></div>${bar(value, sup[0][1], "var(--accent)")}</div>`).join("") : `<p class="muted">Sem lançamentos no mês.</p>`);
 
   const cat = $("#expFilterCategory").value, status = $("#expFilterStatus").value, term = $("#expSearch").value.trim().toLowerCase();
-  const rows = inMonth.filter(e => (!cat || e.category === cat) && (!term || e.description.toLowerCase().includes(term)) &&
-    (!status || (status === "open" && e.paid === false) || (status === "paid" && e.paid !== false) || (status === "late" && e.paid === false && expDay(e) < today)))
+  const rows = (status === "lateAll" ? late : inMonth).filter(e => (!cat || e.category === cat) && (!term || e.description.toLowerCase().includes(term)) &&
+    (!status || status === "lateAll" || (status === "open" && e.paid === false) || (status === "paid" && e.paid !== false) || (status === "late" && e.paid === false && expDay(e) < today)))
     .sort((a, b) => b.at.localeCompare(a.at));
   setHtml("#expTable", pagedTable("expTable", ["Vencimento", "Pagamento", "Categoria", "Descrição", "Valor", "Situação", "Origem", ""], rows.map(e => `<tr>
     <td>${new Date(e.at).toLocaleDateString("pt-BR")}</td>
@@ -4038,7 +4049,27 @@ $("#importProductsButton")?.addEventListener("click", () => $("#importProductsIn
 $("#importProductsInput")?.addEventListener("change", event => { const file = event.target.files[0]; event.target.value = ""; importProductsFile(file); });
 
 $("#addDebtButton")?.addEventListener("click", () => openDebtModal());
-document.addEventListener("click", event => { const go = event.target.closest("[data-view-go]")?.dataset.viewGo; if (go) view(go); });
+document.addEventListener("click", event => {
+  const action = event.target.closest("[data-view-go]");
+  if (!action) return;
+  const pending = action.dataset.pending;
+  if (pending === "late") {
+    $("#expFilterCategory").value = "";
+    $("#expSearch").value = "";
+    $("#expFilterStatus").value = "lateAll";
+  } else if (pending === "stock") {
+    $("#productSearch").value = "";
+    $("#productCategory").value = "";
+    $("#productStatus").value = "low";
+    renderProducts();
+  } else if (pending === "debt") {
+    $("#clientSearch").value = "";
+    $("#clientLateOnly").checked = true;
+    renderClients();
+  }
+  view(action.dataset.viewGo);
+  if (pending === "late") $("#expFilterStatus").focus();
+});
 $("#addIncomeButton")?.addEventListener("click", () => openModal("Lançar comissão ou outra receita",
   select("category", "Tipo", [["Comissão Speed Financeira", "Comissão Speed Financeira"], ["Outra receita", "Outra receita"]], "Comissão Speed Financeira") +
   field("description", "Descrição", "text", "", 'maxlength="120" placeholder="Ex.: consignado INSS - cliente Maria" required') +
@@ -4116,7 +4147,7 @@ document.addEventListener("click", async event => {
 
 function renderBillsBanner() {
   const el = $("#billsDueBanner"); if (!el) return;
-  const bills = state.billsDue || [];
+  const bills = (state.billsDue || []).filter(b => !state.hudAlerts?.overdueBillsCount || expDay(b) >= expToday());
   const today = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const late = bills.filter(b => new Date(b.at).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }) < today);
   el.hidden = !bills.length;
@@ -4169,14 +4200,14 @@ function renderDashboardCockpit() {
   if (hudEl) {
     const alerts = [];
     const ha = state.hudAlerts || {};
-    if (ha.overdueBillsCount > 0) {
-      alerts.push(`<div class="dashHudAlert danger"><span><strong>${ha.overdueBillsCount} ${ha.overdueBillsCount === 1 ? "conta atrasada" : "contas atrasadas"}</strong> (${currency(ha.overdueBillsCents || 0)})</span><button type="button" data-view-go="expenses">Ver despesas</button></div>`);
+    if (state.user.role === "admin" && ha.overdueBillsCount > 0) {
+      alerts.push(`<div class="dashHudAlert danger"><span><strong>${ha.overdueBillsCount} ${ha.overdueBillsCount === 1 ? "conta atrasada" : "contas atrasadas"}</strong> (${currency(ha.overdueBillsCents || 0)})</span><button type="button" data-view-go="expenses" data-pending="late">Ver vencidas</button></div>`);
     }
     if (ha.zeroStockCount > 0) {
-      alerts.push(`<div class="dashHudAlert warn"><span><strong>${ha.zeroStockCount} produtos com estoque zerado ou negativo</strong></span><button type="button" data-view-go="products">Repor estoque</button></div>`);
+      alerts.push(`<div class="dashHudAlert warn"><span><strong>${ha.zeroStockCount} produtos com estoque zerado ou negativo</strong></span><button type="button" data-view-go="products" data-pending="stock">Ver estoque</button></div>`);
     }
     if (ha.lateDebtsCount > 0) {
-      alerts.push(`<div class="dashHudAlert warn"><span><strong>${ha.lateDebtsCount} ${ha.lateDebtsCount === 1 ? "fiado aberto" : "fiados abertos"} há mais de 30 dias</strong> (${currency(ha.lateDebtsCents || 0)})</span><button type="button" data-view-go="clients">Cobrar fiados</button></div>`);
+      alerts.push(`<div class="dashHudAlert warn"><span><strong>${ha.lateDebtsCount} ${ha.lateDebtsCount === 1 ? "fiado aberto" : "fiados abertos"} há mais de 30 dias</strong> (${currency(ha.lateDebtsCents || 0)})</span><button type="button" data-view-go="clients" data-pending="debt">Ver clientes</button></div>`);
     }
     hudEl.hidden = !alerts.length;
     hudEl.innerHTML = alerts.join("");
@@ -4221,7 +4252,8 @@ function renderLeads() {
     metric(String(inMonth.length), `Contatos no mês (${fromStore} vieram da loja)`) +
     metric(String(leads.filter(l => !["won", "lost"].includes(l.stage)).length), "Em andamento") +
     metric(String(wonMonth.length), `Contratos no mês · conversão ${conv}%`, wonMonth.length ? "free" : "") +
-    metric(currency(wonMonth.reduce((s, l) => s + (l.commissionCents || 0), 0)), "Comissão no mês", wonMonth.length ? "free" : ""));
+    metric(currency(wonMonth.reduce((s, l) => s + (l.commissionCents || 0), 0)), "Comissão no mês", wonMonth.length ? "free" : "") +
+    metric(`${wonMonth.filter(l => l.reviewAskedAt).length} de ${wonMonth.length}`, "Avaliações pedidas nos contratos do mês"));
   // Por cidade: quem chegou pelas páginas de cidade e guias do site, e quanto rendeu.
   // Junta os toques no WhatsApp dos últimos 30 dias (contados pelo site) com os contatos registrados no funil.
   const novaCidade = () => ({ cliques: 0, contatos: 0, site: 0, contratos: 0, comissao: 0 });
@@ -4239,7 +4271,10 @@ function renderLeads() {
     : !waData.configured ? `<p class="muted">Contagem do site desligada: falta a chave do contador no servidor.</p>`
     : `<p class="muted">Toques no botão do WhatsApp do site nos últimos ${waData.dias} dias: ${waData.total} (${quando}). Conta toques, não conversas: compare com os contatos registrados.</p>`;
   const paginas = (waData?.paginas || []).slice(0, 10);
-  setHtml("#leadCities", (linhas.length || aviso) ? `<h3>Por cidade: toques no WhatsApp do site e contatos</h3>${aviso}` +
+  // Por origem: botão do site e links curtos speedfinanceira.com.br/w/<origem> (Instagram, ficha, posts, produtos, impresso).
+  const origens = waData?.origens || [];
+  const tabelaOrigens = origens.length ? `<h3 class="spacedTop">Cliques no WhatsApp por origem (${waData?.dias || 30} dias)</h3><p class="muted">Links para usar fora do site: speedfinanceira.com.br/w/instagram, /w/ficha, /w/posts, /w/produtos e /w/impresso. Robôs, prévias de link e quem repete em menos de 30 s não contam.</p><div class="tableWrap"><table class="dataTable"><thead><tr><th>Origem</th><th>Cliques</th></tr></thead><tbody>${origens.map(o => `<tr><td>${html(o.origem)}</td><td>${o.cliques}</td></tr>`).join("")}</tbody></table></div>` : "";
+  setHtml("#leadCities", (linhas.length || aviso || tabelaOrigens) ? tabelaOrigens + `<h3${tabelaOrigens ? ' class="spacedTop"' : ""}>Por cidade: toques no WhatsApp do site e contatos</h3>${aviso}` +
     (linhas.length ? `<div class="tableWrap"><table class="dataTable"><thead><tr><th>Cidade</th><th>Toques no WhatsApp (${waData?.dias || 30} dias)</th><th>Contatos</th><th>Pelo site</th><th>Contratos</th><th>Comissão</th></tr></thead><tbody>${linhas.map(([cidade, c]) => `<tr><td>${html(cidade)}</td><td>${c.cliques}</td><td>${c.contatos}</td><td>${c.site}</td><td>${c.contratos}</td><td>${currency(c.comissao)}</td></tr>`).join("")}</tbody></table></div>` : "") +
     (paginas.length ? `<h3 class="spacedTop">Páginas com mais toques no WhatsApp</h3><div class="tableWrap"><table class="dataTable"><thead><tr><th>Página</th><th>Tipo</th><th>Cidade</th><th>Toques</th></tr></thead><tbody>${paginas.map(p => `<tr><td><a href="https://speedfinanceira.com.br${html(p.caminho)}" target="_blank" rel="noopener">${html(p.caminho)}</a></td><td>${html(p.tipo)}</td><td>${html(p.cidade)}</td><td>${p.cliques}</td></tr>`).join("")}</tbody></table></div>` : "") : "");
   const daysAgo = at => Math.max(0, Math.floor((Date.now() - Date.parse(at)) / 86400000));
@@ -4255,12 +4290,34 @@ function renderLeads() {
         <div class="leadMeta">${wa(l.phone) ? `<a href="${wa(l.phone)}" target="_blank" rel="noopener">${html(l.phone)}</a>` : html(l.phone)} · ${daysAgo(l.stageAt || l.createdAt)} dia(s) nesta etapa</div>
         ${l.notes ? `<div class="leadNotes">${html(l.notes)}</div>` : ""}
         ${l.stage === "won" ? `<div class="leadWon">Comissão ${currency(l.commissionCents)}${l.contractCents ? ` · contrato ${currency(l.contractCents)}` : ""}</div>` : ""}
+        ${l.stage === "won" ? (l.reviewAskedAt ? `<div class="leadMeta">Avaliação pedida em ${new Date(l.reviewAskedAt).toLocaleDateString("pt-BR")}</div>` : (leadData.reviewUrl && leadWaNumber(l.phone) ? `<button type="button" class="leadReviewBtn" data-lead-review="${html(l.id)}">Pedir avaliação no Google</button>` : "")) : ""}
         ${l.stage === "lost" && l.lostReason ? `<div class="leadMeta">Motivo: ${html(l.lostReason)}</div>` : ""}
         <select data-lead-stage="${html(l.id)}" aria-label="Etapa">${leadData.stages.map(s => `<option value="${s.key}" ${s.key === l.stage ? "selected" : ""}>${html(s.label)}</option>`).join("")}</select>
       </article>`).join("") || `<p class="muted leadEmpty">Nenhum contato.</p>`}
     </div>`;
   }).join(""));
 }
+// Pedido de avaliação no Google para o cliente com contrato fechado. Só pede a opinião: pedir nota
+// ("5 estrelas") ou dar brinde em troca fere a política de avaliações do Google.
+function leadWaNumber(phone) { const d = String(phone || "").replace(/\D/g, ""); return d.length >= 10 ? (d.length <= 11 ? "55" + d : d) : ""; }
+function leadReviewText(lead) {
+  const nome = String(lead.name || "").trim().split(/\s+/)[0] || "";
+  return `Olá${nome ? `, ${nome}` : ""}! Aqui é da Speed Financeira, em Varginha. Obrigado por confiar na gente no seu ${lead.product}. Se puder, conte no Google como foi o seu atendimento. Leva menos de 1 minuto e ajuda outras pessoas da cidade a escolher com segurança: ${leadData.reviewUrl}`;
+}
+function openLeadReview(lead) {
+  const texto = leadReviewText(lead);
+  openModal(`Pedir avaliação · ${lead.name}`,
+    `<p class="quoteBox">Abre o WhatsApp do cliente com a mensagem abaixo. Revise antes de enviar.</p><p class="leadReviewPreview">${html(texto)}</p>`,
+    async () => {
+      window.open(`https://wa.me/${leadWaNumber(lead.phone)}?text=${encodeURIComponent(texto)}`, "_blank", "noopener");
+      await api(`/api/leads/${lead.id}`, { reviewAsked: true }); toast("Pedido de avaliação registrado."); await loadLeads();
+    }, "Abrir WhatsApp");
+}
+document.addEventListener("click", event => {
+  const botao = event.target.closest("[data-lead-review]"); if (!botao || !leadData) return;
+  const lead = leadData.leads.find(l => l.id === botao.dataset.leadReview);
+  if (lead) openLeadReview(lead);
+});
 function openLeadModal(prefill = {}) {
   const products = leadData?.products || ["Consignado INSS", "Antecipação FGTS", "Consignado CLT", "Portabilidade", "Refinanciamento", "Financiamento de veículos"];
   const sources = leadData?.sources || ["Serviço da loja", "Indicação", "Campanha", "Passou na frente", "WhatsApp", "Instagram", "Facebook", "Google", "Cliente antigo", "Outro"];
@@ -4297,7 +4354,12 @@ document.addEventListener("change", async event => {
     openModal(`Contrato fechado · ${lead.name}`, `<p class="quoteBox">${html(lead.product)}. A comissão entra como receita da Speed Financeira nos relatórios.</p>` +
       field("commission", "Comissão recebida (R$)", "number", lead.commissionCents ? (lead.commissionCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required') +
       field("contract", "Valor do contrato (R$, conta na meta da financeira)", "number", lead.contractCents ? (lead.contractCents / 100).toFixed(2) : "", 'min="0.01" step="0.01" required'),
-      async values => { await api(`/api/leads/${id}`, { stage: "won", commission: values.commission, contract: values.contract }); playChime("success"); toast("Contrato registrado."); await loadLeads(); }, "Confirmar contrato");
+      async values => {
+        await api(`/api/leads/${id}`, { stage: "won", commission: values.commission, contract: values.contract }); playChime("success"); toast("Contrato registrado."); await loadLeads();
+        // Logo depois do contrato é quando o cliente mais aceita avaliar: oferece o pedido na hora.
+        const fechado = leadData.leads.find(l => l.id === id);
+        if (fechado && !fechado.reviewAskedAt && leadData.reviewUrl && leadWaNumber(fechado.phone)) setTimeout(() => openLeadReview(fechado), 50);
+      }, "Confirmar contrato");
     return;
   }
   if (stage === "lost") {
@@ -4437,7 +4499,7 @@ function view(name) {
   if (mktSub) mktSub.classList.toggle("open", name === "marketing");
   // O submenu abre no fim do menu (que rola por dentro): traz os itens dele para a vista.
   if (mktSub && name === "marketing") requestAnimationFrame(() => mktSub.scrollIntoView({ block: "nearest" }));
-  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação", leads: "Financeira", crlv: "Consultas & CRLV" };
+  const titles = { machines: "Atendimento", cash: "Caixa e vendas", clients: "Clientes", products: "Catálogo e estoque", settings: "Configurações", reports: "Relatórios", users: "Operadores", expenses: "Despesas", marketing: "Speed Marketing", vault: "Logins bancários", plan: "Plano de ação", leads: "Financeira", crlv: "Consultas & CRLV", print: "Impressão" };
   const label = titles[name] || "Painel";
   $("#pageTitle").textContent = label;
   document.title = `${label} · Nexcafé`;
@@ -4447,6 +4509,7 @@ function view(name) {
   if (name === "vault") loadVault();
   if (name === "expenses") loadExpenses();
   if (name === "crlv") loadCrlvStatus();
+  if (name === "print") loadPrintInbox();
   if (name === "marketing" && !$("#marketingResults").hidden) loadMarketingResults();
   if (name === "reports") loadReport();
   if (name === "cash") {
@@ -4528,7 +4591,9 @@ async function loadPlanIndicators() {
   } catch (cause) { toast(cause.message); }
 }
 
+let reportRequestId = 0;
 async function loadReport(period = null, customStart = null, customEnd = null) {
+  const requestId = ++reportRequestId;
   if (period) reportPeriod = period;
   try {
     const dateInput = $("#reportDate")?.value || new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
@@ -4540,9 +4605,11 @@ async function loadReport(period = null, customStart = null, customEnd = null) {
         url += `&start=${encodeURIComponent(cStart)}&end=${encodeURIComponent(cEnd)}`;
       }
     }
-    report = await api(url);
+    const result = await api(url);
+    if (requestId !== reportRequestId) return;
+    report = result;
     renderReport();
-  } catch (cause) { toast(cause.message); }
+  } catch (cause) { if (requestId === reportRequestId) toast(cause.message); }
 }
 
 document.querySelectorAll("[data-view]").forEach(button => button.addEventListener("click", () => view(button.dataset.view)));
@@ -7006,3 +7073,616 @@ $("#crlvRefreshBtn")?.addEventListener("click", () => {
 
 // Inicialização automática do módulo
 loadCrlvStatus();
+
+// ============================================================================
+// Impressão no balcão: fila da pasta de recebimento, um clique por impressora
+// e cartão de cobrança pré-preenchido (receber agora, juntar na máquina ou pendente).
+// ============================================================================
+
+let printInboxCache = { folder: "", files: [], black: "", color: "", blackCents: 100, colorCents: 200, receiptCents: 0 };
+let pendingPrintCharge = null;
+let printInboxTimer = null;
+// Cobrança fechada sem confirmar: não abre sozinho de novo (o botão "Cobrar" da fila continua lá).
+const dismissedPrintCharges = new Set();
+// Impressão lançada no cupom do caixa: jobId -> chave do item no cupom. A venda finalizada vincula o trabalho.
+const posPrintJobs = new Map();
+
+function schedulePrintInbox(delay = 45000) {
+  clearTimeout(printInboxTimer);
+  printInboxTimer = setTimeout(() => { if (currentView === "print") loadPrintInbox(false); }, delay);
+}
+
+async function loadPrintInbox(refresh = false) {
+  const list = $("#printInboxList");
+  if (!list) return;
+  if (!printInboxCache.files.length) list.innerHTML = `<p class="muted" style="padding:16px;">Lendo a pasta de recebimento...</p>`;
+  try {
+    const data = await api(`/api/print/inbox${refresh ? "?refresh=1" : ""}`);
+    printInboxCache = {
+      folder: data.folder || "",
+      files: data.files || [],
+      black: data.black || "",
+      color: data.color || "",
+      blackCents: data.blackCents || 100,
+      colorCents: data.colorCents || 200,
+      receiptCents: data.receiptCents || 0
+    };
+    const folder = $("#printInboxFolder");
+    if (folder) { folder.textContent = printInboxCache.folder; folder.title = printInboxCache.folder; }
+    if ($("#printInboxBlack")) $("#printInboxBlack").textContent = `${printInboxCache.black || "não configurada"} · ${currency(printInboxCache.blackCents)}/pág`;
+    if ($("#printInboxColor")) $("#printInboxColor").textContent = `${printInboxCache.color || "não configurada"} · ${currency(printInboxCache.colorCents)}/pág`;
+    const autoToggle = $("#printAutoBoleto");
+    if (autoToggle) autoToggle.checked = data.autoBoleto === true;
+    renderPrintDaySummary(data.day);
+    renderPrintInbox();
+    schedulePrintInbox();
+  } catch (cause) {
+    list.innerHTML = `<p class="muted" style="padding:16px;">${html(cause.message)}</p>`;
+    schedulePrintInbox(90000);
+  }
+}
+
+function renderPrintInbox() {
+  const list = $("#printInboxList");
+  if (!list) return;
+  const search = ($("#printInboxSearch")?.value || "").trim().toLowerCase();
+  const onlyNew = $("#printInboxOnlyNew")?.checked !== false;
+  const files = printInboxCache.files.filter(file => {
+    if (search && !String(file.name || "").toLowerCase().includes(search)) return false;
+    if (onlyNew && file.chargedAt) return false;
+    return true;
+  });
+  updatePrintBatchBtn();
+  if (!files.length) {
+    list.innerHTML = `<p class="muted" style="padding:16px;">${printInboxCache.files.length ? "Nenhum arquivo com esse filtro." : "Nenhum arquivo para imprimir na pasta de recebimento."}</p>`;
+    return;
+  }
+  const nowMs = Date.now() + serverOffset;
+  const rows = files.map(file => {
+    const pages = file.pages ? `${file.pages} pág` : "—";
+    const size = file.bytes >= 1048576 ? `${(file.bytes / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(file.bytes / 1024))} KB`;
+    const kind = ({ doc: "Word", docx: "Word", xls: "Excel", xlsx: "Excel", ppt: "PowerPoint", pptx: "PowerPoint" })[file.ext] || (file.kind === "image" ? "imagem" : "PDF");
+    const chegouAgora = Number.isFinite(Date.parse(file.modifiedAt)) && nowMs - Date.parse(file.modifiedAt) < 15 * 60000;
+    const status = file.chargedAt
+      ? `<span class="printInboxBadge">Cobrado ${timeOnly(file.chargedAt)}</span>`
+      : file.jobId && posPrintJobs.has(file.jobId)
+        ? `<span class="printInboxBadge ok">No cupom · finalize no caixa</span>`
+        : file.valid === false && file.encrypted
+          ? `<span class="printInboxBadge warn" title="${html(file.problem || "")}">Protegido por senha</span>`
+          : file.printedAt
+            ? `<span class="printInboxBadge ok">Impresso ${timeOnly(file.printedAt)} · falta cobrar</span>`
+            : chegouAgora
+              ? `<span class="printInboxBadge warn">Novo · aguardando</span>`
+              : `<span class="printInboxBadge">Novo</span>`;
+    const actions = file.valid === false && !file.encrypted
+      ? `<span class="printInboxBadge warn" title="${html(file.problem || "")}">Não imprimível</span>`
+      : `<div class="printInboxActions">
+          ${file.printedAt && !file.chargedAt ? `<button class="primary" data-print-charge="${html(file.jobId)}">Cobrar</button>` : ""}
+          <input class="printSelect" type="checkbox" title="Marcar para impressão em lote" aria-label="Selecionar ${html(file.name)}">
+          <input class="printCopies" type="number" min="1" max="20" value="1" title="Cópias deste documento" aria-label="Cópias de ${html(file.name)}">
+          <button type="button" class="printDuplex" title="Frente e verso (aperte para ligar neste arquivo)">FV</button>
+          ${file.kind === "image" ? `<button class="docBtn" data-print-file="${html(file.name)}" data-print-mode="doc9x13" style="font-weight:600;color:#0284c7;" title="Imprime no formato documento (9×13 cm) no topo da folha sem esticar">Doc 9×13</button><button type="button" class="printRotate" data-rotate-file="${html(file.name)}" title="Girar foto 90° no sentido horário">⟳</button>` : ""}
+          <button data-print-file="${html(file.name)}" data-print-mode="bw">P&amp;B</button>
+          <button data-print-file="${html(file.name)}" data-print-mode="color">Cor</button>
+          <button data-print-file="${html(file.name)}" data-print-mode="special">Especial</button>
+          <button data-print-file="${html(file.name)}" data-print-mode="choose">Escolher</button>
+        </div>`;
+    return `<tr>
+      <td><strong>${html(file.name)}</strong><br><small class="muted">${kind} · ${size}${file.problem ? ` · <span class="printInboxBadge warn">${html(file.problem)}</span>` : ""}</small></td>
+      <td class="money">${pages}</td>
+      <td>${dateTime(file.modifiedAt)}</td>
+      <td>${status}</td>
+      <td class="actionsCell">${actions}</td>
+    </tr>`;
+  });
+  list.innerHTML = table(["Arquivo", "Páginas", "Recebido", "Situação", "Imprimir"], rows, "Nenhum arquivo.");
+}
+
+// Botao de lote: conta os marcados e mostra o total de folhas previsto.
+function updatePrintBatchBtn() {
+  const btn = $("#printBatchBtn");
+  const gridBtn = $("#printDocGridBtn");
+  const checked = [...document.querySelectorAll("#printInboxList .printSelect:checked")];
+  if (btn) {
+    btn.disabled = !checked.length;
+    btn.textContent = checked.length ? `Imprimir ${checked.length} selecionado(s) (P&B)` : "Imprimir selecionados";
+  }
+  if (gridBtn) {
+    gridBtn.disabled = !checked.length || checked.length > 4;
+    gridBtn.textContent = checked.length === 2
+      ? "Juntar 2 fotos (RG Frente e Verso)"
+      : checked.length > 0
+        ? `Juntar ${checked.length} em 1 folha (Grade 9×13)`
+        : "Juntar Documento (Grade 9×13)";
+  }
+}
+
+function renderPrintDaySummary(day) {
+  const el = $("#printDaySummary");
+  if (!el) return;
+  if (!day) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `
+    <span>Hoje: <strong>${day.jobs}</strong> trabalho(s)</span>
+    <span><strong>${day.pagesPB}</strong> pág P&amp;B</span>
+    <span><strong>${day.pagesColor}</strong> pág cor</span>
+    <span>impresso: <strong>${currency(day.amountCents)}</strong></span>
+    <span>cobrado: <strong>${currency(day.chargedCents)}</strong></span>
+    ${day.missingJobs ? `<span class="printDayWarn"><strong>${day.missingJobs}</strong> sem cobrança (${currency(day.missingCents)})</span>` : ""}`;
+}
+
+// Fatura identificada: o atendente ve a folha do boleto e autoriza antes de imprimir.
+// Resolve "authorize" (so as folhas do pagamento), "full" (PDF inteiro) ou "cancel".
+let faturaPreviewResolve = null;
+
+function openFaturaPreview(fatura) {
+  return new Promise(resolve => {
+    const dialog = $("#faturaPreviewDialog");
+    if (!dialog || !fatura || !Array.isArray(fatura.previews) || !fatura.previews.length) { resolve("cancel"); return; }
+    faturaPreviewResolve = resolve;
+    const folhas = fatura.printPages.length * fatura.copies;
+    $("#faturaPreviewSummary").textContent = `${fatura.name}: ${fatura.totalPages} ${fatura.totalPages === 1 ? "página" : "páginas"}; o código de barras está na ${fatura.printPages.length === 1 ? "página" : "páginas"} ${fatura.printPages.join(" e ")}. Sai ${folhas} ${folhas === 1 ? "folha" : "folhas"}.`;
+    $("#faturaPreviewHint").textContent = fatura.receiptCents
+      ? `Cobrança: ${folhas} × ${currency(fatura.unitCents)} = ${currency(fatura.printCents)} + recebimento ${currency(fatura.receiptCents)} (total ${currency(fatura.printCents + fatura.receiptCents)}). O cartão de cobrança abre depois de imprimir.`
+      : `Cobrança: ${folhas} × ${currency(fatura.unitCents)} = ${currency(fatura.printCents)}. O cartão de cobrança abre depois de imprimir.`;
+    $("#faturaPreviewPages").innerHTML = fatura.previews.map(row => `<figure><img src="${row.image}" alt="Página ${row.page} da fatura"><figcaption>Página ${row.page} de ${fatura.totalPages} · folha do pagamento</figcaption></figure>`).join("");
+    if (!dialog.open) dialog.showModal();
+  });
+}
+
+function closeFaturaPreview(acao) {
+  const dialog = $("#faturaPreviewDialog");
+  if (dialog?.open) dialog.close();
+  if (faturaPreviewResolve) { const resolve = faturaPreviewResolve; faturaPreviewResolve = null; resolve(acao); }
+}
+
+$("#faturaPreviewForm")?.addEventListener("submit", event => { event.preventDefault(); closeFaturaPreview("authorize"); });
+$("#faturaPreviewFull")?.addEventListener("click", () => closeFaturaPreview("full"));
+$("#faturaPreviewCancel")?.addEventListener("click", () => closeFaturaPreview("cancel"));
+$("#faturaPreviewClose")?.addEventListener("click", () => closeFaturaPreview("cancel"));
+$("#faturaPreviewDialog")?.addEventListener("close", () => { if (faturaPreviewResolve) closeFaturaPreview("cancel"); });
+
+async function printInboxFile(name, mode, reprint, password, copies, duplex, escolha) {
+  // Fatura de banco/operadora: cartao de autorizacao mostra a folha identificada
+  // como a do boleto antes de imprimir. Autorizou: imprime so ela. Nao e fatura: fluxo direto.
+  const opt = escolha || {};
+  if (!reprint && !opt.printPages && !opt.fullDoc && (mode === "bw" || mode === "color") && !password) {
+    const cached = printInboxCache.files.find(file => file.name === name);
+    if (cached && cached.kind === "pdf" && (cached.pages || 0) > 1) {
+      const qty = Math.min(20, Math.max(1, parseInt(copies, 10) || 1));
+      let fatura = null;
+      try { fatura = await api("/api/print/inbox/fatura-preview", { name, copies: qty }); } catch { }
+      if (fatura && fatura.fatura) {
+        const acao = await openFaturaPreview(fatura);
+        if (acao === "authorize") return printInboxFile(name, mode, false, null, qty, duplex === true, { printPages: fatura.printPages });
+        if (acao === "full") return printInboxFile(name, mode, false, null, qty, duplex === true, { fullDoc: true });
+        return; // atendente cancelou: nenhuma folha gasta.
+      }
+    }
+  }
+  // Fatura de operadora e afins: o PDF chega com senha, o cliente sabe qual e.
+  if (!password) {
+    const file = printInboxCache.files.find(row => row.name === name);
+    if (file && file.valid === false && file.encrypted) {
+      const typed = prompt("Este PDF está protegido por senha.\nDigite a senha que o cliente informou (fatura de operadora costuma ser CPF ou o número do telefone):");
+      if (!typed) return toast("Impressão cancelada: informe a senha do cliente.");
+      password = typed;
+    }
+  }
+  const quantity = Math.min(20, Math.max(1, parseInt(copies, 10) || 1));
+  const frenteVerso = duplex === true;
+  toast(mode === "choose" ? "Abrindo a janela de impressão do Windows..." : frenteVerso ? "Enviando para a impressora (frente e verso)..." : quantity > 1 ? `Enviando ${quantity} cópias para a impressora...` : "Enviando para a impressora...");
+  try {
+    const result = await api("/api/print/inbox/print", { name, mode, reprint: reprint === true, copies: quantity, duplex: frenteVerso, ...(password ? { password } : {}), ...(opt.printPages ? { printPages: opt.printPages } : {}), ...(opt.fullDoc ? { fullDoc: true } : {}) });
+    if (result.opened) { toast("Arquivo aberto no Windows: escolha a impressora na janela."); return; }
+    if (result.printPages) toast(`Fatura: saiu só a folha do pagamento (pág. ${result.printPages.join(", ")} de ${result.totalPages}).`);
+    const cached = printInboxCache.files.find(file => file.name === name);
+    if (cached) {
+      cached.printedAt = new Date().toISOString();
+      cached.jobId = result.jobId;
+      cached.jobPages = result.pages;
+      cached.jobColor = result.color;
+      cached.jobNoColor = result.noColor;
+      cached.jobAmountCents = result.amountCents;
+      cached.jobPrinter = result.printer;
+      cached.jobUnitCents = result.unitCents;
+      renderPrintInbox();
+    }
+    pendingPrintCharge = { jobId: result.jobId, jobIds: [result.jobId], name, pages: result.pages, color: result.color, noColor: result.noColor, amountCents: result.amountCents, unitCents: result.unitCents, printer: result.printer };
+    openPrintChargeDialog(pendingPrintCharge);
+  } catch (cause) {
+    if (!reprint && /já foi impresso/i.test(cause.message) && confirm(`${cause.message}\n\nImprimir de novo?`)) {
+      return printInboxFile(name, mode, true, password, quantity, frenteVerso, opt);
+    }
+    if (/senha/i.test(cause.message)) {
+      const typed = prompt(`${cause.message}\n\nDigite a senha do cliente:`);
+      if (typed) return printInboxFile(name, mode, reprint, typed, quantity, frenteVerso, opt);
+    }
+    toast(cause.message);
+  }
+}
+
+// Lote: imprime todos os marcados de uma vez e abre um cartao unico com o total.
+async function printInboxBatch() {
+  const rows = [...document.querySelectorAll("#printInboxList tr")].filter(row => row.querySelector(".printSelect:checked"));
+  if (!rows.length) return toast("Marque ao menos um arquivo na caixa de seleção.");
+  const items = rows.map(row => ({
+    name: (row.querySelector("[data-print-file]")?.dataset.printFile) || "",
+    copies: Math.min(20, Math.max(1, parseInt(row.querySelector(".printCopies")?.value, 10) || 1)),
+    duplex: row.querySelector(".printDuplex")?.classList.contains("active") === true
+  })).filter(item => item.name);
+  if (!items.length) return toast("Nada para imprimir.");
+  toast(`Enviando ${items.length} arquivo(s) para a impressora...`);
+  try {
+    const result = await api("/api/print/inbox/print-batch", { mode: "bw", items });
+    const okJobs = (result.jobs || []).filter(job => job.jobId);
+    if (!okJobs.length) {
+      const firstError = (result.jobs || []).find(job => job.error);
+      return toast(`Nenhum arquivo impresso. ${firstError ? firstError.error : ""}`);
+    }
+    for (const job of okJobs) {
+      const cached = printInboxCache.files.find(file => file.name === job.name);
+      if (cached) {
+        cached.printedAt = new Date().toISOString();
+        cached.jobId = job.jobId;
+        cached.jobPages = job.pages;
+        cached.jobColor = job.color;
+        cached.jobNoColor = job.noColor;
+        cached.jobAmountCents = job.amountCents;
+      }
+    }
+    renderPrintInbox();
+    const failed = (result.jobs || []).filter(job => job.error);
+    if (failed.length) toast(`${failed.length} arquivo(s) não saíram: ${failed.map(job => `${job.name} (${job.error})`).join("; ").slice(0, 180)}`);
+    const boletoOnly = (result.jobs || []).filter(job => job.printPages && job.jobId);
+    if (boletoOnly.length) toast(`Fatura(s): só a folha do pagamento saiu (${boletoOnly.map(job => job.name).join("; ").slice(0, 140)}).`);
+    pendingPrintCharge = {
+      jobId: okJobs[0].jobId,
+      jobIds: okJobs.map(job => job.jobId),
+      name: `${okJobs.length} ${okJobs.length === 1 ? "arquivo" : "arquivos"}`,
+      pages: result.pages,
+      color: false,
+      noColor: okJobs.some(job => job.noColor),
+      amountCents: result.amountCents,
+      unitCents: result.unitCents,
+      printer: result.printer
+    };
+    openPrintChargeDialog(pendingPrintCharge);
+  } catch (cause) { toast(cause.message); }
+}
+
+// Grade: junta de 1 a 4 fotos de documentos em 1 unica folha A4 no formato 9x13 cm.
+// O campo "Copias da folha" define quantas folhas iguais saem (confere antes de imprimir).
+// Lote ja impresso pede confirmacao antes de gastar outra folha.
+async function printInboxGrid(reprint = false) {
+  const rows = [...document.querySelectorAll("#printInboxList tr")].filter(row => row.querySelector(".printSelect:checked"));
+  if (!rows.length) return toast("Marque de 1 a 4 fotos para juntar no documento.");
+  if (rows.length > 4) return toast("Máximo de 4 fotos por folha A4.");
+  const items = rows.map(row => ({
+    name: (row.querySelector("[data-print-file]")?.dataset.printFile) || "",
+  })).filter(item => item.name);
+  if (!items.length) return toast("Nenhuma foto selecionada.");
+  const copies = Math.min(20, Math.max(1, parseInt($("#printDocGridCopies")?.value, 10) || 1));
+  toast(`Montando folha com ${items.length} foto(s) no formato 9×13 cm${copies > 1 ? ` (${copies} cópias)` : ""}...`);
+  try {
+    const result = await api("/api/print/inbox/print-grid", { mode: "bw", items, copies, ...(reprint ? { reprint: true } : {}) });
+    for (const name of (result.files || [])) {
+      const cached = printInboxCache.files.find(file => file.name === name);
+      if (cached) {
+        cached.printedAt = new Date().toISOString();
+        cached.jobId = result.jobId;
+        cached.jobPages = result.pages;
+        cached.jobColor = result.color;
+        cached.jobNoColor = result.noColor;
+        cached.jobAmountCents = result.amountCents;
+      }
+    }
+    renderPrintInbox();
+    pendingPrintCharge = {
+      jobId: result.jobId,
+      jobIds: [result.jobId],
+      name: result.name,
+      pages: result.pages,
+      color: false,
+      noColor: result.noColor,
+      amountCents: result.amountCents,
+      unitCents: result.unitCents,
+      printer: result.printer
+    };
+    openPrintChargeDialog(pendingPrintCharge);
+  } catch (cause) {
+    if (!reprint && /já foi impresso/i.test(cause.message) && confirm(`${cause.message}\n\nImprimir este lote de novo?`)) {
+      return printInboxGrid(true);
+    }
+    toast(cause.message);
+  }
+}
+
+// Preco do servico "Recebimento de Arquivos" (#20): vale mesmo fora da aba Impressao (auto-abertura).
+function printReceiptCents() {
+  if (printInboxCache.receiptCents) return printInboxCache.receiptCents;
+  const product = (state?.products || []).find(p => p.active && p.code === "20")
+    || (state?.products || []).find(p => p.active && /Recebimento de Arquivos/i.test(p.name));
+  return product ? product.priceCents : 0;
+}
+
+function openPrintChargeDialog(result) {
+  const dialog = $("#printChargeDialog");
+  if (!dialog || !result) return;
+  const pages = result.pages || 1;
+  const unit = result.unitCents || (result.color ? printInboxCache.colorCents : printInboxCache.blackCents);
+  const summary = `${result.name} · ${pages} ${pages === 1 ? "página" : "páginas"} · ${result.color ? "colorida" : "P&B"}${result.noColor ? " (documento sem cor: cobrado como P&B)" : ""} · ${result.printer || ""}`;
+  $("#printChargeSummary").textContent = summary;
+  $("#printChargeAmount").value = ((result.amountCents || 0) / 100).toFixed(2).replace(".", ",");
+  const receiptCents = printReceiptCents();
+  const receiptBox = $("#printChargeReceipt");
+  const receiptText = $("#printChargeReceiptText");
+  if (receiptBox) receiptBox.checked = receiptCents > 0;
+  if (receiptText) receiptText.textContent = receiptCents ? `+ ${currency(receiptCents)}` : "catálogo sem o serviço #20";
+  $("#printChargeHint").textContent = receiptCents
+    ? `Tabela: ${pages} × ${currency(unit)} = ${currency(result.amountCents || 0)}, mais o recebimento do arquivo. A forma de pagamento você escolhe ao finalizar o cupom.`
+    : `Tabela: ${pages} × ${currency(unit)} = ${currency(result.amountCents || 0)}. O valor da impressão pode ser ajustado.`;
+  const machine = $("#printChargeMachine");
+  const busy = ((state && state.machines) || []).filter(item => item.session);
+  machine.innerHTML = busy.length
+    ? busy.map(item => `<option value="${html(item.session.id)}">${html(item.name)} · ${html(item.session.customer || "avulso")}</option>`).join("")
+    : `<option value="">Nenhuma máquina em uso</option>`;
+  $("#printChargeTarget").value = "cupom";
+  syncPrintChargeTarget();
+  if (!dialog.open) dialog.showModal();
+  setTimeout(() => { const input = $("#printChargeAmount"); input?.focus(); input?.select(); }, 60);
+}
+
+function syncPrintChargeTarget() {
+  const target = $("#printChargeTarget")?.value || "cupom";
+  const machineField = $("#printChargeMachineField");
+  if (machineField) machineField.hidden = target !== "machine";
+  const submit = $("#printChargeForm button[type=submit]");
+  if (submit) submit.disabled = target === "machine" && !$("#printChargeMachine")?.value;
+}
+
+function closePrintCharge() {
+  const dialog = $("#printChargeDialog");
+  if (dialog?.open) dialog.close();
+  if (pendingPrintCharge) {
+    for (const id of (pendingPrintCharge.jobIds || [pendingPrintCharge.jobId])) dismissedPrintCharges.add(id);
+  }
+  pendingPrintCharge = null;
+}
+
+document.addEventListener("click", event => {
+  // Frente e verso: botao da propria linha, liga/desliga na hora.
+  const duplexToggle = event.target.closest(".printDuplex");
+  if (duplexToggle) { duplexToggle.classList.toggle("active"); return; }
+
+  const chargeButton = event.target.closest("[data-print-charge]");
+  if (chargeButton) {
+    const file = printInboxCache.files.find(row => row.jobId === chargeButton.dataset.printCharge);
+    if (!file) return toast("Impressão não encontrada. Atualize a pasta.");
+    pendingPrintCharge = {
+      jobId: file.jobId,
+      jobIds: [file.jobId],
+      name: file.name,
+      pages: file.jobPages || file.pages || 1,
+      color: file.jobColor,
+      noColor: file.jobNoColor,
+      amountCents: file.jobAmountCents || 0,
+      unitCents: file.jobUnitCents,
+      printer: file.jobPrinter || ""
+    };
+    openPrintChargeDialog(pendingPrintCharge);
+    return;
+  }
+  const printButton = event.target.closest("[data-print-file]");
+  if (printButton && !printButton.disabled) {
+    event.preventDefault();
+    const cell = printButton.closest(".printInboxActions");
+    const copies = parseInt(cell?.querySelector(".printCopies")?.value, 10) || 1;
+    const duplex = cell?.querySelector(".printDuplex")?.classList.contains("active") === true;
+    printInboxFile(printButton.dataset.printFile, printButton.dataset.printMode, false, null, copies, duplex);
+  }
+});
+
+// Marca/desmarca para o lote: o botao da secao mostra a contagem na hora.
+document.addEventListener("change", event => {
+  if (event.target.classList?.contains("printSelect")) updatePrintBatchBtn();
+});
+
+$("#printBatchBtn")?.addEventListener("click", printInboxBatch);
+
+$("#printDocGridBtn")?.addEventListener("click", printInboxGrid);
+
+document.addEventListener("click", async event => {
+  const rotateBtn = event.target.closest("[data-rotate-file]");
+  if (rotateBtn) {
+    const name = rotateBtn.dataset.rotateFile;
+    toast("Girando imagem 90°...");
+    try {
+      await api("/api/print/inbox/rotate", { name, degrees: 90 });
+      toast("Imagem girada com sucesso.");
+      loadPrintInbox(true);
+    } catch (cause) { toast(cause.message); }
+  }
+});
+
+$("#printInboxRefresh")?.addEventListener("click", () => loadPrintInbox(true));
+
+$("#printInboxPrefs")?.addEventListener("click", async () => {
+  try {
+    await api("/api/printers/open-driver-prefs", { printer: printInboxCache.color });
+    toast("Preferências abertas: confirme bandeja e tipo de papel antes do especial.");
+  } catch (cause) { toast(cause.message); }
+});
+
+$("#printInboxSearch")?.addEventListener("input", renderPrintInbox);
+$("#printInboxOnlyNew")?.addEventListener("change", renderPrintInbox);
+$("#printChargeTarget")?.addEventListener("change", syncPrintChargeTarget);
+$("#printChargeMachine")?.addEventListener("change", syncPrintChargeTarget);
+
+$("#printAutoBoleto")?.addEventListener("change", async event => {
+  try {
+    const result = await api("/api/print/inbox/auto", { enabled: event.target.checked });
+    event.target.checked = result.enabled === true;
+    toast(result.enabled
+      ? "Ligado: boleto de 1 página com código de barras imprime sozinho (a cobrança continua esperando você)."
+      : "Impressão automática de boleto desligada.");
+  } catch (cause) {
+    event.target.checked = !event.target.checked;
+    toast(cause.message);
+  }
+});
+
+// Aviso de chegada: o servidor vigia a pasta de recebimento e o painel toca
+// quando algo novo desce, mesmo em outra aba. A primeira carga nao toca nada.
+const inboxNewsSeen = new Set();
+let inboxNewsFirstLoad = true;
+
+function checkInboxNews() {
+  const news = (state && state.inboxNews) || [];
+  if (inboxNewsFirstLoad) {
+    inboxNewsFirstLoad = false;
+    for (const item of news) inboxNewsSeen.add(`${item.at}|${item.name}`);
+    return;
+  }
+  let fresh = 0;
+  let firstName = "";
+  for (const item of news) {
+    const key = `${item.at}|${item.name}`;
+    if (inboxNewsSeen.has(key)) continue;
+    inboxNewsSeen.add(key);
+    fresh++;
+    if (!firstName) firstName = item.name;
+  }
+  if (!fresh) return;
+  playChime("alert");
+  toast(fresh === 1 ? `Arquivo recebido: ${firstName}` : `${fresh} arquivos recebidos (ex.: ${firstName})`);
+  if (currentView === "print") loadPrintInbox(false);
+}
+
+// Impressão pronta e ainda sem cobrança (clique manual ou boleto automático):
+// abre o cartão de cobrança sozinho para o atendente só escolher o pagamento e validar.
+function checkPrintedForCharge() {
+  const dialog = $("#printChargeDialog");
+  if (!dialog || dialog.open) return;
+  if (!state || !Array.isArray(state.printJobs)) return;
+  const nowMs = Date.now() + serverOffset;
+  for (const job of state.printJobs) {
+    if (job.source !== "counter" || job.state !== "printed" || job.chargeId) continue;
+    if (dismissedPrintCharges.has(job.id) || pendingPrintCharge?.jobId === job.id) continue;
+    if (posPrintJobs.has(job.id)) continue;
+    const printedAt = Date.parse(job.printedAt || job.at);
+    if (!Number.isFinite(printedAt) || nowMs - printedAt > 15 * 60000) continue;
+    pendingPrintCharge = {
+      jobId: job.id,
+      jobIds: [job.id],
+      name: job.fileName || "Impressão",
+      pages: job.pages || 1,
+      color: job.billedColor === undefined ? !!job.color : !!job.billedColor,
+      noColor: !!job.noColor,
+      amountCents: job.amountCents || 0,
+      unitCents: Math.round((job.amountCents || 0) / (job.pages || 1)),
+      printer: job.printer || ""
+    };
+    openPrintChargeDialog(pendingPrintCharge);
+    playChime("alert");
+    return;
+  }
+}
+$("#printChargeClose")?.addEventListener("click", closePrintCharge);
+$("#printChargeCancel")?.addEventListener("click", closePrintCharge);
+$("#printChargeDialog")?.addEventListener("close", () => {
+  if (pendingPrintCharge) {
+    for (const id of (pendingPrintCharge.jobIds || [pendingPrintCharge.jobId])) dismissedPrintCharges.add(id);
+  }
+  pendingPrintCharge = null;
+});
+
+// Coloca a impressão no cupom do PDV: recebimento de arquivo (#20) + páginas (#1.1 P&B / #2-B cor).
+// Devolve o trabalho para o atendente terminar como sempre: acrescentar serviços e finalizar a venda.
+function launchPrintToPosCart(job, printCents, receiptOn) {
+  const pages = job.pages || 1;
+  const receiptCents = printReceiptCents();
+  if (receiptOn && receiptCents) {
+    const receipt = (state?.products || []).find(p => p.active && p.code === "20")
+      || (state?.products || []).find(p => p.active && /Recebimento de Arquivos/i.test(p.name));
+    if (receipt) addPosProduct(receipt.id, 1);
+    else {
+      const id = "custom_receipt";
+      const current = posCart.get(id);
+      if (current) current.quantity += 1;
+      else posCart.set(id, { id, type: "custom", name: "Recebimento de Arquivos (#20)", code: "20", category: "Lan House & Serviços Digitais", priceCents: receiptCents, quantity: 1, maxStock: null });
+    }
+  }
+  const code = job.color ? "2-B" : "1.1";
+  const product = (state?.products || []).find(p => p.active && p.code === code)
+    || (state?.products || []).find(p => p.active && (job.color ? /Impressão Colorida/i.test(p.name) : /Impressão P\/?B/i.test(p.name)));
+  // Valor ajustado no cartão vira preço unitário próprio (linha separada no cupom, como no PDV).
+  const unit = Math.max(1, Math.round(printCents / pages));
+  let key;
+  if (product) {
+    addPosProduct(product.id, pages, unit);
+    key = unit === product.priceCents ? product.id : `${product.id}@${unit}`;
+  } else {
+    const id = job.color ? "custom_print_color" : "custom_print_bw";
+    const current = posCart.get(id);
+    if (current) current.quantity += pages;
+    else posCart.set(id, { id, type: "custom", name: job.color ? "Impressão Colorida (#2-B)" : "Impressão P&B (#1.1)", code, category: "Gráfica Rápida", priceCents: unit, quantity: pages, maxStock: null });
+    key = id;
+  }
+  posPrintJobs.set(job.jobId, { key, name: job.name });
+  for (const id of (job.jobIds || [])) posPrintJobs.set(id, { key, name: job.name });
+  playChime("success");
+  renderPOSTicket();
+}
+
+$("#printChargeForm")?.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!pendingPrintCharge) return;
+  const typed = String($("#printChargeAmount").value || "").trim();
+  const normalized = typed.includes(",") ? typed.replace(/\./g, "").replace(",", ".") : typed;
+  const value = Number(normalized);
+  if (!Number.isFinite(value) || value <= 0) return toast("Informe o valor da impressão.");
+  const printCents = Math.round(value * 100);
+  const receiptOn = $("#printChargeReceipt")?.checked === true && printReceiptCents() > 0;
+  const target = $("#printChargeTarget").value;
+  const job = pendingPrintCharge;
+  const submit = event.target.querySelector("button[type=submit]");
+  if (submit) submit.disabled = true;
+  try {
+    if (target === "cupom") {
+      launchPrintToPosCart(job, printCents, receiptOn);
+      pendingPrintCharge = null;
+      $("#printChargeDialog")?.close();
+      renderPrintInbox();
+      // Vai direto para o fechamento: forma de pagamento, desconto e finalizar, sem clicar de novo.
+      view("cash");
+      const destination = $("#posDestinationSelect");
+      if (destination && destination.value !== "counter") {
+        destination.value = "counter";
+        destination.dispatchEvent(new Event("change"));
+      }
+      setTimeout(() => $("#posSubmitTicketBtn")?.click(), 80);
+      toast(`No cupom: ${(job.pages || 1)} pág de impressão${receiptOn ? " + recebimento do arquivo" : ""}. Escolha a forma de pagamento e finalize.`);
+    } else {
+      const payload = { jobId: job.jobId, jobIds: job.jobIds || [job.jobId], amountCents: printCents + (receiptOn ? printReceiptCents() : 0), receipt: receiptOn, target };
+      if (target === "machine") {
+        payload.sessionId = $("#printChargeMachine").value;
+        if (!payload.sessionId) return toast("Nenhuma máquina em uso para juntar. Lance no cupom ou deixe pendente.");
+      }
+      await api("/api/print/inbox/charge", payload);
+      const cached = printInboxCache.files.find(file => file.name === job.name);
+      if (cached) cached.chargedAt = new Date().toISOString();
+      pendingPrintCharge = null;
+      $("#printChargeDialog")?.close();
+      renderPrintInbox();
+      toast(target === "machine" ? "Juntado na comanda da máquina (sai no encerrar e receber)." : "Cobrança pendente registrada no caixa.");
+      loadState();
+    }
+  } catch (cause) {
+    toast(cause.message);
+  } finally {
+    if (submit) submit.disabled = false;
+    syncPrintChargeTarget();
+  }
+});
+

@@ -12,7 +12,9 @@ $serverJs = Join-Path $serverDir "server.js"
 Write-Host "Node: $node"
 Write-Host "Projeto: $projectRoot"
 
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
+# Prioridade 4 (normal). O padrao do Agendador (7) tambem baixa a prioridade de disco: com outro programa
+# usando o D:, o servidor esperava minutos por cada leitura e o painel parava de responder (18/11/2026).
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew -Priority 4
 $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
 # AtStartup liga com o Windows; a repeticao a cada minuto religa o servidor se ele cair (IgnoreNew evita duas instancias).
 $trigger = @((New-ScheduledTaskTrigger -AtStartup), (New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -RepetitionDuration (New-TimeSpan -Days 3650)))
