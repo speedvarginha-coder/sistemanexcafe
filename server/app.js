@@ -501,9 +501,9 @@ const defaultPrintRunner = {
 
   inbox: folder => runPrintScript(["-Action", "Inbox", "-Folder", folder], 180000),
 
-  barcode: file => runPrintScript(["-Action", "Barcode", "-Path", file], 120000),
+  barcode: (file, password) => runPrintScript(["-Action", "Barcode", "-Path", file, ...(password ? ["-Password", password] : [])], 120000),
 
-  pageImage: (file, page) => runPrintScript(["-Action", "PageImage", "-Path", file, "-Page", String(page || 1)], 90000),
+  pageImage: (file, page, password) => runPrintScript(["-Action", "PageImage", "-Path", file, "-Page", String(page || 1), ...(password ? ["-Password", password] : [])], 90000),
 
   info: (file, password) => runPrintScript(["-Action", "Info", "-Path", file, ...(password ? ["-Password", password] : [])], 60000),
 
@@ -2555,16 +2555,14 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
   // Fatura de banco/operadora em PDF: imprime so a folha do pagamento (a que tem o codigo de barras),
   // nao as folhas de instrucao que vem junto. Devolve as paginas 1-based a imprimir ou null (= documento inteiro).
-  // So para PDF de 2 a 10 paginas e sem senha: leitura do codigo de barras abre o arquivo original.
+  // So para PDF de 2 a 10 paginas. Com senha: a leitura roda na copia desbloqueada em cache.
   async function faturaPrintPages(file, info, password) {
-
-    if (password) return null;
 
     if (!info || !Number.isInteger(info.pages) || info.pages < 2 || info.pages > 10) return null;
 
     try {
 
-      const barcode = await printRunner.barcode(file);
+      const barcode = await printRunner.barcode(file, password);
 
       if (!barcode || !barcode.ok || !Array.isArray(barcode.pages) || !barcode.pages.length) return null;
 
@@ -5763,10 +5761,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       if (path.extname(name).toLowerCase() !== ".pdf") return send(res, 200, { ok: true, fatura: false });
 
-      // PDF com senha sai inteiro: a leitura do codigo de barras nao abre o original.
-      if (label(input.password, 100)) return send(res, 200, { ok: true, fatura: false });
+      // Com ou sem senha: a leitura abre a copia desbloqueada em cache (o original nao e tocado).
+      const password = label(input.password, 100);
 
-      const info = await printRunner.info(file, "");
+      const info = await printRunner.info(file, password);
 
       if (!info || !info.ok || info.valid === false) throw err(400, (info && info.problem) || "Nao foi possivel ler o documento");
 
@@ -5775,7 +5773,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       // Sugestao: se so algumas paginas tem codigo de barras de boleto, elas vem marcadas;
       // senao todas vem marcadas (documento comum: um clique autoriza e sai inteiro).
-      const suggested = await faturaPrintPages(file, info, "");
+      const suggested = await faturaPrintPages(file, info, password);
 
       // Miniatura de cada folha com a marcacao de codigo de barras.
       const previews = [];
@@ -5784,7 +5782,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
         try {
 
-          const img = await printRunner.pageImage(file, page);
+          const img = await printRunner.pageImage(file, page, password);
 
           if (img && img.ok && img.image) previews.push({ page, image: `data:image/jpeg;base64,${img.image}`, barcode: !!(suggested && suggested.includes(page)) });
 

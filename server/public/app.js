@@ -7366,20 +7366,31 @@ $("#faturaPreviewClose")?.addEventListener("click", () => closeFaturaPreview("ca
 $("#faturaPreviewDialog")?.addEventListener("close", () => { if (faturaPreviewResolve) closeFaturaPreview("cancel"); });
 
 async function printInboxFile(name, mode, reprint, password, copies, duplex, escolha) {
-  // PDF de varias paginas: cartao de conferencia mostra cada folha, o atendente
-  // marca o que sai e autoriza antes de gastar papel. Nao e multi-pagina: fluxo direto.
+  // PDF com senha: pede a senha ANTES da conferencia — o cartao mostra as folhas da copia aberta.
+  if (!password && !reprint && (mode === "bw" || mode === "color")) {
+    const cifrado = printInboxCache.files.find(file => file.name === name);
+    if (cifrado && cifrado.valid === false && cifrado.encrypted) {
+      const digitada = prompt("Este PDF está protegido por senha.\nDigite a senha que o cliente informou (fatura de operadora costuma ser CPF ou o número do telefone):");
+      if (!digitada) return toast("Impressão cancelada: informe a senha do cliente.");
+      password = digitada;
+    }
+  }
+  // PDF de varias paginas (com ou sem senha): cartao de conferencia mostra cada folha,
+  // o atendente marca o que sai e autoriza antes de gastar papel. Nao e multi-pagina: fluxo direto.
   const opt = escolha || {};
-  if (!reprint && !opt.printPages && !opt.fullDoc && (mode === "bw" || mode === "color") && !password) {
+  if (!reprint && !opt.printPages && !opt.fullDoc && (mode === "bw" || mode === "color")) {
     const cached = printInboxCache.files.find(file => file.name === name);
-    if (cached && cached.kind === "pdf" && (cached.pages || 0) > 1) {
+    // Arquivo com senha vem sem contagem na fila (o servidor nao abre sem senha): a rota confere por nos.
+    const multiPaginas = cached && cached.kind === "pdf" && ((cached.pages || 0) > 1 || (cached.encrypted && password));
+    if (multiPaginas) {
       const qty = Math.min(20, Math.max(1, parseInt(copies, 10) || 1));
       toast("Conferindo as páginas do PDF...");
       let fatura = null;
-      try { fatura = await api("/api/print/inbox/fatura-preview", { name, copies: qty }); } catch { }
+      try { fatura = await api("/api/print/inbox/fatura-preview", { name, copies: qty, ...(password ? { password } : {}) }); } catch { }
       if (fatura && Array.isArray(fatura.previews) && fatura.previews.length) {
         const escolhaCartao = await openFaturaPreview(fatura);
-        if (escolhaCartao.acao === "authorize" && escolhaCartao.pages.length) return printInboxFile(name, mode, false, null, qty, duplex === true, { printPages: escolhaCartao.pages });
-        if (escolhaCartao.acao === "full") return printInboxFile(name, mode, false, null, qty, duplex === true, { fullDoc: true });
+        if (escolhaCartao.acao === "authorize" && escolhaCartao.pages.length) return printInboxFile(name, mode, false, password, qty, duplex === true, { printPages: escolhaCartao.pages });
+        if (escolhaCartao.acao === "full") return printInboxFile(name, mode, false, password, qty, duplex === true, { fullDoc: true });
         return; // atendente cancelou: nenhuma folha gasta.
       }
     }

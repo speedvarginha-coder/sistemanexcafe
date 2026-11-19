@@ -510,8 +510,10 @@ try {
         Write-Output (ConvertTo-Json -InputObject @{ ok = $true; printers = $names } -Compress)
     } elseif ($Action -eq "Barcode") {
         if (-not (Test-Path -LiteralPath $Path)) { throw "Arquivo nao encontrado." }
-        $found = Get-BarcodePages -Path ([System.IO.Path]::GetFullPath($Path))
-        $total = [int](Open-PdfDocument -Path ([System.IO.Path]::GetFullPath($Path))).PageCount
+        # PDF com senha: a deteccao roda na copia desbloqueada em cache, nunca no original.
+        $printable = Ensure-PrintablePdf -Path ([System.IO.Path]::GetFullPath($Path)) -Password $Password
+        $found = Get-BarcodePages -Path $printable
+        $total = [int](Open-PdfDocument -Path $printable).PageCount
         Write-Output (ConvertTo-Json -InputObject @{ ok = $true; total = $total; pages = @($found) } -Compress)
     } elseif ($Action -eq "Info") {
         if (-not (Test-Path -LiteralPath $Path)) { throw "Arquivo nao encontrado." }

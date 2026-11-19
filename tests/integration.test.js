@@ -1618,11 +1618,12 @@ test("fatura: cartao de autorizacao mostra a folha do boleto e imprime so o que 
   const inboxDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-fatura-auth-inbox-"));
   fs.writeFileSync(path.join(inboxDir, "Fatura_Itau_3pag.pdf"), Buffer.concat([Buffer.from("%PDF-1.4 teste"), Buffer.alloc(8)]));
   const printed = [];
+  const senhas = [];
   const printRunner = {
     list: async () => ({ ok: true, printers: ["HP Laser MFP 432 PCL6"] }),
-    info: async () => ({ ok: true, pages: 3, kind: "pdf", valid: true }),
-    barcode: async () => ({ ok: true, total: 3, pages: [1] }),
-    pageImage: async (file, page) => ({ ok: true, page, total: 3, image: Buffer.from("imagem-jpg-fake").toString("base64") }),
+    info: async (file, password) => { senhas.push(password); return { ok: true, pages: 3, kind: "pdf", valid: true }; },
+    barcode: async (file, password) => { senhas.push(password); return { ok: true, total: 3, pages: [1] }; },
+    pageImage: async (file, page, password) => { senhas.push(password); return { ok: true, page, total: 3, image: Buffer.from("imagem-jpg-fake").toString("base64") }; },
     print: async job => {
       printed.push(job);
       // O spooler devolve as paginas reais que sairam: as pedidas ou todas.
@@ -1680,6 +1681,17 @@ test("fatura: cartao de autorizacao mostra a folha do boleto e imprime so o que 
     const fora = await request("/api/print/inbox/print", { name: "Fatura_Itau_3pag.pdf", mode: "bw", copies: 1, reprint: true, printPages: [9] });
     assert.equal(fora.status, 200);
     assert.equal(fora.payload.pages, 1, "pagina inexistente ignora e detecta o boleto");
+    // PDF com senha tambem tem conferencia: a leitura roda na copia desbloqueada em cache.
+    const comSenha = await request("/api/print/inbox/fatura-preview", { name: "Fatura_Itau_3pag.pdf", copies: 1, password: "123456" });
+    assert.equal(comSenha.status, 200);
+    assert.equal(comSenha.payload.fatura, true);
+    assert.equal(comSenha.payload.previews.length, 3, "com senha mostra as folhas tambem");
+    assert.ok(senhas.includes("123456"), "senha repassada para a leitura desbloqueada");
+    // Autorizou paginas com senha: imprime so elas.
+    const pagoComSenha = await request("/api/print/inbox/print", { name: "Fatura_Itau_3pag.pdf", mode: "bw", copies: 1, reprint: true, password: "123456", printPages: [1, 2] });
+    assert.equal(pagoComSenha.status, 200);
+    assert.equal(pagoComSenha.payload.pages, 2);
+    assert.equal(printed[printed.length - 1].pages, "1,2", "com senha imprime so as autorizadas");
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
 
