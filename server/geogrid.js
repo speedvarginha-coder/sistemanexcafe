@@ -6,12 +6,33 @@ const SEARCH_URL = "https://places.googleapis.com/v1/places:searchText";
 const DETAILS_URL = "https://places.googleapis.com/v1/places/";
 
 // Sem o nome da cidade: cidade escrita na busca anula o locationBias (documentacao da Text Search).
-const DEFAULT_TERMS = ["empréstimo consignado", "empréstimo", "antecipação fgts", "financeira"];
+const DEFAULT_TERMS = [
+  "empréstimo consignado",
+  "consignado clt",
+  "antecipação fgts",
+  "financeira",
+  "empréstimo com garantia de veículo",
+  "refinanciamento",
+  "portabilidade de crédito",
+  "cartão consignado",
+  "crédito para aposentado",
+  "empréstimo",
+  "lan house",
+  "empréstimo pessoal"
+];
 const DEFAULT_CENTER = { lat: -21.5551923, lng: -45.439385 }; // Rua Santa Cruz, 696 (pino da ficha)
 const GRID_SIZE = 5;
 const SPACING_KM = 1;
 const BIAS_RADIUS_M = 1000;
 const OUT = 21; // fora dos 20 primeiros, para a media
+
+const BAIRROS_VARGINHA = [
+  ["Alto dos Pinheiros / Rezende", "Vila Floresta / Sta. Maria", "Parque Mariela / Pinheiros", "Sion Norte / São Geraldo", "Canaã / São Sebastião"],
+  ["Jardim Andere / Imaculada", "Vila Paiva / Bom Pastor", "Centro Norte / Rodoviária", "Jardim Alvorada / Bela Vista", "Vila Sion / Padre Victor"],
+  ["Vila Pinto / Medicina", "Vila Isabel / Mercado", "Centro (Sede Speed)", "Jardim América / Sion Sul", "Parque Novo Horizonte"],
+  ["Santana / Damasco", "Catanduvas / Vila Morani", "Vila Barcelona / Santa Luiza", "Parque Rinaldini / Vargem", "Jd. Mont Serrat / Carvalhos"],
+  ["Polo Industrial / Princesa", "Três Bicas / Aeroporto", "Corcetti / Sagrado Coração", "Jardim Europa / Fátima", "Zona Sul / Trevo Varginha"]
+];
 
 const placesError = (message, status = 502) => Object.assign(new Error(message), { status });
 
@@ -23,7 +44,10 @@ function gridPoints(center = DEFAULT_CENTER, size = GRID_SIZE, spacingKm = SPACI
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
       // Linha 0 = norte, coluna 0 = oeste.
-      points.push({ row, col, lat: +(center.lat + (half - row) * dLat).toFixed(6), lng: +(center.lng + (col - half) * dLng).toFixed(6) });
+      const lat = +(center.lat + (half - row) * dLat).toFixed(6);
+      const lng = +(center.lng + (col - half) * dLng).toFixed(6);
+      const bairro = BAIRROS_VARGINHA[row]?.[col] || `Ponto L${row + 1} C${col + 1}`;
+      points.push({ row, col, lat, lng, bairro });
     }
   }
   return points;
@@ -78,7 +102,9 @@ async function measureGeogrid({ key, placeId, terms = DEFAULT_TERMS, center = DE
       calls++;
       const ids = (data.places || []).map(place => place.id);
       const index = ids.indexOf(placeId);
-      return { row: point.row, col: point.col, lat: point.lat, lng: point.lng, rank: index >= 0 ? index + 1 : null, leader: ids[0] || null, ids };
+      const top3Ids = ids.slice(0, 3);
+      const bairro = point.bairro || BAIRROS_VARGINHA[point.row]?.[point.col] || `Ponto L${point.row + 1} C${point.col + 1}`;
+      return { row: point.row, col: point.col, lat: point.lat, lng: point.lng, bairro, rank: index >= 0 ? index + 1 : null, leader: ids[0] || null, top3Ids, ids };
     });
     const ranks = cells.map(cell => cell.rank || OUT);
     const leaders = {};
@@ -130,4 +156,4 @@ function rivals(cells, placeId, limit = 8) {
     .sort((a, b) => b.top3 - a.top3 || a.average - b.average).slice(0, limit);
 }
 
-module.exports = { measureGeogrid, findPlaces, gridPoints, rivals, DEFAULT_TERMS, DEFAULT_CENTER, GRID_SIZE, SPACING_KM };
+module.exports = { measureGeogrid, findPlaces, gridPoints, rivals, BAIRROS_VARGINHA, DEFAULT_TERMS, DEFAULT_CENTER, GRID_SIZE, SPACING_KM };

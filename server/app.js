@@ -34,6 +34,8 @@ const ficha = require("./ficha-saude");
 
 const searchConsole = require("./search-console");
 const waCliques = require("./wa-cliques");
+const oportunidades = require("./oportunidades");
+const monitorClt = require("./piloto-clt");
 
 const vm = require("node:vm");
 
@@ -309,7 +311,7 @@ function verifyPassword(password, user) {
 
 function defaults() {
 
-  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, gmbApi: emptyGmbApi(), fichaSaude: { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null }, gmbPosts: { publicados: {}, erros: {} }, searchConsole: { dados: null, lastError: null }, waClicks: { fetchedAt: null, dias: {}, lastError: null }, vault: { salt: null, check: null, items: [], updatedAt: null }, crlv: { token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FwcC5hcGlicmFzaWwuaW8vYXBpL3YyL2F1dGgvbG9naW4iLCJpYXQiOjE3OTM4MzUyNzAsImV4cCI6MTgyNTM3MTI3MCwibmJmIjoxNzkzODM1MjcwLCJqdGkiOiJyTU1Lb3V2cHlQczhYQ252Iiwic3ViIjoiMTc3MDkiLCJzZWFyY2giOiI1MjIyNTUyOC02ZmZkLTQyYWUtOTc5MS1jNjFlOTY0YTM2YjEifQ.-37PXjIIeipnCELtCl54XIDCBZR1nPbi4tBIuAIoDGg", history: [] } };
+  return { version: 2, createdAt: now(), installKey: crypto.randomBytes(12).toString("base64url"), printerShares: [], settings: { defaultMinutes: 60, autoRestoreOnTimeEnd: true, rateCentsHour: 500, printBWCents: 100, printColorCents: 200, printBlackPrinter: "", printColorPrinter: "", printInboxDir: "", timeTable: [{ minutes: 15, cents: 300 }, { minutes: 30, cents: 370 }, { minutes: 60, cents: 500 }], printTiers: DEFAULT_PRINT_TIERS.map(row => ({ ...row })), printTiersEnabled: false, printAutoBoleto: false, comboHintsEnabled: true }, machines: {}, events: [], users: [], loginSessions: [], clients: [], products: [], charges: [], payments: [], sessionHistory: [], stockMovements: [], cashShifts: [], cashAdjustments: [], expenses: [], incomes: [], printJobs: [], waitList: [], marketing: { store: {}, updatedAt: null }, geogrid: { key: "", placeId: "", placeName: "", placeAddress: "", runs: [], lastError: null }, gmbApi: emptyGmbApi(), fichaSaude: { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null }, gmbPosts: { publicados: {}, erros: {} }, searchConsole: { dados: null, lastError: null }, waClicks: { fetchedAt: null, dias: {}, lastError: null }, vault: { salt: null, check: null, items: [], updatedAt: null }, crlv: { token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL2FwcC5hcGlicmFzaWwuaW8vYXBpL3YyL2F1dGgvbG9naW4iLCJpYXQiOjE3OTM4MzUyNzAsImV4cCI6MTgyNTM3MTI3MCwibmJmIjoxNzkzODM1MjcwLCJqdGkiOiJyTU1Lb3V2cHlQczhYQ252Iiwic3ViIjoiMTc3MDkiLCJzZWFyY2giOiI1MjIyNTUyOC02ZmZkLTQyYWUtOTc5MS1jNjFlOTY0YTM2YjEifQ.-37PXjIIeipnCELtCl54XIDCBZR1nPbi4tBIuAIoDGg", history: [] } };
 
 }
 
@@ -370,6 +372,27 @@ function normalize(db) {
   db.geogrid.runs ||= [];
 
   db.gmbApi ||= emptyGmbApi();
+
+  // Restaura automaticamente credenciais caso db.json tenha sido reiniciado ou resetado
+  try {
+    const credsPath = path.join(dataDir, "api-credentials.json");
+    if (fs.existsSync(credsPath)) {
+      const savedCreds = JSON.parse(fs.readFileSync(credsPath, "utf8"));
+      if (!db.geogrid.key && savedCreds.geogrid?.key) {
+        db.geogrid.key = savedCreds.geogrid.key;
+        db.geogrid.placeId = savedCreds.geogrid.placeId || db.geogrid.placeId;
+        db.geogrid.placeName = savedCreds.geogrid.placeName || db.geogrid.placeName;
+        db.geogrid.placeAddress = savedCreds.geogrid.placeAddress || db.geogrid.placeAddress;
+      }
+      if (!db.gmbApi.refreshToken && savedCreds.gmbApi?.refreshToken) {
+        db.gmbApi.clientId = savedCreds.gmbApi.clientId || db.gmbApi.clientId;
+        db.gmbApi.clientSecret = savedCreds.gmbApi.clientSecret || db.gmbApi.clientSecret;
+        db.gmbApi.refreshToken = savedCreds.gmbApi.refreshToken;
+        db.gmbApi.locationName = savedCreds.gmbApi.locationName || db.gmbApi.locationName;
+        db.gmbApi.accountName = savedCreds.gmbApi.accountName || db.gmbApi.accountName;
+      }
+    }
+  } catch (e) { console.error("Aviso credenciais backup:", e.message); }
 
   db.fichaSaude ||= { health: null, history: [], snapshot: null, changes: [], googleDiff: [], nap: null, lastError: null };
 
@@ -444,11 +467,51 @@ function runPrintScript(args, timeout = 240000) {
 
 }
 
+// Executa server/pdf-tools.py para manipulacao de imagens e PDFs (grade 9x13, rotacao, desbloqueio).
+function runPdfTool(args, timeout = 60000) {
+
+  const script = path.join(__dirname, "pdf-tools.py");
+
+  return new Promise(resolve => {
+
+    execFile("python.exe", [script, ...args], { timeout, windowsHide: true, maxBuffer: 1024 * 1024 }, (error, stdout) => {
+
+      const line = String(stdout || "").trim().split(/\r?\n/).pop();
+
+      try { return resolve(JSON.parse(line)); } catch { }
+
+      resolve({ ok: false, error: error ? error.message : "Resposta invalida do utilitario de imagem/PDF" });
+
+    });
+
+  });
+
+}
+
+// Pasta onde o WhatsApp e os sites salvam o que o cliente mandou imprimir.
+// O atendente imprime daqui pelo painel, sem abrir o Chrome e sem Ctrl+P.
+const PRINT_INBOX_DIR = process.env.LHM_PRINT_INBOX || "L:\\Meu Drive\\Rotina Diaria\\Recebimento de Arquivos";
+
+// Word/Excel/PowerPoint viram PDF no script de impressao (Office instalado no caixa).
+const PRINT_OFFICE_EXTS = [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"];
+
 const defaultPrintRunner = {
 
   list: () => runPrintScript(["-Action", "List"], 30000),
 
-  print: ({ file, printer, color, quality }) => runPrintScript(["-Action", "Print", "-Path", file, "-Printer", printer, ...(color ? ["-Color"] : []), "-Quality", quality || "High"]),
+  inbox: folder => runPrintScript(["-Action", "Inbox", "-Folder", folder], 180000),
+
+  barcode: file => runPrintScript(["-Action", "Barcode", "-Path", file], 120000),
+
+  pageImage: (file, page) => runPrintScript(["-Action", "PageImage", "-Path", file, "-Page", String(page || 1)], 90000),
+
+  info: (file, password) => runPrintScript(["-Action", "Info", "-Path", file, ...(password ? ["-Password", password] : [])], 60000),
+
+  print: ({ file, printer, color, quality, margin, pages, password, copies, duplex }) => runPrintScript(["-Action", "Print", "-Path", file, "-Printer", printer, ...(color ? ["-Color"] : []), "-Quality", quality || "High", ...(Number.isInteger(margin) ? ["-Margin", String(margin)] : []), ...(pages ? ["-Pages", pages] : []), ...(Number.isInteger(copies) && copies > 1 ? ["-Copies", String(copies)] : []), ...(duplex ? ["-Duplex"] : []), ...(password ? ["-Password", password] : [])]),
+
+  grid: (outFile, images) => runPdfTool(["grid", outFile, ...images], 60000),
+
+  rotate: (file, degrees) => runPdfTool(["rotate", file, String(degrees || 90)], 30000),
 
 };
 
@@ -506,7 +569,7 @@ function defaultOcrRunner(file) {
 
 }
 
-function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing"), placesFetch = globalThis.fetch, gmbFetch = globalThis.fetch, napFetch = globalThis.fetch, waFetch = globalThis.fetch } = {}) {
+function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defaultPrintRunner, backupDir, ocrRunner = defaultOcrRunner, marketingSource, marketingDir = path.join(__dirname, "public", "marketing"), placesFetch = globalThis.fetch, gmbFetch = globalThis.fetch, napFetch = globalThis.fetch, waFetch = globalThis.fetch, siteFetch = globalThis.fetch } = {}) {
 
   const offsiteDir = backupDir !== undefined ? backupDir : (path.resolve(dataDir) === path.resolve(DEFAULT_DATA_DIR) ? DEFAULT_OFFSITE_DIR : "");
 
@@ -803,6 +866,28 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     const text = JSON.stringify(db);
 
     writeDurable(dbPath, text);
+
+    try {
+      if (db.geogrid?.key || db.gmbApi?.refreshToken) {
+        const credsPath = path.join(dataDir, "api-credentials.json");
+        const creds = {
+          geogrid: {
+            key: db.geogrid?.key || "",
+            placeId: db.geogrid?.placeId || "",
+            placeName: db.geogrid?.placeName || "",
+            placeAddress: db.geogrid?.placeAddress || ""
+          },
+          gmbApi: {
+            clientId: db.gmbApi?.clientId || "",
+            clientSecret: db.gmbApi?.clientSecret || "",
+            refreshToken: db.gmbApi?.refreshToken || "",
+            locationName: db.gmbApi?.locationName || "",
+            accountName: db.gmbApi?.accountName || ""
+          }
+        };
+        fs.writeFileSync(credsPath, JSON.stringify(creds, null, 2), "utf8");
+      }
+    } catch (cause) { console.error(`Backup de api-credentials.json falhou: ${cause.message}`); }
 
     // Copia externa do banco JA gravado a cada 15 min: o arquivo do dia guarda o estado mais recente daquele dia.
 
@@ -1212,11 +1297,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     const monthSalesCents = (db.payments || []).filter(item => localDay(item.at).startsWith(thisMonth)).reduce((sum, item) => sum + item.amountCents, 0);
 
-    const zeroStockProducts = (db.products || []).filter(p => p.active !== false && (p.stock || 0) <= 0);
+    const zeroStockProducts = (db.products || []).filter(p => p.active && p.type === "stock" && p.stock <= 0);
 
     const lateDebts = openCharges.filter(c => (Date.now() - Date.parse(c.at)) > 30 * 86400000);
 
-    const lateBills = (db.expenses || []).filter(item => item.paid === false && Date.parse(item.at) < Date.now());
+    const lateBills = (db.expenses || []).filter(item => item.paid === false && localDay(item.at) < today);
 
     return {
 
@@ -1284,6 +1369,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       printJobs: db.printJobs.slice(0, 20),
 
+      inboxNews: inboxWatch.news.slice(0, 10),
+
       waitList: db.waitList,
 
       campaigns: (db.campaigns || []).filter(c => c.active).map(c => ({ code: c.code, name: c.name })),
@@ -1300,7 +1387,15 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
   // Datas locais (America/Sao_Paulo) no formato AAAA-MM-DD; comparacao por texto.
 
-  function localDay(value) { return new Date(value).toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" }); }
+  const dayFormatter = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" });
+  const saleTimeFormatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "numeric", day: "numeric",
+    hour: "numeric", minute: "numeric", second: "numeric"
+  });
+  function localDay(value) {
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? dayFormatter.format(date) : "Invalid Date";
+  }
 
   function shiftDay(day, days) { const d = new Date(`${day}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
 
@@ -1524,7 +1619,7 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     for (const sale of charges) {
 
-      const local = new Date(new Date(sale.at).toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
+      const local = new Date(saleTimeFormatter.format(new Date(sale.at)));
 
       const day = localDay(sale.at);
 
@@ -2441,6 +2536,272 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   let favoritesCache = null;
 
   let localPrinters = { at: 0, list: [] };
+
+  // A leitura da pasta abre cada PDF para contar paginas (~14 s com 200 arquivos): guarda o resultado.
+  let inboxCache = { at: 0, folder: "", data: null };
+
+  function inboxFolder() { return db.settings.printInboxDir || PRINT_INBOX_DIR; }
+
+  // "Recebimento de Arquivos" (#20, R$ 1,00): acompanha todo arquivo que chega pelo WhatsApp.
+  function receiptProduct() {
+
+    return db.products.find(row => row.active && /^Recebimento de Arquivos$/i.test(String(row.name)))
+      || db.products.find(row => row.active && String(row.code) === "20")
+      || null;
+
+  }
+
+  // Fatura de banco/operadora em PDF: imprime so a folha do pagamento (a que tem o codigo de barras),
+  // nao as folhas de instrucao que vem junto. Devolve as paginas 1-based a imprimir ou null (= documento inteiro).
+  // So para PDF de 2 a 10 paginas e sem senha: leitura do codigo de barras abre o arquivo original.
+  async function faturaPrintPages(file, info, password) {
+
+    if (password) return null;
+
+    if (!info || !Number.isInteger(info.pages) || info.pages < 2 || info.pages > 10) return null;
+
+    try {
+
+      const barcode = await printRunner.barcode(file);
+
+      if (!barcode || !barcode.ok || !Array.isArray(barcode.pages) || !barcode.pages.length) return null;
+
+      const pages = [...new Set(barcode.pages.filter(v => Number.isInteger(v) && v >= 1 && v <= info.pages))].sort((a, b) => a - b);
+
+      // Nenhuma pagina valida, ou todas com codigo (boleto em duplicata): imprime o documento inteiro.
+      if (!pages.length || pages.length >= info.pages) return null;
+
+      return pages;
+
+    } catch { return null; }
+
+  }
+
+  async function scanInbox(force = false) {
+
+    const folder = inboxFolder();
+
+    if (force || !inboxCache.data || inboxCache.folder !== folder || Date.now() - inboxCache.at > 30000) {
+
+      const result = await printRunner.inbox(folder);
+
+      if (!result || !result.ok) throw err(502, `Nao foi possivel ler a pasta de recebimento: ${(result && result.error) || "erro"}`);
+
+      inboxCache = { at: Date.now(), folder, data: Array.isArray(result.files) ? result.files : [] };
+
+    }
+
+    return inboxCache.data;
+
+  }
+
+  // Boleto de 1 pagina em conversa individual: imprime sozinho no caixa, mas a cobranca
+  // sempre espera o atendente confirmar ("Impresso - falta cobrar" na fila).
+  let autoBoletoTimer = null;
+
+  function scheduleAutoBoleto(delay = 30000) {
+
+    clearTimeout(autoBoletoTimer);
+
+    autoBoletoTimer = setTimeout(runAutoBoleto, delay);
+
+    if (autoBoletoTimer.unref) autoBoletoTimer.unref();
+
+  }
+
+  async function runAutoBoleto() {
+
+    try {
+
+      if (!db.settings.printAutoBoleto) return;
+
+      // Caixa fechado = loja sem atendente: nao gasta papel sem ninguem para cobrar.
+      if (!currentShift()) return scheduleAutoBoleto();
+
+      const printer = db.settings.printBlackPrinter;
+
+      if (!printer) return scheduleAutoBoleto();
+
+      const files = await scanInbox(false);
+
+      const printedKeys = new Set(db.printJobs.filter(row => row.source === "counter").map(row => row.fileKey));
+
+      let autoCount = 0;
+
+      for (const file of files) {
+
+        if (autoCount >= 3) break;
+
+        if (file.kind !== "pdf" || file.valid === false || file.encrypted) continue;
+
+        if (file.pages !== 1) continue;
+
+        if (printedKeys.has(`${file.name}|${file.bytes}`)) continue;
+
+        // So o que acabou de chegar: boleto antigo nao imprime sozinho ao ligar o recurso.
+        if (Date.now() - Date.parse(file.modifiedAt) > 30 * 60000) continue;
+
+        try {
+
+          const barcode = await printRunner.barcode(inboxPath(file.name));
+
+          if (!barcode || !barcode.ok || !(barcode.pages || []).includes(1)) continue;
+
+          const full = inboxPath(file.name);
+
+          const fileKey = `${file.name}|${file.bytes}`;
+
+          const printJob = { id: uuid(), at: now(), source: "counter", machineId: "balcao", fileName: file.name, fileKey, fileBytes: file.bytes, printer, pages: 1, color: false, mode: "auto", auto: true, barcode: true, amountCents: db.settings.printBWCents, state: "printing", operator: "automatico" };
+
+          db.printJobs.unshift(printJob);
+
+          db.printJobs.length = Math.min(db.printJobs.length, 300);
+
+          save();
+
+          const run = () => printRunner.print({ file: full, printer, color: false, quality: db.settings.printBWQuality || "High", margin: 25 });
+
+          const result = await (printQueue = printQueue.then(run, run));
+
+          if (!result || !result.ok) {
+
+            printJob.state = "failed"; printJob.error = label(result && result.error ? result.error : "Falha desconhecida", 200);
+
+            event("balcao", "Boleto automatico falhou", `${file.name}: ${printJob.error}`, "automatico"); save();
+
+            continue;
+
+          }
+
+          printJob.state = "printed"; printJob.printedAt = now();
+
+          event("balcao", "Boleto impresso automaticamente", `${file.name}: 1 pag P&B (${printer})`, "automatico");
+
+          save();
+
+          autoCount++;
+
+        } catch (cause) { console.error("Boleto automatico falhou:", cause.message); }
+
+      }
+
+    } catch (cause) { console.error("Leitura para boleto automatico falhou:", cause.message); }
+
+    scheduleAutoBoleto();
+
+  }
+
+  // Servidor reiniciou com o recurso ligado: o ciclo volta a rodar sozinho.
+  if (db.settings.printAutoBoleto) scheduleAutoBoleto(5000);
+
+  // Aviso de chegada: so lista nomes (nao abre PDF nenhum) a cada 20 s.
+  // Na primeira volta aprende o que ja existe; dai em diante, arquivo novo vira aviso para o painel.
+  let inboxWatch = { names: null, news: [], timer: null };
+
+  function scheduleInboxWatch(delay = 20000) {
+
+    clearTimeout(inboxWatch.timer);
+
+    inboxWatch.timer = setTimeout(runInboxWatch, delay);
+
+    if (inboxWatch.timer.unref) inboxWatch.timer.unref();
+
+  }
+
+  function runInboxWatch() {
+
+    try {
+
+      const folder = inboxFolder();
+
+      const files = new Set();
+
+      for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+
+        if (!entry.isFile()) continue;
+
+        const ext = path.extname(entry.name).toLowerCase();
+
+        if (![".pdf", ".jpg", ".jpeg", ".png", ".webp", ...PRINT_OFFICE_EXTS].includes(ext)) continue;
+
+        files.add(entry.name);
+
+      }
+
+      if (inboxWatch.names === null) {
+
+        inboxWatch.names = files;
+
+      } else {
+
+        let chegou = false;
+
+        for (const name of files) {
+
+          if (inboxWatch.names.has(name)) continue;
+
+          inboxWatch.news.unshift({ name, at: now() });
+
+          event("balcao", "Arquivo recebido", name, "pasta");
+
+          chegou = true;
+
+        }
+
+        inboxWatch.names = files;
+
+        if (chegou) save();
+
+      }
+
+      inboxWatch.news = inboxWatch.news.filter(item => Date.now() - Date.parse(item.at) < 30 * 60000).slice(0, 20);
+
+    } catch { /* pasta fora do ar (Drive sincronizando): tenta de novo no proximo ciclo */ }
+
+    scheduleInboxWatch();
+
+  }
+
+  scheduleInboxWatch(8000);
+
+  // Resumo do dia da impressao de balcao: para conferir no fechamento do caixa.
+  function inboxDaySummary() {
+
+    const startOfDay = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).toISOString();
+
+    const dayJobs = db.printJobs.filter(row => row.source === "counter" && row.state === "printed" && (row.printedAt || row.at) >= startOfDay);
+
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+
+    const missing = db.printJobs.filter(row => row.source === "counter" && row.state === "printed" && !row.chargeId && (row.printedAt || row.at) >= weekAgo);
+
+    return {
+
+      jobs: dayJobs.length,
+
+      pagesPB: dayJobs.reduce((sum, row) => sum + (row.billedColor ? 0 : (row.pages || 0)), 0),
+
+      pagesColor: dayJobs.reduce((sum, row) => sum + (row.billedColor ? (row.pages || 0) : 0), 0),
+
+      amountCents: dayJobs.reduce((sum, row) => sum + (row.amountCents || 0), 0),
+
+      chargedCents: dayJobs.filter(row => row.chargeId).reduce((sum, row) => sum + (row.amountCents || 0), 0),
+
+      missingJobs: missing.length,
+
+      missingCents: missing.reduce((sum, row) => sum + (row.amountCents || 0), 0)
+
+    };
+
+  }
+
+  // Nome vindo do navegador nao pode escapar da pasta de recebimento.
+  function inboxPath(name) {
+    const folder = path.resolve(inboxFolder());
+    const full = path.resolve(folder, name);
+    if (!name || full !== path.join(folder, path.basename(name))) throw err(400, "Arquivo invalido");
+    return full;
+  }
 
   async function readRaw(req, limit) {
 
@@ -4062,9 +4423,20 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       }
 
-      const sale = charge("sale", `Venda balcao: ${items.map(row => `${row.quantity}x ${row.name}`).join(", ").slice(0, 160)}`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId, campaign: campaignCode(input.campaign), origin: pickOrigin(input.origin) });
+      // Impressao do balcao lancada no cupom: a venda fecha e o trabalho sai de "falta cobrar".
+      const printJobIds = (Array.isArray(input.printJobIds) ? input.printJobIds : input.printJobId ? [input.printJobId] : []).map(value => label(value, 60)).filter(Boolean);
+
+      const sale = charge("sale", `Venda balcao: ${items.map(row => `${row.quantity}x ${row.name}`).join(", ").slice(0, 160)}`, finalTotalCents, { items, discountCents, originalTotalCents: amountCents, ref, clientId, campaign: campaignCode(input.campaign), origin: pickOrigin(input.origin), ...(printJobIds.length ? { printJobId: printJobIds[0] } : {}) });
 
       for (const row of planned) pay(sale, row.amountCents, row.method, user.name);
+
+      for (const id of printJobIds) {
+
+        const printJob = db.printJobs.find(row => row.id === id && row.source === "counter" && !row.chargeId);
+
+        if (printJob) { printJob.chargeId = sale.id; printJob.chargedAt = now(); }
+
+      }
 
       for (const row of items) {
 
@@ -4722,7 +5094,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     if (p === "/api/leads" && req.method === "GET") {
 
-      return send(res, 200, { ok: true, leads: db.leads || [], products: FIN_PRODUCTS, stages: LEAD_STAGES, sources: LEAD_SOURCES, cities: CIDADES_SITE });
+      // reviewUrl: link oficial para o cliente avaliar a ficha no Google (ID do lugar, da configuração do GeoGrid).
+      const reviewUrl = db.geogrid?.placeId ? `https://search.google.com/local/writereview?placeid=${encodeURIComponent(db.geogrid.placeId)}` : "";
+      return send(res, 200, { ok: true, leads: db.leads || [], products: FIN_PRODUCTS, stages: LEAD_STAGES, sources: LEAD_SOURCES, cities: CIDADES_SITE, reviewUrl });
 
     }
 
@@ -4770,6 +5144,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       if (input.notes !== undefined) item.notes = label(input.notes, 500);
 
       if (input.lostReason !== undefined) item.lostReason = label(input.lostReason, 120);
+      // Pedido de avaliação no Google enviado ao cliente (só depois do contrato fechado; registra a data).
+      if (input.reviewAsked === true) {
+        if (item.stage !== "won") throw err(400, "Peça a avaliação depois de marcar o contrato como fechado");
+        item.reviewAskedAt = now();
+      }
 
       if (input.contract !== undefined) item.contractCents = input.contract === "" ? 0 : money(input.contract, "Valor do contrato");
 
@@ -5325,6 +5704,634 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     }
 
+    if (p === "/api/print/inbox" && req.method === "GET") {
+
+      const folder = inboxFolder();
+
+      const data = await scanInbox(url.searchParams.get("refresh") === "1");
+
+      // Servico fixo que acompanha todo recebimento de arquivo (catalogo #20).
+      const receipt = receiptProduct();
+
+      // Ultimo trabalho de balcao de cada arquivo (mesmo nome e tamanho): mostra o que ja saiu e o que ja foi cobrado.
+      const files = data.map(file => {
+
+        const key = `${file.name}|${file.bytes}`;
+
+        const job = db.printJobs.find(row => row.source === "counter" && row.fileKey === key);
+
+        return { ...file, printedAt: job ? job.at : null, chargedAt: job && job.chargeId ? job.at : null, jobId: job ? job.id : null, jobPages: job ? job.pages : 0, jobColor: job ? !!job.billedColor : false, jobNoColor: job ? !!job.noColor : false, jobAmountCents: job ? job.amountCents : 0, jobPrinter: job ? job.printer : "", jobUnitCents: job ? (job.billedColor ? db.settings.printColorCents : db.settings.printBWCents) : 0 };
+
+      }).sort((a, b) => String(b.modifiedAt || "").localeCompare(String(a.modifiedAt || "")));
+
+      return send(res, 200, { ok: true, folder, files, at: new Date(inboxCache.at).toISOString(), autoBoleto: db.settings.printAutoBoleto === true, receiptCents: receipt ? receipt.priceCents : null, day: inboxDaySummary(), black: db.settings.printBlackPrinter || "", color: db.settings.printColorPrinter || "", blackCents: db.settings.printBWCents, colorCents: db.settings.printColorCents });
+
+    }
+
+    if (p === "/api/print/inbox/auto" && req.method === "POST") {
+
+      // Liga/desliga o boleto de 1 pagina imprimindo sozinho. A cobranca continua manual.
+      const input = await readBody(req);
+
+      db.settings.printAutoBoleto = input.enabled === true;
+
+      event("sistema", db.settings.printAutoBoleto ? "Boleto automatico ligado" : "Boleto automatico desligado", "1 pag com codigo de barras imprime sozinho no caixa", user.name);
+
+      save();
+
+      if (db.settings.printAutoBoleto) scheduleAutoBoleto(1000); else clearTimeout(autoBoletoTimer);
+
+      return send(res, 200, { ok: true, enabled: db.settings.printAutoBoleto });
+
+    }
+
+    if (p === "/api/print/inbox/fatura-preview" && req.method === "POST") {
+
+      // Fatura de banco/operadora: o atendente ve a folha identificada como a do boleto
+      // e autoriza antes de gastar papel. Nao imprime nada aqui.
+      const input = await readBody(req);
+
+      const name = path.basename(String(input.name || ""));
+
+      if (!name || name !== String(input.name || "")) throw err(400, "Nome de arquivo invalido");
+
+      const file = inboxPath(name);
+
+      if (!fs.existsSync(file) || !fs.statSync(file).isFile()) throw err(404, "Arquivo nao encontrado na pasta de recebimento");
+
+      if (path.extname(name).toLowerCase() !== ".pdf") return send(res, 200, { ok: true, fatura: false });
+
+      // PDF com senha sai inteiro: a leitura do codigo de barras nao abre o original.
+      if (label(input.password, 100)) return send(res, 200, { ok: true, fatura: false });
+
+      const info = await printRunner.info(file, "");
+
+      if (!info || !info.ok || info.valid === false) throw err(400, (info && info.problem) || "Nao foi possivel ler o documento");
+
+      const pages = await faturaPrintPages(file, info, "");
+
+      if (!pages) return send(res, 200, { ok: true, fatura: false, totalPages: Number.isInteger(info.pages) ? info.pages : null });
+
+      // Pre-render de cada folha do boleto para o cartao de autorizacao.
+      const previews = [];
+
+      for (const page of pages.slice(0, 4)) {
+
+        try {
+
+          const img = await printRunner.pageImage(file, page);
+
+          if (img && img.ok && img.image) previews.push({ page, image: `data:image/jpeg;base64,${img.image}` });
+
+        } catch { }
+
+      }
+
+      if (!previews.length) return send(res, 200, { ok: true, fatura: false, totalPages: info.pages });
+
+      const copies = number(input.copies ?? 1, 1, 20, "Copias");
+
+      const unitCents = db.settings.printBWCents;
+
+      const receipt = receiptProduct();
+
+      return send(res, 200, {
+        ok: true, fatura: true, name,
+        printPages: previews.map(row => row.page),
+        totalPages: info.pages,
+        previews,
+        copies, unitCents,
+        printCents: previews.length * copies * unitCents,
+        receiptCents: receipt ? receipt.priceCents : 0
+      });
+
+    }
+
+    if (p === "/api/print/inbox/print" && req.method === "POST") {
+
+      // Imprime direto na impressora do caixa e devolve paginas reais: nada de Chrome, Ctrl+P nem digitacao.
+      const input = await readBody(req);
+
+      const name = path.basename(String(input.name || ""));
+
+      if (!name || name !== String(input.name || "")) throw err(400, "Nome de arquivo invalido");
+
+      const file = inboxPath(name);
+
+      let stat = null;
+
+      try { stat = fs.statSync(file); } catch { throw err(404, "Arquivo nao encontrado na pasta de recebimento"); }
+
+      if (!stat.isFile()) throw err(404, "Arquivo nao encontrado na pasta de recebimento");
+
+      const ext = path.extname(name).toLowerCase();
+
+      if (![".pdf", ".jpg", ".jpeg", ".png", ".webp", ...PRINT_OFFICE_EXTS].includes(ext)) throw err(400, "Este tipo de arquivo nao pode ser impresso pelo painel");
+
+      // Senha de PDF protegido (fatura de operadora): o atendente pede ao cliente.
+      const password = label(input.password, 100);
+
+      // Copias do documento inteiro: 4 folhas x 2 = 8 paginas impressas e cobradas.
+      const copies = number(input.copies ?? 1, 1, 20, "Copias");
+
+      // Frente e verso: decisao do atendente, arquivo por arquivo.
+      const duplex = input.duplex === true;
+
+      // PDF falso (pagina da internet salva com nome .pdf) e Office que nao converteu: recusa antes de gastar papel.
+      let info = null;
+
+      if (ext === ".pdf" || PRINT_OFFICE_EXTS.includes(ext)) {
+
+        info = await printRunner.info(file, password);
+
+        if (!info || !info.ok || info.valid === false) throw err(400, (info && info.problem) || "Nao foi possivel ler o documento");
+
+      }
+
+      if (["choose", "bw", "color", "special", "doc9x13"].includes(input.mode) === false) throw err(400, "Modo de impressao invalido");
+
+      const mode = input.mode;
+
+      const fileKey = `${name}|${stat.size}`;
+
+      if (mode !== "choose" && input.reprint !== true) {
+
+        const done = db.printJobs.find(row => row.source === "counter" && row.fileKey === fileKey && row.state === "printed");
+
+        if (done) {
+
+          const when = new Date(done.at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+
+          throw err(409, `Este arquivo ja foi impresso em ${when}.`);
+
+        }
+
+      }
+
+      if (mode === "choose") {
+
+        const script = path.join(__dirname, "..", "Abrir-Para-Imprimir.ps1");
+
+        execFile("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, "-Arquivo", file], { windowsHide: true }, () => { });
+
+        return send(res, 200, { ok: true, opened: true });
+
+      }
+
+      const color = mode === "color" || mode === "special";
+
+      const printer = color ? db.settings.printColorPrinter : db.settings.printBlackPrinter;
+
+      if (!printer) throw err(409, `Impressora ${color ? "colorida" : "preto e branco"} nao configurada no Atendimento`);
+
+      const quality = mode === "special" ? "High" : (color ? (db.settings.printColorQuality || "High") : (db.settings.printBWQuality || "High"));
+
+      // Papel especial (foto/adesivo) usa a area util inteira da bandeja traseira.
+      const margin = mode === "special" ? 0 : 25;
+
+      let printFile = file;
+      if (mode === "doc9x13") {
+        if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) throw err(400, "Apenas imagens podem ser impressas no modo documento 9x13");
+        const outDir = path.join(process.env.LOCALAPPDATA || path.join(__dirname, "data"), "Nexcafe", "inbox-grade");
+        fs.mkdirSync(outDir, { recursive: true });
+        const gridPdf = path.join(outDir, `${name}.${stat.size}.doc9x13.pdf`);
+        const resGrid = await printRunner.grid(gridPdf, [file]);
+        if (!resGrid || !resGrid.ok) throw err(502, (resGrid && resGrid.error) || "Falha ao montar documento em grade");
+        printFile = gridPdf;
+      }
+
+      // Fatura de banco/operadora em PDF: sai so a folha do pagamento (codigo de barras),
+      // sem desperdicio das folhas de instrucao que o banco manda junto.
+      // O atendente pode ter autorizado paginas especificas no cartao de pre-visualizacao
+      // (input.printPages) ou pedido o documento inteiro (input.fullDoc).
+      let printPages = null;
+
+      if (ext === ".pdf" && (mode === "bw" || mode === "color") && input.fullDoc !== true) {
+
+        const total = info && Number.isInteger(info.pages) ? info.pages : 0;
+
+        const explicit = Array.isArray(input.printPages)
+          ? [...new Set(input.printPages.filter(v => Number.isInteger(v) && v >= 1 && v <= total))].sort((a, b) => a - b)
+          : null;
+
+        // Paginas autorizadas validas mandam; sem elas (ou invalidas), a deteccao automatica decide.
+        printPages = explicit && explicit.length ? explicit : await faturaPrintPages(file, info, password);
+
+      }
+
+      const printJob = { id: uuid(), at: now(), source: "counter", machineId: "balcao", fileName: name, fileKey, fileBytes: stat.size, printer, pages: 0, copies, duplex, color, mode, ...(printPages ? { printPages } : {}), amountCents: 0, state: "printing", operator: user.name };
+
+      db.printJobs.unshift(printJob);
+
+      db.printJobs.length = Math.min(db.printJobs.length, 300);
+
+      save();
+
+      const run = () => printRunner.print({ file: printFile, printer, color, quality, margin, ...(printPages ? { pages: printPages.join(",") } : {}), password, copies, duplex });
+
+      const result = await (printQueue = printQueue.then(run, run));
+
+      if (!result || !result.ok) {
+
+        printJob.state = "failed"; printJob.error = label(result && result.error ? result.error : "Falha desconhecida", 200);
+
+        event("balcao", "Impressao no balcao falhou", `${name}: ${printJob.error}`, user.name); save();
+
+        throw err(502, `Nao foi possivel imprimir: ${printJob.error}`);
+
+      }
+
+      // O script devolve as paginas reais; se vier sem o numero, cobra pelo que deveria sair,
+      // nunca a menos (fatura de 3 folhas nao pode ser cobrada como 1).
+      const isImageExt = [".jpg", ".jpeg", ".png", ".webp"].includes(ext);
+
+      const expectedPages = isImageExt ? copies : (printPages ? printPages.length : (info && Number.isInteger(info.pages) ? info.pages : 1)) * copies;
+
+      const pages = Number.isInteger(result.pages) && result.pages > 0 ? result.pages : expectedPages;
+
+      // Pediu colorido, mas o documento nao tem cor (contracheque, boleto): cobra como P&B.
+      const noColor = color && result.hasColor === false;
+
+      const billedColor = color && !noColor;
+
+      const amountCents = pages * (billedColor ? db.settings.printColorCents : db.settings.printBWCents);
+
+      Object.assign(printJob, { pages, noColor, billedColor, amountCents, state: "printed", printedAt: now() });
+
+      event("balcao", "Impressao no balcao", `${name}: ${pages} pag ${billedColor ? "colorida" : "P&B"} (${printer})${printPages ? ` so a folha do boleto (pag ${printPages.join(",")} de ${info.pages})` : ""}`, user.name);
+
+      save();
+
+      return send(res, 200, { ok: true, jobId: printJob.id, name, pages, color: billedColor, noColor, amountCents, unitCents: billedColor ? db.settings.printColorCents : db.settings.printBWCents, printer, ...(printPages ? { printPages, totalPages: info.pages } : {}) });
+
+    }
+
+    if (p === "/api/print/inbox/print-batch" && req.method === "POST") {
+
+      // Varios arquivos, um clique: imprime na sequencia e devolve um total unico para o cartao.
+      // O que falhar (ja impresso, PDF com senha) entra na lista com o motivo e nao para os demais.
+      const input = await readBody(req);
+
+      const mode = ["bw", "color"].includes(input.mode) ? input.mode : "bw";
+
+      const items = (Array.isArray(input.items) ? input.items.slice(0, 20) : []).filter(row => row && row.name);
+
+      if (!items.length) throw err(400, "Selecione ao menos um arquivo");
+
+      const password = label(input.password, 100);
+
+      const color = mode === "color";
+
+      const printer = color ? db.settings.printColorPrinter : db.settings.printBlackPrinter;
+
+      if (!printer) throw err(409, `Impressora ${color ? "colorida" : "preto e branco"} nao configurada no Atendimento`);
+
+      const results = [];
+
+      let totalPages = 0, totalCents = 0;
+
+      for (const row of items) {
+
+        const outcome = { name: String(row.name) };
+
+        try {
+
+          const name = path.basename(String(row.name || ""));
+
+          if (!name || name !== String(row.name || "")) throw err(400, "Nome de arquivo invalido");
+
+          const file = inboxPath(name);
+
+          let stat = null;
+
+          try { stat = fs.statSync(file); } catch { throw err(404, "Arquivo nao encontrado na pasta de recebimento"); }
+
+          const ext = path.extname(name).toLowerCase();
+
+          if (![".pdf", ".jpg", ".jpeg", ".png", ".webp", ...PRINT_OFFICE_EXTS].includes(ext)) throw err(400, "Este tipo de arquivo nao pode ser impresso pelo painel");
+
+          let info = null;
+
+          if (ext === ".pdf" || PRINT_OFFICE_EXTS.includes(ext)) {
+
+            info = await printRunner.info(file, password);
+
+            if (!info || !info.ok || info.valid === false) throw err(400, (info && info.problem) || "Nao foi possivel ler o documento");
+
+            // Fatura no lote tambem sai so com a folha do pagamento.
+            row.printPages = ext === ".pdf" ? await faturaPrintPages(file, info, password) : null;
+
+            if (row.printPages) outcome.printPages = row.printPages;
+
+          }
+
+          const fileKey = `${name}|${stat.size}`;
+
+          if (row.reprint !== true) {
+
+            const done = db.printJobs.find(job => job.source === "counter" && job.fileKey === fileKey && job.state === "printed");
+
+            if (done) throw err(409, `Este arquivo ja foi impresso em ${new Date(done.at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}.`);
+
+          }
+
+          const copies = number(row.copies ?? 1, 1, 20, "Copias");
+
+          const duplex = row.duplex === true;
+
+          const printJob = { id: uuid(), at: now(), source: "counter", machineId: "balcao", fileName: name, fileKey, fileBytes: stat.size, printer, pages: 0, copies, duplex, color, mode, batch: true, ...(row.printPages ? { printPages: row.printPages } : {}), amountCents: 0, state: "printing", operator: user.name };
+
+          db.printJobs.unshift(printJob);
+
+          db.printJobs.length = Math.min(db.printJobs.length, 300);
+
+          save();
+
+          const quality = color ? (db.settings.printColorQuality || "High") : (db.settings.printBWQuality || "High");
+
+          const run = () => printRunner.print({ file, printer, color, quality, margin: 25, ...(row.printPages ? { pages: row.printPages.join(",") } : {}), password, copies, duplex });
+
+          const result = await (printQueue = printQueue.then(run, run));
+
+          if (!result || !result.ok) {
+
+            printJob.state = "failed"; printJob.error = label(result && result.error ? result.error : "Falha desconhecida", 200);
+
+            event("balcao", "Impressao em lote falhou", `${name}: ${printJob.error}`, user.name); save();
+
+            outcome.error = printJob.error;
+
+          } else {
+
+            // Sem o numero real do script: cobra pelo que deveria sair, nunca a menos.
+            const expectedPages = [".jpg", ".jpeg", ".png", ".webp"].includes(ext) ? copies : (row.printPages ? row.printPages.length : (info && Number.isInteger(info.pages) ? info.pages : 1)) * copies;
+
+            const pages = Number.isInteger(result.pages) && result.pages > 0 ? result.pages : expectedPages;
+
+            const noColor = color && result.hasColor === false;
+
+            const billedColor = color && !noColor;
+
+            const amountCents = pages * (billedColor ? db.settings.printColorCents : db.settings.printBWCents);
+
+            Object.assign(printJob, { pages, noColor, billedColor, amountCents, state: "printed", printedAt: now() });
+
+            outcome.jobId = printJob.id; outcome.pages = pages; outcome.color = billedColor; outcome.noColor = noColor; outcome.amountCents = amountCents; outcome.copies = copies; outcome.duplex = duplex;
+
+            totalPages += pages; totalCents += amountCents;
+
+          }
+
+        } catch (cause) { outcome.error = cause.message || "Falha desconhecida"; }
+
+        results.push(outcome);
+
+      }
+
+      event("balcao", "Impressao em lote", `${results.filter(row => row.jobId).length} arquivo(s): ${totalPages} pag (${printer})`, user.name);
+
+      save();
+
+      return send(res, 200, { ok: true, jobs: results, pages: totalPages, amountCents: totalCents, printer, color, unitCents: color ? db.settings.printColorCents : db.settings.printBWCents });
+
+    }
+
+    if (p === "/api/print/inbox/print-grid" && req.method === "POST") {
+
+      // Junta de 1 a 4 fotos de documentos (RG frente e verso, CNH, SUS, etc.) em 1 unica folha A4 no formato 9x13 cm.
+      const input = await readBody(req);
+
+      const items = (Array.isArray(input.items) ? input.items.slice(0, 4) : []).filter(row => row && row.name);
+
+      if (!items.length) throw err(400, "Selecione de 1 a 4 fotos para juntar no documento");
+
+      const mode = ["bw", "color"].includes(input.mode) ? input.mode : "bw";
+
+      const color = mode === "color";
+
+      const printer = color ? db.settings.printColorPrinter : db.settings.printBlackPrinter;
+
+      if (!printer) throw err(409, `Impressora ${color ? "colorida" : "preto e branco"} nao configurada no Atendimento`);
+
+      const validFiles = [];
+
+      const fileNames = [];
+
+      for (const row of items) {
+
+        const name = path.basename(String(row.name || ""));
+
+        if (!name || name !== String(row.name || "")) continue;
+
+        const f = inboxPath(name);
+
+        if (!fs.existsSync(f)) throw err(404, `Arquivo nao encontrado: ${name}`);
+
+        const ext = path.extname(name).toLowerCase();
+
+        if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) throw err(400, `Apenas imagens podem ser unidas em grade: ${name}`);
+
+        validFiles.push(f);
+
+        fileNames.push(name);
+
+      }
+
+      if (!validFiles.length) throw err(400, "Nenhum arquivo valido selecionado");
+
+      // Mesmo lote (mesmas fotos, mesmos tamanhos): so reimprime com confirmacao do atendente.
+      const fileKey = `${validFiles.map(f => `${path.basename(f)}|${fs.statSync(f).size}`).join("+")}|grade`;
+
+      if (input.reprint !== true) {
+
+        const done = db.printJobs.find(row => row.source === "counter" && row.fileKey === fileKey && row.state === "printed");
+
+        if (done) {
+
+          const when = new Date(done.at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+
+          throw err(409, `Este lote ja foi impresso em ${when}.`);
+
+        }
+
+      }
+
+      const outDir = path.join(process.env.LOCALAPPDATA || path.join(__dirname, "data"), "Nexcafe", "inbox-grade");
+
+      fs.mkdirSync(outDir, { recursive: true });
+
+      const gridId = uuid();
+
+      const gridPdf = path.join(outDir, `grade-${gridId}.pdf`);
+
+      const resGrid = await printRunner.grid(gridPdf, validFiles);
+
+      if (!resGrid || !resGrid.ok) throw err(502, (resGrid && resGrid.error) || "Falha ao diagramar documentos na folha");
+
+      const copies = number(input.copies ?? 1, 1, 20, "Copias");
+
+      const quality = color ? (db.settings.printColorQuality || "High") : (db.settings.printBWQuality || "High");
+
+      const displayName = fileNames.length === 2 ? `RG / Documento Frente e Verso (${fileNames[0]}, ${fileNames[1]})` : `Grade de Documentos (${fileNames.length} fotos)`;
+
+      const printJob = { id: uuid(), at: now(), source: "counter", machineId: "balcao", fileName: displayName, fileKey, fileBytes: fs.statSync(gridPdf).size, printer, pages: 1, copies, duplex: false, color, mode: "grid", gridFiles: fileNames, amountCents: 0, state: "printing", operator: user.name };
+
+      db.printJobs.unshift(printJob);
+
+      db.printJobs.length = Math.min(db.printJobs.length, 300);
+
+      save();
+
+      const run = () => printRunner.print({ file: gridPdf, printer, color, quality, margin: 25, copies, duplex: false });
+
+      const result = await (printQueue = printQueue.then(run, run));
+
+      if (!result || !result.ok) {
+
+        printJob.state = "failed"; printJob.error = label(result && result.error ? result.error : "Falha desconhecida", 200);
+
+        event("balcao", "Impressao em grade falhou", `${displayName}: ${printJob.error}`, user.name); save();
+
+        throw err(502, `Nao foi possivel imprimir: ${printJob.error}`);
+
+      }
+
+      const pages = copies;
+
+      const noColor = color && result.hasColor === false;
+
+      const billedColor = color && !noColor;
+
+      const amountCents = pages * (billedColor ? db.settings.printColorCents : db.settings.printBWCents);
+
+      Object.assign(printJob, { pages, noColor, billedColor, amountCents, state: "printed", printedAt: now() });
+
+      event("balcao", "Impressao em grade de documento", `${displayName}: ${pages} folha(s) ${billedColor ? "colorida" : "P&B"} (${printer})`, user.name);
+
+      save();
+
+      return send(res, 200, { ok: true, jobId: printJob.id, name: displayName, files: fileNames, pages, color: billedColor, noColor, amountCents, unitCents: billedColor ? db.settings.printColorCents : db.settings.printBWCents, printer });
+
+    }
+
+    if (p === "/api/print/inbox/rotate" && req.method === "POST") {
+
+      // Gira uma foto de documento em 90 graus no sentido horario.
+      const input = await readBody(req);
+
+      const name = path.basename(String(input.name || ""));
+
+      if (!name || name !== String(input.name || "")) throw err(400, "Nome de arquivo invalido");
+
+      const file = inboxPath(name);
+
+      if (!fs.existsSync(file)) throw err(404, "Arquivo nao encontrado na pasta de recebimento");
+
+      const ext = path.extname(name).toLowerCase();
+
+      if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) throw err(400, "Apenas imagens podem ser giradas");
+
+      const degrees = [90, 180, 270].includes(Number(input.degrees)) ? Number(input.degrees) : 90;
+
+      const resRotate = await printRunner.rotate(file, degrees);
+
+      if (!resRotate || !resRotate.ok) throw err(502, (resRotate && resRotate.error) || "Falha ao girar imagem");
+
+      inboxCache.at = 0; // invalida cache para atualizar dimensoes e visualizacao
+
+      return send(res, 200, { ok: true, width: resRotate.width, height: resRotate.height });
+
+    }
+
+    if (p === "/api/print/inbox/charge" && req.method === "POST") {
+
+      // O trabalho ja foi impresso: aqui so entra o dinheiro, sempre com o valor confirmado pelo atendente.
+      // Aceita um trabalho (jobId) ou varios de uma impressao em lote (jobIds).
+      const input = await readBody(req);
+
+      const jobs = (Array.isArray(input.jobIds) ? input.jobIds : [input.jobId]).map(id => db.printJobs.find(row => row.id === label(id, 60) && row.source === "counter")).filter(Boolean);
+
+      const job = jobs[0];
+
+      if (!job) throw err(404, "Impressao nao encontrada");
+
+      const previous = job.chargeId && db.charges.find(row => row.id === job.chargeId);
+
+      if (previous) return send(res, 200, { ok: true, duplicate: true, charge: previous });
+
+      if (jobs.some(row => row.state !== "printed")) throw err(409, "Esta impressao nao foi concluida");
+
+      const fileLabel = jobs.length > 1 ? `${jobs.length} arquivos` : (job.fileName || "");
+
+      const target = ["now", "machine", "pending"].includes(input.target) ? input.target : "now";
+
+      const amountCents = Number.isInteger(input.amountCents) ? input.amountCents : money(input.amount, "Valor");
+
+      if (amountCents < 1 || amountCents > 10000000) throw err(400, "Informe o valor cobrado");
+
+      const pages = jobs.reduce((sum, row) => sum + (row.pages || 1), 0);
+
+      const items = [];
+
+      // Recebimento de arquivo (R$ 1,00) entra sozinho em todo recebimento do WhatsApp; o painel deixa desmarcar.
+      const receipt = input.receipt === true ? receiptProduct() : null;
+
+      if (receipt) {
+
+        const unit = Math.min(receipt.priceCents, amountCents);
+
+        items.push({ productId: receipt.id, name: receipt.name, category: receipt.category, quantity: 1, unitPriceCents: unit, totalCents: unit, ...(unit !== receipt.priceCents ? { listPriceCents: receipt.priceCents } : {}) });
+
+      }
+
+      const printPart = receipt ? amountCents - receipt.priceCents : amountCents;
+
+      if (printPart > 0) {
+
+        const itemName = `Impressao ${job.color ? "colorida" : "P&B"} (balcao)`;
+
+        items.push({ productId: null, name: itemName, category: "Impressao", quantity: pages, unitPriceCents: Math.max(1, Math.round(printPart / pages)), totalCents: printPart });
+
+      }
+
+      if (!items.length) throw err(400, "Informe o valor cobrado");
+
+      const fields = { items, originalTotalCents: amountCents, ref: `print:${job.id}`, printJobId: job.id, printFile: fileLabel };
+
+      if (target === "machine") {
+
+        const sessionId = label(input.sessionId, 60);
+
+        const machine = Object.values(db.machines).find(row => row.session && row.session.id === sessionId);
+
+        if (!machine) throw err(409, "Estacao sem sessao ativa: escolha outra ou deixe pendente");
+
+        fields.machineId = machine.id; fields.sessionId = machine.session.id;
+
+      }
+
+      const sale = charge("sale", `${items.map(row => `${row.quantity}x ${row.name}`).join(", ")}: ${fileLabel || `${pages} pag`}`.slice(0, 160), amountCents, fields);
+
+      if (target === "now") {
+
+        if (!currentShift()) throw err(409, "Abra o caixa antes de receber");
+
+        const method = METHODS.includes(input.method) ? input.method : "cash";
+
+        pay(sale, amountCents, method, user.name);
+
+      }
+
+      for (const row of jobs) { row.chargeId = sale.id; row.chargedAt = now(); }
+
+      event(fields.machineId || "balcao", "Impressao cobrada", `${fileLabel || `${pages} pag`}: R$ ${(amountCents / 100).toFixed(2)}`, user.name);
+
+      save();
+
+      return send(res, 201, { ok: true, charge: sale });
+
+    }
+
     if (p === "/api/printers/local" && req.method === "GET") {
 
       if (url.searchParams.get("refresh") === "1" || Date.now() - localPrinters.at > 30000) {
@@ -5361,15 +6368,30 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       const colorQuality = ["High", "Standard", "Draft"].includes(input.colorQuality) ? input.colorQuality : (db.settings.printColorQuality || "High");
 
+      // Pasta de recebimento configuravel (Drive em outro caminho ou outro computador).
+      let inboxDir = db.settings.printInboxDir || "";
+
+      if (input.inboxDir !== undefined) {
+
+        admin(user);
+
+        const folder = label(input.inboxDir, 500);
+
+        if (folder && (!fs.existsSync(folder) || !fs.statSync(folder).isDirectory())) throw err(400, "Pasta de recebimento nao encontrada");
+
+        inboxDir = folder;
+
+      }
+
       db.settings.printBlackPrinter = black; db.settings.printColorPrinter = color;
 
       db.settings.printBWCents = blackCents; db.settings.printColorCents = colorCents;
 
-      db.settings.printColorQuality = colorQuality;
+      db.settings.printColorQuality = colorQuality; db.settings.printInboxDir = inboxDir;
 
       event("sistema", "Impressoras do atendimento", `P&B: ${black} R$ ${(blackCents / 100).toFixed(2)}; Colorida: ${color} R$ ${(colorCents / 100).toFixed(2)} (Qualidade: ${colorQuality})`, user.name); save();
 
-      return send(res, 200, { ok: true, black, color, blackCents, colorCents, colorQuality });
+      return send(res, 200, { ok: true, black, color, blackCents, colorCents, colorQuality, inboxDir });
 
     }
 
@@ -5739,6 +6761,21 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       if (input.remove) { db.geogrid.key = ""; db.geogrid.placeId = ""; db.geogrid.placeName = ""; db.geogrid.placeAddress = ""; db.geogrid.lastError = null; save(); return send(res, 200, { ok: true, geogrid: geogridView() }); }
 
+      // Atualizacao de termos ou parametros da grade sem alterar chave da API
+      if ((input.terms || input.size || input.spacingKm) && !input.key) {
+        if (Array.isArray(input.terms)) {
+          db.geogrid.terms = input.terms.map(t => String(t || '').trim()).filter(Boolean).slice(0, 30);
+        }
+        if (input.size && [3, 5, 7].includes(Number(input.size))) {
+          db.geogrid.size = Number(input.size);
+        }
+        if (input.spacingKm && Number(input.spacingKm) >= 0.2 && Number(input.spacingKm) <= 5) {
+          db.geogrid.spacingKm = Number(input.spacingKm);
+        }
+        save();
+        return send(res, 200, { ok: true, geogrid: geogridView() });
+      }
+
       const key = String(input.key || db.geogrid.key || "").trim();
 
       if (!/^[\w-]{20,200}$/.test(key)) throw err(400, "Chave da API invalida");
@@ -5750,6 +6787,16 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       const chosen = input.placeId ? places.find(place => place.id === input.placeId) : places.find(place => /speed financeira/i.test(place.name));
 
       if (!chosen) return send(res, 404, { ok: false, error: "Ficha da Speed Financeira nao encontrada na busca", candidates: places.slice(0, 10) });
+
+      if (Array.isArray(input.terms)) {
+        db.geogrid.terms = input.terms.map(t => String(t || '').trim()).filter(Boolean).slice(0, 30);
+      }
+      if (input.size && [3, 5, 7].includes(Number(input.size))) {
+        db.geogrid.size = Number(input.size);
+      }
+      if (input.spacingKm && Number(input.spacingKm) >= 0.2 && Number(input.spacingKm) <= 5) {
+        db.geogrid.spacingKm = Number(input.spacingKm);
+      }
 
       Object.assign(db.geogrid, { key, placeId: chosen.id, placeName: chosen.name, placeAddress: chosen.address, lastError: null });
 
@@ -5765,9 +6812,11 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       admin(user);
 
+      const input = await readBody(req).catch(() => ({}));
+
       if (!db.geogrid.key || !db.geogrid.placeId) throw err(400, "Configure a chave da API antes de medir");
 
-      await runGeogrid("manual");
+      await runGeogrid("manual", input);
 
       return send(res, 200, { ok: true, geogrid: geogridView() });
 
@@ -5846,6 +6895,16 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
     // Saude da ficha: nota, alteracoes no perfil, potencial de crescimento e NAP nos diretorios.
 
     if (p === "/api/marketing/ficha-saude" && req.method === "GET") { admin(user); return send(res, 200, { ok: true, ficha: fichaView() }); }
+    // Fila de oportunidades da Pesquisa SEO: junta ficha, diretórios, GeoGrid, Search Console, WhatsApp e funil (server/oportunidades.js).
+    if (p === "/api/marketing/oportunidades" && req.method === "GET") {
+      admin(user);
+      const wa = waView();
+      const itens = oportunidades.montarFila({ health: db.fichaSaude.health, nap: db.fichaSaude.nap, geogridRuns: db.geogrid.runs, searchConsole: db.searchConsole.dados, wa, leads: db.leads });
+      const leituras = { ficha: db.fichaSaude.health?.at || null, diretorios: db.fichaSaude.nap?.at || null, geogrid: db.geogrid.runs.at(-1)?.at || null, searchConsole: db.searchConsole.dados?.at || null, whatsapp: db.waClicks?.fetchedAt || null };
+      return send(res, 200, { ok: true, geradaEm: now(), itens: itens.filter(item => !db.searchConsole.piloto || item.id !== "sc-sem-/credito-trabalhador-clt.html"), leituras,
+        monitorClt: db.searchConsole.piloto || null, erroSearchConsole: db.searchConsole.lastError?.message || null,
+        precisaConectar: !db.gmbApi.refreshToken, pilotoClt: oportunidades.pilotoClt(db.searchConsole.dados), servicos: oportunidades.SERVICOS });
+    }
 
     if (p === "/api/marketing/ficha-saude/run" && req.method === "POST") {
 
@@ -6466,20 +7525,27 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   function geogridView() {
 
     const g = db.geogrid;
+    const terms = Array.isArray(g.terms) && g.terms.length ? g.terms : GEOGRID_TERMS;
+    const size = g.size || GEOGRID_SIZE;
+    const spacingKm = g.spacingKm || GEOGRID_SPACING_KM;
 
     return {
 
       configured: !!(g.key && g.placeId), keyHint: g.key ? `...${g.key.slice(-4)}` : "", placeId: g.placeId, placeName: g.placeName, placeAddress: g.placeAddress,
 
-      terms: GEOGRID_TERMS, size: GEOGRID_SIZE, spacingKm: GEOGRID_SPACING_KM, running: !!geo.running, lastError: g.lastError, runs: g.runs.slice(-12)
+      terms, size, spacingKm, running: !!geo.running, lastError: g.lastError, runs: g.runs.slice(-12)
 
     };
 
   }
 
-  function runGeogrid(trigger) {
+  function runGeogrid(trigger, opts = {}) {
 
-    geo.running ||= measureGeogrid({ key: db.geogrid.key, placeId: db.geogrid.placeId, fetchImpl: placesFetch })
+    const terms = (Array.isArray(opts.terms) && opts.terms.length ? opts.terms : (Array.isArray(db.geogrid.terms) && db.geogrid.terms.length ? db.geogrid.terms : GEOGRID_TERMS));
+    const size = Number(opts.size) || db.geogrid.size || GEOGRID_SIZE;
+    const spacingKm = Number(opts.spacingKm) || db.geogrid.spacingKm || GEOGRID_SPACING_KM;
+
+    geo.running ||= measureGeogrid({ key: db.geogrid.key, placeId: db.geogrid.placeId, terms, size, spacingKm, fetchImpl: placesFetch })
 
       .then(run => {
 
@@ -6525,7 +7591,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     if (g.lastError && Date.now() - Date.parse(g.lastError.at) < 86400_000) return;
 
-    if (!last || Date.now() - Date.parse(last.at) >= 30 * 86400_000) runGeogrid("automatica").catch(cause => console.error(`GeoGrid automatico falhou: ${cause.message}`));
+    // Mede automaticamente a cada 7 dias para manter o ranking das 12 palavras sempre atualizado
+    if (!last || Date.now() - Date.parse(last.at) >= 7 * 86400_000) runGeogrid("automatica").catch(cause => console.error(`GeoGrid automatico falhou: ${cause.message}`));
 
   }
 
@@ -6833,9 +7900,14 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       try {
 
-        const dados = await searchConsole.lerSite({ accessToken: await gmbToken(), fetchImpl: gmbFetch, site: sc.dados?.site });
+        const accessToken = await gmbToken();
+        const dados = await searchConsole.lerSite({ accessToken, fetchImpl: gmbFetch, site: sc.dados?.site });
 
         sc.dados = { ...dados, at: now(), trigger };
+        sc.piloto = await monitorClt.acompanhar({
+          anterior: sc.piloto, dados, wa: db.waClicks, agora: sc.dados.at, siteFetch,
+          inspecionar: url => searchConsole.inspecionar(url, dados.site, accessToken, gmbFetch)
+        });
 
         sc.lastError = null;
 
@@ -6867,7 +7939,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     if (sc.lastError && Date.now() - Date.parse(sc.lastError.at) < 12 * 3600_000) return;
 
-    if (sc.dados && Date.now() - Date.parse(sc.dados.at) < 20 * 3600_000) return;
+    const intervalo = sc.piloto?.erro ? 2 : 20;
+    if (sc.piloto && sc.dados && Date.now() - Date.parse(sc.dados.at) < intervalo * 3600_000) return;
 
     runSearchConsole("automatica").catch(cause => console.error(`Search Console automatico falhou: ${cause.message}`));
 
@@ -6967,7 +8040,10 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     }
 
-    if (!file.startsWith(marketingDir + path.sep) || !fs.existsSync(file) || !fs.statSync(file).isFile()) throw err(404, "Arquivo nao encontrado");
+    if (!file.startsWith(marketingDir + path.sep) || !fs.existsSync(file)) throw err(404, "Arquivo nao encontrado");
+
+    const stat = fs.statSync(file);
+    if (!stat.isFile()) throw err(404, "Arquivo nao encontrado");
 
     const type = MARKETING_TYPES[path.extname(file).toLowerCase()];
 
@@ -6987,7 +8063,18 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
     }
 
-    res.writeHead(200, { "content-type": type, "cache-control": "no-cache", "x-content-type-options": "nosniff" });
+    const mtime = stat.mtime.toUTCString();
+    if (req.headers["if-modified-since"] === mtime) {
+      res.writeHead(304);
+      return res.end();
+    }
+
+    res.writeHead(200, {
+      "content-type": type,
+      "cache-control": "public, max-age=600",
+      "last-modified": mtime,
+      "x-content-type-options": "nosniff"
+    });
 
     fs.createReadStream(file).pipe(res);
 

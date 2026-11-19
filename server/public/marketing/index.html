@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <!-- Estilos Customizados -->
-  <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/custom.css?v=20261119_geogrid_pro">
   <link rel="stylesheet" href="css/compat-tw3.css">
   <!-- Dentro do Nexcafe o título já aparece na moldura: esconde o cabeçalho próprio do painel. -->
   <script>if (window.self !== window.top) document.documentElement.classList.add('embutido');</script>
@@ -80,9 +80,9 @@
           <span id="gmbSidebarBadge" class="tab-badge-alert hidden">1</span>
           <kbd class="tab-kbd">Alt+6</kbd>
         </button>
-        <button id="tab-button-palavras" type="button" role="tab" aria-selected="false" aria-controls="tab-palavras" data-tab="palavras" data-tab-quick="palavras" class="nav-tab-btn quick-pill" title="Palavras-chave (Alt+7)">
+        <button id="tab-button-palavras" type="button" role="tab" aria-selected="false" aria-controls="tab-palavras" data-tab="palavras" data-tab-quick="palavras" class="nav-tab-btn quick-pill" title="Pesquisa SEO (Alt+7)">
           <i class="fas fa-key text-indigo-500"></i>
-          <span>Palavras-chave</span>
+          <span>Pesquisa SEO</span>
           <kbd class="tab-kbd">Alt+7</kbd>
         </button>
       </div>
@@ -1028,21 +1028,7 @@
         </div>
         <div id="fichaSaudeConteudo"></div>
       </div>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 items-start">
-        <div class="card-premium p-5 lg:col-span-2" id="geogridPainel">
-          <div class="flex items-start justify-between gap-3 mb-4">
-            <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-map-marked-alt text-green-700 mr-2"></i>Posicionamento geográfico (GeoGrid)</h3><p class="text-[11px] text-gray-500 mt-1">Posição da ficha em 25 pontos de Varginha, com 1 km entre eles, medida pela Places API do Google, sem a personalização da conta logada.</p></div>
-            <span id="geogridStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
-          </div>
-          <div id="geogridConteudo"></div>
-        </div>
-
-        <div class="card-premium p-5">
-          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-store text-purple-600 mr-2"></i>Concorrentes monitorados</h3>
-          <p class="text-[11px] text-gray-500 mb-4">Sites e ofertas observados. Esta coleta não mede posição no Maps nem avaliações.</p>
-          <div id="raioxConcorrentesLista" class="space-y-2 max-h-[390px] overflow-y-auto pr-1"></div>
-        </div>
-      </div>
+      <button type="button" class="gmb-btn-primario mb-6" onclick="switchTab('palavras'); abrirPesquisaSeo('posicoes')">Ver posições e concorrentes</button>
       <!-- BUSCAS DO SITE NO GOOGLE: SEARCH CONSOLE (js/search_console.js) -->
       <div class="card-premium p-5 mb-8" id="scPainel">
         <div class="flex items-start justify-between gap-3 mb-4">
@@ -1373,10 +1359,22 @@
     <!-- ABA: ESTUDO DE PALAVRAS-CHAVE                            -->
     <!-- ======================================================== -->
     <section id="tab-palavras" class="tab-panel hidden" role="tabpanel" aria-labelledby="tab-button-palavras">
+<h2 class="font-display mb-3">Pesquisa SEO</h2><nav class="pesquisa-nav" aria-label="Áreas de pesquisa SEO"><button type="button" aria-controls="pesquisa-fila" aria-pressed="true" data-pesquisa="fila">Fila de oportunidades</button><button type="button" aria-controls="pesquisa-estudo" aria-pressed="false" data-pesquisa="estudo">Estudo de palavras-chave</button><button type="button" aria-controls="pesquisa-concorrentes" aria-pressed="false" data-pesquisa="concorrentes">Concorrentes</button><button type="button" aria-controls="pesquisa-posicoes" aria-pressed="false" data-pesquisa="posicoes">Monitoramento de posições</button></nav><div id="pesquisa-fila">
+      <section class="card-premium fila-painel" aria-labelledby="filaTitulo">
+        <div class="fila-cabeca">
+          <div><h3 id="filaTitulo">Fila de oportunidades</h3><p>O que fazer primeiro, com a evidência e a data da medição. A linha some sozinha quando a próxima leitura mostrar o problema resolvido.</p></div>
+          <button type="button" class="fila-atualizar" onclick="carregarFilaOportunidades()"><i class="fas fa-rotate" aria-hidden="true"></i> Atualizar</button>
+        </div>
+        <div id="filaServicos" class="fila-servicos" role="group" aria-label="Filtrar por serviço"></div>
+        <section id="filaClt" class="fila-clt" aria-label="Consignado CLT no Google" hidden></section>
+        <div id="filaOportunidades" class="fila-conteudo" aria-live="polite"><p class="fila-vazia">Montando a fila...</p></div>
+        <ul id="filaLeituras" class="fila-leituras" aria-label="Última leitura por fonte"></ul>
+      </section>
+</div><div id="pesquisa-estudo" hidden>
       <div class="card-premium p-6 mb-6">
         <p class="text-[11px] font-bold text-green-700 uppercase tracking-wider">Estudo de palavras-chave</p>
-        <h2 class="text-xl font-black text-gray-900 mt-1">O que as pessoas procuram e quanto procuram</h2>
-        <p class="text-xs text-gray-600 mt-1 max-w-3xl">Três fontes lado a lado. As duas primeiras são buscas reais, medidas pelo Google na ficha e no site. A terceira é o estudo de volume, que mostra o tamanho de cada termo e ajuda a escolher pautas e anúncios.</p>
+        <h2 class="text-xl font-black text-gray-900 mt-1">Demanda de pesquisa</h2>
+        <p class="text-xs text-gray-600 mt-1 max-w-3xl">Compare as buscas que dão visibilidade à loja com a demanda estimada em Minas Gerais.</p>
         <div id="palavrasResumo" class="palavras-resumo mt-4"></div>
       </div>
 
@@ -1384,7 +1382,7 @@
         <div class="card-premium p-6">
           <div class="flex items-start justify-between gap-3 mb-2">
             <div>
-              <h3 class="text-base font-bold text-gray-900">O que digitam para achar a ficha</h3>
+              <h3 class="text-base font-bold text-gray-900">Como encontram a loja</h3>
               <p class="text-[11px] text-gray-600">Desempenho da ficha no Google, últimos 3 meses. Número de pessoas por termo.</p>
             </div>
             <span id="palavrasFichaStatus" class="status-badge text-[10px] whitespace-nowrap bg-gray-100 text-gray-700">Carregando</span>
@@ -1394,7 +1392,7 @@
         <div class="card-premium p-6">
           <div class="flex items-start justify-between gap-3 mb-2">
             <div>
-              <h3 class="text-base font-bold text-gray-900">Buscas que mostram o site</h3>
+              <h3 class="text-base font-bold text-gray-900">Visibilidade do site</h3>
               <p class="text-[11px] text-gray-600">Search Console: quantas vezes o site apareceu no Google para cada busca.</p>
             </div>
             <span id="palavrasSiteStatus" class="status-badge text-[10px] whitespace-nowrap bg-gray-100 text-gray-700">Carregando</span>
@@ -1454,6 +1452,20 @@
         </table></div>
         <p class="text-[10px] text-gray-500 mt-3">Volumes de Brasil, MG e região: estudo em planilha, sem conferência recente no Keyword Planner. A coluna Varginha é a faixa real do Keyword Planner com Varginha como local (11/09/2026). O Google só mostra faixa, como "10 a 100", para contas sem gasto contínuo em anúncios.</p>
       </div>
+</div><div id="pesquisa-concorrentes" hidden>        <div class="card-premium p-5">
+          <h3 class="text-base font-bold text-gray-900 mb-1"><i class="fas fa-store text-purple-600 mr-2"></i>Concorrentes monitorados</h3>
+          <p class="text-[11px] text-gray-500 mb-4">Sites e ofertas observados. Esta coleta não mede posição no Maps nem avaliações.</p>
+          <div id="raioxConcorrentesLista" class="space-y-2 max-h-[390px] overflow-y-auto pr-1"></div>
+        </div>
+</div><div id="pesquisa-posicoes" hidden>        <div class="card-premium p-5 lg:col-span-2" id="geogridPainel">
+          <div class="flex items-start justify-between gap-3 mb-4">
+            <div><h3 class="text-base font-bold text-gray-900"><i class="fas fa-map-marked-alt text-green-700 mr-2"></i>Posicionamento geográfico (GeoGrid)</h3><p class="text-[11px] text-gray-500 mt-1">Posição da ficha em 25 pontos de Varginha, com 1 km entre eles, medida pela Places API do Google, sem a personalização da conta logada.</p></div>
+            <span id="geogridStatus" class="status-badge bg-gray-100 text-gray-700 text-[10px] whitespace-nowrap">Carregando</span>
+          </div>
+          <div id="geogridConteudo"></div>
+        </div>
+
+</div>
     </section>
 
   </main>
@@ -1568,18 +1580,34 @@
   <script src="js/calendario.js"></script>
   <script src="js/simulador.js"></script>
   <script src="js/raiox.js"></script>
-  <script src="js/geogrid.js"></script>
-  <script src="js/gmb_api.js"></script>
-  <script src="js/ficha_saude.js"></script>
+  <script src="js/geogrid.js?v=20261119_geogrid_ultra"></script>
+  <script src="js/gmb_api.js?v=20261118b"></script>
+  <script src="js/ficha_saude.js?v=20261118b"></script>
   <script src="js/search_console.js"></script>
   <script src="js/data_palavras.js"></script>
-  <script src="js/palavras.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/resultados.js"></script>
+  <script src="js/palavras.js?v=20261118b"></script>
+  <script src="js/app.js?v=20261118b"></script>
+  <script src="js/resultados.js?v=20261118b"></script>
+  <script src="js/oportunidades.js?v=20261118b"></script>
   <script src="js/criador_artes.js"></script>
   <!-- Botão Flutuante de Retorno Rápido ao Topo (1-Clique) -->
   <button id="btnVoltarTopo" class="btn-floating-top" type="button" title="Voltar ao topo (1-Clique)" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Voltar ao topo da página">
     <i class="fas fa-arrow-up"></i>
   </button>
+<script>
+function abrirPesquisaSeo(area) {
+  document.querySelectorAll('[data-pesquisa]').forEach(botao => {
+    const ativo = botao.dataset.pesquisa === area;
+    document.getElementById(botao.getAttribute('aria-controls')).hidden = !ativo;
+    botao.setAttribute('aria-pressed', String(ativo));
+  });
+  if (area === 'fila') carregarFilaOportunidades();
+  if (area === 'concorrentes') renderRaioXConcorrentes(window.DADOS_CONCORRENTES || {});
+}
+document.querySelector('.pesquisa-nav').addEventListener('click', evento => {
+  const botao = evento.target.closest('[data-pesquisa]');
+  if (botao) abrirPesquisaSeo(botao.dataset.pesquisa);
+});
+</script>
 </body>
 </html>
