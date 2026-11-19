@@ -1497,6 +1497,8 @@ test("pausar sessao: bloqueia a tela, para o relogio e retomar desconta o tempo 
 
 test("grade de documentos 9x13: copias por folha e confirmacao para reimprimir", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-grade-"));
+  // PDFs compostos pela rota caem no LOCALAPPDATA: manda para o temporario para nao sujar a pasta real do Windows.
+  process.env.LOCALAPPDATA = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-grade-lappdata-"));
   const inboxDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-grade-inbox-"));
   fs.writeFileSync(path.join(inboxDir, "rg-frente.jpg"), Buffer.from("foto"));
   fs.writeFileSync(path.join(inboxDir, "rg-verso.jpg"), Buffer.from("foto"));
@@ -1697,6 +1699,8 @@ test("fatura: cartao de autorizacao mostra a folha do boleto e imprime so o que 
 
 test("2 por folha: 28 paginas viram 14 folhas cobradas e abre a cobranca", async () => {
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-nup-"));
+  // O PDF 2-por-folha da rota cai no LOCALAPPDATA: manda para o temporario para nao sujar a pasta real.
+  process.env.LOCALAPPDATA = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-nup-lappdata-"));
   const inboxDir = fs.mkdtempSync(path.join(os.tmpdir(), "lanhouse-nup-inbox-"));
   fs.writeFileSync(path.join(inboxDir, "Trabalho_28pag.pdf"), Buffer.concat([Buffer.from("%PDF-1.4 teste"), Buffer.alloc(8)]));
   const printed = [];
