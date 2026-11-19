@@ -2694,6 +2694,70 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
   // Servidor reiniciou com o recurso ligado: o ciclo volta a rodar sozinho.
   if (db.settings.printAutoBoleto) scheduleAutoBoleto(5000);
 
+  // Faxina da pasta de recebimento: backup de ferramenta (o WaSpeed baixa ~117 MB por dia
+  // as 10h28), zip, rar e executavel GRANDES nao sao imprimiveis e incham a pasta que sincroniza
+  // para o Google Drive. O servidor move sozinho para o arquivo local do lado de ca.
+  // So arquivo grande (20 MB ou mais), de tipo que nunca se imprime, parado ha 10 minutos
+  // (download concluido). Nada e apagado: fica em D:\Sistema Nexcafe\_arquivos-nao-imprimiveis.
+  const JUNK_EXTS = [".json", ".zip", ".rar", ".7z", ".exe", ".msi", ".apk"];
+  const junkSweep = { at: 0, running: false };
+
+  async function archiveBigJunk(folder) {
+
+    if (junkSweep.running || Date.now() - junkSweep.at < 3600000) return;
+
+    junkSweep.at = Date.now();
+
+    junkSweep.running = true;
+
+    try {
+
+      const dest = process.env.LHM_JUNK_ARCHIVE || path.join(path.dirname(__dirname), "_arquivos-nao-imprimiveis");
+
+      fs.mkdirSync(dest, { recursive: true });
+
+      let movidos = 0;
+
+      for (const entry of fs.readdirSync(folder, { withFileTypes: true })) {
+
+        // Subpasta (a pasta de recebimento tem varias) nao interessa: pula, nao para o laco.
+        if (!entry.isFile()) continue;
+
+        if (movidos >= 2) break;
+
+        if (!JUNK_EXTS.includes(path.extname(entry.name).toLowerCase())) continue;
+
+        const full = path.join(folder, entry.name);
+
+        let stat = null;
+
+        try { stat = fs.statSync(full); } catch { continue; }
+
+        if (stat.size < 20 * 1048576 || Date.now() - stat.mtimeMs < 10 * 60000) continue;
+
+        await fs.promises.copyFile(full, path.join(dest, entry.name));
+
+        fs.unlinkSync(full);
+
+        event("sistema", "Arquivo não imprimível arquivado", `${entry.name} (${Math.round(stat.size / 1048576)} MB) foi para ${dest}`, "faxina");
+
+        movidos++;
+
+      }
+
+      if (movidos) save();
+
+    } catch (cause) {
+
+      console.error("Faxina da pasta de recebimento falhou:", cause.message);
+
+      // Falha aparece no painel: sem isso o erro ia só pro console invisível do serviço.
+      try { event("sistema", "Faxina da pasta de recebimento falhou", label(cause.message, 200), "faxina"); save(); } catch { }
+
+    } finally { junkSweep.running = false; }
+
+  }
+
   // Aviso de chegada: so lista nomes (nao abre PDF nenhum) a cada 20 s.
   // Na primeira volta aprende o que ja existe; dai em diante, arquivo novo vira aviso para o painel.
   let inboxWatch = { names: null, news: [], timer: null };
@@ -2755,6 +2819,9 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
       }
 
       inboxWatch.news = inboxWatch.news.filter(item => Date.now() - Date.parse(item.at) < 30 * 60000).slice(0, 20);
+
+      // Faxina ao lado do vigia: move lixo grande nao imprimivel para o arquivo local.
+      archiveBigJunk(folder);
 
     } catch { /* pasta fora do ar (Drive sincronizando): tenta de novo no proximo ciclo */ }
 
@@ -8265,6 +8332,17 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
 
       }
 
+      if (url.pathname.startsWith("/fonts/")) {
+        const fontName = path.basename(url.pathname);
+        const fontPath = path.join(__dirname, "public", "fonts", fontName);
+        if (fs.existsSync(fontPath)) {
+          const fontExt = path.extname(fontName).toLowerCase();
+          const mime = fontExt === ".woff2" ? "font/woff2" : fontExt === ".woff" ? "font/woff" : fontExt === ".ttf" ? "font/ttf" : "application/octet-stream";
+          res.writeHead(200, { "content-type": mime, "cache-control": "public, max-age=31536000, immutable", "x-content-type-options": "nosniff" });
+          return fs.createReadStream(fontPath).pipe(res);
+        }
+      }
+
       const files = {
 
         "/": "index.html",
@@ -8274,6 +8352,8 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         "/app.js": "app.js",
 
         "/styles.css": "styles.css",
+
+        "/fonts.css": "fonts.css",
 
         "/favicon.ico": "favicon.ico",
 
@@ -8296,6 +8376,12 @@ function createApp({ dataDir = DEFAULT_DATA_DIR, port = 4780, printRunner = defa
         ".css": "text/css; charset=utf-8",
 
         ".js": "application/javascript; charset=utf-8",
+
+        ".woff2": "font/woff2",
+
+        ".woff": "font/woff",
+
+        ".ttf": "font/ttf",
 
         ".svg": "image/svg+xml",
 

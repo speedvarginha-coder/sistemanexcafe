@@ -18,3 +18,5 @@ server/public/crlv/
 *.bak-*
 # Cache do Python (pdf-tools.py roda sob demanda)
 __pycache__/
+# Arquivo de lixo grande movido da pasta de recebimento (faxina do servidor)
+_arquivos-nao-imprimiveis/
