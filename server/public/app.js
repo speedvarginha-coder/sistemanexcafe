@@ -4308,13 +4308,12 @@ function render() {
   renderGestaoHome();
   renderPosMachineDue();
   document.querySelectorAll("[data-admin-only]").forEach(el => { el.hidden = state.user.role !== "admin"; });
+  // Atendimento tem o relogio das sessoes: atualiza sempre (tabela pequena).
   renderMachines();
-  renderCash();
-  renderClients();
-  renderProducts();
-  renderSettings();
-  renderUsers();
-  renderReport();
+  // Resto so a tela que esta aberta: tabela de 404 produtos e relatorios a cada 3 s
+  // travavam o painel do balcao sem ninguem olhando. Ao trocar de tela o view() chama render().
+  const renderizarTela = { cash: renderCash, clients: renderClients, products: renderProducts, settings: renderSettings, users: renderUsers, reports: renderReport }[currentView];
+  if (typeof renderizarTela === "function") renderizarTela();
 }
 
 // ---- Financeira: funil de contatos da Speed Financeira ----
@@ -4607,6 +4606,8 @@ function view(name) {
       if (s) { s.focus(); s.select(); }
     }, 50);
   }
+  // render() so desenha a tela aberta: ao entrar numa tela, garante que ela esta fresca.
+  render();
 }
 
 // Normalizacao do cadastro: mostra a proposta e so aplica com confirmacao. Nada e apagado:
